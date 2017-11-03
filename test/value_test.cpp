@@ -1,5 +1,6 @@
 #include <cleo/value.hpp>
 #include <limits>
+#include <string>
 #include <gtest/gtest.h>
 
 namespace cleo
@@ -35,6 +36,23 @@ TEST(value_test, should_create_a_new_instance_for_each_int)
 {
     Value val = create_int(7);
     Value val2 = create_int(7);
+    ASSERT_TRUE(val != val2);
+}
+
+TEST(value_test, should_store_string_values)
+{
+    std::string example("abc\0xyz", 7);
+    std::string exampleCopy = example;
+    Value val = create_string(exampleCopy.data(), exampleCopy.length());
+    exampleCopy.clear();
+    ASSERT_EQ(type::STRING, get_value_type(val));
+    ASSERT_EQ(example, std::string(get_string_ptr(val), get_string_len(val)));
+}
+
+TEST(value_test, should_create_a_new_instance_for_each_string)
+{
+    Value val = create_string("abc", 3);
+    Value val2 = create_string("abc", 3);
     ASSERT_TRUE(val != val2);
 }
 
