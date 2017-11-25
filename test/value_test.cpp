@@ -69,6 +69,38 @@ TEST(value_test, should_return_same_instances_for_symbols_with_same_namespace_an
     EXPECT_TRUE(create_symbol("com.z", 5, "abc", 3) != create_symbol("org.xxx", 7, "abc", 3));
 }
 
+TEST(value_test, should_store_keywords_with_namespaces)
+{
+    Value kw = create_keyword("org.xxx", 7, "thing", 5);
+    ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
+    auto ns = get_keyword_namespace(kw);
+    ASSERT_EQ(tag::STRING, get_value_tag(ns));
+    ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_len(ns)));
+    auto name = get_keyword_name(kw);
+    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+}
+
+TEST(value_test, should_store_keywords_without_namespaces)
+{
+    Value kw = create_keyword("thing", 5);
+    ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
+    ASSERT_TRUE(get_nil() == get_keyword_namespace(kw));
+    auto name = get_keyword_name(kw);
+    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+}
+
+TEST(value_test, should_return_same_instances_for_keywords_with_same_namespace_and_names)
+{
+    EXPECT_TRUE(create_keyword("abc", 3) != create_keyword("xyz", 3));
+    EXPECT_TRUE(create_keyword("abc", 3) == create_keyword("abc", 3));
+    EXPECT_TRUE(create_keyword("org.xxx", 7, "abc", 3) != create_keyword("abc", 3));
+    EXPECT_TRUE(create_keyword("org.xxx", 7, "abc", 3) != create_keyword("org.xxx", 7, "xyz", 3));
+    EXPECT_TRUE(create_keyword("org.xxx", 7, "abc", 3) == create_keyword("org.xxx", 7, "abc", 3));
+    EXPECT_TRUE(create_keyword("com.z", 5, "abc", 3) != create_keyword("org.xxx", 7, "abc", 3));
+}
+
 TEST(value_test, should_store_int_values)
 {
     Value val = create_int64(7);

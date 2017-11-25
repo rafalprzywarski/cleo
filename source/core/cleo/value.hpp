@@ -16,6 +16,7 @@ namespace tag
 constexpr Tag NIL = 0;
 constexpr Tag NATIVE_FUNCTION = 1;
 constexpr Tag SYMBOL = 2;
+constexpr Tag KEYWORD = 3;
 constexpr Tag INT64 = 4;
 constexpr Tag FLOAT64 = 5;
 constexpr Tag STRING = 6;
@@ -39,6 +40,11 @@ Value create_symbol(const char *ns, std::uint32_t ns_len, const char *name, std:
 Value create_symbol(const char *name, std::uint32_t name_len);
 Value get_symbol_namespace(Value s);
 Value get_symbol_name(Value s);
+
+Value create_keyword(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len);
+Value create_keyword(const char *name, std::uint32_t name_len);
+Value get_keyword_namespace(Value s);
+Value get_keyword_name(Value s);
 
 Value create_int64(Int64 val);
 Int64 get_int64_value(Value val);

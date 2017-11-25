@@ -8,6 +8,7 @@ namespace cleo
 {
 
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
+std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
 
 struct String
 {
@@ -16,6 +17,11 @@ struct String
 };
 
 struct Symbol
+{
+    Value ns, name;
+};
+
+struct Keyword
 {
     Value ns, name;
 };
@@ -67,6 +73,32 @@ Value get_symbol_namespace(Value s)
 Value get_symbol_name(Value s)
 {
     return get_ptr<Symbol>(s)->name;
+}
+
+Value create_keyword(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len)
+{
+    auto& entry = keywords[std::string(ns, ns_len)][std::string(name, name_len)];
+    if (entry != Value())
+        return entry;
+    auto val = alloc<Keyword>();
+    val->ns = ns ? create_string(ns, ns_len) : get_nil();
+    val->name = create_string(name, name_len);
+    return entry = tag_ptr(val, tag::KEYWORD);
+}
+
+Value create_keyword(const char *name, std::uint32_t name_len)
+{
+    return create_keyword(nullptr, 0, name, name_len);
+}
+
+Value get_keyword_namespace(Value s)
+{
+    return get_ptr<Keyword>(s)->ns;
+}
+
+Value get_keyword_name(Value s)
+{
+    return get_ptr<Keyword>(s)->name;
 }
 
 Value create_int64(Int64 intVal)
