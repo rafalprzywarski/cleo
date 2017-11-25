@@ -26,6 +26,12 @@ struct Keyword
     Value ns, name;
 };
 
+struct Object
+{
+    std::uint32_t size;
+    Value firstElem;
+};
+
 Value tag_ptr(void *ptr, Value tag)
 {
     return reinterpret_cast<Value>(ptr) | tag;
@@ -141,6 +147,24 @@ const char *get_string_ptr(Value val)
 std::uint32_t get_string_len(Value val)
 {
     return get_ptr<String>(val)->len;
+}
+
+Value create_object(Value type, const Value *elems, std::uint32_t size)
+{
+    auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstElem) + size * sizeof(Object::firstElem)));
+    val->size = size;
+    std::copy_n(elems, size, &val->firstElem);
+    return tag_ptr(val, tag::OBJECT);
+}
+
+std::uint32_t get_object_size(Value obj)
+{
+    return get_ptr<Object>(obj)->size;
+}
+
+Value get_object_element(Value obj, std::uint32_t index)
+{
+    return (&get_ptr<Object>(obj)->firstElem)[index];
 }
 
 }

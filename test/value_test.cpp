@@ -1,6 +1,7 @@
 #include <cleo/value.hpp>
 #include <limits>
 #include <string>
+#include <array>
 #include <gtest/gtest.h>
 
 namespace cleo
@@ -151,6 +152,28 @@ TEST(value_test, should_create_a_new_instance_for_each_string)
 {
     Value val = create_string("abc", 3);
     Value val2 = create_string("abc", 3);
+    ASSERT_TRUE(val != val2);
+}
+
+TEST(value_test, should_store_object_values)
+{
+    auto type = create_symbol("org.xxx", 7);
+    const std::array<Value, 3> elems{{create_int64(10), create_float64(20), create_symbol("elem3", 5)}};
+    Value obj = create_object(type, elems.data(), elems.size());
+    ASSERT_EQ(tag::OBJECT, get_value_tag(obj));
+    ASSERT_EQ(elems.size(), get_object_size(obj));
+    ASSERT_TRUE(elems[0] == get_object_element(obj, 0));
+    ASSERT_TRUE(elems[1] == get_object_element(obj, 1));
+    ASSERT_TRUE(elems[2] == get_object_element(obj, 2));
+
+    ASSERT_EQ(0u, get_object_size(create_object(type, nullptr, 0)));
+}
+
+TEST(value_test, should_create_a_new_instance_for_each_object)
+{
+    auto type = create_symbol("org.xxx", 7);
+    Value val = create_object(type, nullptr, 0);
+    Value val2 = create_object(type, nullptr, 0);
     ASSERT_TRUE(val != val2);
 }
 
