@@ -58,7 +58,10 @@ const char *get_string_ptr(Value val);
 std::uint32_t get_string_len(Value val);
 
 Value create_object(Value type, const Value *elems, std::uint32_t size);
+Value get_object_type(Value obj);
 std::uint32_t get_object_size(Value obj);
 Value get_object_element(Value obj, std::uint32_t index);
+
+Value get_value_type(Value val);
 
 }

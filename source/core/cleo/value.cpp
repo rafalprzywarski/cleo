@@ -3,12 +3,23 @@
 #include <cstring>
 #include <unordered_map>
 #include <string>
+#include <array>
 
 namespace cleo
 {
 
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
+
+std::array<Value, 7> fixed_types{{
+    get_nil(),
+    create_symbol("cleo.core", 9, "NativeFunction", 14),
+    create_symbol("cleo.core", 9, "Symbol", 6),
+    create_symbol("cleo.core", 9, "Keyword", 7),
+    create_symbol("cleo.core", 9, "Int64", 5),
+    create_symbol("cleo.core", 9, "Float64", 7),
+    create_symbol("cleo.core", 9, "String", 6)
+}};
 
 struct String
 {
@@ -28,6 +39,7 @@ struct Keyword
 
 struct Object
 {
+    Value type;
     std::uint32_t size;
     Value firstElem;
 };
@@ -152,9 +164,15 @@ std::uint32_t get_string_len(Value val)
 Value create_object(Value type, const Value *elems, std::uint32_t size)
 {
     auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstElem) + size * sizeof(Object::firstElem)));
+    val->type = type;
     val->size = size;
     std::copy_n(elems, size, &val->firstElem);
     return tag_ptr(val, tag::OBJECT);
+}
+
+Value get_object_type(Value obj)
+{
+    return get_ptr<Object>(obj)->type;
 }
 
 std::uint32_t get_object_size(Value obj)
@@ -165,6 +183,14 @@ std::uint32_t get_object_size(Value obj)
 Value get_object_element(Value obj, std::uint32_t index)
 {
     return (&get_ptr<Object>(obj)->firstElem)[index];
+}
+
+Value get_value_type(Value val)
+{
+    auto tag = get_value_tag(val);
+    if (tag == tag::OBJECT)
+        return get_object_type(val);
+    return fixed_types[tag];
 }
 
 }

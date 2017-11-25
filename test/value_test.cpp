@@ -177,5 +177,19 @@ TEST(value_test, should_create_a_new_instance_for_each_object)
     ASSERT_TRUE(val != val2);
 }
 
+TEST(value_test, should_return_the_type_of_a_value)
+{
+    auto f = [](const Value *, std::uint8_t) { return get_nil(); };
+    auto type = create_symbol("org.xxx", 7);
+    ASSERT_TRUE(get_nil() == get_value_type(get_nil()));
+    ASSERT_TRUE(create_symbol("cleo.core", 9, "NativeFunction", 14) == get_value_type(create_native_function(f)));
+    ASSERT_TRUE(create_symbol("cleo.core", 9, "Symbol", 6) == get_value_type(create_symbol("abc", 3)));
+    ASSERT_TRUE(create_symbol("cleo.core", 9, "Keyword", 7) == get_value_type(create_keyword("abc", 3)));
+    ASSERT_TRUE(create_symbol("cleo.core", 9, "Int64", 5) == get_value_type(create_int64(11)));
+    ASSERT_TRUE(create_symbol("cleo.core", 9, "Float64", 7) == get_value_type(create_float64(3.5)));
+    ASSERT_TRUE(create_symbol("cleo.core", 9, "String", 6) == get_value_type(create_string("abc", 3)));
+    ASSERT_TRUE(type == get_value_type(create_object(type, nullptr, 0)));
+}
+
 }
 }
