@@ -1,4 +1,5 @@
 #include "memory.hpp"
+#include "value.hpp"
 #include <cstdlib>
 
 namespace cleo
@@ -6,7 +7,10 @@ namespace cleo
 
 void *mem_alloc(std::size_t size)
 {
-    return std::malloc(size);
+    auto ptr = std::malloc(size);
+    if ((reinterpret_cast<std::uintptr_t>(ptr) & tag::MASK) != 0)
+        std::abort();
+    return ptr;
 }
 
 }

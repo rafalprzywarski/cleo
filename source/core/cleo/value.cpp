@@ -5,66 +5,51 @@
 namespace cleo
 {
 
-struct ObjectHeader
-{
-    std::uint64_t type;
-};
-
-struct Integer
-{
-    ObjectHeader header;
-    Int intVal;
-};
-
 struct String
 {
-    ObjectHeader header;
     std::uint32_t len;
     char firstChar;
 };
 
-ObjectHeader nil{type::NIL};
-
-Type get_value_type(Value val)
+Value tag_ptr(void *ptr, Value tag)
 {
-    return static_cast<ObjectHeader *>(val)->type;
+    return reinterpret_cast<Value>(ptr) | tag;
 }
 
-Value get_nil()
+template <typename T>
+T *get_ptr(Value ptr)
 {
-    return &nil;
+    return reinterpret_cast<T *>(ptr & ~tag::MASK);
 }
 
-Value create_int(std::int64_t intVal)
+Value create_int64(std::int64_t intVal)
 {
-    Integer *val = alloc<Integer>();
-    val->header.type = type::INT;
-    val->intVal = intVal;
-    return val;
+    auto val = alloc<std::int64_t>();
+    *val = intVal;
+    return tag_ptr(val, tag::INT64);
 }
 
-Int get_int_value(Value val)
+std::int64_t get_int_value(Value val)
 {
-    return static_cast<Integer *>(val)->intVal;
+    return *get_ptr<std::int64_t>(val);
 }
 
 Value create_string(const char *str, std::uint32_t len)
 {
-    String *val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len));
-    val->header.type = type::STRING;
+    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len));
     val->len = len;
     std::memcpy(&val->firstChar, str, len);
-    return val;
+    return tag_ptr(val, tag::STRING);
 }
 
 const char *get_string_ptr(Value val)
 {
-    return &static_cast<String *>(val)->firstChar;
+    return &get_ptr<String>(val)->firstChar;
 }
 
 std::uint32_t get_string_len(Value val)
 {
-    return static_cast<String *>(val)->len;
+    return get_ptr<String>(val)->len;
 }
 
 }

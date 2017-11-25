@@ -4,23 +4,29 @@
 namespace cleo
 {
 
-using Value = void *;
-using Type = std::uint64_t;
-using Int = std::int64_t;
+using Value = std::uintptr_t;
+using Type = Value;
 
-namespace type
+namespace tag
 {
 constexpr Type NIL = 0;
-constexpr Type INT = 1;
-constexpr Type STRING = 2;
+constexpr Type INT64 = 4;
+constexpr Type STRING = 6;
+constexpr Type MASK = 7;
 }
 
-Type get_value_type(Value val);
+inline Type get_value_tag(Value val)
+{
+    return val & tag::MASK;
+}
 
-Value get_nil();
+inline Value get_nil()
+{
+    return 0;
+}
 
-Value create_int(std::int64_t val);
-Int get_int_value(Value val);
+Value create_int64(std::int64_t val);
+std::int64_t get_int_value(Value val);
 
 Value create_string(const char *str, std::uint32_t len);
 const char *get_string_ptr(Value val);

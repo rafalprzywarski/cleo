@@ -11,7 +11,7 @@ namespace test
 TEST(value_test, nil_should_have_type_NIL)
 {
     Value val = get_nil();
-    ASSERT_EQ(type::NIL, get_value_type(val));
+    ASSERT_EQ(tag::NIL, get_value_tag(val));
 }
 
 TEST(value_test, there_should_be_one_instance_of_nil)
@@ -23,19 +23,19 @@ TEST(value_test, there_should_be_one_instance_of_nil)
 
 TEST(value_test, should_store_int_values)
 {
-    Value val = create_int(7);
-    ASSERT_EQ(type::INT, get_value_type(val));
+    Value val = create_int64(7);
+    ASSERT_EQ(tag::INT64, get_value_tag(val));
     ASSERT_EQ(7, get_int_value(val));
-    val = create_int(std::numeric_limits<Int>::min());
-    ASSERT_EQ(std::numeric_limits<Int>::min(), get_int_value(val));
-    val = create_int(std::numeric_limits<Int>::max());
-    ASSERT_EQ(std::numeric_limits<Int>::max(), get_int_value(val));
+    val = create_int64(std::numeric_limits<std::int64_t>::min());
+    ASSERT_EQ(std::numeric_limits<std::int64_t>::min(), get_int_value(val));
+    val = create_int64(std::numeric_limits<std::int64_t>::max());
+    ASSERT_EQ(std::numeric_limits<std::int64_t>::max(), get_int_value(val));
 }
 
 TEST(value_test, should_create_a_new_instance_for_each_int)
 {
-    Value val = create_int(7);
-    Value val2 = create_int(7);
+    Value val = create_int64(7);
+    Value val2 = create_int64(7);
     ASSERT_TRUE(val != val2);
 }
 
@@ -45,7 +45,7 @@ TEST(value_test, should_store_string_values)
     std::string exampleCopy = example;
     Value val = create_string(exampleCopy.data(), exampleCopy.length());
     exampleCopy.clear();
-    ASSERT_EQ(type::STRING, get_value_type(val));
+    ASSERT_EQ(tag::STRING, get_value_tag(val));
     ASSERT_EQ(example, std::string(get_string_ptr(val), get_string_len(val)));
 }
 
