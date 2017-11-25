@@ -22,16 +22,28 @@ T *get_ptr(Value ptr)
     return reinterpret_cast<T *>(ptr & ~tag::MASK);
 }
 
-Value create_int64(std::int64_t intVal)
+Value create_int64(Int64 intVal)
 {
-    auto val = alloc<std::int64_t>();
+    auto val = alloc<Int64>();
     *val = intVal;
     return tag_ptr(val, tag::INT64);
 }
 
-std::int64_t get_int_value(Value val)
+Int64 get_int64_value(Value val)
 {
-    return *get_ptr<std::int64_t>(val);
+    return *get_ptr<Int64>(val);
+}
+
+Value create_float64(Float64 floatVal)
+{
+    auto val = alloc<Float64>();
+    *val = floatVal;
+    return tag_ptr(val, tag::FLOAT64);
+}
+
+Float64 get_float64_value(Value val)
+{
+    return *get_ptr<Float64>(val);
 }
 
 Value create_string(const char *str, std::uint32_t len)

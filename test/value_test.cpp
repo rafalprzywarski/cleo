@@ -25,17 +25,35 @@ TEST(value_test, should_store_int_values)
 {
     Value val = create_int64(7);
     ASSERT_EQ(tag::INT64, get_value_tag(val));
-    ASSERT_EQ(7, get_int_value(val));
-    val = create_int64(std::numeric_limits<std::int64_t>::min());
-    ASSERT_EQ(std::numeric_limits<std::int64_t>::min(), get_int_value(val));
-    val = create_int64(std::numeric_limits<std::int64_t>::max());
-    ASSERT_EQ(std::numeric_limits<std::int64_t>::max(), get_int_value(val));
+    ASSERT_EQ(7, get_int64_value(val));
+    val = create_int64(std::numeric_limits<Int64>::min());
+    ASSERT_EQ(std::numeric_limits<Int64>::min(), get_int64_value(val));
+    val = create_int64(std::numeric_limits<Int64>::max());
+    ASSERT_EQ(std::numeric_limits<Int64>::max(), get_int64_value(val));
 }
 
 TEST(value_test, should_create_a_new_instance_for_each_int)
 {
     Value val = create_int64(7);
     Value val2 = create_int64(7);
+    ASSERT_TRUE(val != val2);
+}
+
+TEST(value_test, should_store_float_values)
+{
+    Value val = create_float64(7.125);
+    ASSERT_EQ(tag::FLOAT64, get_value_tag(val));
+    ASSERT_EQ(7.125, get_float64_value(val));
+    val = create_float64(std::numeric_limits<Float64>::min());
+    ASSERT_EQ(std::numeric_limits<Float64>::min(), get_float64_value(val));
+    val = create_float64(std::numeric_limits<Float64>::max());
+    ASSERT_EQ(std::numeric_limits<Float64>::max(), get_float64_value(val));
+}
+
+TEST(value_test, should_create_a_new_instance_for_each_float)
+{
+    Value val = create_float64(7);
+    Value val2 = create_float64(7);
     ASSERT_TRUE(val != val2);
 }
 
