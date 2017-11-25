@@ -22,6 +22,18 @@ T *get_ptr(Value ptr)
     return reinterpret_cast<T *>(ptr & ~tag::MASK);
 }
 
+Value create_native_function(NativeFunction f)
+{
+    auto val = alloc<NativeFunction>();
+    *val = f;
+    return tag_ptr(val, tag::NATIVE_FUNCTION);
+}
+
+NativeFunction get_native_function_ptr(Value val)
+{
+    return *get_ptr<NativeFunction>(val);
+}
+
 Value create_int64(Int64 intVal)
 {
     auto val = alloc<Int64>();

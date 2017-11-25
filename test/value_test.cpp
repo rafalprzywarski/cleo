@@ -21,6 +21,22 @@ TEST(value_test, there_should_be_one_instance_of_nil)
     ASSERT_TRUE(val == val2);
 }
 
+TEST(value_test, should_store_native_functions)
+{
+    auto f = [](const Value *, std::uint8_t) { return get_nil(); };
+    Value val = create_native_function(f);
+    ASSERT_EQ(tag::NATIVE_FUNCTION, get_value_tag(val));
+    ASSERT_EQ(f, get_native_function_ptr(val));
+}
+
+TEST(value_test, should_create_a_new_instance_for_each_function)
+{
+    auto f = [](const Value *, std::uint8_t) { return get_nil(); };
+    Value val = create_native_function(f);
+    Value val2 = create_native_function(f);
+    ASSERT_TRUE(val != val2);
+}
+
 TEST(value_test, should_store_int_values)
 {
     Value val = create_int64(7);
