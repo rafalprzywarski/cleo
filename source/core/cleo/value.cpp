@@ -13,12 +13,12 @@ std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords
 
 std::array<Value, 7> fixed_types{{
     get_nil(),
-    create_symbol("cleo.core", 9, "NativeFunction", 14),
-    create_symbol("cleo.core", 9, "Symbol", 6),
-    create_symbol("cleo.core", 9, "Keyword", 7),
-    create_symbol("cleo.core", 9, "Int64", 5),
-    create_symbol("cleo.core", 9, "Float64", 7),
-    create_symbol("cleo.core", 9, "String", 6)
+    create_symbol("cleo.core", "NativeFunction"),
+    create_symbol("cleo.core", "Symbol"),
+    create_symbol("cleo.core", "Keyword"),
+    create_symbol("cleo.core", "Int64"),
+    create_symbol("cleo.core", "Float64"),
+    create_symbol("cleo.core", "String")
 }};
 
 struct String
@@ -67,20 +67,20 @@ NativeFunction get_native_function_ptr(Value val)
     return *get_ptr<NativeFunction>(val);
 }
 
-Value create_symbol(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len)
+Value create_symbol(const std::string& ns, const std::string& name)
 {
-    auto& entry = symbols[std::string(ns, ns_len)][std::string(name, name_len)];
+    auto& entry = symbols[ns][name];
     if (entry != Value())
         return entry;
     auto val = alloc<Symbol>();
-    val->ns = ns ? create_string(ns, ns_len) : get_nil();
-    val->name = create_string(name, name_len);
+    val->ns = !ns.empty() ? create_string(ns) : get_nil();
+    val->name = create_string(name);
     return entry = tag_ptr(val, tag::SYMBOL);
 }
 
-Value create_symbol(const char *name, std::uint32_t name_len)
+Value create_symbol(const std::string& name)
 {
-    return create_symbol(nullptr, 0, name, name_len);
+    return create_symbol({}, name);
 }
 
 Value get_symbol_namespace(Value s)
@@ -93,20 +93,20 @@ Value get_symbol_name(Value s)
     return get_ptr<Symbol>(s)->name;
 }
 
-Value create_keyword(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len)
+Value create_keyword(const std::string& ns, const std::string& name)
 {
-    auto& entry = keywords[std::string(ns, ns_len)][std::string(name, name_len)];
+    auto& entry = keywords[ns][name];
     if (entry != Value())
         return entry;
     auto val = alloc<Keyword>();
-    val->ns = ns ? create_string(ns, ns_len) : get_nil();
-    val->name = create_string(name, name_len);
+    val->ns = !ns.empty() ? create_string(ns) : get_nil();
+    val->name = create_string(name);
     return entry = tag_ptr(val, tag::KEYWORD);
 }
 
-Value create_keyword(const char *name, std::uint32_t name_len)
+Value create_keyword(const std::string& name)
 {
-    return create_keyword(nullptr, 0, name, name_len);
+    return create_keyword({}, name);
 }
 
 Value get_keyword_namespace(Value s)
@@ -143,11 +143,11 @@ Float64 get_float64_value(Value val)
     return *get_ptr<Float64>(val);
 }
 
-Value create_string(const char *str, std::uint32_t len)
+Value create_string(const std::string& str)
 {
-    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len));
-    val->len = len;
-    std::memcpy(&val->firstChar, str, len);
+    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + str.length()));
+    val->len = str.length();
+    std::memcpy(&val->firstChar, str.data(), str.length());
     return tag_ptr(val, tag::STRING);
 }
 

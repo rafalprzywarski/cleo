@@ -40,7 +40,7 @@ TEST(value_test, should_create_a_new_instance_for_each_function)
 
 TEST(value_test, should_store_symbols_with_namespaces)
 {
-    Value sym = create_symbol("org.xxx", 7, "thing", 5);
+    Value sym = create_symbol("org.xxx", "thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
     auto ns = get_symbol_namespace(sym);
     ASSERT_EQ(tag::STRING, get_value_tag(ns));
@@ -52,7 +52,7 @@ TEST(value_test, should_store_symbols_with_namespaces)
 
 TEST(value_test, should_store_symbols_without_namespaces)
 {
-    Value sym = create_symbol("thing", 5);
+    Value sym = create_symbol("thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
     ASSERT_TRUE(get_nil() == get_symbol_namespace(sym));
     auto name = get_symbol_name(sym);
@@ -62,17 +62,17 @@ TEST(value_test, should_store_symbols_without_namespaces)
 
 TEST(value_test, should_return_same_instances_for_symbols_with_same_namespace_and_names)
 {
-    EXPECT_TRUE(create_symbol("abc", 3) != create_symbol("xyz", 3));
-    EXPECT_TRUE(create_symbol("abc", 3) == create_symbol("abc", 3));
-    EXPECT_TRUE(create_symbol("org.xxx", 7, "abc", 3) != create_symbol("abc", 3));
-    EXPECT_TRUE(create_symbol("org.xxx", 7, "abc", 3) != create_symbol("org.xxx", 7, "xyz", 3));
-    EXPECT_TRUE(create_symbol("org.xxx", 7, "abc", 3) == create_symbol("org.xxx", 7, "abc", 3));
-    EXPECT_TRUE(create_symbol("com.z", 5, "abc", 3) != create_symbol("org.xxx", 7, "abc", 3));
+    EXPECT_TRUE(create_symbol("abc") != create_symbol("xyz"));
+    EXPECT_TRUE(create_symbol("abc") == create_symbol("abc"));
+    EXPECT_TRUE(create_symbol("org.xxx", "abc") != create_symbol("abc"));
+    EXPECT_TRUE(create_symbol("org.xxx", "abc") != create_symbol("org.xxx", "xyz"));
+    EXPECT_TRUE(create_symbol("org.xxx", "abc") == create_symbol("org.xxx", "abc"));
+    EXPECT_TRUE(create_symbol("com.z", "abc") != create_symbol("org.xxx", "abc"));
 }
 
 TEST(value_test, should_store_keywords_with_namespaces)
 {
-    Value kw = create_keyword("org.xxx", 7, "thing", 5);
+    Value kw = create_keyword("org.xxx", "thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
     auto ns = get_keyword_namespace(kw);
     ASSERT_EQ(tag::STRING, get_value_tag(ns));
@@ -84,7 +84,7 @@ TEST(value_test, should_store_keywords_with_namespaces)
 
 TEST(value_test, should_store_keywords_without_namespaces)
 {
-    Value kw = create_keyword("thing", 5);
+    Value kw = create_keyword("thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
     ASSERT_TRUE(get_nil() == get_keyword_namespace(kw));
     auto name = get_keyword_name(kw);
@@ -94,12 +94,12 @@ TEST(value_test, should_store_keywords_without_namespaces)
 
 TEST(value_test, should_return_same_instances_for_keywords_with_same_namespace_and_names)
 {
-    EXPECT_TRUE(create_keyword("abc", 3) != create_keyword("xyz", 3));
-    EXPECT_TRUE(create_keyword("abc", 3) == create_keyword("abc", 3));
-    EXPECT_TRUE(create_keyword("org.xxx", 7, "abc", 3) != create_keyword("abc", 3));
-    EXPECT_TRUE(create_keyword("org.xxx", 7, "abc", 3) != create_keyword("org.xxx", 7, "xyz", 3));
-    EXPECT_TRUE(create_keyword("org.xxx", 7, "abc", 3) == create_keyword("org.xxx", 7, "abc", 3));
-    EXPECT_TRUE(create_keyword("com.z", 5, "abc", 3) != create_keyword("org.xxx", 7, "abc", 3));
+    EXPECT_TRUE(create_keyword("abc") != create_keyword("xyz"));
+    EXPECT_TRUE(create_keyword("abc") == create_keyword("abc"));
+    EXPECT_TRUE(create_keyword("org.xxx", "abc") != create_keyword("abc"));
+    EXPECT_TRUE(create_keyword("org.xxx", "abc") != create_keyword("org.xxx", "xyz"));
+    EXPECT_TRUE(create_keyword("org.xxx", "abc") == create_keyword("org.xxx", "abc"));
+    EXPECT_TRUE(create_keyword("com.z", "abc") != create_keyword("org.xxx", "abc"));
 }
 
 TEST(value_test, should_store_int_values)
@@ -142,7 +142,7 @@ TEST(value_test, should_store_string_values)
 {
     std::string example("abc\0xyz", 7);
     std::string exampleCopy = example;
-    Value val = create_string(exampleCopy.data(), exampleCopy.length());
+    Value val = create_string(exampleCopy);
     exampleCopy.clear();
     ASSERT_EQ(tag::STRING, get_value_tag(val));
     ASSERT_EQ(example, std::string(get_string_ptr(val), get_string_len(val)));
@@ -150,15 +150,15 @@ TEST(value_test, should_store_string_values)
 
 TEST(value_test, should_create_a_new_instance_for_each_string)
 {
-    Value val = create_string("abc", 3);
-    Value val2 = create_string("abc", 3);
+    Value val = create_string("abc");
+    Value val2 = create_string("abc");
     ASSERT_TRUE(val != val2);
 }
 
 TEST(value_test, should_store_object_values)
 {
-    auto type = create_symbol("org.xxx", 7);
-    const std::array<Value, 3> elems{{create_int64(10), create_float64(20), create_symbol("elem3", 5)}};
+    auto type = create_symbol("org.xxx");
+    const std::array<Value, 3> elems{{create_int64(10), create_float64(20), create_symbol("elem3")}};
     Value obj = create_object(type, elems.data(), elems.size());
     ASSERT_EQ(tag::OBJECT, get_value_tag(obj));
     ASSERT_EQ(elems.size(), get_object_size(obj));
@@ -171,7 +171,7 @@ TEST(value_test, should_store_object_values)
 
 TEST(value_test, should_create_a_new_instance_for_each_object)
 {
-    auto type = create_symbol("org.xxx", 7);
+    auto type = create_symbol("org.xxx");
     Value val = create_object(type, nullptr, 0);
     Value val2 = create_object(type, nullptr, 0);
     ASSERT_TRUE(val != val2);
@@ -180,14 +180,14 @@ TEST(value_test, should_create_a_new_instance_for_each_object)
 TEST(value_test, should_return_the_type_of_a_value)
 {
     auto f = [](const Value *, std::uint8_t) { return get_nil(); };
-    auto type = create_symbol("org.xxx", 7);
+    auto type = create_symbol("org.xxx");
     ASSERT_TRUE(get_nil() == get_value_type(get_nil()));
-    ASSERT_TRUE(create_symbol("cleo.core", 9, "NativeFunction", 14) == get_value_type(create_native_function(f)));
-    ASSERT_TRUE(create_symbol("cleo.core", 9, "Symbol", 6) == get_value_type(create_symbol("abc", 3)));
-    ASSERT_TRUE(create_symbol("cleo.core", 9, "Keyword", 7) == get_value_type(create_keyword("abc", 3)));
-    ASSERT_TRUE(create_symbol("cleo.core", 9, "Int64", 5) == get_value_type(create_int64(11)));
-    ASSERT_TRUE(create_symbol("cleo.core", 9, "Float64", 7) == get_value_type(create_float64(3.5)));
-    ASSERT_TRUE(create_symbol("cleo.core", 9, "String", 6) == get_value_type(create_string("abc", 3)));
+    ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(create_native_function(f)));
+    ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(create_symbol("abc")));
+    ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(create_keyword("abc")));
+    ASSERT_TRUE(create_symbol("cleo.core", "Int64") == get_value_type(create_int64(11)));
+    ASSERT_TRUE(create_symbol("cleo.core", "Float64") == get_value_type(create_float64(3.5)));
+    ASSERT_TRUE(create_symbol("cleo.core", "String") == get_value_type(create_string("abc")));
     ASSERT_TRUE(type == get_value_type(create_object(type, nullptr, 0)));
 }
 

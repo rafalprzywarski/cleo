@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 
 namespace cleo
 {
@@ -37,13 +38,13 @@ inline Value get_nil()
 Value create_native_function(NativeFunction f);
 NativeFunction get_native_function_ptr(Value val);
 
-Value create_symbol(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len);
-Value create_symbol(const char *name, std::uint32_t name_len);
+Value create_symbol(const std::string& ns, const std::string& name);
+Value create_symbol(const std::string& name);
 Value get_symbol_namespace(Value s);
 Value get_symbol_name(Value s);
 
-Value create_keyword(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len);
-Value create_keyword(const char *name, std::uint32_t name_len);
+Value create_keyword(const std::string& ns, const std::string& name);
+Value create_keyword(const std::string& name);
 Value get_keyword_namespace(Value s);
 Value get_keyword_name(Value s);
 
@@ -53,7 +54,7 @@ Int64 get_int64_value(Value val);
 Value create_float64(Float64 val);
 Float64 get_float64_value(Value val);
 
-Value create_string(const char *str, std::uint32_t len);
+Value create_string(const std::string& str);
 const char *get_string_ptr(Value val);
 std::uint32_t get_string_len(Value val);
 
