@@ -1,14 +1,23 @@
 #include "value.hpp"
 #include "memory.hpp"
 #include <cstring>
+#include <unordered_map>
+#include <string>
 
 namespace cleo
 {
+
+std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 
 struct String
 {
     std::uint32_t len;
     char firstChar;
+};
+
+struct Symbol
+{
+    Value ns, name;
 };
 
 Value tag_ptr(void *ptr, Value tag)
@@ -32,6 +41,32 @@ Value create_native_function(NativeFunction f)
 NativeFunction get_native_function_ptr(Value val)
 {
     return *get_ptr<NativeFunction>(val);
+}
+
+Value create_symbol(const char *ns, std::uint32_t ns_len, const char *name, std::uint32_t name_len)
+{
+    auto& entry = symbols[std::string(ns, ns_len)][std::string(name, name_len)];
+    if (entry != Value())
+        return entry;
+    auto val = alloc<Symbol>();
+    val->ns = ns ? create_string(ns, ns_len) : get_nil();
+    val->name = create_string(name, name_len);
+    return entry = tag_ptr(val, tag::SYMBOL);
+}
+
+Value create_symbol(const char *name, std::uint32_t name_len)
+{
+    return create_symbol(nullptr, 0, name, name_len);
+}
+
+Value get_symbol_namespace(Value s)
+{
+    return get_ptr<Symbol>(s)->ns;
+}
+
+Value get_symbol_name(Value s)
+{
+    return get_ptr<Symbol>(s)->name;
 }
 
 Value create_int64(Int64 intVal)

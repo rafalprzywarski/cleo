@@ -37,6 +37,38 @@ TEST(value_test, should_create_a_new_instance_for_each_function)
     ASSERT_TRUE(val != val2);
 }
 
+TEST(value_test, should_store_symbols_with_namespaces)
+{
+    Value sym = create_symbol("org.xxx", 7, "thing", 5);
+    ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
+    auto ns = get_symbol_namespace(sym);
+    ASSERT_EQ(tag::STRING, get_value_tag(ns));
+    ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_len(ns)));
+    auto name = get_symbol_name(sym);
+    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+}
+
+TEST(value_test, should_store_symbols_without_namespaces)
+{
+    Value sym = create_symbol("thing", 5);
+    ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
+    ASSERT_TRUE(get_nil() == get_symbol_namespace(sym));
+    auto name = get_symbol_name(sym);
+    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+}
+
+TEST(value_test, should_return_same_instances_for_symbols_with_same_namespace_and_names)
+{
+    EXPECT_TRUE(create_symbol("abc", 3) != create_symbol("xyz", 3));
+    EXPECT_TRUE(create_symbol("abc", 3) == create_symbol("abc", 3));
+    EXPECT_TRUE(create_symbol("org.xxx", 7, "abc", 3) != create_symbol("abc", 3));
+    EXPECT_TRUE(create_symbol("org.xxx", 7, "abc", 3) != create_symbol("org.xxx", 7, "xyz", 3));
+    EXPECT_TRUE(create_symbol("org.xxx", 7, "abc", 3) == create_symbol("org.xxx", 7, "abc", 3));
+    EXPECT_TRUE(create_symbol("com.z", 5, "abc", 3) != create_symbol("org.xxx", 7, "abc", 3));
+}
+
 TEST(value_test, should_store_int_values)
 {
     Value val = create_int64(7);
