@@ -9,22 +9,14 @@ namespace cleo
 namespace test
 {
 
-TEST(value_test, nil_should_have_type_NIL)
+TEST(value_test, nil_should_have_tag_NIL)
 {
-    Value val = get_nil();
-    ASSERT_EQ(tag::NIL, get_value_tag(val));
-}
-
-TEST(value_test, there_should_be_one_instance_of_nil)
-{
-    Value val = get_nil();
-    Value val2 = get_nil();
-    ASSERT_TRUE(val == val2);
+    ASSERT_EQ(tag::NIL, get_value_tag(nil));
 }
 
 TEST(value_test, should_store_native_functions)
 {
-    auto f = [](const Value *, std::uint8_t) { return get_nil(); };
+    auto f = [](const Value *, std::uint8_t) { return nil; };
     Value val = create_native_function(f);
     ASSERT_EQ(tag::NATIVE_FUNCTION, get_value_tag(val));
     ASSERT_EQ(f, get_native_function_ptr(val));
@@ -32,7 +24,7 @@ TEST(value_test, should_store_native_functions)
 
 TEST(value_test, should_create_a_new_instance_for_each_function)
 {
-    auto f = [](const Value *, std::uint8_t) { return get_nil(); };
+    auto f = [](const Value *, std::uint8_t) { return nil; };
     Value val = create_native_function(f);
     Value val2 = create_native_function(f);
     ASSERT_TRUE(val != val2);
@@ -54,7 +46,7 @@ TEST(value_test, should_store_symbols_without_namespaces)
 {
     Value sym = create_symbol("thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
-    ASSERT_TRUE(get_nil() == get_symbol_namespace(sym));
+    ASSERT_TRUE(nil == get_symbol_namespace(sym));
     auto name = get_symbol_name(sym);
     ASSERT_EQ(tag::STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
@@ -86,7 +78,7 @@ TEST(value_test, should_store_keywords_without_namespaces)
 {
     Value kw = create_keyword("thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
-    ASSERT_TRUE(get_nil() == get_keyword_namespace(kw));
+    ASSERT_TRUE(nil == get_keyword_namespace(kw));
     auto name = get_keyword_name(kw);
     ASSERT_EQ(tag::STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
@@ -179,9 +171,9 @@ TEST(value_test, should_create_a_new_instance_for_each_object)
 
 TEST(value_test, should_return_the_type_of_a_value)
 {
-    auto f = [](const Value *, std::uint8_t) { return get_nil(); };
+    auto f = [](const Value *, std::uint8_t) { return nil; };
     auto type = create_symbol("org.xxx");
-    ASSERT_TRUE(get_nil() == get_value_type(get_nil()));
+    ASSERT_TRUE(nil == get_value_type(nil));
     ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(create_native_function(f)));
     ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(create_symbol("abc")));
     ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(create_keyword("abc")));

@@ -15,7 +15,7 @@ singleton<std::unordered_map<std::string, std::unordered_map<std::string, Value>
 singleton<std::unordered_map<std::string, std::unordered_map<std::string, Value>>, Keywords> keywords;
 
 std::array<Value, 7> fixed_types{{
-    get_nil(),
+    nil,
     create_symbol("cleo.core", "NativeFunction"),
     create_symbol("cleo.core", "Symbol"),
     create_symbol("cleo.core", "Keyword"),
@@ -76,7 +76,7 @@ Value create_symbol(const std::string& ns, const std::string& name)
     if (entry != Value())
         return entry;
     auto val = alloc<Symbol>();
-    val->ns = !ns.empty() ? create_string(ns) : get_nil();
+    val->ns = !ns.empty() ? create_string(ns) : nil;
     val->name = create_string(name);
     return entry = tag_ptr(val, tag::SYMBOL);
 }
@@ -102,7 +102,7 @@ Value create_keyword(const std::string& ns, const std::string& name)
     if (entry != Value())
         return entry;
     auto val = alloc<Keyword>();
-    val->ns = !ns.empty() ? create_string(ns) : get_nil();
+    val->ns = !ns.empty() ? create_string(ns) : nil;
     val->name = create_string(name);
     return entry = tag_ptr(val, tag::KEYWORD);
 }

@@ -25,14 +25,11 @@ constexpr Tag OBJECT = 7;
 constexpr Tag MASK = 7;
 }
 
+constexpr Value nil = tag::NIL;
+
 inline Tag get_value_tag(Value val)
 {
     return val & tag::MASK;
-}
-
-inline Value get_nil()
-{
-    return 0;
 }
 
 Value create_native_function(NativeFunction f);

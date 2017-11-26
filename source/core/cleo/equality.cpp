@@ -16,7 +16,7 @@ Value are_equal(Value left, Value right)
     auto right_tag = get_value_tag(right);
 
     if (left_tag != right_tag)
-        return get_nil();
+        return nil;
 
     switch (left_tag)
     {
@@ -29,7 +29,7 @@ Value are_equal(Value left, Value right)
                 get_string_len(left) == get_string_len(right) &&
                 std::memcmp(get_string_ptr(left), get_string_ptr(right), get_string_len(left)) == 0;
         default:
-            return get_nil();
+            return nil;
     }
 }
 

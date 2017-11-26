@@ -11,8 +11,8 @@ TEST(list_test, should_create_an_empty_list)
 {
     Value list = create_list(nullptr, 0);
     ASSERT_EQ(0, get_int64_value(get_list_size(list)));
-    ASSERT_TRUE(get_nil() == get_list_first(list));
-    ASSERT_TRUE(get_nil() == get_list_next(list));
+    ASSERT_TRUE(nil == get_list_first(list));
+    ASSERT_TRUE(nil == get_list_next(list));
 }
 
 TEST(list_test, should_create_a_list_from_elements)
@@ -21,7 +21,7 @@ TEST(list_test, should_create_a_list_from_elements)
     Value list = create_list(&elem, 1);
     ASSERT_EQ(1, get_int64_value(get_list_size(list)));
     ASSERT_TRUE(elem == get_list_first(list));
-    ASSERT_TRUE(get_nil() == get_list_next(list));
+    ASSERT_TRUE(nil == get_list_next(list));
 
     std::array<Value, 3> elems{{
         create_int64(101),
@@ -39,7 +39,7 @@ TEST(list_test, should_create_a_list_from_elements)
     Value next2 = get_list_next(next1);
     ASSERT_EQ(1u, get_int64_value(get_list_size(next2)));
     ASSERT_TRUE(elems[2] == get_list_first(next2));
-    ASSERT_TRUE(get_nil() == get_list_next(next2));
+    ASSERT_TRUE(nil == get_list_next(next2));
 }
 
 TEST(list_test, should_conj_elements_in_front_of_the_list)
@@ -56,18 +56,18 @@ TEST(list_test, should_conj_elements_in_front_of_the_list)
 
     ASSERT_EQ(1u, get_int64_value(get_list_size(list1)));
     ASSERT_TRUE(elems[0] == get_list_first(list1));
-    ASSERT_TRUE(get_nil() == get_list_next(list1));
+    ASSERT_TRUE(nil == get_list_next(list1));
 
     ASSERT_EQ(2u, get_int64_value(get_list_size(list2)));
     ASSERT_TRUE(elems[1] == get_list_first(list2));
     ASSERT_TRUE(elems[0] == get_list_first(get_list_next(list2)));
-    ASSERT_TRUE(get_nil() == get_list_next(get_list_next(list2)));
+    ASSERT_TRUE(nil == get_list_next(get_list_next(list2)));
 
     ASSERT_EQ(3u, get_int64_value(get_list_size(list3)));
     ASSERT_TRUE(elems[2] == get_list_first(list3));
     ASSERT_TRUE(elems[1] == get_list_first(get_list_next(list3)));
     ASSERT_TRUE(elems[0] == get_list_first(get_list_next(get_list_next(list3))));
-    ASSERT_TRUE(get_nil() == get_list_next(get_list_next(get_list_next(list3))));
+    ASSERT_TRUE(nil == get_list_next(get_list_next(get_list_next(list3))));
 }
 
 }
