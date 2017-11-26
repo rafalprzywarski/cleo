@@ -6,6 +6,7 @@ add_executable(cleo_test
   hash_test.cpp
   list_test.cpp
   value_test.cpp
+  var_test.cpp
   main.cpp
 )
 target_link_libraries(cleo_test cleo_core ${Boost_LIBRARIES} gmock pthread)
