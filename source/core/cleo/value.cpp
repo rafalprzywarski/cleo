@@ -1,5 +1,6 @@
 #include "value.hpp"
 #include "memory.hpp"
+#include "singleton.hpp"
 #include <cstring>
 #include <unordered_map>
 #include <string>
@@ -8,8 +9,10 @@
 namespace cleo
 {
 
-std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
-std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
+class Symbols{};
+class Keywords{};
+singleton<std::unordered_map<std::string, std::unordered_map<std::string, Value>>, Symbols> symbols;
+singleton<std::unordered_map<std::string, std::unordered_map<std::string, Value>>, Keywords> keywords;
 
 std::array<Value, 7> fixed_types{{
     get_nil(),
@@ -69,7 +72,7 @@ NativeFunction get_native_function_ptr(Value val)
 
 Value create_symbol(const std::string& ns, const std::string& name)
 {
-    auto& entry = symbols[ns][name];
+    auto& entry = (*symbols)[ns][name];
     if (entry != Value())
         return entry;
     auto val = alloc<Symbol>();
@@ -95,7 +98,7 @@ Value get_symbol_name(Value s)
 
 Value create_keyword(const std::string& ns, const std::string& name)
 {
-    auto& entry = keywords[ns][name];
+    auto& entry = (*keywords)[ns][name];
     if (entry != Value())
         return entry;
     auto val = alloc<Keyword>();
