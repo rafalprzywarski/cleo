@@ -2,6 +2,7 @@ include_directories(${GoogleMock_INCLUDE_DIRS})
 include_directories("../source/core")
 
 add_executable(cleo_test
+  list_test.cpp
   value_test.cpp
   main.cpp
 )
