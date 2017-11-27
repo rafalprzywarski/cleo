@@ -4,6 +4,7 @@
 #include <cleo/equality.hpp>
 #include <gtest/gtest.h>
 #include <array>
+#include "util.hpp"
 
 namespace cleo
 {
@@ -52,13 +53,6 @@ TEST(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
     catch (const symbol_not_found& e)
     {
     }
-}
-
-template <typename... T>
-Value list(T... elems)
-{
-    std::array<Value, sizeof...(T)> a{{elems...}};
-    return create_list(a.data(), a.size());
 }
 
 TEST(eval_test, should_eval_lists_as_function_calls)
