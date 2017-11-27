@@ -1,6 +1,7 @@
 #include "eval.hpp"
 #include "var.hpp"
 #include "list.hpp"
+#include "multimethod.hpp"
 #include <vector>
 
 namespace cleo
@@ -19,14 +20,16 @@ Value eval_symbol(Value sym)
 
 Value eval_list(Value list)
 {
-    auto val = lookup(get_list_first(list));
-    if (get_value_tag(val) != tag::NATIVE_FUNCTION)
-        throw call_error();
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));
-    for (list = get_list_next(list); list != nil; list = get_list_next(list))
-        args.push_back(eval(get_list_first(list)));
-    return get_native_function_ptr(val)(args.data(), args.size());
+    for (auto arg_list = get_list_next(list); arg_list != nil; arg_list = get_list_next(arg_list))
+        args.push_back(eval(get_list_first(arg_list)));
+    auto val = lookup(get_list_first(list));
+    if (get_value_tag(val) == tag::NATIVE_FUNCTION)
+        return get_native_function_ptr(val)(args.data(), args.size());
+    if (get_value_type(val) == type::MULTIMETHOD)
+        return call_multimethod(val, args.data(), args.size());
+    throw call_error();
 }
 
 }

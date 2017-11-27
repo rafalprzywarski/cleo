@@ -6,6 +6,7 @@ add_library(cleo_core
   cleo/hash.cpp
   cleo/list.cpp
   cleo/memory.cpp
+  cleo/multimethod.cpp
   cleo/value.cpp
   cleo/var.cpp
 )
