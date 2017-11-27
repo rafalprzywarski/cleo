@@ -5,8 +5,8 @@ namespace cleo
 {
 namespace type
 {
-Value CONS = create_symbol("cleo.core", "Cons");
-Value LIST = create_symbol("cleo.core", "List");
+const Value CONS = create_symbol("cleo.core", "Cons");
+const Value LIST = create_symbol("cleo.core", "List");
 }
 
 Value create_list(const Value *elems, std::uint32_t size)
