@@ -88,10 +88,16 @@ Value isa(Value child, Value parent)
 
 Value get_method(const Multimethod& multimethod, Value dispatchVal)
 {
-    auto fn = multimethod.fns.find(dispatchVal);
-    if (fn == end(multimethod.fns))
-        return nil;
-    return fn->second;
+    std::pair<Value, Value> best{nil, nil};
+    for (auto& fn : multimethod.fns)
+        if (isa(dispatchVal, fn.first))
+        {
+            if (best.first == nil || isa(fn.first, best.first))
+                best = fn;
+            else if (!isa(best.first, fn.first))
+                throw illegal_argument();
+        }
+    return best.second;
 }
 
 Value get_method(Value multi, Value dispatchVal)

@@ -42,6 +42,58 @@ TEST_F(multimethod_test, get_method_should_provide_the_method_for_a_dispatch_val
     ASSERT_EQ(nil, get_method(multi, create_int64(300)));
 }
 
+TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
+{
+    auto name = symbol("hierarchies");
+    auto ha = keyword("ha");
+    auto hb = keyword("hb");
+    auto hc = keyword("hc");
+    auto fn1 = mk_fn();
+    auto fn2 = mk_fn();
+    auto fn3 = mk_fn();
+
+    derive(hb, ha);
+    derive(hc, hb);
+
+    Value multi = define_multimethod(name, mk_fn());
+    define_method(name, ha, fn1);
+
+    EXPECT_EQ(fn1, get_method(multi, ha));
+    EXPECT_EQ(fn1, get_method(multi, hb));
+    EXPECT_EQ(fn1, get_method(multi, hc));
+
+    define_method(name, hb, fn2);
+
+    EXPECT_EQ(fn1, get_method(multi, ha));
+    EXPECT_EQ(fn2, get_method(multi, hb));
+    EXPECT_EQ(fn2, get_method(multi, hc));
+
+    define_method(name, hc, fn3);
+
+    EXPECT_EQ(fn1, get_method(multi, ha));
+    EXPECT_EQ(fn2, get_method(multi, hb));
+    EXPECT_EQ(fn3, get_method(multi, hc));
+}
+
+TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_dispatch_value)
+{
+    auto name = symbol("bad");
+    auto a = keyword("bad_a");
+    auto b = keyword("bad_b");
+    auto c = keyword("bad_c");
+    auto fn1 = mk_fn();
+    auto fn2 = mk_fn();
+
+    derive(c, a);
+    derive(c, b);
+
+    Value multi = define_multimethod(name, mk_fn());
+    define_method(name, a, fn1);
+    define_method(name, b, fn2);
+
+    EXPECT_THROW(get_method(multi, c), illegal_argument);
+}
+
 TEST_F(multimethod_test, should_dispatch_to_the_right_method)
 {
     auto name = symbol("ab");
