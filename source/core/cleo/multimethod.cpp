@@ -3,6 +3,7 @@
 #include "var.hpp"
 #include "hash.hpp"
 #include "equality.hpp"
+#include "small_vector.hpp"
 #include <unordered_map>
 #include <unordered_set>
 
@@ -56,14 +57,31 @@ void derive(Value tag, Value parent)
     ancestors.insert(begin(parent_ancestors), end(parent_ancestors));
 }
 
-Value isa(Value child, Value parent)
+bool isa_vectors(Value child, Value parent)
 {
-    if (are_equal(child, parent))
-        return TRUE;
+    auto size = get_small_vector_size(child);
+    if (size != get_small_vector_size(parent))
+        return false;
+    for (decltype(size) i = 0; i < size; ++i)
+        if (!isa(get_small_vector_elem(child, i), get_small_vector_elem(parent, i)))
+            return false;
+    return true;
+}
+
+bool is_ancestor(Value child, Value ancestor)
+{
     auto ancestors = global_hierarchy->ancestors.find(child);
     if (ancestors == end(global_hierarchy->ancestors))
-        return nil;
-    return ancestors->second.count(parent) ? TRUE : nil;
+        return false;
+    return ancestors->second.count(ancestor) != 0;
+}
+
+Value isa(Value child, Value parent)
+{
+    return (
+        are_equal(child, parent) != nil ||
+        (get_value_type(child) == type::SMALL_VECTOR && get_value_type(parent) == type::SMALL_VECTOR && isa_vectors(child, parent)) ||
+        is_ancestor(child, parent)) ? TRUE : nil;
 }
 
 Value call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)

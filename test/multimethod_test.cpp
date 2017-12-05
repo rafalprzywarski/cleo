@@ -48,6 +48,14 @@ struct hierarchy_test : testing::Test
     Value e = create_keyword("cleo.multimethod.test", "e");
     Value f = create_keyword("cleo.multimethod.test", "f");
     Value g = create_keyword("cleo.multimethod.test", "g");
+
+    Value c1 = create_keyword("cleo.multimethod.test", "c1");
+    Value c2 = create_keyword("cleo.multimethod.test", "c2");
+    Value c3 = create_keyword("cleo.multimethod.test", "c3");
+    Value p1 = create_keyword("cleo.multimethod.test", "p1");
+    Value p2 = create_keyword("cleo.multimethod.test", "p2");
+    Value p3 = create_keyword("cleo.multimethod.test", "p3");
+    Value gp1 = create_keyword("cleo.multimethod.test", "gp1");
 };
 
 TEST_F(hierarchy_test, isa_should_be_true_for_equal_values)
@@ -115,6 +123,28 @@ TEST_F(hierarchy_test, isa_should_be_true_for_all_ancestors)
     EXPECT_EQ(nil, isa(c, a));
     EXPECT_EQ(nil, isa(d, a));
     EXPECT_EQ(nil, isa(b, a));
+}
+
+TEST_F(hierarchy_test, isa_should_treat_small_vectors_as_tuples)
+{
+    derive(c1, p1);
+    derive(c2, p2);
+    derive(c3, p3);
+    derive(p1, gp1);
+
+    EXPECT_NE(nil, isa(svec(), svec()));
+    EXPECT_EQ(nil, isa(b, svec()));
+    EXPECT_EQ(nil, isa(svec(), b));
+
+    EXPECT_NE(nil, isa(svec(c1, p2), svec(c1, p2)));
+    EXPECT_EQ(nil, isa(svec(c1), svec(c1, p2)));
+    EXPECT_EQ(nil, isa(svec(c1, c2), svec(c3, c2)));
+    EXPECT_EQ(nil, isa(svec(c1, c2), svec(c1, c3)));
+    EXPECT_EQ(nil, isa(svec(c1, c2), svec(c2, c1)));
+
+    EXPECT_NE(nil, isa(svec(c1, c2), svec(gp1, p2)));
+    EXPECT_EQ(nil, isa(svec(c1, c2), svec(p3, p2)));
+    EXPECT_EQ(nil, isa(svec(c1, c2), svec(gp1, p3)));
 }
 
 }
