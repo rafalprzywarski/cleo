@@ -31,10 +31,12 @@ struct Multimethod
 singleton<std::unordered_map<Value, Multimethod>, Multimethods> multimethods;
 singleton<Hierachy, GlobalHierarchy> global_hierarchy;
 
-void define_multimethod(Value name, Value dispatchFn)
+Value define_multimethod(Value name, Value dispatchFn)
 {
-    define(name, create_object(type::MULTIMETHOD, &name, 1));
+    auto multi = create_object(type::MULTIMETHOD, &name, 1);
+    define(name, multi);
     (*multimethods)[name].dispatchFn = dispatchFn;
+    return multi;
 }
 
 void define_method(Value name, Value dispatchVal, Value fn)
@@ -84,15 +86,30 @@ Value isa(Value child, Value parent)
         is_ancestor(child, parent)) ? TRUE : nil;
 }
 
+Value get_method(const Multimethod& multimethod, Value dispatchVal)
+{
+    auto fn = multimethod.fns.find(dispatchVal);
+    if (fn == end(multimethod.fns))
+        return nil;
+    return fn->second;
+}
+
+Value get_method(Value multi, Value dispatchVal)
+{
+    auto name = get_object_element(multi, 0);
+    auto& multimethod = multimethods->find(name)->second;
+    return get_method(multimethod, dispatchVal);
+}
+
 Value call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     auto name = get_object_element(multi, 0);
     auto& multimethod = multimethods->find(name)->second;
     auto dispatchVal = get_native_function_ptr(multimethod.dispatchFn)(args, numArgs);
-    auto fn = multimethod.fns.find(dispatchVal);
-    if (fn == end(multimethod.fns))
+    auto fn = get_method(multimethod, dispatchVal);
+    if (fn == nil)
         throw illegal_argument();
-    return get_native_function_ptr(fn->second)(args, numArgs);
+    return get_native_function_ptr(fn)(args, numArgs);
 }
 
 }
