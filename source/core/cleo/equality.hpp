@@ -4,9 +4,11 @@
 namespace cleo
 {
 
+extern const Value TRUE;
+
 Value are_equal(Value left, Value right);
 
-struct std_equal_to
+struct StdEqualTo
 {
     using result_type = bool;
     using first_argument_type = Value;

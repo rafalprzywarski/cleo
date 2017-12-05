@@ -7,7 +7,7 @@ namespace cleo
 Int64 hash_value(Value val);
 Value hash(Value val);
 
-struct std_hash
+struct StdHash
 {
     using argument_type = Value;
     using result_type = std::size_t;
