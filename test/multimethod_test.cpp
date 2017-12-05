@@ -97,15 +97,22 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
 TEST_F(multimethod_test, should_dispatch_to_the_right_method)
 {
     auto name = symbol("ab");
+    auto parent = keyword("dparent");
+    auto child1 = keyword("dchild1");
+    auto child2 = keyword("dchild2");
     auto dispatchFn = create_native_function([](const Value *args, std::uint8_t) { return args[0]; });
+
+    derive(child1, parent);
+    derive(child2, parent);
+
     define_multimethod(name, dispatchFn);
-    define_method(name, create_int64(100), create_native_function([](const Value *args, std::uint8_t) { return args[1]; }));
-    define_method(name, create_int64(200), create_native_function([](const Value *args, std::uint8_t) { return args[2]; }));
+    define_method(name, parent, create_native_function([](const Value *args, std::uint8_t) { return args[1]; }));
+    define_method(name, child2, create_native_function([](const Value *args, std::uint8_t) { return args[2]; }));
 
     auto val1 = create_int64(77);
     auto val2 = create_int64(88);
-    ASSERT_TRUE(val1 == eval(list(name, create_int64(100), val1, val2)));
-    ASSERT_TRUE(val2 == eval(list(name, create_int64(200), val1, val2)));
+    ASSERT_TRUE(val1 == eval(list(name, child1, val1, val2)));
+    ASSERT_TRUE(val2 == eval(list(name, child2, val1, val2)));
 }
 
 TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
