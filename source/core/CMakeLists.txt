@@ -7,6 +7,7 @@ add_library(cleo_core
   cleo/list.cpp
   cleo/memory.cpp
   cleo/multimethod.cpp
+  cleo/small_vector.cpp
   cleo/value.cpp
   cleo/var.cpp
 )
