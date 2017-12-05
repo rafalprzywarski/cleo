@@ -25,17 +25,20 @@ struct Hierachy
 struct Multimethod
 {
     Value dispatchFn;
+    Value defaultDispatchVal;
     std::unordered_map<Value, Value, StdHash, StdEqualTo> fns;
 };
 
 singleton<std::unordered_map<Value, Multimethod>, Multimethods> multimethods;
 singleton<Hierachy, GlobalHierarchy> global_hierarchy;
 
-Value define_multimethod(Value name, Value dispatchFn)
+Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 {
     auto multi = create_object(type::MULTIMETHOD, &name, 1);
     define(name, multi);
-    (*multimethods)[name].dispatchFn = dispatchFn;
+    auto& desc = (*multimethods)[name];
+    desc.dispatchFn = dispatchFn;
+    desc.defaultDispatchVal = defaultDispatchVal;
     return multi;
 }
 
@@ -97,6 +100,13 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
             else if (!isa(best.first, fn.first))
                 throw illegal_argument();
         }
+
+    if (best.first == nil)
+    {
+        auto default_ = multimethod.fns.find(multimethod.defaultDispatchVal);
+        if (default_ != end(multimethod.fns))
+            return default_->second;
+    }
     return best.second;
 }
 

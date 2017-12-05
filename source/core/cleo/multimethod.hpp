@@ -10,7 +10,7 @@ extern const Value MULTIMETHOD;
 
 class illegal_argument {};
 
-Value define_multimethod(Value name, Value dispatchFn);
+Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal);
 void define_method(Value name, Value dispatchVal, Value fn);
 void derive(Value tag, Value parent);
 Value isa(Value child, Value parent);

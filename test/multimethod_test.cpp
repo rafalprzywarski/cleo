@@ -33,13 +33,31 @@ TEST_F(multimethod_test, get_method_should_provide_the_method_for_a_dispatch_val
     auto fn1 = mk_fn();
     auto fn2 = mk_fn();
 
-    Value multi = define_multimethod(name, mk_fn());
+    Value multi = define_multimethod(name, mk_fn(), nil);
     define_method(name, create_int64(100), fn1);
     define_method(name, create_int64(200), fn2);
 
     ASSERT_EQ(fn1, get_method(multi, create_int64(100)));
     ASSERT_EQ(fn2, get_method(multi, create_int64(200)));
     ASSERT_EQ(nil, get_method(multi, create_int64(300)));
+}
+
+TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_defined_and_no_methods_are_matched)
+{
+    auto name = symbol("with-default");
+    auto fn1 = mk_fn();
+    auto fn2 = mk_fn();
+    auto default_ = keyword("default");
+
+    Value multi = define_multimethod(name, mk_fn(), default_);
+    define_method(name, create_int64(100), fn1);
+
+    ASSERT_EQ(nil, get_method(multi, create_int64(300)));
+
+    define_method(name, default_, fn2);
+
+    ASSERT_EQ(fn1, get_method(multi, create_int64(100)));
+    ASSERT_EQ(fn2, get_method(multi, create_int64(300)));
 }
 
 TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
@@ -55,7 +73,7 @@ TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
     derive(hb, ha);
     derive(hc, hb);
 
-    Value multi = define_multimethod(name, mk_fn());
+    Value multi = define_multimethod(name, mk_fn(), nil);
     define_method(name, ha, fn1);
 
     EXPECT_EQ(fn1, get_method(multi, ha));
@@ -87,7 +105,7 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     derive(c, a);
     derive(c, b);
 
-    Value multi = define_multimethod(name, mk_fn());
+    Value multi = define_multimethod(name, mk_fn(), nil);
     define_method(name, a, fn1);
     define_method(name, b, fn2);
 
@@ -105,7 +123,7 @@ TEST_F(multimethod_test, should_dispatch_to_the_right_method)
     derive(child1, parent);
     derive(child2, parent);
 
-    define_multimethod(name, dispatchFn);
+    define_multimethod(name, dispatchFn, nil);
     define_method(name, parent, create_native_function([](const Value *args, std::uint8_t) { return args[1]; }));
     define_method(name, child2, create_native_function([](const Value *args, std::uint8_t) { return args[2]; }));
 
@@ -119,7 +137,7 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
 {
     auto name = symbol("one");
     auto dispatchFn = create_native_function([](const Value *args, std::uint8_t) { return args[0]; });
-    define_multimethod(name, dispatchFn);
+    define_multimethod(name, dispatchFn, nil);
     define_method(name, create_int64(100), create_native_function([](const Value *, std::uint8_t) { return nil; }));
     try
     {
