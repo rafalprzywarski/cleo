@@ -136,5 +136,25 @@ TEST(equality_test, should_compare_small_vectors)
     EXPECT_TRUE(nil == are_equal(svec(svec(i64(10)), i64(11), i64(12)), svec(svec(i64(10), i64(11)), i64(12))));
 }
 
+TEST(equality_test, should_compare_sequences)
+{
+    ASSERT_TRUE(nil != are_equal(list(), list()));
+    ASSERT_TRUE(nil == are_equal(list(i64(10), i64(20)), list(i64(1))));
+    ASSERT_TRUE(nil != are_equal(list(i64(10), i64(20)), list(i64(10), i64(20))));
+    ASSERT_TRUE(nil == are_equal(list(i64(10), i64(20)), list(i64(10), i64(21))));
+
+    ASSERT_TRUE(nil != are_equal(svec(), list()));
+    ASSERT_TRUE(nil == are_equal(svec(), list(i64(1))));
+    ASSERT_TRUE(nil == are_equal(svec(i64(20)), list()));
+    ASSERT_TRUE(nil == are_equal(svec(i64(10), i64(20)), list(i64(1))));
+    ASSERT_TRUE(nil != are_equal(svec(i64(10), i64(20)), list(i64(10), i64(20))));
+    ASSERT_TRUE(nil == are_equal(svec(i64(10), i64(20)), list(i64(10), i64(21))));
+
+    ASSERT_TRUE(nil != are_equal(list(), svec()));
+    ASSERT_TRUE(nil == are_equal(list(i64(10), i64(20)), svec(i64(1))));
+    ASSERT_TRUE(nil != are_equal(list(i64(10), i64(20)), svec(i64(10), i64(20))));
+    ASSERT_TRUE(nil == are_equal(list(i64(10), i64(20)), svec(i64(10), i64(21))));
+}
+
 }
 }

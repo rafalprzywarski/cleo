@@ -1,6 +1,8 @@
 #include "equality.hpp"
 #include "small_vector.hpp"
 #include "global.hpp"
+#include "var.hpp"
+#include "multimethod.hpp"
 #include <array>
 
 namespace cleo
@@ -15,6 +17,23 @@ Value are_small_vectors_equal(Value left, Value right)
         if (!are_equal(get_small_vector_elem(left, i), get_small_vector_elem(right, i)))
             return nil;
     return TRUE;
+}
+
+Value are_seqs_equal(Value left, Value right)
+{
+    auto first = lookup(FIRST);
+    auto next = lookup(NEXT);
+
+    for (; left != nil && right != nil; left = call_multimethod(next, &left, 1), right = call_multimethod(next, &right, 1))
+        if (!are_equal(call_multimethod(first, &left, 1), call_multimethod(first, &right, 1)))
+            return nil;
+    return left == right;
+}
+
+Value are_seqables_equal(Value left, Value right)
+{
+    auto seq = lookup(SEQ);
+    return are_seqs_equal(call_multimethod(seq, &left, 1), call_multimethod(seq, &right, 1));
 }
 
 Value are_equal(Value left, Value right)
@@ -41,7 +60,10 @@ Value are_equal(Value left, Value right)
         case tag::OBJECT:
             if (get_object_type(left) == type::SMALL_VECTOR && get_object_type(right) == type::SMALL_VECTOR)
                 return are_small_vectors_equal(left, right);
-            return nil;
+            {
+                std::array<Value, 2> args{{left, right}};
+                return call_multimethod(lookup(OBJ_EQ), args.data(), args.size());
+            }
         default:
             return nil;
     }

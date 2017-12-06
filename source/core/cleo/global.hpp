@@ -33,6 +33,10 @@ extern Hierachy global_hierarchy;
 extern const std::array<Value, 7> type_by_tag;
 
 extern const Value TRUE;
+extern const Value SEQ;
+extern const Value FIRST;
+extern const Value NEXT;
+extern const Value OBJ_EQ;
 
 namespace type
 {
@@ -41,6 +45,7 @@ extern const Value LIST;
 extern const Value SMALL_VECTOR;
 extern const Value SMALL_VECTOR_SEQ;
 extern const Value MULTIMETHOD;
+extern const Value SEQUABLE;
 }
 
 }

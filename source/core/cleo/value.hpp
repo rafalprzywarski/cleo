@@ -33,6 +33,25 @@ inline Tag get_value_tag(Value val)
 }
 
 Value create_native_function(NativeFunction f);
+
+template <Value f(Value)>
+Value create_native_function1()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args)
+    {
+        return f(args[0]);
+    });
+}
+
+template <Value f(Value, Value)>
+Value create_native_function2()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args)
+    {
+        return f(args[0], args[1]);
+    });
+}
+
 NativeFunction get_native_function_ptr(Value val);
 
 Value create_symbol(const std::string& ns, const std::string& name);

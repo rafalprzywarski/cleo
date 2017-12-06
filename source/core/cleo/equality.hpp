@@ -4,6 +4,7 @@
 namespace cleo
 {
 
+Value are_seqables_equal(Value left, Value right);
 Value are_equal(Value left, Value right);
 
 struct StdEqualTo
