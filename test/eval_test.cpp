@@ -31,7 +31,7 @@ TEST(eval_test, should_eval_simple_values_to_themselves)
 TEST(eval_test, should_eval_objects_to_themselves)
 {
     auto sym = create_symbol("cleo.eval.test", "obj");
-    auto o = create_object(sym, nullptr, 0);
+    auto o = create_object0(sym);
     ASSERT_TRUE(o == eval(o));
 }
 

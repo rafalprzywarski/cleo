@@ -56,6 +56,7 @@ const char *get_string_ptr(Value val);
 std::uint32_t get_string_len(Value val);
 
 Value create_object(Value type, const Value *elems, std::uint32_t size);
+Value create_object0(Value type);
 Value create_object2(Value type, Value elem0, Value elem1);
 Value get_object_type(Value obj);
 std::uint32_t get_object_size(Value obj);

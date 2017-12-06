@@ -15,7 +15,7 @@ TEST(equality_test, same_instances_should_be_equal)
     auto i = create_int64(7);
     auto flt = create_float64(3.5);
     auto s = create_string("abcd");
-    auto o = create_object(sym, nullptr, 0);
+    auto o = create_object0(sym);
 
     ASSERT_TRUE(nil != are_equal(nil, nil));
     ASSERT_TRUE(nil == are_equal(nil, fn));
@@ -114,14 +114,14 @@ TEST(equality_test, should_compare_strings)
 TEST(equality_test, objects_should_not_be_equal)
 {
     auto type = create_symbol("cleo.equality.test", "sometype");
-    ASSERT_TRUE(nil == are_equal(create_object(type, nullptr, 0), create_object(type, nullptr, 0)));
+    ASSERT_TRUE(nil == are_equal(create_object0(type), create_object0(type)));
 }
 
 TEST(equality_test, should_compare_small_vectors)
 {
     auto type = create_symbol("cleo.equality.test", "not-vector");
-    EXPECT_TRUE(nil == are_equal(svec(), create_object(type, nullptr, 0)));
-    EXPECT_TRUE(nil == are_equal(create_object(type, nullptr, 0), svec()));
+    EXPECT_TRUE(nil == are_equal(svec(), create_object0(type)));
+    EXPECT_TRUE(nil == are_equal(create_object0(type), svec()));
 
     EXPECT_TRUE(nil != are_equal(svec(), svec()));
     EXPECT_TRUE(nil == are_equal(svec(i64(10)), svec()));

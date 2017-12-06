@@ -9,13 +9,9 @@ Value create_list(const Value *elems, std::uint32_t size)
 {
     Value cons = nil;
     for (auto i = size; i > 0; --i)
-    {
-        std::array<Value, 2> cons_elems{{elems[i - 1], cons}};
-        cons = create_object(type::CONS, cons_elems.data(), cons_elems.size());
-    }
+        cons = create_object2(type::CONS, elems[i - 1], cons);
 
-    std::array<Value, 2> list_elems{{create_int64(size), cons}};
-    return create_object(type::LIST, list_elems.data(), list_elems.size());
+    return create_object2(type::LIST, create_int64(size), cons);
 }
 
 Value get_list_size(Value list)
@@ -37,18 +33,14 @@ Value get_list_next(Value list)
     if (size <= 1)
         return nil;
     auto cons = get_object_element(get_object_element(list, 1), 1);
-    std::array<Value, 2> list_elems{{create_int64(size - 1), cons}};
-    return create_object(type::LIST, list_elems.data(), list_elems.size());
+    return create_object2(type::LIST, create_int64(size - 1), cons);
 }
 
 Value list_conj(Value list, Value elem)
 {
-    std::array<Value, 2> cons_elems{{elem, get_object_element(list, 1)}};
-    auto cons = create_object(type::CONS, cons_elems.data(), cons_elems.size());
-
+    auto cons = create_object2(type::CONS, elem, get_object_element(list, 1));
     auto size = get_int64_value(get_list_size(list));
-    std::array<Value, 2> list_elems{{create_int64(size + 1), cons}};
-    return create_object(type::LIST, list_elems.data(), list_elems.size());
+    return create_object2(type::LIST, create_int64(size + 1), cons);
 }
 
 Value list_seq(Value list)

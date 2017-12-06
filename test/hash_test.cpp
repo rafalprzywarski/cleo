@@ -13,7 +13,7 @@ TEST(hash_test, should_return_0_for_nil)
 
 TEST(hash_test, should_return_0_for_objects)
 {
-    ASSERT_EQ(0u, get_int64_value(hash(create_object(nil, nullptr, 0))));
+    ASSERT_EQ(0u, get_int64_value(hash(create_object0(nil))));
 }
 
 TEST(hash_test, should_hash_values)
