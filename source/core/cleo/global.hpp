@@ -39,6 +39,7 @@ namespace type
 extern const Value CONS;
 extern const Value LIST;
 extern const Value SMALL_VECTOR;
+extern const Value SMALL_VECTOR_SEQ;
 extern const Value MULTIMETHOD;
 }
 

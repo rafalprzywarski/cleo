@@ -155,6 +155,13 @@ Value create_object(Value type, const Value *elems, std::uint32_t size)
     return tag_ptr(val, tag::OBJECT);
 }
 
+Value create_object2(Value type, Value elem0, Value elem1)
+{
+    std::array<Value, 2> elems{{elem0, elem1}};
+    return create_object(type, elems.data(), elems.size());
+}
+
+
 Value get_object_type(Value obj)
 {
     return get_ptr<Object>(obj)->type;

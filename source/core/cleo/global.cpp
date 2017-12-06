@@ -28,6 +28,7 @@ namespace type
 const Value CONS = create_symbol("cleo.core", "Cons");
 const Value LIST = create_symbol("cleo.core", "List");
 const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
+const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
 const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
 }
 
