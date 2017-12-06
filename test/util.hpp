@@ -22,5 +22,10 @@ Value svec(T... elems)
     return create_small_vector(a.data(), a.size());
 }
 
+inline Value i64(Int64 value)
+{
+    return create_int64(value);
+}
+
 }
 }

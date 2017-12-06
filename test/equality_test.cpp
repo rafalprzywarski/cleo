@@ -1,5 +1,6 @@
 #include <cleo/equality.hpp>
 #include <gtest/gtest.h>
+#include "util.hpp"
 
 namespace cleo
 {
@@ -114,6 +115,25 @@ TEST(equality_test, objects_should_not_be_equal)
 {
     auto type = create_symbol("cleo.equality.test", "sometype");
     ASSERT_TRUE(nil == are_equal(create_object(type, nullptr, 0), create_object(type, nullptr, 0)));
+}
+
+TEST(equality_test, should_compare_small_vectors)
+{
+    auto type = create_symbol("cleo.equality.test", "not-vector");
+    EXPECT_TRUE(nil == are_equal(svec(), create_object(type, nullptr, 0)));
+    EXPECT_TRUE(nil == are_equal(create_object(type, nullptr, 0), svec()));
+
+    EXPECT_TRUE(nil != are_equal(svec(), svec()));
+    EXPECT_TRUE(nil == are_equal(svec(i64(10)), svec()));
+    EXPECT_TRUE(nil != are_equal(svec(i64(10)), svec(i64(10))));
+    EXPECT_TRUE(nil == are_equal(svec(i64(10)), svec(i64(9))));
+    EXPECT_TRUE(nil != are_equal(svec(i64(10), i64(11), i64(12)), svec(i64(10), i64(11), i64(12))));
+    EXPECT_TRUE(nil == are_equal(svec(i64(9), i64(11), i64(12)), svec(i64(10), i64(11), i64(12))));
+    EXPECT_TRUE(nil == are_equal(svec(i64(10), i64(9), i64(12)), svec(i64(10), i64(11), i64(12))));
+    EXPECT_TRUE(nil == are_equal(svec(i64(10), i64(11), i64(9)), svec(i64(10), i64(11), i64(12))));
+
+    EXPECT_TRUE(nil != are_equal(svec(svec(i64(10), i64(11)), i64(12)), svec(svec(i64(10), i64(11)), i64(12))));
+    EXPECT_TRUE(nil == are_equal(svec(svec(i64(10)), i64(11), i64(12)), svec(svec(i64(10), i64(11)), i64(12))));
 }
 
 }

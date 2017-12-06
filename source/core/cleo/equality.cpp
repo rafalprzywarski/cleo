@@ -1,4 +1,5 @@
 #include "equality.hpp"
+#include "small_vector.hpp"
 #include <array>
 
 namespace cleo
@@ -6,6 +7,17 @@ namespace cleo
 
 const Value TRUE = create_keyword("true");
 const Value EQ = create_symbol("cleo.core", "=");
+
+Value are_small_vectors_equal(Value left, Value right)
+{
+    auto size = get_small_vector_size(left);
+    if (size != get_small_vector_size(right))
+        return nil;
+    for (decltype(size) i = 0; i < size; ++i)
+        if (!are_equal(get_small_vector_elem(left, i), get_small_vector_elem(right, i)))
+            return nil;
+    return TRUE;
+}
 
 Value are_equal(Value left, Value right)
 {
@@ -28,6 +40,10 @@ Value are_equal(Value left, Value right)
             return
                 get_string_len(left) == get_string_len(right) &&
                 std::memcmp(get_string_ptr(left), get_string_ptr(right), get_string_len(left)) == 0;
+        case tag::OBJECT:
+            if (get_object_type(left) == type::SMALL_VECTOR && get_object_type(right) == type::SMALL_VECTOR)
+                return are_small_vectors_equal(left, right);
+            return nil;
         default:
             return nil;
     }
