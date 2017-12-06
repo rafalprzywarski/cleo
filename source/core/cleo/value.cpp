@@ -1,28 +1,10 @@
 #include "value.hpp"
 #include "memory.hpp"
-#include "singleton.hpp"
+#include "global.hpp"
 #include <cstring>
-#include <unordered_map>
-#include <string>
-#include <array>
 
 namespace cleo
 {
-
-class Symbols{};
-class Keywords{};
-singleton<std::unordered_map<std::string, std::unordered_map<std::string, Value>>, Symbols> symbols;
-singleton<std::unordered_map<std::string, std::unordered_map<std::string, Value>>, Keywords> keywords;
-
-std::array<Value, 7> fixed_types{{
-    nil,
-    create_symbol("cleo.core", "NativeFunction"),
-    create_symbol("cleo.core", "Symbol"),
-    create_symbol("cleo.core", "Keyword"),
-    create_symbol("cleo.core", "Int64"),
-    create_symbol("cleo.core", "Float64"),
-    create_symbol("cleo.core", "String")
-}};
 
 struct String
 {
@@ -72,7 +54,7 @@ NativeFunction get_native_function_ptr(Value val)
 
 Value create_symbol(const std::string& ns, const std::string& name)
 {
-    auto& entry = (*symbols)[ns][name];
+    auto& entry = symbols[ns][name];
     if (entry != Value())
         return entry;
     auto val = alloc<Symbol>();
@@ -98,7 +80,7 @@ Value get_symbol_name(Value s)
 
 Value create_keyword(const std::string& ns, const std::string& name)
 {
-    auto& entry = (*keywords)[ns][name];
+    auto& entry = keywords[ns][name];
     if (entry != Value())
         return entry;
     auto val = alloc<Keyword>();
@@ -193,7 +175,7 @@ Value get_value_type(Value val)
     auto tag = get_value_tag(val);
     if (tag == tag::OBJECT)
         return get_object_type(val);
-    return fixed_types[tag];
+    return type_by_tag[tag];
 }
 
 }

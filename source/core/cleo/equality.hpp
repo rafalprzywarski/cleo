@@ -4,8 +4,6 @@
 namespace cleo
 {
 
-extern const Value TRUE;
-
 Value are_equal(Value left, Value right);
 
 struct StdEqualTo

@@ -1,12 +1,10 @@
 #include "equality.hpp"
 #include "small_vector.hpp"
+#include "global.hpp"
 #include <array>
 
 namespace cleo
 {
-
-const Value TRUE = create_keyword("true");
-const Value EQ = create_symbol("cleo.core", "=");
 
 Value are_small_vectors_equal(Value left, Value right)
 {

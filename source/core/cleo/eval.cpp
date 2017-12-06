@@ -2,6 +2,7 @@
 #include "var.hpp"
 #include "list.hpp"
 #include "multimethod.hpp"
+#include "global.hpp"
 #include <vector>
 
 namespace cleo

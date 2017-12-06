@@ -1,42 +1,18 @@
 #include "multimethod.hpp"
-#include "singleton.hpp"
 #include "var.hpp"
 #include "hash.hpp"
 #include "equality.hpp"
 #include "small_vector.hpp"
-#include <unordered_map>
-#include <unordered_set>
+#include "global.hpp"
 
 namespace cleo
 {
-namespace type
-{
-const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
-}
-
-class GlobalHierarchy {};
-class Multimethods {};
-
-struct Hierachy
-{
-    std::unordered_map<Value, std::unordered_set<Value, StdHash, StdEqualTo>, StdHash, StdEqualTo> ancestors;
-};
-
-struct Multimethod
-{
-    Value dispatchFn;
-    Value defaultDispatchVal;
-    std::unordered_map<Value, Value, StdHash, StdEqualTo> fns;
-};
-
-singleton<std::unordered_map<Value, Multimethod>, Multimethods> multimethods;
-singleton<Hierachy, GlobalHierarchy> global_hierarchy;
 
 Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 {
     auto multi = create_object(type::MULTIMETHOD, &name, 1);
     define(name, multi);
-    auto& desc = (*multimethods)[name];
+    auto& desc = multimethods[name];
     desc.dispatchFn = dispatchFn;
     desc.defaultDispatchVal = defaultDispatchVal;
     return multi;
@@ -44,12 +20,12 @@ Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 
 void define_method(Value name, Value dispatchVal, Value fn)
 {
-    (*multimethods)[name].fns[dispatchVal] = fn;
+    multimethods[name].fns[dispatchVal] = fn;
 }
 
 void derive(Value tag, Value parent)
 {
-    auto& h = *global_hierarchy;
+    auto& h = global_hierarchy;
     auto& parent_ancestors = h.ancestors[parent];
     for (auto& a : h.ancestors)
         if (a.second.count(tag))
@@ -75,8 +51,8 @@ bool isa_vectors(Value child, Value parent)
 
 bool is_ancestor(Value child, Value ancestor)
 {
-    auto ancestors = global_hierarchy->ancestors.find(child);
-    if (ancestors == end(global_hierarchy->ancestors))
+    auto ancestors = global_hierarchy.ancestors.find(child);
+    if (ancestors == end(global_hierarchy.ancestors))
         return false;
     return ancestors->second.count(ancestor) != 0;
 }
@@ -113,14 +89,14 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
 Value get_method(Value multi, Value dispatchVal)
 {
     auto name = get_object_element(multi, 0);
-    auto& multimethod = multimethods->find(name)->second;
+    auto& multimethod = multimethods.find(name)->second;
     return get_method(multimethod, dispatchVal);
 }
 
 Value call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     auto name = get_object_element(multi, 0);
-    auto& multimethod = multimethods->find(name)->second;
+    auto& multimethod = multimethods.find(name)->second;
     auto dispatchVal = get_native_function_ptr(multimethod.dispatchFn)(args, numArgs);
     auto fn = get_method(multimethod, dispatchVal);
     if (fn == nil)

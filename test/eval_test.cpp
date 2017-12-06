@@ -2,6 +2,7 @@
 #include <cleo/var.hpp>
 #include <cleo/list.hpp>
 #include <cleo/equality.hpp>
+#include <cleo/global.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"

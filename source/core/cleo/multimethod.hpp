@@ -3,10 +3,6 @@
 
 namespace cleo
 {
-namespace type
-{
-extern const Value MULTIMETHOD;
-}
 
 class illegal_argument {};
 

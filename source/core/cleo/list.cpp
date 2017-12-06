@@ -1,13 +1,9 @@
 #include "list.hpp"
+#include "global.hpp"
 #include <array>
 
 namespace cleo
 {
-namespace type
-{
-const Value CONS = create_symbol("cleo.core", "Cons");
-const Value LIST = create_symbol("cleo.core", "List");
-}
 
 Value create_list(const Value *elems, std::uint32_t size)
 {

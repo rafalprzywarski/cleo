@@ -1,12 +1,8 @@
 #include "small_vector.hpp"
-#include <array>
+#include "global.hpp"
 
 namespace cleo
 {
-namespace type
-{
-const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
-}
 
 Value create_small_vector(const Value *elems, std::uint32_t size)
 {
