@@ -1,4 +1,8 @@
 #include "print.hpp"
+#include "global.hpp"
+#include "var.hpp"
+#include "multimethod.hpp"
+#include "small_vector.hpp"
 #include <sstream>
 
 namespace cleo
@@ -82,6 +86,52 @@ Value pr_str_string(Value val)
 
 }
 
+Value pr_str_object(Value val)
+{
+    auto type = pr_str(get_object_type(val));
+    std::ostringstream os;
+    os << '#' << std::string(get_string_ptr(type), get_string_len(type)) << "[0x" << std::hex << val << "]";
+    return create_string(os.str());
+}
+
+Value pr_str_small_vector(Value v)
+{
+    std::string str;
+    str += '[';
+    auto size = get_small_vector_size(v);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (i > 0)
+            str += ' ';
+        auto s = pr_str(get_small_vector_elem(v, i));
+        str.append(get_string_ptr(s), get_string_len(s));
+    }
+    str += ']';
+    return create_string(str);
+}
+
+Value pr_str_sequable(Value v)
+{
+    auto seq = lookup(SEQ);
+    auto first = lookup(FIRST);
+    auto next = lookup(NEXT);
+    std::string str;
+    str += '(';
+    bool first_elem = true;
+    for (auto s = call_multimethod(seq, &v, 1); s != nil; s = call_multimethod(next, &s, 1))
+    {
+        if (first_elem)
+            first_elem = false;
+        else
+            str += ' ';
+
+        auto ss = pr_str(call_multimethod(first, &s, 1));
+        str.append(get_string_ptr(ss), get_string_len(ss));
+    }
+    str += ')';
+    return create_string(str);
+}
+
 Value pr_str(Value val)
 {
     switch (get_value_tag(val))
@@ -94,7 +144,7 @@ Value pr_str(Value val)
         case tag::FLOAT64: return pr_str_float(val);
         case tag::STRING: return pr_str_string(val);
         default: // tag::OBJECT
-            return nil;
+            return call_multimethod(lookup(PR_STR_OBJ), &val, 1);
     }
 }
 

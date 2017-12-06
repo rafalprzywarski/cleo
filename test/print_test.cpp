@@ -1,5 +1,6 @@
 #include <cleo/print.hpp>
 #include <gtest/gtest.h>
+#include "util.hpp"
 
 namespace cleo
 {
@@ -62,6 +63,30 @@ TEST_F(pr_str_test, should_print_strings)
     EXPECT_EQ("\"abc\"", str(pr_str(create_string("abc"))));
     EXPECT_EQ("\"\\nabc\\rdef\\t\\n\"", str(pr_str(create_string("\nabc\rdef\t\n"))));
     EXPECT_EQ("\"\\\"x\\\\\\\'y\\\\\"", str(pr_str(create_string("\"x\\\'y\\"))));
+}
+
+TEST_F(pr_str_test, should_print_objects)
+{
+    auto obj = create_object0(create_symbol("somewhere", "something"));
+    std::ostringstream os;
+    os << std::hex << obj;
+    EXPECT_EQ("#somewhere/something[0x" + os.str() + "]", str(pr_str(obj)));
+}
+
+TEST_F(pr_str_test, should_print_vectors)
+{
+    EXPECT_EQ("[]", str(pr_str(svec())));
+    EXPECT_EQ("[nil]", str(pr_str(svec(nil))));
+    EXPECT_EQ("[1 2 3]", str(pr_str(svec(i64(1), i64(2), i64(3)))));
+    EXPECT_EQ("[1 [2 [3]]]", str(pr_str(svec(i64(1), svec(i64(2), svec(i64(3)))))));
+}
+
+TEST_F(pr_str_test, should_print_sequences)
+{
+    EXPECT_EQ("()", str(pr_str(list())));
+    EXPECT_EQ("(nil)", str(pr_str(small_vector_seq(svec(nil)))));
+    EXPECT_EQ("(1 2 3)", str(pr_str(list(i64(1), i64(2), i64(3)))));
+    EXPECT_EQ("(1 (2 (3)))", str(pr_str(small_vector_seq(svec(i64(1), list(i64(2), list(i64(3))))))));
 }
 
 }

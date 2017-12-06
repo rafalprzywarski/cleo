@@ -37,6 +37,7 @@ extern const Value SEQ;
 extern const Value FIRST;
 extern const Value NEXT;
 extern const Value OBJ_EQ;
+extern const Value PR_STR_OBJ;
 
 namespace type
 {
@@ -46,6 +47,7 @@ extern const Value SMALL_VECTOR;
 extern const Value SMALL_VECTOR_SEQ;
 extern const Value MULTIMETHOD;
 extern const Value SEQUABLE;
+extern const Value SEQUENCE;
 }
 
 }

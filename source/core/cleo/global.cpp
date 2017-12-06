@@ -3,6 +3,7 @@
 #include "multimethod.hpp"
 #include "equality.hpp"
 #include "list.hpp"
+#include "print.hpp"
 
 namespace cleo
 {
@@ -30,6 +31,7 @@ const Value SEQ = create_symbol("cleo.code", "seq");
 const Value FIRST = create_symbol("cleo.code", "first");
 const Value NEXT = create_symbol("cleo.code", "next");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
+const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 
 namespace type
 {
@@ -39,6 +41,7 @@ const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
 const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
 const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
 const Value SEQUABLE = create_symbol("cleo.core", "Sequable");
+const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
 }
 
 namespace
@@ -56,6 +59,11 @@ const Value ret_nil = create_native_function([](const Value *, std::uint8_t)
 {
     return nil;
 });
+
+Value identity(Value val)
+{
+    return val;
+}
 
 struct Initialize
 {
@@ -75,11 +83,20 @@ struct Initialize
         define_method(FIRST, type::SMALL_VECTOR_SEQ, create_native_function1<get_small_vector_seq_first>());
         define_method(NEXT, type::SMALL_VECTOR_SEQ, create_native_function1<get_small_vector_seq_next>());
 
+        derive(type::SMALL_VECTOR_SEQ, type::SEQUENCE);
+        derive(type::SEQUENCE, type::SEQUABLE);
+        define_method(SEQ, type::SEQUENCE, create_native_function1<identity>());
+
         define_multimethod(OBJ_EQ, equal_dispatch, nil);
         define_method(OBJ_EQ, nil, ret_nil);
 
         std::array<Value, 2> two_seq{{type::SEQUABLE, type::SEQUABLE}};
         define_method(OBJ_EQ, create_small_vector(two_seq.data(), two_seq.size()), create_native_function2<are_seqables_equal>());
+
+        define_multimethod(PR_STR_OBJ, first_type, nil);
+        define_method(PR_STR_OBJ, type::SMALL_VECTOR, create_native_function1<pr_str_small_vector>());
+        define_method(PR_STR_OBJ, type::SEQUABLE, create_native_function1<pr_str_sequable>());
+        define_method(PR_STR_OBJ, nil, create_native_function1<pr_str_object>());
     }
 } initialize;
 
