@@ -9,5 +9,6 @@ Value get_list_size(Value list);
 Value get_list_first(Value list);
 Value get_list_next(Value list);
 Value list_conj(Value list, Value elem);
+Value list_seq(Value list);
 
 }

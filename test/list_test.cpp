@@ -1,6 +1,7 @@
 #include <cleo/list.hpp>
 #include <gtest/gtest.h>
 #include <array>
+#include "util.hpp"
 
 namespace cleo
 {
@@ -68,6 +69,13 @@ TEST(list_test, should_conj_elements_in_front_of_the_list)
     ASSERT_TRUE(elems[1] == get_list_first(get_list_next(list3)));
     ASSERT_TRUE(elems[0] == get_list_first(get_list_next(get_list_next(list3))));
     ASSERT_TRUE(nil == get_list_next(get_list_next(get_list_next(list3))));
+}
+
+TEST(list_test, seq_should_return_the_list_or_nil_when_empty)
+{
+    EXPECT_TRUE(nil == list_seq(list()));
+    Value l = list(nil, i64(5));
+    EXPECT_TRUE(l == list_seq(l));
 }
 
 }

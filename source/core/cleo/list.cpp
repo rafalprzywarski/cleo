@@ -51,4 +51,9 @@ Value list_conj(Value list, Value elem)
     return create_object(type::LIST, list_elems.data(), list_elems.size());
 }
 
+Value list_seq(Value list)
+{
+    return get_int64_value(get_list_size(list)) == 0 ? nil : list;
+}
+
 }
