@@ -12,4 +12,6 @@ inline T *alloc()
     return static_cast<T *>(mem_alloc(sizeof(T)));
 }
 
+void gc();
+
 }

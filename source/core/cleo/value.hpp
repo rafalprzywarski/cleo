@@ -32,6 +32,11 @@ inline Tag get_value_tag(Value val)
     return val & tag::MASK;
 }
 
+inline void *get_value_ptr(Value ptr)
+{
+    return reinterpret_cast<void *>(ptr & ~tag::MASK);
+}
+
 Value create_native_function(NativeFunction f);
 
 template <Value f(Value)>

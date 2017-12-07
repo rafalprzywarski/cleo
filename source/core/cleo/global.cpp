@@ -8,6 +8,11 @@
 namespace cleo
 {
 
+std::vector<void *> allocations;
+std::vector<Value> extra_roots;
+unsigned gc_frequency = 64;
+unsigned gc_counter = gc_frequency - 1;
+
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
 

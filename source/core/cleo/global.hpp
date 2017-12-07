@@ -6,9 +6,27 @@
 #include <unordered_set>
 #include <string>
 #include <array>
+#include <vector>
 
 namespace cleo
 {
+
+extern std::vector<void *> allocations;
+extern std::vector<Value> extra_roots;
+extern unsigned gc_frequency;
+extern unsigned gc_counter;
+
+class Root
+{
+public:
+    Root() : index(extra_roots.size()) { extra_roots.push_back(nil); }
+    Root(const Root& ) = delete;
+    ~Root() { extra_roots.pop_back(); }
+    Root& operator=(const Root& ) = delete;
+    Value& operator*() { return extra_roots[index]; }
+private:
+    decltype(extra_roots)::size_type index;
+};
 
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;

@@ -8,6 +8,24 @@ namespace cleo
 namespace test
 {
 
+template <typename T>
+class Override
+{
+public:
+    Override(T& ref, T new_val) : ref(ref), old_val(ref)
+    {
+        ref = new_val;
+    }
+    ~Override()
+    {
+        ref = old_val;
+    }
+
+private:
+    T& ref;
+    T old_val;
+};
+
 template <typename... T>
 Value list(T... elems)
 {
