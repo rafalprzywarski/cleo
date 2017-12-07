@@ -25,6 +25,7 @@ public:
     Root(const Root& ) = delete;
     ~Root() { assert(extra_roots.size() == index + 1); extra_roots.pop_back(); }
     Root& operator=(const Root& ) = delete;
+    Root& operator=(const Force& f) { **this = f.val; return *this; }
     Value& operator*() { return extra_roots[index]; }
     const Value& operator*() const { return extra_roots[index]; }
 private:
@@ -42,6 +43,7 @@ public:
     Roots& operator=(const Roots& ) = delete;
     Value& operator[](size_type k) { return extra_roots[index + k]; }
     const Value& operator[](size_type k) const { return extra_roots[index + k]; }
+    void set(size_type k, Force f) { extra_roots[index + k] = f.val; }
 private:
     size_type index, count;
 };

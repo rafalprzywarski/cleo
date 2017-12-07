@@ -62,7 +62,7 @@ const Root equal_dispatch{create_native_function([](const Value *args, std::uint
 
 const Root ret_nil{create_native_function([](const Value *, std::uint8_t)
 {
-    return nil;
+    return force(nil);
 })};
 
 Value identity(Value val)
@@ -80,41 +80,40 @@ struct Initialize
 
         derive(type::LIST, type::SEQUABLE);
         Root f;
-        *f = create_native_function1<list_seq>();
+        f = create_native_function1<list_seq>();
         define_method(SEQ, type::LIST, *f);
-        *f = create_native_function1<get_list_first>();
+        f = create_native_function1<get_list_first>();
         define_method(FIRST, type::LIST, *f);
-        *f = create_native_function1<get_list_next>();
+        f = create_native_function1<get_list_next>();
         define_method(NEXT, type::LIST, *f);
 
         derive(type::SMALL_VECTOR, type::SEQUABLE);
-        *f = create_native_function1<small_vector_seq>();
+        f = create_native_function1<small_vector_seq>();
         define_method(SEQ, type::SMALL_VECTOR, *f);
-        *f = create_native_function1<get_small_vector_seq_first>();
+        f = create_native_function1<get_small_vector_seq_first>();
         define_method(FIRST, type::SMALL_VECTOR_SEQ, *f);
-        *f = create_native_function1<get_small_vector_seq_next>();
+        f = create_native_function1<get_small_vector_seq_next>();
         define_method(NEXT, type::SMALL_VECTOR_SEQ, *f);
 
         derive(type::SMALL_VECTOR_SEQ, type::SEQUENCE);
         derive(type::SEQUENCE, type::SEQUABLE);
-        *f = create_native_function1<identity>();
+        f = create_native_function1<identity>();
         define_method(SEQ, type::SEQUENCE, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
 
         std::array<Value, 2> two_seq{{type::SEQUABLE, type::SEQUABLE}};
-        Root v;
-        *v = create_small_vector(two_seq.data(), two_seq.size());
-        *f = create_native_function2<are_seqables_equal>();
+        Root v{create_small_vector(two_seq.data(), two_seq.size())};
+        f = create_native_function2<are_seqables_equal>();
         define_method(OBJ_EQ, *v, *f);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
-        *f = create_native_function1<pr_str_small_vector>();
+        f = create_native_function1<pr_str_small_vector>();
         define_method(PR_STR_OBJ, type::SMALL_VECTOR, *f);
-        *f = create_native_function1<pr_str_sequable>();
+        f = create_native_function1<pr_str_sequable>();
         define_method(PR_STR_OBJ, type::SEQUABLE, *f);
-        *f = create_native_function1<pr_str_object>();
+        f = create_native_function1<pr_str_object>();
         define_method(PR_STR_OBJ, nil, *f);
     }
 } initialize;

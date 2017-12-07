@@ -5,7 +5,7 @@ namespace cleo
 {
 
 Int64 hash_value(Value val);
-Value hash(Value val);
+Force hash(Value val);
 
 struct StdHash
 {

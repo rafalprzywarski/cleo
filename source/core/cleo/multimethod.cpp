@@ -10,12 +10,12 @@ namespace cleo
 
 Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 {
-    auto multi = create_object(type::MULTIMETHOD, &name, 1);
-    define(name, multi);
+    Root multi{create_object(type::MULTIMETHOD, &name, 1)};
+    define(name, *multi);
     auto& desc = multimethods[name];
     desc.dispatchFn = dispatchFn;
     desc.defaultDispatchVal = defaultDispatchVal;
-    return multi;
+    return *multi;
 }
 
 void define_method(Value name, Value dispatchVal, Value fn)
@@ -93,15 +93,20 @@ Value get_method(Value multi, Value dispatchVal)
     return get_method(multimethod, dispatchVal);
 }
 
-Value call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
+Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     auto name = get_object_element(multi, 0);
     auto& multimethod = multimethods.find(name)->second;
-    Root dispatchVal{force(get_native_function_ptr(multimethod.dispatchFn)(args, numArgs))};
+    Root dispatchVal{get_native_function_ptr(multimethod.dispatchFn)(args, numArgs)};
     auto fn = get_method(multimethod, *dispatchVal);
     if (fn == nil)
         throw illegal_argument();
     return get_native_function_ptr(fn)(args, numArgs);
+}
+
+Force call_multimethod1(Value multi, Value arg)
+{
+    return call_multimethod(multi, &arg, 1);
 }
 
 }

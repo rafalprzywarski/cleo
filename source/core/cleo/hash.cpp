@@ -22,7 +22,7 @@ Int64 hash_value(Value val)
     return 0;
 }
 
-Value hash(Value val)
+Force hash(Value val)
 {
     return create_int64(hash_value(val));
 }

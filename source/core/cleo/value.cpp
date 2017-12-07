@@ -40,7 +40,7 @@ T *get_ptr(Value ptr)
     return reinterpret_cast<T *>(ptr & ~tag::MASK);
 }
 
-Value create_native_function(NativeFunction f)
+Force create_native_function(NativeFunction f)
 {
     auto val = alloc<NativeFunction>();
     *val = f;
@@ -58,8 +58,9 @@ Value create_symbol(const std::string& ns, const std::string& name)
     if (entry != Value())
         return entry;
     Root ns_root, name_root;
-    *ns_root = !ns.empty() ? create_string(ns) : nil;
-    *name_root = create_string(name);
+    if (!ns.empty())
+        ns_root = create_string(ns);
+    name_root = create_string(name);
     auto val = alloc<Symbol>();
     val->ns = *ns_root;
     val->name = *name_root;
@@ -87,8 +88,9 @@ Value create_keyword(const std::string& ns, const std::string& name)
     if (entry != Value())
         return entry;
     Root ns_root, name_root;
-    *ns_root = !ns.empty() ? create_string(ns) : nil;
-    *name_root = create_string(name);
+    if (!ns.empty())
+        ns_root = create_string(ns);
+    name_root = create_string(name);
     auto val = alloc<Keyword>();
     val->ns = *ns_root;
     val->name = *name_root;
@@ -110,7 +112,7 @@ Value get_keyword_name(Value s)
     return get_ptr<Keyword>(s)->name;
 }
 
-Value create_int64(Int64 intVal)
+Force create_int64(Int64 intVal)
 {
     auto val = alloc<Int64>();
     *val = intVal;
@@ -122,7 +124,7 @@ Int64 get_int64_value(Value val)
     return *get_ptr<Int64>(val);
 }
 
-Value create_float64(Float64 floatVal)
+Force create_float64(Float64 floatVal)
 {
     auto val = alloc<Float64>();
     *val = floatVal;
@@ -134,7 +136,7 @@ Float64 get_float64_value(Value val)
     return *get_ptr<Float64>(val);
 }
 
-Value create_string(const std::string& str)
+Force create_string(const std::string& str)
 {
     auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + str.length()));
     val->len = str.length();
@@ -152,7 +154,7 @@ std::uint32_t get_string_len(Value val)
     return get_ptr<String>(val)->len;
 }
 
-Value create_object(Value type, const Value *elems, std::uint32_t size)
+Force create_object(Value type, const Value *elems, std::uint32_t size)
 {
     auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstElem) + size * sizeof(Object::firstElem)));
     val->type = type;
@@ -161,12 +163,12 @@ Value create_object(Value type, const Value *elems, std::uint32_t size)
     return tag_ptr(val, tag::OBJECT);
 }
 
-Value create_object0(Value type)
+Force create_object0(Value type)
 {
     return create_object(type, nullptr, 0);
 }
 
-Value create_object2(Value type, Value elem0, Value elem1)
+Force create_object2(Value type, Value elem0, Value elem1)
 {
     std::array<Value, 2> elems{{elem0, elem1}};
     return create_object(type, elems.data(), elems.size());

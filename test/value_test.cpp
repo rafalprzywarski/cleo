@@ -20,18 +20,18 @@ TEST_F(value_test, nil_should_have_tag_NIL)
 
 TEST_F(value_test, should_store_native_functions)
 {
-    auto f = [](const Value *, std::uint8_t) { return nil; };
-    Value val = create_native_function(f);
-    ASSERT_EQ(tag::NATIVE_FUNCTION, get_value_tag(val));
-    ASSERT_EQ(f, get_native_function_ptr(val));
+    auto f = [](const Value *, std::uint8_t) { return force(nil); };
+    Root val{create_native_function(f)};
+    ASSERT_EQ(tag::NATIVE_FUNCTION, get_value_tag(*val));
+    ASSERT_EQ(f, get_native_function_ptr(*val));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_function)
 {
-    auto f = [](const Value *, std::uint8_t) { return nil; };
+    auto f = [](const Value *, std::uint8_t) { return force(nil); };
     Root val, val2;
-    *val = create_native_function(f);
-    *val2 = create_native_function(f);
+    val = create_native_function(f);
+    val2 = create_native_function(f);
     ASSERT_TRUE(*val != *val2);
 }
 
@@ -101,37 +101,37 @@ TEST_F(value_test, should_return_same_instances_for_keywords_with_same_namespace
 
 TEST_F(value_test, should_store_int_values)
 {
-    Value val = create_int64(7);
-    ASSERT_EQ(tag::INT64, get_value_tag(val));
-    ASSERT_EQ(7, get_int64_value(val));
+    Root val{create_int64(7)};
+    ASSERT_EQ(tag::INT64, get_value_tag(*val));
+    ASSERT_EQ(7, get_int64_value(*val));
     val = create_int64(std::numeric_limits<Int64>::min());
-    ASSERT_EQ(std::numeric_limits<Int64>::min(), get_int64_value(val));
+    ASSERT_EQ(std::numeric_limits<Int64>::min(), get_int64_value(*val));
     val = create_int64(std::numeric_limits<Int64>::max());
-    ASSERT_EQ(std::numeric_limits<Int64>::max(), get_int64_value(val));
+    ASSERT_EQ(std::numeric_limits<Int64>::max(), get_int64_value(*val));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_int)
 {
-    Root val{force(create_int64(7))};
-    Root val2{force(create_int64(7))};
+    Root val{create_int64(7)};
+    Root val2{create_int64(7)};
     ASSERT_TRUE(*val != *val2);
 }
 
 TEST_F(value_test, should_store_float_values)
 {
-    Value val = create_float64(7.125);
-    ASSERT_EQ(tag::FLOAT64, get_value_tag(val));
-    ASSERT_EQ(7.125, get_float64_value(val));
+    Root val{create_float64(7.125)};
+    ASSERT_EQ(tag::FLOAT64, get_value_tag(*val));
+    ASSERT_EQ(7.125, get_float64_value(*val));
     val = create_float64(std::numeric_limits<Float64>::min());
-    ASSERT_EQ(std::numeric_limits<Float64>::min(), get_float64_value(val));
+    ASSERT_EQ(std::numeric_limits<Float64>::min(), get_float64_value(*val));
     val = create_float64(std::numeric_limits<Float64>::max());
-    ASSERT_EQ(std::numeric_limits<Float64>::max(), get_float64_value(val));
+    ASSERT_EQ(std::numeric_limits<Float64>::max(), get_float64_value(*val));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_float)
 {
-    Root val{force(create_float64(7))};
-    Root val2{force(create_float64(7))};
+    Root val{create_float64(7)};
+    Root val2{create_float64(7)};
     ASSERT_TRUE(*val != *val2);
 }
 
@@ -139,16 +139,16 @@ TEST_F(value_test, should_store_string_values)
 {
     std::string example("abc\0xyz", 7);
     std::string exampleCopy = example;
-    Value val = create_string(exampleCopy);
+    Root val{create_string(exampleCopy)};
     exampleCopy.clear();
-    ASSERT_EQ(tag::STRING, get_value_tag(val));
-    ASSERT_EQ(example, std::string(get_string_ptr(val), get_string_len(val)));
+    ASSERT_EQ(tag::STRING, get_value_tag(*val));
+    ASSERT_EQ(example, std::string(get_string_ptr(*val), get_string_len(*val)));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_string)
 {
-    Root val{force(create_string("abc"))};
-    Root val2{force(create_string("abc"))};
+    Root val{create_string("abc")};
+    Root val2{create_string("abc")};
     ASSERT_TRUE(*val != *val2);
 }
 
@@ -156,47 +156,48 @@ TEST_F(value_test, should_store_object_values)
 {
     auto type = create_symbol("org.xxx");
     Root elem0, elem1, elem2;
-    *elem0 = create_int64(10);
-    *elem1 = create_float64(20);
+    elem0 = create_int64(10);
+    elem1 = create_float64(20);
     *elem2 = create_symbol("elem3");
     const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
-    Root obj{force(create_object(type, elems.data(), elems.size()))};
+    Root obj{create_object(type, elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
     ASSERT_EQ(elems.size(), get_object_size(*obj));
     ASSERT_TRUE(elems[0] == get_object_element(*obj, 0));
     ASSERT_TRUE(elems[1] == get_object_element(*obj, 1));
     ASSERT_TRUE(elems[2] == get_object_element(*obj, 2));
 
-    ASSERT_EQ(0u, get_object_size(create_object(type, nullptr, 0)));
+    obj = create_object(type, nullptr, 0);
+    ASSERT_EQ(0u, get_object_size(*obj));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_object)
 {
     auto type = create_symbol("org.xxx");
-    Root val{force(create_object(type, nullptr, 0))};
-    Root val2{force(create_object(type, nullptr, 0))};
+    Root val{create_object(type, nullptr, 0)};
+    Root val2{create_object(type, nullptr, 0)};
     ASSERT_TRUE(*val != *val2);
 }
 
 TEST_F(value_test, should_return_the_type_of_a_value)
 {
-    auto f = [](const Value *, std::uint8_t) { return nil; };
+    auto f = [](const Value *, std::uint8_t) { return force(nil); };
     auto type = create_symbol("org.xxx");
     Root val;
     ASSERT_TRUE(nil == get_value_type(nil));
-    *val = create_native_function(f);
+    val = create_native_function(f);
     ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(*val));
     *val = create_symbol("abc");
     ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(*val));
     *val = create_keyword("abc");
     ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(*val));
-    *val = create_int64(11);
+    val = create_int64(11);
     ASSERT_TRUE(create_symbol("cleo.core", "Int64") == get_value_type(*val));
-    *val = create_float64(3.5);
+    val = create_float64(3.5);
     ASSERT_TRUE(create_symbol("cleo.core", "Float64") == get_value_type(*val));
-    *val = create_string("abc");
+    val = create_string("abc");
     ASSERT_TRUE(create_symbol("cleo.core", "String") == get_value_type(*val));
-    *val = create_object(type, nullptr, 0);
+    val = create_object(type, nullptr, 0);
     ASSERT_TRUE(type == get_value_type(*val));
 }
 

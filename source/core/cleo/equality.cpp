@@ -19,21 +19,30 @@ Value are_small_vectors_equal(Value left, Value right)
     return TRUE;
 }
 
-Value are_seqs_equal(Value left, Value right)
+Value are_seqs_equal(Value left_, Value right_)
 {
+    Root left(force(left_));
+    Root right(force(right_));
     auto first = lookup(FIRST);
     auto next = lookup(NEXT);
 
-    for (; left != nil && right != nil; left = call_multimethod(next, &left, 1), right = call_multimethod(next, &right, 1))
-        if (!are_equal(call_multimethod(first, &left, 1), call_multimethod(first, &right, 1)))
+    Root lf, rf;
+    for (; *left != nil && *right != nil; left = call_multimethod1(next, *left), right = call_multimethod1(next, *right))
+    {
+        lf = call_multimethod1(first, *left);
+        rf = call_multimethod1(first, *right);
+        if (!are_equal(*lf, *rf))
             return nil;
-    return left == right;
+    }
+    return *left == *right;
 }
 
 Value are_seqables_equal(Value left, Value right)
 {
     auto seq = lookup(SEQ);
-    return are_seqs_equal(call_multimethod(seq, &left, 1), call_multimethod(seq, &right, 1));
+    Root ls{call_multimethod1(seq, left)};
+    Root rs{call_multimethod1(seq, right)};
+    return are_seqs_equal(*ls, *rs);
 }
 
 Value are_equal(Value left, Value right)
@@ -62,7 +71,8 @@ Value are_equal(Value left, Value right)
                 return are_small_vectors_equal(left, right);
             {
                 std::array<Value, 2> args{{left, right}};
-                return call_multimethod(lookup(OBJ_EQ), args.data(), args.size());
+                Root ret{call_multimethod(lookup(OBJ_EQ), args.data(), args.size())};
+                return *ret;
             }
         default:
             return nil;

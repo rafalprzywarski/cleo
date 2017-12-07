@@ -10,14 +10,14 @@ namespace cleo
 namespace
 {
 
-Value pr_str_native_function(Value fn)
+Force pr_str_native_function(Value fn)
 {
     std::ostringstream os;
     os << "#cleo.core/NativeFunction[0x" << std::hex << fn << "]";
     return create_string(os.str());
 }
 
-Value pr_str_symbol(Value sym)
+Force pr_str_symbol(Value sym)
 {
     auto ns = get_keyword_namespace(sym);
     auto name = get_keyword_name(sym);
@@ -32,7 +32,7 @@ Value pr_str_symbol(Value sym)
     return create_string(s);
 }
 
-Value pr_str_keyword(Value kw)
+Force pr_str_keyword(Value kw)
 {
     auto ns = get_keyword_namespace(kw);
     auto name = get_keyword_name(kw);
@@ -48,7 +48,7 @@ Value pr_str_keyword(Value kw)
     return create_string(s);
 }
 
-Value pr_str_float(Value val)
+Force pr_str_float(Value val)
 {
     std::ostringstream os;
     os << get_float64_value(val);
@@ -58,7 +58,7 @@ Value pr_str_float(Value val)
     return create_string(s);
 }
 
-Value pr_str_string(Value val)
+Force pr_str_string(Value val)
 {
     std::string s;
     s.reserve(2 * get_string_len(val) + 2);
@@ -86,15 +86,15 @@ Value pr_str_string(Value val)
 
 }
 
-Value pr_str_object(Value val)
+Force pr_str_object(Value val)
 {
-    auto type = pr_str(get_object_type(val));
+    Root type{pr_str(get_object_type(val))};
     std::ostringstream os;
-    os << '#' << std::string(get_string_ptr(type), get_string_len(type)) << "[0x" << std::hex << val << "]";
+    os << '#' << std::string(get_string_ptr(*type), get_string_len(*type)) << "[0x" << std::hex << val << "]";
     return create_string(os.str());
 }
 
-Value pr_str_small_vector(Value v)
+Force pr_str_small_vector(Value v)
 {
     std::string str;
     str += '[';
@@ -103,14 +103,14 @@ Value pr_str_small_vector(Value v)
     {
         if (i > 0)
             str += ' ';
-        auto s = pr_str(get_small_vector_elem(v, i));
-        str.append(get_string_ptr(s), get_string_len(s));
+        Root s{pr_str(get_small_vector_elem(v, i))};
+        str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += ']';
     return create_string(str);
 }
 
-Value pr_str_sequable(Value v)
+Force pr_str_sequable(Value v)
 {
     auto seq = lookup(SEQ);
     auto first = lookup(FIRST);
@@ -118,22 +118,22 @@ Value pr_str_sequable(Value v)
     std::string str;
     str += '(';
     bool first_elem = true;
-    for (Root s{force(call_multimethod(seq, &v, 1))}; *s != nil; *s = call_multimethod(next, &*s, 1))
+    for (Root s{call_multimethod1(seq, v)}; *s != nil; s = call_multimethod1(next, *s))
     {
         if (first_elem)
             first_elem = false;
         else
             str += ' ';
 
-        Root f{force(call_multimethod(first, &*s, 1))};
-        auto ss = pr_str(*f);
-        str.append(get_string_ptr(ss), get_string_len(ss));
+        Root f{call_multimethod1(first, *s)};
+        Root ss{pr_str(*f)};
+        str.append(get_string_ptr(*ss), get_string_len(*ss));
     }
     str += ')';
     return create_string(str);
 }
 
-Value pr_str(Value val)
+Force pr_str(Value val)
 {
     switch (get_value_tag(val))
     {

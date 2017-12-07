@@ -29,20 +29,20 @@ private:
 };
 
 template <typename... T>
-Value list(T... elems)
+Force list(T... elems)
 {
     std::array<Value, sizeof...(T)> a{{elems...}};
     return create_list(a.data(), a.size());
 }
 
 template <typename... T>
-Value svec(T... elems)
+Force svec(T... elems)
 {
     std::array<Value, sizeof...(T)> a{{elems...}};
     return create_small_vector(a.data(), a.size());
 }
 
-inline Value i64(Int64 value)
+inline Force i64(Int64 value)
 {
     return create_int64(value);
 }

@@ -42,7 +42,7 @@ TEST_F(memory_test, Root_should_prevent_garbage_collection)
     auto num_allocations = allocations.size();
 
     Root root1;
-    *root1 = create_int64(20);
+    root1 = create_int64(20);
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
     gc();
@@ -50,8 +50,8 @@ TEST_F(memory_test, Root_should_prevent_garbage_collection)
 
     {
         Root root2, root3;
-        *root2 = create_int64(20);
-        *root3 = create_int64(20);
+        root2 = create_int64(20);
+        root3 = create_int64(20);
         ASSERT_EQ(num_allocations + 3, allocations.size());
 
         gc();
@@ -98,9 +98,9 @@ TEST_F(memory_test, should_collect_objects)
     auto num_allocations_before = allocations.size();
 
     Root root1, root2, root3;
-    *root1 = create_object0(name1);
-    *root2 = create_object0(name2);
-    *root3 = create_object2(name3, *root1, *root2);
+    root1 = create_object0(name1);
+    root2 = create_object0(name2);
+    root3 = create_object2(name3, *root1, *root2);
 
     auto num_allocations_after = allocations.size();
 
@@ -145,8 +145,11 @@ TEST_F(memory_test, should_trace_vars)
 
     auto num_allocations_before = allocations.size();
 
-    define(name1, create_int64(20));
-    define(name2, create_int64(30));
+    Root val1{create_int64(20)}, val2{create_int64(30)};
+    define(name1, *val1);
+    define(name2, *val2);
+    *val1 = nil;
+    *val2 = nil;
     auto num_allocations_after = allocations.size();
 
     gc();
@@ -161,14 +164,19 @@ TEST_F(memory_test, should_trace_vars)
 
 TEST_F(memory_test, should_trace_multimethods)
 {
-    auto name = create_string("cleo.memory.test/mm1");
-    auto fn = create_native_function([](const Value *, std::uint8_t){ return nil; });
-    auto fn1 = create_native_function([](const Value *, std::uint8_t){ return nil; });
-    auto def_val = create_string("cleo.memory.test/mm_def_val");
-    auto val1 = create_string("cleo.memory.test/mm_val1");
+    Root name{create_string("cleo.memory.test/mm1")};
+    Root fn{create_native_function([](const Value *, std::uint8_t){ return force(nil); })};
+    Root fn1{create_native_function([](const Value *, std::uint8_t){ return force(nil); })};
+    Root def_val{create_string("cleo.memory.test/mm_def_val")};
+    Root val1{create_string("cleo.memory.test/mm_val1")};
 
-    define_multimethod(name, fn, def_val);
-    define_method(name, val1, fn1);
+    define_multimethod(*name, *fn, *def_val);
+    define_method(*name, *val1, *fn1);
+    *name = nil;
+    *fn = nil;
+    *fn1 = nil;
+    *def_val = nil;
+    *val1 = nil;
 
     auto num_allocations = allocations.size();
 
@@ -178,12 +186,14 @@ TEST_F(memory_test, should_trace_multimethods)
 
 TEST_F(memory_test, should_trace_global_hierarchy)
 {
-    auto s1 = create_string("cleo.memory.test/string1");
-    auto s2 = create_string("cleo.memory.test/string2");
+    Root s1{create_string("cleo.memory.test/string1")};
+    Root s2{create_string("cleo.memory.test/string2")};
 
     auto num_allocations = allocations.size();
 
-    derive(s1, s2);
+    derive(*s1, *s2);
+    *s1 = nil;
+    *s2 = nil;
 
     gc();
     ASSERT_EQ(num_allocations, allocations.size());

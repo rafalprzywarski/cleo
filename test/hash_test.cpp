@@ -7,35 +7,41 @@ namespace cleo
 namespace test
 {
 
-struct hash_test : Test {};
-
-TEST(hash_test, should_return_0_for_nil)
+struct hash_test : Test
 {
-    ASSERT_EQ(0u, get_int64_value(hash(nil)));
+    Int64 hash(Value val)
+    {
+        Root h{cleo::hash(val)};
+        return get_int64_value(*h);
+    }
+};
+
+TEST_F(hash_test, should_return_0_for_nil)
+{
+    ASSERT_EQ(0u, hash(nil));
 }
 
-TEST(hash_test, should_return_0_for_objects)
+TEST_F(hash_test, should_return_0_for_objects)
 {
-    Root val;
-    *val = create_object0(nil);
-    ASSERT_EQ(0u, get_int64_value(hash(*val)));
+    Root val{create_object0(nil)};
+    ASSERT_EQ(0u, hash(*val));
 }
 
-TEST(hash_test, should_hash_values)
+TEST_F(hash_test, should_hash_values)
 {
-    Root fn{force(create_native_function([](const Value *, std::uint8_t) { return nil; }))};
+    Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
     auto sym = create_symbol("org.xyz", "eqsym");
     auto kw = create_keyword("org.xyz", "eqkw");
     Root val;
-    ASSERT_EQ(std::hash<Value>{}(*fn), get_int64_value(hash(*fn)));
-    ASSERT_EQ(std::hash<Value>{}(sym), get_int64_value(hash(sym)));
-    ASSERT_EQ(std::hash<Value>{}(kw), get_int64_value(hash(kw)));
-    *val = create_int64(55);
-    ASSERT_EQ(std::hash<Int64>{}(55), get_int64_value(hash(*val)));
-    *val = create_float64(5.5);
-    ASSERT_EQ(std::hash<Float64>{}(5.5), get_int64_value(hash(*val)));
-    *val = create_string("hamster");
-    ASSERT_EQ(std::hash<std::string>{}("hamster"), get_int64_value(hash(*val)));
+    ASSERT_EQ(std::hash<Value>{}(*fn), hash(*fn));
+    ASSERT_EQ(std::hash<Value>{}(sym), hash(sym));
+    ASSERT_EQ(std::hash<Value>{}(kw), hash(kw));
+    val = create_int64(55);
+    ASSERT_EQ(std::hash<Int64>{}(55), hash(*val));
+    val = create_float64(5.5);
+    ASSERT_EQ(std::hash<Float64>{}(5.5), hash(*val));
+    val = create_string("hamster");
+    ASSERT_EQ(std::hash<std::string>{}("hamster"), hash(*val));
 }
 
 }
