@@ -21,9 +21,10 @@ Value get_small_vector_elem(Value v, std::uint32_t index)
 
 Value small_vector_seq(Value v)
 {
-    return get_small_vector_size(v) == 0 ?
-        nil
-        : create_object2(type::SMALL_VECTOR_SEQ, v, create_int64(0));
+    if (get_small_vector_size(v) == 0)
+        return nil;
+    Root index{force(create_int64(0))};
+    return create_object2(type::SMALL_VECTOR_SEQ, v, *index);
 }
 
 Value get_small_vector_seq_first(Value s)
@@ -35,10 +36,10 @@ Value get_small_vector_seq_next(Value s)
 {
     auto v = get_object_element(s, 0);
     auto i = get_int64_value(get_object_element(s, 1)) + 1;
-
-    return get_small_vector_size(v) == i ?
-        nil :
-        create_object2(type::SMALL_VECTOR_SEQ, v, create_int64(i));
+    if (get_small_vector_size(v) == i)
+        return nil;
+    Root index{force(create_int64(i))};
+    return create_object2(type::SMALL_VECTOR_SEQ, v, *index);
 }
 
 }

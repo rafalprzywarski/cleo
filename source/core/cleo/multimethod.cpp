@@ -97,8 +97,8 @@ Value call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     auto name = get_object_element(multi, 0);
     auto& multimethod = multimethods.find(name)->second;
-    auto dispatchVal = get_native_function_ptr(multimethod.dispatchFn)(args, numArgs);
-    auto fn = get_method(multimethod, dispatchVal);
+    Root dispatchVal{force(get_native_function_ptr(multimethod.dispatchFn)(args, numArgs))};
+    auto fn = get_method(multimethod, *dispatchVal);
     if (fn == nil)
         throw illegal_argument();
     return get_native_function_ptr(fn)(args, numArgs);

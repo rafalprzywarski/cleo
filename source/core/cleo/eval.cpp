@@ -21,10 +21,16 @@ Value eval_symbol(Value sym)
 
 Value eval_list(Value list)
 {
+    Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));
-    for (auto arg_list = get_list_next(list); arg_list != nil; arg_list = get_list_next(arg_list))
-        args.push_back(eval(get_list_first(arg_list)));
+    Roots::size_type i = 0;
+    for (auto arg_list = get_list_next(list); arg_list != nil; arg_list = get_list_next(arg_list), ++i)
+    {
+        auto val = eval(get_list_first(arg_list));
+        arg_roots[i] = val;
+        args.push_back(val);
+    }
     auto val = lookup(get_list_first(list));
     if (get_value_tag(val) == tag::NATIVE_FUNCTION)
         return get_native_function_ptr(val)(args.data(), args.size());

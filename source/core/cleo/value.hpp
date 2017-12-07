@@ -27,6 +27,17 @@ constexpr Tag MASK = 7;
 
 constexpr Value nil = tag::NIL;
 
+class Force
+{
+public:
+    Force(Value val) : val(val) { }
+private:
+    Value val;
+    friend class Root;
+};
+
+inline Force force(Value val) { return val; }
+
 inline Tag get_value_tag(Value val)
 {
     return val & tag::MASK;

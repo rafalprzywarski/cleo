@@ -1,6 +1,7 @@
 #include <cleo/multimethod.hpp>
 #include <cleo/eval.hpp>
 #include <cleo/var.hpp>
+#include <cleo/global.hpp>
 #include "util.hpp"
 #include <gtest/gtest.h>
 
@@ -30,34 +31,43 @@ struct multimethod_test : testing::Test
 TEST_F(multimethod_test, get_method_should_provide_the_method_for_a_dispatch_value_or_nil)
 {
     auto name = symbol("simple");
-    auto fn1 = mk_fn();
-    auto fn2 = mk_fn();
+    Root dfn, fn1, fn2, val1, val2, val3;
+    *dfn = mk_fn();
+    *fn1 = mk_fn();
+    *fn2 = mk_fn();
+    *val1 = create_int64(100);
+    *val2 = create_int64(200);
+    *val3 = create_int64(300);
 
-    Value multi = define_multimethod(name, mk_fn(), nil);
-    define_method(name, create_int64(100), fn1);
-    define_method(name, create_int64(200), fn2);
+    Value multi = define_multimethod(name, *dfn, nil);
+    define_method(name, *val1, *fn1);
+    define_method(name, *val2, *fn2);
 
-    ASSERT_EQ(fn1, get_method(multi, create_int64(100)));
-    ASSERT_EQ(fn2, get_method(multi, create_int64(200)));
-    ASSERT_EQ(nil, get_method(multi, create_int64(300)));
+    ASSERT_EQ(*fn1, get_method(multi, *val1));
+    ASSERT_EQ(*fn2, get_method(multi, *val2));
+    ASSERT_EQ(nil, get_method(multi, *val3));
 }
 
 TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_defined_and_no_methods_are_matched)
 {
     auto name = symbol("with-default");
-    auto fn1 = mk_fn();
-    auto fn2 = mk_fn();
+    Root dfn, fn1, fn2, val1, val2;
+    *dfn = mk_fn();
+    *fn1 = mk_fn();
+    *fn2 = mk_fn();
+    *val1 = create_int64(100);
+    *val2 = create_int64(300);
     auto default_ = keyword("default");
 
-    Value multi = define_multimethod(name, mk_fn(), default_);
-    define_method(name, create_int64(100), fn1);
+    Value multi = define_multimethod(name, *dfn, default_);
+    define_method(name, *val1, *fn1);
 
-    ASSERT_EQ(nil, get_method(multi, create_int64(300)));
+    ASSERT_EQ(nil, get_method(multi, *val2));
 
-    define_method(name, default_, fn2);
+    define_method(name, default_, *fn2);
 
-    ASSERT_EQ(fn1, get_method(multi, create_int64(100)));
-    ASSERT_EQ(fn2, get_method(multi, create_int64(300)));
+    ASSERT_EQ(*fn1, get_method(multi, *val1));
+    ASSERT_EQ(*fn2, get_method(multi, *val2));
 }
 
 TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
@@ -66,31 +76,33 @@ TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
     auto ha = keyword("ha");
     auto hb = keyword("hb");
     auto hc = keyword("hc");
-    auto fn1 = mk_fn();
-    auto fn2 = mk_fn();
-    auto fn3 = mk_fn();
+    Root dfn, fn1, fn2, fn3;
+    *dfn = mk_fn();
+    *fn1 = mk_fn();
+    *fn2 = mk_fn();
+    *fn3 = mk_fn();
 
     derive(hb, ha);
     derive(hc, hb);
 
-    Value multi = define_multimethod(name, mk_fn(), nil);
-    define_method(name, ha, fn1);
+    Value multi = define_multimethod(name, *dfn, nil);
+    define_method(name, ha, *fn1);
 
-    EXPECT_EQ(fn1, get_method(multi, ha));
-    EXPECT_EQ(fn1, get_method(multi, hb));
-    EXPECT_EQ(fn1, get_method(multi, hc));
+    EXPECT_EQ(*fn1, get_method(multi, ha));
+    EXPECT_EQ(*fn1, get_method(multi, hb));
+    EXPECT_EQ(*fn1, get_method(multi, hc));
 
-    define_method(name, hb, fn2);
+    define_method(name, hb, *fn2);
 
-    EXPECT_EQ(fn1, get_method(multi, ha));
-    EXPECT_EQ(fn2, get_method(multi, hb));
-    EXPECT_EQ(fn2, get_method(multi, hc));
+    EXPECT_EQ(*fn1, get_method(multi, ha));
+    EXPECT_EQ(*fn2, get_method(multi, hb));
+    EXPECT_EQ(*fn2, get_method(multi, hc));
 
-    define_method(name, hc, fn3);
+    define_method(name, hc, *fn3);
 
-    EXPECT_EQ(fn1, get_method(multi, ha));
-    EXPECT_EQ(fn2, get_method(multi, hb));
-    EXPECT_EQ(fn3, get_method(multi, hc));
+    EXPECT_EQ(*fn1, get_method(multi, ha));
+    EXPECT_EQ(*fn2, get_method(multi, hb));
+    EXPECT_EQ(*fn3, get_method(multi, hc));
 }
 
 TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_dispatch_value)
@@ -99,15 +111,17 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     auto a = keyword("bad_a");
     auto b = keyword("bad_b");
     auto c = keyword("bad_c");
-    auto fn1 = mk_fn();
-    auto fn2 = mk_fn();
+    Root dfn, fn1, fn2;
+    *dfn = mk_fn();
+    *fn1 = mk_fn();
+    *fn2 = mk_fn();
 
     derive(c, a);
     derive(c, b);
 
-    Value multi = define_multimethod(name, mk_fn(), nil);
-    define_method(name, a, fn1);
-    define_method(name, b, fn2);
+    Value multi = define_multimethod(name, *dfn, nil);
+    define_method(name, a, *fn1);
+    define_method(name, b, *fn2);
 
     EXPECT_THROW(get_method(multi, c), illegal_argument);
 }
@@ -118,30 +132,42 @@ TEST_F(multimethod_test, should_dispatch_to_the_right_method)
     auto parent = keyword("dparent");
     auto child1 = keyword("dchild1");
     auto child2 = keyword("dchild2");
-    auto dispatchFn = create_native_function([](const Value *args, std::uint8_t) { return args[0]; });
+    Root dispatchFn, ret2nd, ret3rd;
+    *dispatchFn = create_native_function([](const Value *args, std::uint8_t) { return args[0]; });
+    *ret2nd = create_native_function([](const Value *args, std::uint8_t) { return args[1]; });
+    *ret3rd = create_native_function([](const Value *args, std::uint8_t) { return args[2]; });
 
     derive(child1, parent);
     derive(child2, parent);
 
-    define_multimethod(name, dispatchFn, nil);
-    define_method(name, parent, create_native_function([](const Value *args, std::uint8_t) { return args[1]; }));
-    define_method(name, child2, create_native_function([](const Value *args, std::uint8_t) { return args[2]; }));
+    define_multimethod(name, *dispatchFn, nil);
+    define_method(name, parent, *ret2nd);
+    define_method(name, child2, *ret3rd);
 
-    auto val1 = create_int64(77);
-    auto val2 = create_int64(88);
-    ASSERT_TRUE(val1 == eval(list(name, child1, val1, val2)));
-    ASSERT_TRUE(val2 == eval(list(name, child2, val1, val2)));
+    Root val1, val2, l;
+    *val1 = create_int64(77);
+    *val2 = create_int64(88);
+    *l = list(name, child1, *val1, *val2);
+    ASSERT_TRUE(*val1 == eval(*l));
+    *l = list(name, child2, *val1, *val2);
+    ASSERT_TRUE(*val2 == eval(*l));
 }
 
 TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
 {
     auto name = symbol("one");
-    auto dispatchFn = create_native_function([](const Value *args, std::uint8_t) { return args[0]; });
-    define_multimethod(name, dispatchFn, nil);
-    define_method(name, create_int64(100), create_native_function([](const Value *, std::uint8_t) { return nil; }));
+    Root dispatchFn, ret_nil, num;
+    *dispatchFn = create_native_function([](const Value *args, std::uint8_t) { return args[0]; });
+    *ret_nil = create_native_function([](const Value *, std::uint8_t) { return nil; });
+    *num = create_int64(100);
+    define_multimethod(name, *dispatchFn, nil);
+    define_method(name, *num, *ret_nil);
+    Root val, l;
+    *val = create_int64(200);
+    *l = list(name, *val);
     try
     {
-        eval(list(name, create_int64(200)));
+        eval(*l);
         FAIL() << "expected an exception";
     }
     catch (const illegal_argument& )
@@ -171,13 +197,21 @@ struct hierarchy_test : multimethod_test
 TEST_F(hierarchy_test, isa_should_be_true_for_equal_values)
 {
     ASSERT_NE(nil, isa(a, a));
-    ASSERT_NE(nil, isa(create_int64(10), create_int64(10)));
+    Root val1, val2;
+    *val1 = create_int64(10);
+    *val2 = create_int64(10);
+    ASSERT_NE(nil, isa(*val1, *val2));
 }
 
 TEST_F(hierarchy_test, isa_should_be_true_for_all_ancestors)
 {
-    derive(create_int64(34567243), create_int64(873456346));
-    EXPECT_NE(nil, isa(create_int64(34567243), create_int64(873456346)));
+    Root val1, val2;
+    *val1 = create_int64(34567243);
+    *val2 = create_int64(873456346);
+    derive(*val1, *val2);
+    *val1 = create_int64(34567243);
+    *val2 = create_int64(873456346);
+    EXPECT_NE(nil, isa(*val1, *val2));
 
     derive(b, d);
 

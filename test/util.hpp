@@ -2,6 +2,8 @@
 #include <array>
 #include <cleo/list.hpp>
 #include <cleo/small_vector.hpp>
+#include <cleo/global.hpp>
+#include <gtest/gtest.h>
 
 namespace cleo
 {
@@ -44,6 +46,12 @@ inline Value i64(Int64 value)
 {
     return create_int64(value);
 }
+
+struct Test : testing::Test
+{
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 1};
+    Override<decltype(gc_counter)> ovc{gc_counter, 1};
+};
 
 }
 }

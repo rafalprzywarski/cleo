@@ -52,18 +52,18 @@ const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
 namespace
 {
 
-const Value first_type = create_native_function1<get_value_type>();
+const Root first_type{create_native_function1<get_value_type>()};
 
-const Value equal_dispatch = create_native_function([](const Value *args, std::uint8_t numArgs)
+const Root equal_dispatch{create_native_function([](const Value *args, std::uint8_t numArgs)
 {
     std::array<Value, 2> types{{get_value_type(args[0]), get_value_type(args[1])}};
     return create_small_vector(types.data(), types.size());
-});
+})};
 
-const Value ret_nil = create_native_function([](const Value *, std::uint8_t)
+const Root ret_nil{create_native_function([](const Value *, std::uint8_t)
 {
     return nil;
-});
+})};
 
 Value identity(Value val)
 {
@@ -74,34 +74,48 @@ struct Initialize
 {
     Initialize()
     {
-        define_multimethod(SEQ, first_type, nil);
-        define_multimethod(FIRST, first_type, nil);
-        define_multimethod(NEXT, first_type, nil);
+        define_multimethod(SEQ, *first_type, nil);
+        define_multimethod(FIRST, *first_type, nil);
+        define_multimethod(NEXT, *first_type, nil);
 
         derive(type::LIST, type::SEQUABLE);
-        define_method(SEQ, type::LIST, create_native_function1<list_seq>());
-        define_method(FIRST, type::LIST, create_native_function1<get_list_first>());
-        define_method(NEXT, type::LIST, create_native_function1<get_list_next>());
+        Root f;
+        *f = create_native_function1<list_seq>();
+        define_method(SEQ, type::LIST, *f);
+        *f = create_native_function1<get_list_first>();
+        define_method(FIRST, type::LIST, *f);
+        *f = create_native_function1<get_list_next>();
+        define_method(NEXT, type::LIST, *f);
 
         derive(type::SMALL_VECTOR, type::SEQUABLE);
-        define_method(SEQ, type::SMALL_VECTOR, create_native_function1<small_vector_seq>());
-        define_method(FIRST, type::SMALL_VECTOR_SEQ, create_native_function1<get_small_vector_seq_first>());
-        define_method(NEXT, type::SMALL_VECTOR_SEQ, create_native_function1<get_small_vector_seq_next>());
+        *f = create_native_function1<small_vector_seq>();
+        define_method(SEQ, type::SMALL_VECTOR, *f);
+        *f = create_native_function1<get_small_vector_seq_first>();
+        define_method(FIRST, type::SMALL_VECTOR_SEQ, *f);
+        *f = create_native_function1<get_small_vector_seq_next>();
+        define_method(NEXT, type::SMALL_VECTOR_SEQ, *f);
 
         derive(type::SMALL_VECTOR_SEQ, type::SEQUENCE);
         derive(type::SEQUENCE, type::SEQUABLE);
-        define_method(SEQ, type::SEQUENCE, create_native_function1<identity>());
+        *f = create_native_function1<identity>();
+        define_method(SEQ, type::SEQUENCE, *f);
 
-        define_multimethod(OBJ_EQ, equal_dispatch, nil);
-        define_method(OBJ_EQ, nil, ret_nil);
+        define_multimethod(OBJ_EQ, *equal_dispatch, nil);
+        define_method(OBJ_EQ, nil, *ret_nil);
 
         std::array<Value, 2> two_seq{{type::SEQUABLE, type::SEQUABLE}};
-        define_method(OBJ_EQ, create_small_vector(two_seq.data(), two_seq.size()), create_native_function2<are_seqables_equal>());
+        Root v;
+        *v = create_small_vector(two_seq.data(), two_seq.size());
+        *f = create_native_function2<are_seqables_equal>();
+        define_method(OBJ_EQ, *v, *f);
 
-        define_multimethod(PR_STR_OBJ, first_type, nil);
-        define_method(PR_STR_OBJ, type::SMALL_VECTOR, create_native_function1<pr_str_small_vector>());
-        define_method(PR_STR_OBJ, type::SEQUABLE, create_native_function1<pr_str_sequable>());
-        define_method(PR_STR_OBJ, nil, create_native_function1<pr_str_object>());
+        define_multimethod(PR_STR_OBJ, *first_type, nil);
+        *f = create_native_function1<pr_str_small_vector>();
+        define_method(PR_STR_OBJ, type::SMALL_VECTOR, *f);
+        *f = create_native_function1<pr_str_sequable>();
+        define_method(PR_STR_OBJ, type::SEQUABLE, *f);
+        *f = create_native_function1<pr_str_object>();
+        define_method(PR_STR_OBJ, nil, *f);
     }
 } initialize;
 

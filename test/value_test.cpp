@@ -1,20 +1,24 @@
 #include <cleo/value.hpp>
+#include <cleo/global.hpp>
 #include <limits>
 #include <string>
 #include <array>
 #include <gtest/gtest.h>
+#include "util.hpp"
 
 namespace cleo
 {
 namespace test
 {
 
-TEST(value_test, nil_should_have_tag_NIL)
+struct value_test : Test {};
+
+TEST_F(value_test, nil_should_have_tag_NIL)
 {
     ASSERT_EQ(tag::NIL, get_value_tag(nil));
 }
 
-TEST(value_test, should_store_native_functions)
+TEST_F(value_test, should_store_native_functions)
 {
     auto f = [](const Value *, std::uint8_t) { return nil; };
     Value val = create_native_function(f);
@@ -22,15 +26,16 @@ TEST(value_test, should_store_native_functions)
     ASSERT_EQ(f, get_native_function_ptr(val));
 }
 
-TEST(value_test, should_create_a_new_instance_for_each_function)
+TEST_F(value_test, should_create_a_new_instance_for_each_function)
 {
     auto f = [](const Value *, std::uint8_t) { return nil; };
-    Value val = create_native_function(f);
-    Value val2 = create_native_function(f);
-    ASSERT_TRUE(val != val2);
+    Root val, val2;
+    *val = create_native_function(f);
+    *val2 = create_native_function(f);
+    ASSERT_TRUE(*val != *val2);
 }
 
-TEST(value_test, should_store_symbols_with_namespaces)
+TEST_F(value_test, should_store_symbols_with_namespaces)
 {
     Value sym = create_symbol("org.xxx", "thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
@@ -42,7 +47,7 @@ TEST(value_test, should_store_symbols_with_namespaces)
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
-TEST(value_test, should_store_symbols_without_namespaces)
+TEST_F(value_test, should_store_symbols_without_namespaces)
 {
     Value sym = create_symbol("thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
@@ -52,7 +57,7 @@ TEST(value_test, should_store_symbols_without_namespaces)
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
-TEST(value_test, should_return_same_instances_for_symbols_with_same_namespace_and_names)
+TEST_F(value_test, should_return_same_instances_for_symbols_with_same_namespace_and_names)
 {
     EXPECT_TRUE(create_symbol("abc") != create_symbol("xyz"));
     EXPECT_TRUE(create_symbol("abc") == create_symbol("abc"));
@@ -62,7 +67,7 @@ TEST(value_test, should_return_same_instances_for_symbols_with_same_namespace_an
     EXPECT_TRUE(create_symbol("com.z", "abc") != create_symbol("org.xxx", "abc"));
 }
 
-TEST(value_test, should_store_keywords_with_namespaces)
+TEST_F(value_test, should_store_keywords_with_namespaces)
 {
     Value kw = create_keyword("org.xxx", "thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
@@ -74,7 +79,7 @@ TEST(value_test, should_store_keywords_with_namespaces)
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
-TEST(value_test, should_store_keywords_without_namespaces)
+TEST_F(value_test, should_store_keywords_without_namespaces)
 {
     Value kw = create_keyword("thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
@@ -84,7 +89,7 @@ TEST(value_test, should_store_keywords_without_namespaces)
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
-TEST(value_test, should_return_same_instances_for_keywords_with_same_namespace_and_names)
+TEST_F(value_test, should_return_same_instances_for_keywords_with_same_namespace_and_names)
 {
     EXPECT_TRUE(create_keyword("abc") != create_keyword("xyz"));
     EXPECT_TRUE(create_keyword("abc") == create_keyword("abc"));
@@ -94,7 +99,7 @@ TEST(value_test, should_return_same_instances_for_keywords_with_same_namespace_a
     EXPECT_TRUE(create_keyword("com.z", "abc") != create_keyword("org.xxx", "abc"));
 }
 
-TEST(value_test, should_store_int_values)
+TEST_F(value_test, should_store_int_values)
 {
     Value val = create_int64(7);
     ASSERT_EQ(tag::INT64, get_value_tag(val));
@@ -105,14 +110,14 @@ TEST(value_test, should_store_int_values)
     ASSERT_EQ(std::numeric_limits<Int64>::max(), get_int64_value(val));
 }
 
-TEST(value_test, should_create_a_new_instance_for_each_int)
+TEST_F(value_test, should_create_a_new_instance_for_each_int)
 {
-    Value val = create_int64(7);
-    Value val2 = create_int64(7);
-    ASSERT_TRUE(val != val2);
+    Root val{force(create_int64(7))};
+    Root val2{force(create_int64(7))};
+    ASSERT_TRUE(*val != *val2);
 }
 
-TEST(value_test, should_store_float_values)
+TEST_F(value_test, should_store_float_values)
 {
     Value val = create_float64(7.125);
     ASSERT_EQ(tag::FLOAT64, get_value_tag(val));
@@ -123,14 +128,14 @@ TEST(value_test, should_store_float_values)
     ASSERT_EQ(std::numeric_limits<Float64>::max(), get_float64_value(val));
 }
 
-TEST(value_test, should_create_a_new_instance_for_each_float)
+TEST_F(value_test, should_create_a_new_instance_for_each_float)
 {
-    Value val = create_float64(7);
-    Value val2 = create_float64(7);
-    ASSERT_TRUE(val != val2);
+    Root val{force(create_float64(7))};
+    Root val2{force(create_float64(7))};
+    ASSERT_TRUE(*val != *val2);
 }
 
-TEST(value_test, should_store_string_values)
+TEST_F(value_test, should_store_string_values)
 {
     std::string example("abc\0xyz", 7);
     std::string exampleCopy = example;
@@ -140,47 +145,59 @@ TEST(value_test, should_store_string_values)
     ASSERT_EQ(example, std::string(get_string_ptr(val), get_string_len(val)));
 }
 
-TEST(value_test, should_create_a_new_instance_for_each_string)
+TEST_F(value_test, should_create_a_new_instance_for_each_string)
 {
-    Value val = create_string("abc");
-    Value val2 = create_string("abc");
-    ASSERT_TRUE(val != val2);
+    Root val{force(create_string("abc"))};
+    Root val2{force(create_string("abc"))};
+    ASSERT_TRUE(*val != *val2);
 }
 
-TEST(value_test, should_store_object_values)
+TEST_F(value_test, should_store_object_values)
 {
     auto type = create_symbol("org.xxx");
-    const std::array<Value, 3> elems{{create_int64(10), create_float64(20), create_symbol("elem3")}};
-    Value obj = create_object(type, elems.data(), elems.size());
-    ASSERT_EQ(tag::OBJECT, get_value_tag(obj));
-    ASSERT_EQ(elems.size(), get_object_size(obj));
-    ASSERT_TRUE(elems[0] == get_object_element(obj, 0));
-    ASSERT_TRUE(elems[1] == get_object_element(obj, 1));
-    ASSERT_TRUE(elems[2] == get_object_element(obj, 2));
+    Root elem0, elem1, elem2;
+    *elem0 = create_int64(10);
+    *elem1 = create_float64(20);
+    *elem2 = create_symbol("elem3");
+    const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
+    Root obj{force(create_object(type, elems.data(), elems.size()))};
+    ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
+    ASSERT_EQ(elems.size(), get_object_size(*obj));
+    ASSERT_TRUE(elems[0] == get_object_element(*obj, 0));
+    ASSERT_TRUE(elems[1] == get_object_element(*obj, 1));
+    ASSERT_TRUE(elems[2] == get_object_element(*obj, 2));
 
     ASSERT_EQ(0u, get_object_size(create_object(type, nullptr, 0)));
 }
 
-TEST(value_test, should_create_a_new_instance_for_each_object)
+TEST_F(value_test, should_create_a_new_instance_for_each_object)
 {
     auto type = create_symbol("org.xxx");
-    Value val = create_object(type, nullptr, 0);
-    Value val2 = create_object(type, nullptr, 0);
-    ASSERT_TRUE(val != val2);
+    Root val{force(create_object(type, nullptr, 0))};
+    Root val2{force(create_object(type, nullptr, 0))};
+    ASSERT_TRUE(*val != *val2);
 }
 
-TEST(value_test, should_return_the_type_of_a_value)
+TEST_F(value_test, should_return_the_type_of_a_value)
 {
     auto f = [](const Value *, std::uint8_t) { return nil; };
     auto type = create_symbol("org.xxx");
+    Root val;
     ASSERT_TRUE(nil == get_value_type(nil));
-    ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(create_native_function(f)));
-    ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(create_symbol("abc")));
-    ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(create_keyword("abc")));
-    ASSERT_TRUE(create_symbol("cleo.core", "Int64") == get_value_type(create_int64(11)));
-    ASSERT_TRUE(create_symbol("cleo.core", "Float64") == get_value_type(create_float64(3.5)));
-    ASSERT_TRUE(create_symbol("cleo.core", "String") == get_value_type(create_string("abc")));
-    ASSERT_TRUE(type == get_value_type(create_object(type, nullptr, 0)));
+    *val = create_native_function(f);
+    ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(*val));
+    *val = create_symbol("abc");
+    ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(*val));
+    *val = create_keyword("abc");
+    ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(*val));
+    *val = create_int64(11);
+    ASSERT_TRUE(create_symbol("cleo.core", "Int64") == get_value_type(*val));
+    *val = create_float64(3.5);
+    ASSERT_TRUE(create_symbol("cleo.core", "Float64") == get_value_type(*val));
+    *val = create_string("abc");
+    ASSERT_TRUE(create_symbol("cleo.core", "String") == get_value_type(*val));
+    *val = create_object(type, nullptr, 0);
+    ASSERT_TRUE(type == get_value_type(*val));
 }
 
 }

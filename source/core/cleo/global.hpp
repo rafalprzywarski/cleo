@@ -7,6 +7,7 @@
 #include <string>
 #include <array>
 #include <vector>
+#include <cassert>
 
 namespace cleo
 {
@@ -20,12 +21,29 @@ class Root
 {
 public:
     Root() : index(extra_roots.size()) { extra_roots.push_back(nil); }
+    Root(Force f) : Root() { **this = f.val; }
     Root(const Root& ) = delete;
-    ~Root() { extra_roots.pop_back(); }
+    ~Root() { assert(extra_roots.size() == index + 1); extra_roots.pop_back(); }
     Root& operator=(const Root& ) = delete;
     Value& operator*() { return extra_roots[index]; }
+    const Value& operator*() const { return extra_roots[index]; }
 private:
     decltype(extra_roots)::size_type index;
+};
+
+class Roots
+{
+public:
+    using size_type = decltype(extra_roots)::size_type;
+
+    explicit Roots(size_type count) : index(extra_roots.size()), count(count) { extra_roots.resize(index + count, nil); }
+    Roots(const Roots& ) = delete;
+    ~Roots() { assert(extra_roots.size() == index + count); extra_roots.resize(index); }
+    Roots& operator=(const Roots& ) = delete;
+    Value& operator[](size_type k) { return extra_roots[index + k]; }
+    const Value& operator[](size_type k) const { return extra_roots[index + k]; }
+private:
+    size_type index, count;
 };
 
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;

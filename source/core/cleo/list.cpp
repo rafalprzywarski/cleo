@@ -7,11 +7,12 @@ namespace cleo
 
 Value create_list(const Value *elems, std::uint32_t size)
 {
-    Value cons = nil;
+    Root cons;
     for (auto i = size; i > 0; --i)
-        cons = create_object2(type::CONS, elems[i - 1], cons);
+        *cons = create_object2(type::CONS, elems[i - 1], *cons);
 
-    return create_object2(type::LIST, create_int64(size), cons);
+    Root size_{force(create_int64(size))};
+    return create_object2(type::LIST, *size_, *cons);
 }
 
 Value get_list_size(Value list)
@@ -33,14 +34,16 @@ Value get_list_next(Value list)
     if (size <= 1)
         return nil;
     auto cons = get_object_element(get_object_element(list, 1), 1);
-    return create_object2(type::LIST, create_int64(size - 1), cons);
+    Root new_size{force(create_int64(size - 1))};
+    return create_object2(type::LIST, *new_size, cons);
 }
 
 Value list_conj(Value list, Value elem)
 {
-    auto cons = create_object2(type::CONS, elem, get_object_element(list, 1));
-    auto size = get_int64_value(get_list_size(list));
-    return create_object2(type::LIST, create_int64(size + 1), cons);
+    Root cons, size;
+    *cons = create_object2(type::CONS, elem, get_object_element(list, 1));
+    *size = create_int64(get_int64_value(get_list_size(list)) + 1);
+    return create_object2(type::LIST, *size, *cons);
 }
 
 Value list_seq(Value list)

@@ -118,14 +118,15 @@ Value pr_str_sequable(Value v)
     std::string str;
     str += '(';
     bool first_elem = true;
-    for (auto s = call_multimethod(seq, &v, 1); s != nil; s = call_multimethod(next, &s, 1))
+    for (Root s{force(call_multimethod(seq, &v, 1))}; *s != nil; *s = call_multimethod(next, &*s, 1))
     {
         if (first_elem)
             first_elem = false;
         else
             str += ' ';
 
-        auto ss = pr_str(call_multimethod(first, &s, 1));
+        Root f{force(call_multimethod(first, &*s, 1))};
+        auto ss = pr_str(*f);
         str.append(get_string_ptr(ss), get_string_len(ss));
     }
     str += ')';

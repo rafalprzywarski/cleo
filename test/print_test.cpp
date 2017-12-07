@@ -1,4 +1,5 @@
 #include <cleo/print.hpp>
+#include <cleo/global.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -7,9 +8,9 @@ namespace cleo
 namespace test
 {
 
-struct pr_str_test : testing::Test
+struct pr_str_test : Test
 {
-    std::string str(Value val)
+    static std::string str(Value val)
     {
         return get_value_tag(val) == tag::STRING ?
             std::string{get_string_ptr(val), get_string_len(val)} :
@@ -24,17 +25,26 @@ TEST_F(pr_str_test, should_print_nil)
 
 TEST_F(pr_str_test, should_print_integers)
 {
-    EXPECT_EQ("-15442", str(pr_str(create_int64(-15442))));
+    Root val;
+    *val = create_int64(-15442);
+    EXPECT_EQ("-15442", str(pr_str(*val)));
 }
 
 TEST_F(pr_str_test, should_print_floats)
 {
-    EXPECT_EQ("-3.125", str(pr_str(create_float64(-3.125))));
-    EXPECT_EQ("0.0", str(pr_str(create_float64(0))));
-    EXPECT_EQ("-3.0", str(pr_str(create_float64(-3))));
-    EXPECT_EQ("-30.0", str(pr_str(create_float64(-30))));
-    EXPECT_EQ("7e+32", str(pr_str(create_float64(7e+32))));
-    EXPECT_EQ("7.25e+32", str(pr_str(create_float64(7.25e+32))));
+    Root val;
+    *val = create_float64(-3.125);
+    EXPECT_EQ("-3.125", str(pr_str(*val)));
+    *val = create_float64(0);
+    EXPECT_EQ("0.0", str(pr_str(*val)));
+    *val = create_float64(-3);
+    EXPECT_EQ("-3.0", str(pr_str(*val)));
+    *val = create_float64(-30);
+    EXPECT_EQ("-30.0", str(pr_str(*val)));
+    *val = create_float64(7e+32);
+    EXPECT_EQ("7e+32", str(pr_str(*val)));
+    *val = create_float64(7.25e+32);
+    EXPECT_EQ("7.25e+32", str(pr_str(*val)));
 }
 
 TEST_F(pr_str_test, should_print_keywords)
@@ -51,42 +61,77 @@ TEST_F(pr_str_test, should_print_symbols)
 
 TEST_F(pr_str_test, should_print_native_functions)
 {
-    auto fn = create_native_function([](const Value *, std::uint8_t) { return nil; });
+    Root fn{force(create_native_function([](const Value *, std::uint8_t) { return nil; }))};
     std::ostringstream os;
-    os << std::hex << fn;
-    EXPECT_EQ("#cleo.core/NativeFunction[0x" + os.str() + "]", str(pr_str(fn)));
+    os << std::hex << *fn;
+    EXPECT_EQ("#cleo.core/NativeFunction[0x" + os.str() + "]", str(pr_str(*fn)));
 }
 
 TEST_F(pr_str_test, should_print_strings)
 {
-    EXPECT_EQ("\"\"", str(pr_str(create_string(""))));
-    EXPECT_EQ("\"abc\"", str(pr_str(create_string("abc"))));
-    EXPECT_EQ("\"\\nabc\\rdef\\t\\n\"", str(pr_str(create_string("\nabc\rdef\t\n"))));
-    EXPECT_EQ("\"\\\"x\\\\\\\'y\\\\\"", str(pr_str(create_string("\"x\\\'y\\"))));
+    Root val;
+    *val = create_string("");
+    EXPECT_EQ("\"\"", str(pr_str(*val)));
+    *val = create_string("abc");
+    EXPECT_EQ("\"abc\"", str(pr_str(*val)));
+    *val = create_string("\nabc\rdef\t\n");
+    EXPECT_EQ("\"\\nabc\\rdef\\t\\n\"", str(pr_str(*val)));
+    *val = create_string("\"x\\\'y\\");
+    EXPECT_EQ("\"\\\"x\\\\\\\'y\\\\\"", str(pr_str(*val)));
 }
 
 TEST_F(pr_str_test, should_print_objects)
 {
-    auto obj = create_object0(create_symbol("somewhere", "something"));
+    Root obj{force(create_object0(create_symbol("somewhere", "something")))};
     std::ostringstream os;
-    os << std::hex << obj;
-    EXPECT_EQ("#somewhere/something[0x" + os.str() + "]", str(pr_str(obj)));
+    os << std::hex << *obj;
+    EXPECT_EQ("#somewhere/something[0x" + os.str() + "]", str(pr_str(*obj)));
 }
 
 TEST_F(pr_str_test, should_print_vectors)
 {
-    EXPECT_EQ("[]", str(pr_str(svec())));
-    EXPECT_EQ("[nil]", str(pr_str(svec(nil))));
-    EXPECT_EQ("[1 2 3]", str(pr_str(svec(i64(1), i64(2), i64(3)))));
-    EXPECT_EQ("[1 [2 [3]]]", str(pr_str(svec(i64(1), svec(i64(2), svec(i64(3)))))));
+    Root val;
+    *val = svec();
+    EXPECT_EQ("[]", str(pr_str(*val)));
+    *val = svec(nil);
+    EXPECT_EQ("[nil]", str(pr_str(*val)));
+    Root elem0, elem1, elem2;
+    *elem0 = i64(1);
+    *elem1 = i64(2);
+    *elem2 = i64(3);
+    *val = svec(*elem0, *elem1, *elem2);
+    EXPECT_EQ("[1 2 3]", str(pr_str(*val)));
+    *elem0 = i64(1);
+    *elem1 = i64(2);
+    *elem2 = i64(3);
+    *elem2 = svec(*elem2);
+    *elem1 = svec(*elem1, *elem2);
+    *val = svec(*elem0, *elem1);
+    EXPECT_EQ("[1 [2 [3]]]", str(pr_str(*val)));
 }
 
 TEST_F(pr_str_test, should_print_sequences)
 {
-    EXPECT_EQ("()", str(pr_str(list())));
-    EXPECT_EQ("(nil)", str(pr_str(small_vector_seq(svec(nil)))));
-    EXPECT_EQ("(1 2 3)", str(pr_str(list(i64(1), i64(2), i64(3)))));
-    EXPECT_EQ("(1 (2 (3)))", str(pr_str(small_vector_seq(svec(i64(1), list(i64(2), list(i64(3))))))));
+    Root val;
+    *val = list();
+    EXPECT_EQ("()", str(pr_str(*val)));
+    *val = svec(nil);
+    *val = small_vector_seq(*val);
+    EXPECT_EQ("(nil)", str(pr_str(*val)));
+    Root elem0, elem1, elem2;
+    *elem0 = i64(1);
+    *elem1 = i64(2);
+    *elem2 = i64(3);
+    *val = list(*elem0, *elem1, *elem2);
+    EXPECT_EQ("(1 2 3)", str(pr_str(*val)));
+    *elem0 = i64(1);
+    *elem1 = i64(2);
+    *elem2 = i64(3);
+    *elem2 = list(*elem2);
+    *elem1 = list(*elem1, *elem2);
+    *val = svec(*elem0, *elem1);
+    *val = small_vector_seq(*val);
+    EXPECT_EQ("(1 (2 (3)))", str(pr_str(*val)));
 }
 
 }

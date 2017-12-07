@@ -49,9 +49,9 @@ void unmark(void *ptr)
     tag_ref(ptr) = 0;
 }
 
-bool is_not_marked(void *ptr)
+bool is_marked(void *ptr)
 {
-    return tag_ref(ptr) == 0;
+    return tag_ref(ptr) != 0;
 }
 
 void mark_symbols()
@@ -119,6 +119,11 @@ void *mem_alloc(std::size_t size)
     return ptr;
 }
 
+void mem_free(void *ptr)
+{
+    std::free(reinterpret_cast<char *>(ptr) - OFFSET);
+}
+
 void gc()
 {
     mark_symbols();
@@ -128,7 +133,9 @@ void gc()
     mark_global_hierarchy();
     mark_extra_roots();
 
-    allocations.erase(std::remove_if(begin(allocations), end(allocations), is_not_marked), end(allocations));
+    auto middle = std::partition(begin(allocations), end(allocations), is_marked);
+    std::for_each(middle, end(allocations), mem_free);
+    allocations.erase(middle, end(allocations));
 
     for (auto ptr : allocations)
         unmark(ptr);

@@ -57,9 +57,12 @@ Value create_symbol(const std::string& ns, const std::string& name)
     auto& entry = symbols[ns][name];
     if (entry != Value())
         return entry;
+    Root ns_root, name_root;
+    *ns_root = !ns.empty() ? create_string(ns) : nil;
+    *name_root = create_string(name);
     auto val = alloc<Symbol>();
-    val->ns = !ns.empty() ? create_string(ns) : nil;
-    val->name = create_string(name);
+    val->ns = *ns_root;
+    val->name = *name_root;
     return entry = tag_ptr(val, tag::SYMBOL);
 }
 
@@ -83,9 +86,12 @@ Value create_keyword(const std::string& ns, const std::string& name)
     auto& entry = keywords[ns][name];
     if (entry != Value())
         return entry;
+    Root ns_root, name_root;
+    *ns_root = !ns.empty() ? create_string(ns) : nil;
+    *name_root = create_string(name);
     auto val = alloc<Keyword>();
-    val->ns = !ns.empty() ? create_string(ns) : nil;
-    val->name = create_string(name);
+    val->ns = *ns_root;
+    val->name = *name_root;
     return entry = tag_ptr(val, tag::KEYWORD);
 }
 
