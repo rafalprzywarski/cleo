@@ -54,6 +54,53 @@ bool is_not_marked(void *ptr)
     return tag_ref(ptr) == 0;
 }
 
+void mark_symbols()
+{
+    for (auto& ns : symbols)
+        for (auto& sym : ns.second)
+            mark_value(sym.second);
+}
+
+void mark_keyword()
+{
+    for (auto& ns : keywords)
+        for (auto& sym : ns.second)
+            mark_value(sym.second);
+}
+
+void mark_vars()
+{
+    for (auto& var : vars)
+        mark_value(var.second);
+}
+
+void mark_multimethods()
+{
+    for (auto& mm : multimethods)
+    {
+        mark_value(mm.second.dispatchFn);
+        mark_value(mm.second.defaultDispatchVal);
+
+        for (auto& fn : mm.second.fns)
+        {
+            mark_value(fn.first);
+            mark_value(fn.second);
+        }
+    }
+}
+
+void mark_global_hierarchy()
+{
+    for (auto& entry : global_hierarchy.ancestors)
+        mark_value(entry.first);
+}
+
+void mark_extra_roots()
+{
+    for (auto val : extra_roots)
+        mark_value(val);
+}
+
 }
 
 void *mem_alloc(std::size_t size)
@@ -74,8 +121,12 @@ void *mem_alloc(std::size_t size)
 
 void gc()
 {
-    for (auto val : extra_roots)
-        mark_value(val);
+    mark_symbols();
+    mark_keyword();
+    mark_vars();
+    mark_multimethods();
+    mark_global_hierarchy();
+    mark_extra_roots();
 
     allocations.erase(std::remove_if(begin(allocations), end(allocations), is_not_marked), end(allocations));
 
