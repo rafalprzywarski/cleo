@@ -21,13 +21,13 @@ class Root
 {
 public:
     Root() : index(extra_roots.size()) { extra_roots.push_back(nil); }
-    Root(Force f) : Root() { **this = f.val; }
+    Root(Force f) : Root() { *this = f.val; }
     Root(const Root& ) = delete;
     ~Root() { assert(extra_roots.size() == index + 1); extra_roots.pop_back(); }
     Root& operator=(const Root& ) = delete;
-    Root& operator=(const Force& f) { **this = f.val; return *this; }
-    Value& operator*() { return extra_roots[index]; }
-    const Value& operator*() const { return extra_roots[index]; }
+    Root& operator=(const Force& f) { return *this = f.val; }
+    Root& operator=(Value val) { extra_roots[index] = val; return *this; }
+    Value operator*() const { return extra_roots[index]; }
 private:
     decltype(extra_roots)::size_type index;
 };
@@ -41,8 +41,7 @@ public:
     Roots(const Roots& ) = delete;
     ~Roots() { assert(extra_roots.size() == index + count); extra_roots.resize(index); }
     Roots& operator=(const Roots& ) = delete;
-    Value& operator[](size_type k) { return extra_roots[index + k]; }
-    const Value& operator[](size_type k) const { return extra_roots[index + k]; }
+    Value operator[](size_type k) const { return extra_roots[index + k]; }
     void set(size_type k, Force f) { extra_roots[index + k] = f.val; }
 private:
     size_type index, count;

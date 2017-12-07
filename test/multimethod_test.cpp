@@ -280,7 +280,7 @@ TEST_F(hierarchy_test, isa_should_treat_small_vectors_as_tuples)
     val1 = svec();
     val2 = svec();
     EXPECT_NE(nil, isa(*val1, *val2));
-    *val1 = b;
+    val1 = b;
     EXPECT_EQ(nil, isa(*val1, *val2));
     EXPECT_EQ(nil, isa(*val2, *val1));
 

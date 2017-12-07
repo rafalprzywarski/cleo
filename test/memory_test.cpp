@@ -61,7 +61,7 @@ TEST_F(memory_test, Root_should_prevent_garbage_collection)
     gc();
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
-    *root1 = nil;
+    root1 = nil;
     gc();
     ASSERT_EQ(num_allocations, allocations.size());
 }
@@ -104,12 +104,12 @@ TEST_F(memory_test, should_collect_objects)
 
     auto num_allocations_after = allocations.size();
 
-    *root1 = nil;
-    *root2 = nil;
+    root1 = nil;
+    root2 = nil;
     gc();
     ASSERT_EQ(num_allocations_after, allocations.size());
 
-    *root3 = nil;
+    root3 = nil;
     gc();
     ASSERT_EQ(num_allocations_before, allocations.size());
 }
@@ -148,8 +148,8 @@ TEST_F(memory_test, should_trace_vars)
     Root val1{create_int64(20)}, val2{create_int64(30)};
     define(name1, *val1);
     define(name2, *val2);
-    *val1 = nil;
-    *val2 = nil;
+    val1 = nil;
+    val2 = nil;
     auto num_allocations_after = allocations.size();
 
     gc();
@@ -172,11 +172,11 @@ TEST_F(memory_test, should_trace_multimethods)
 
     define_multimethod(*name, *fn, *def_val);
     define_method(*name, *val1, *fn1);
-    *name = nil;
-    *fn = nil;
-    *fn1 = nil;
-    *def_val = nil;
-    *val1 = nil;
+    name = nil;
+    fn = nil;
+    fn1 = nil;
+    def_val = nil;
+    val1 = nil;
 
     auto num_allocations = allocations.size();
 
@@ -192,8 +192,8 @@ TEST_F(memory_test, should_trace_global_hierarchy)
     auto num_allocations = allocations.size();
 
     derive(*s1, *s2);
-    *s1 = nil;
-    *s2 = nil;
+    s1 = nil;
+    s2 = nil;
 
     gc();
     ASSERT_EQ(num_allocations, allocations.size());

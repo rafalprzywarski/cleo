@@ -158,7 +158,7 @@ TEST_F(value_test, should_store_object_values)
     Root elem0, elem1, elem2;
     elem0 = create_int64(10);
     elem1 = create_float64(20);
-    *elem2 = create_symbol("elem3");
+    elem2 = create_symbol("elem3");
     const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
     Root obj{create_object(type, elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
@@ -187,9 +187,9 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     ASSERT_TRUE(nil == get_value_type(nil));
     val = create_native_function(f);
     ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(*val));
-    *val = create_symbol("abc");
+    val = create_symbol("abc");
     ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(*val));
-    *val = create_keyword("abc");
+    val = create_keyword("abc");
     ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(*val));
     val = create_int64(11);
     ASSERT_TRUE(create_symbol("cleo.core", "Int64") == get_value_type(*val));

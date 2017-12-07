@@ -26,8 +26,8 @@ TEST_F(eval_test, should_eval_simple_values_to_themselves)
     ASSERT_TRUE(*fn == *Root(eval(*fn)));
     ASSERT_TRUE(kw == *Root(eval(kw)));
     ASSERT_TRUE(*i == *Root(eval(*i)));
-    ASSERT_TRUE(*flt = *Root(eval(*flt)));
-    ASSERT_TRUE(*s = *Root(eval(*s)));
+    ASSERT_TRUE(*flt == *Root(eval(*flt)));
+    ASSERT_TRUE(*s == *Root(eval(*s)));
 }
 
 TEST_F(eval_test, should_eval_objects_to_themselves)
@@ -72,8 +72,8 @@ TEST_F(eval_test, should_eval_lists_as_function_calls)
     e0 = create_int64(101);
     e1 = create_int64(102);
     val = list(fn_name, *e0, *e1);
-    *e0 = nil;
-    *e1 = nil;
+    e0 = nil;
+    e1 = nil;
     val = eval(*val);
 
     ASSERT_TRUE(type::LIST == get_value_type(*val));
