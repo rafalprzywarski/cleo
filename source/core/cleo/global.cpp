@@ -37,6 +37,7 @@ const Value FIRST = create_symbol("cleo.code", "first");
 const Value NEXT = create_symbol("cleo.code", "next");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
+const Value QUOTE = create_symbol("quote");
 
 namespace type
 {

@@ -9,6 +9,7 @@ add_library(cleo_core
   cleo/memory.cpp
   cleo/multimethod.cpp
   cleo/print.cpp
+  cleo/reader.cpp
   cleo/small_vector.cpp
   cleo/value.cpp
   cleo/var.cpp

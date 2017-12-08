@@ -3,6 +3,7 @@
 #include <cleo/list.hpp>
 #include <cleo/small_vector.hpp>
 #include <cleo/global.hpp>
+#include <cleo/print.hpp>
 #include <gtest/gtest.h>
 
 namespace cleo
@@ -28,18 +29,63 @@ private:
     T old_val;
 };
 
-template <typename... T>
-Force list(T... elems)
+inline Force to_value(const std::string& s)
 {
-    std::array<Value, sizeof...(T)> a{{elems...}};
-    return create_list(a.data(), a.size());
+    return create_string(s);
 }
 
-template <typename... T>
-Force svec(T... elems)
+inline Force to_value(Int64 n)
 {
-    std::array<Value, sizeof...(T)> a{{elems...}};
-    return create_small_vector(a.data(), a.size());
+    return create_int64(n);
+}
+
+inline Force to_value(int n)
+{
+    return create_int64(n);
+}
+
+inline Force to_value(Value v)
+{
+    return force(v);
+}
+
+inline Force list()
+{
+    return create_list(nullptr, 0);
+}
+
+template <typename T, typename... Ts>
+Force list(const T& first, const Ts&... elems)
+{
+    Root l{list(elems...)};
+    Root val{to_value(first)};
+    return list_conj(*l, *val);
+}
+
+inline Force svec_conj(Value vec)
+{
+    return force(vec);
+}
+
+template <typename T, typename... Ts>
+Force svec_conj(Value vec, const T& first, const Ts&... elems)
+{
+    Root val{to_value(first)};
+    Root nvec{small_vector_conj(vec, *val)};
+    return svec_conj(*nvec, elems...);
+}
+
+template <typename... Ts>
+Force svec(const Ts&... elems)
+{
+    Root vec{create_small_vector(nullptr, 0)};
+    return svec_conj(*vec, elems...);
+}
+
+inline std::string to_string(Value val)
+{
+    Root s{pr_str(val)};
+    return {get_string_ptr(*s), get_string_len(*s)};
 }
 
 inline Force i64(Int64 value)

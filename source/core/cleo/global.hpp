@@ -75,6 +75,7 @@ extern const Value FIRST;
 extern const Value NEXT;
 extern const Value OBJ_EQ;
 extern const Value PR_STR_OBJ;
+extern const Value QUOTE;
 
 namespace type
 {

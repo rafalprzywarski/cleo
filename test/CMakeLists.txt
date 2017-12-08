@@ -9,6 +9,7 @@ add_executable(cleo_test
   memory_test.cpp
   multimethod_test.cpp
   print_test.cpp
+  reader_test.cpp
   small_vector_test.cpp
   value_test.cpp
   var_test.cpp

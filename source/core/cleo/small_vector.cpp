@@ -42,4 +42,15 @@ Force get_small_vector_seq_next(Value s)
     return create_object2(type::SMALL_VECTOR_SEQ, v, *index);
 }
 
+Force small_vector_conj(Value v, Value e)
+{
+    auto size = get_small_vector_size(v);
+    std::vector<Value> new_elems;
+    new_elems.reserve(size + 1);
+    for (decltype(size) i = 0; i < size; ++i)
+        new_elems.push_back(get_small_vector_elem(v, i));
+    new_elems.push_back(e);
+    return create_small_vector(&new_elems.front(), new_elems.size());
+}
+
 }

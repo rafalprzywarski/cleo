@@ -70,5 +70,29 @@ TEST_F(small_vector_test, seq_should_return_a_sequence_of_the_vector_elements)
     ASSERT_TRUE(nil == *Root(get_small_vector_seq_next(*seq)));
 }
 
+TEST_F(small_vector_test, should_conj_elements_at_the_end_of_the_vector)
+{
+    Root vec0{create_small_vector(nullptr, 0)};
+    Root elem0, elem1, elem2;
+    elem0 = create_int64(101);
+    elem1 = create_int64(102);
+    elem2 = create_int64(103);
+    Root vec1{small_vector_conj(*vec0, *elem0)};
+    Root vec2{small_vector_conj(*vec1, *elem1)};
+    Root vec3{small_vector_conj(*vec2, *elem2)};
+
+    ASSERT_EQ(1u, get_small_vector_size(*vec1));
+    ASSERT_TRUE(*elem0 == get_small_vector_elem(*vec1, 0));
+
+    ASSERT_EQ(2u, get_small_vector_size(*vec2));
+    ASSERT_TRUE(*elem0 == get_small_vector_elem(*vec2, 0));
+    ASSERT_TRUE(*elem1 == get_small_vector_elem(*vec2, 1));
+
+    ASSERT_EQ(3u, get_small_vector_size(*vec3));
+    ASSERT_TRUE(*elem0 == get_small_vector_elem(*vec3, 0));
+    ASSERT_TRUE(*elem1 == get_small_vector_elem(*vec3, 1));
+    ASSERT_TRUE(*elem2 == get_small_vector_elem(*vec3, 2));
+}
+
 }
 }
