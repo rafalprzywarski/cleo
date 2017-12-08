@@ -120,6 +120,4 @@ Value get_object_element(Value obj, std::uint32_t index);
 
 Value get_value_type(Value val);
 
-class illegal_argument {};
-
 }

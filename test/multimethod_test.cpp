@@ -2,6 +2,7 @@
 #include <cleo/eval.hpp>
 #include <cleo/var.hpp>
 #include <cleo/global.hpp>
+#include <cleo/error.hpp>
 #include "util.hpp"
 #include <gtest/gtest.h>
 
@@ -123,7 +124,7 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     define_method(name, a, *fn1);
     define_method(name, b, *fn2);
 
-    EXPECT_THROW(get_method(multi, c), illegal_argument);
+    EXPECT_THROW(get_method(multi, c), IllegalArgument);
 }
 
 TEST_F(multimethod_test, should_dispatch_to_the_right_method)
@@ -170,7 +171,7 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
         eval(*l);
         FAIL() << "expected an exception";
     }
-    catch (const illegal_argument& )
+    catch (const IllegalArgument& )
     {
     }
 }

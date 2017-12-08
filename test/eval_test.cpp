@@ -3,6 +3,7 @@
 #include <cleo/list.hpp>
 #include <cleo/equality.hpp>
 #include <cleo/global.hpp>
+#include <cleo/error.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"
@@ -54,7 +55,7 @@ TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
         eval(sym);
         FAIL() << "expected an exception";
     }
-    catch (const symbol_not_found& e)
+    catch (const SymbolNotFound& e)
     {
     }
 }
@@ -94,7 +95,7 @@ TEST_F(eval_test, should_fail_when_trying_to_call_a_non_function)
         eval(*val);
         FAIL() << "expected an exception";
     }
-    catch (const call_error& e)
+    catch (const CallError& e)
     {
     }
 }

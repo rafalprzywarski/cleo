@@ -2,6 +2,7 @@
 #include <cleo/eval.hpp>
 #include <cleo/print.hpp>
 #include <cleo/global.hpp>
+#include <cleo/error.hpp>
 #include <iostream>
 #include <readline/readline.h>
 
@@ -15,7 +16,7 @@ void eval_line(const std::string& line)
         cleo::Root text{cleo::pr_str(*result)};
         std::cout << "> " << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
     }
-    catch (cleo::reader_error const& e)
+    catch (cleo::Error const& e)
     {
         std::cout << "error: " << e.what() << std::endl;
     }

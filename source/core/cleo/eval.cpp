@@ -3,6 +3,7 @@
 #include "list.hpp"
 #include "multimethod.hpp"
 #include "global.hpp"
+#include "error.hpp"
 #include <vector>
 
 namespace cleo
@@ -15,7 +16,7 @@ Value eval_symbol(Value sym)
 {
     auto val = lookup(sym);
     if (val == nil)
-        throw symbol_not_found();
+        throw SymbolNotFound("symbol not found");
     return val;
 }
 
@@ -35,7 +36,7 @@ Force eval_list(Value list)
         return get_native_function_ptr(val)(args.data(), args.size());
     if (get_value_type(val) == type::MULTIMETHOD)
         return call_multimethod(val, args.data(), args.size());
-    throw call_error();
+    throw CallError("call error");
 }
 
 }

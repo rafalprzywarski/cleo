@@ -2,6 +2,7 @@
 #include "list.hpp"
 #include "small_vector.hpp"
 #include "global.hpp"
+#include "error.hpp"
 #include <cctype>
 #include <sstream>
 
@@ -83,7 +84,7 @@ Force read_list(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw reader_error("unexpected end of input");
+        throw ReadError("unexpected end of input");
     s.next(); // ')'
     l = list_seq(*l);
     Root lr{create_list(nullptr, 0)};
@@ -108,7 +109,7 @@ Force read_vector(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw reader_error("unexpected end of input");
+        throw ReadError("unexpected end of input");
     s.next(); // ']'
     return *v;
 }
@@ -132,7 +133,7 @@ Force read_string(Stream& s)
             str += s.next();
     }
     if (s.eos())
-        throw reader_error("unexpected end of input");
+        throw ReadError("unexpected end of input");
     s.next();
     return create_string(str);
 }
@@ -163,13 +164,13 @@ Force read(Stream& s)
         return read_string(s);
     if (s.peek() == '\'')
         return read_quote(s);
-    throw reader_error(std::string("unexpected ") + s.peek());
+    throw ReadError(std::string("unexpected ") + s.peek());
 }
 
 Force read(Value source)
 {
     if (get_value_tag(source) != tag::STRING)
-        throw illegal_argument();
+        throw IllegalArgument("expected a string");
     Stream s(source);
     return read(s);
 }

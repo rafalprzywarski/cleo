@@ -4,6 +4,7 @@
 #include "equality.hpp"
 #include "small_vector.hpp"
 #include "global.hpp"
+#include "error.hpp"
 
 namespace cleo
 {
@@ -74,7 +75,7 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
             if (best.first == nil || isa(fn.first, best.first))
                 best = fn;
             else if (!isa(best.first, fn.first))
-                throw illegal_argument();
+                throw IllegalArgument("ambiguous multimethod call");
         }
 
     if (best.first == nil)
@@ -100,7 +101,7 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
     Root dispatchVal{get_native_function_ptr(multimethod.dispatchFn)(args, numArgs)};
     auto fn = get_method(multimethod, *dispatchVal);
     if (fn == nil)
-        throw illegal_argument();
+        throw IllegalArgument("multimethod not matched");
     return get_native_function_ptr(fn)(args, numArgs);
 }
 

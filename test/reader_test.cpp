@@ -24,7 +24,7 @@ void assert_read_error(const std::string& msg, const std::string& source)
         Root result{read_str(source)};
         FAIL() << "expected an exception; got " << to_string(*result) << " instead; source: " << source;
     }
-    catch (reader_error const& e)
+    catch (ReadError const& e)
     {
         EXPECT_EQ(msg, e.what());
     }
