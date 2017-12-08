@@ -53,6 +53,21 @@ TEST(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
     EXPECT_EQ_VALS(create_symbol("+x"), *val);
     val = read_str("-x");
     EXPECT_EQ_VALS(create_symbol("-x"), *val);
+    val = read_str(".");
+    EXPECT_EQ_VALS(create_symbol("."), *val);
+    val = read_str("ab.cd");
+    EXPECT_EQ_VALS(create_symbol("ab.cd"), *val);
+}
+
+TEST(reader_test, should_parse_symbols_with_namespaces)
+{
+    Root val;
+    val = read_str("abc123/xyz");
+    EXPECT_EQ_VALS(create_symbol("abc123", "xyz"), *val);
+    val = read_str("a.b.c/d.e.f");
+    EXPECT_EQ_VALS(create_symbol("a.b.c", "d.e.f"), *val);
+    val = read_str("cleo.core/seq");
+    EXPECT_EQ_VALS(SEQ, *val);
 }
 
 TEST(reader_test, should_not_treat_newline_as_part_of_symbol)

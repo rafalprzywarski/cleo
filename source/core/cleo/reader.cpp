@@ -33,7 +33,7 @@ Force read(Stream& s);
 
 bool is_symbol_char(char c)
 {
-    return std::isalpha(c) || std::isdigit(c) || c == '-' || c == '+';
+    return std::isalpha(c) || std::isdigit(c) || c == '-' || c == '+' || c == '.';
 }
 
 Force read_number(Stream& s)
@@ -53,6 +53,14 @@ Force read_symbol(Stream& s)
     std::string str;
     while (is_symbol_char(s.peek()))
         str += s.next();
+    if (s.peek() == '/')
+    {
+        s.next();
+        std::string name;
+        while (is_symbol_char(s.peek()))
+            name += s.next();
+        return create_symbol(str, name);
+    }
     return str == "nil" ? nil : create_symbol(str);
 }
 
