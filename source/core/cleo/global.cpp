@@ -32,9 +32,9 @@ const std::array<Value, 7> type_by_tag{{
 }};
 
 const Value TRUE = create_keyword("true");
-const Value SEQ = create_symbol("cleo.code", "seq");
-const Value FIRST = create_symbol("cleo.code", "first");
-const Value NEXT = create_symbol("cleo.code", "next");
+const Value SEQ = create_symbol("cleo.core", "seq");
+const Value FIRST = create_symbol("cleo.core", "first");
+const Value NEXT = create_symbol("cleo.core", "next");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value QUOTE = create_symbol("quote");
