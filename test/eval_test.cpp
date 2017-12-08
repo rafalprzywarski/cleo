@@ -122,7 +122,15 @@ TEST_F(eval_test, should_eval_function_arguments)
     Root next;
     next = get_list_next(*val);
     ASSERT_EQ(102, get_int64_value(get_list_first(*next)));
+}
 
+TEST_F(eval_test, quote_should_return_its_second_argument_unevaluated)
+{
+    Root ex, val;
+    ex = create_symbol("cleo.eval.test", "some-symbol");
+    val = list(QUOTE, *ex);
+    val = eval(*val);
+    ASSERT_EQ(*ex, *val);
 }
 
 }

@@ -22,6 +22,12 @@ Value eval_symbol(Value sym)
 
 Force eval_list(Value list)
 {
+    Value first = get_list_first(list);
+    if (first == QUOTE)
+    {
+        Root next{get_list_next(list)};
+        return get_list_first(*next);
+    }
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));
@@ -31,7 +37,7 @@ Force eval_list(Value list)
         arg_roots.set(i, eval(get_list_first(*arg_list)));
         args.push_back(arg_roots[i]);
     }
-    auto val = lookup(get_list_first(list));
+    auto val = lookup(first);
     if (get_value_tag(val) == tag::NATIVE_FUNCTION)
         return get_native_function_ptr(val)(args.data(), args.size());
     if (get_value_type(val) == type::MULTIMETHOD)
