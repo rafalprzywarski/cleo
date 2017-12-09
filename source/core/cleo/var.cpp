@@ -1,5 +1,6 @@
 #include "var.hpp"
 #include "global.hpp"
+#include "error.hpp"
 
 namespace cleo
 {
@@ -12,7 +13,9 @@ void define(Value sym, Value val)
 Value lookup(Value sym)
 {
     auto it = vars.find(sym);
-    return it == end(vars) ? nil : it->second;
+    if (it == end(vars))
+        throw SymbolNotFound("symbol not found");
+    return it->second;
 }
 
 }

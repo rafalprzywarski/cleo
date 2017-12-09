@@ -1,5 +1,6 @@
 #include <cleo/var.hpp>
 #include <cleo/global.hpp>
+#include <cleo/error.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -34,10 +35,10 @@ TEST_F(var_test, should_redefine_vars)
     ASSERT_TRUE(*val2 == lookup(sym));
 }
 
-TEST_F(var_test, lookup_should_return_nil_when_a_var_is_not_found)
+TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
 {
     auto sym = create_symbol("cleo.var.test", "missing");
-    ASSERT_TRUE(nil == lookup(sym));
+    ASSERT_THROW(lookup(sym), SymbolNotFound);
 }
 
 }
