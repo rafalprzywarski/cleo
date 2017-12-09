@@ -37,11 +37,11 @@ Force eval_list(Value list)
         arg_roots.set(i, eval(get_list_first(*arg_list)));
         args.push_back(arg_roots[i]);
     }
-    auto val = lookup(first);
-    if (get_value_tag(val) == tag::NATIVE_FUNCTION)
-        return get_native_function_ptr(val)(args.data(), args.size());
-    if (get_value_type(val) == type::MULTIMETHOD)
-        return call_multimethod(val, args.data(), args.size());
+    Root val{eval(first)};
+    if (get_value_tag(*val) == tag::NATIVE_FUNCTION)
+        return get_native_function_ptr(*val)(args.data(), args.size());
+    if (get_value_type(*val) == type::MULTIMETHOD)
+        return call_multimethod(*val, args.data(), args.size());
     throw CallError("call error");
 }
 

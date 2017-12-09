@@ -62,17 +62,15 @@ TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
 
 TEST_F(eval_test, should_eval_lists_as_function_calls)
 {
-    auto fn_name = create_symbol("cleo.eval.test", "fn1");
     Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return num_args ? create_list(args, num_args) : force(nil); })};
-    define(fn_name, *fn);
 
-    Root l{list(fn_name)};
+    Root l{list(*fn)};
     ASSERT_TRUE(nil == *Root(eval(*l)));
 
     Root e0, e1, val;
     e0 = create_int64(101);
     e1 = create_int64(102);
-    val = list(fn_name, *e0, *e1);
+    val = list(*fn, *e0, *e1);
     e0 = nil;
     e1 = nil;
     val = eval(*val);
