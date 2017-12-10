@@ -23,7 +23,7 @@ TEST_F(small_map_test, assoc_should_create_a_new_map_with_an_added_or_replaced_e
     Root k2{create_int64(20)};
     Root k3{create_int64(30)};
     Root v1{create_int64(101)};
-    Root v2{create_int64(102)};
+    Root v2{nil};
     Root v3{create_int64(103)};
     Root m0{create_small_map()};
     Root m1{small_map_assoc(*m0, *k1a, *v1)};
@@ -52,6 +52,24 @@ TEST_F(small_map_test, assoc_should_create_a_new_map_with_an_added_or_replaced_e
     EXPECT_EQ_REFS(*v3, small_map_get(*m4, *k1a));
     EXPECT_EQ_REFS(*v2, small_map_get(*m4, *k2));
     EXPECT_EQ_REFS(*v3, small_map_get(*m4, *k3));
+}
+
+TEST_F(small_map_test, contains_should_tell_if_a_map_contains_a_key)
+{
+    Root k1a{create_int64(10)};
+    Root k1b{create_int64(10)};
+    Root k2{create_int64(20)};
+    Root v1{create_int64(101)};
+    Root v2{nil};
+    Root m0{create_small_map()};
+    Root m1{small_map_assoc(*m0, *k1a, *v1)};
+    Root m2{small_map_assoc(*m1, *k2, nil)};
+
+    EXPECT_EQ_REFS(nil, small_map_contains(*m0, *k1b));
+    EXPECT_EQ_REFS(TRUE, small_map_contains(*m1, *k1b));
+    EXPECT_EQ_REFS(nil, small_map_contains(*m1, *k2));
+    EXPECT_EQ_REFS(TRUE, small_map_contains(*m2, *k1b));
+    EXPECT_EQ_REFS(TRUE, small_map_contains(*m2, *k2));
 }
 
 }
