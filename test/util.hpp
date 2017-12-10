@@ -9,6 +9,9 @@
 #define EXPECT_EQ_VALS(ex, val) \
     EXPECT_TRUE(nil != are_equal(ex, val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
 
+#define EXPECT_EQ_REFS(ex, val) \
+    EXPECT_TRUE(ex == val) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+
 namespace cleo
 {
 namespace test

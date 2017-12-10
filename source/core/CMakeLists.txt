@@ -11,6 +11,7 @@ add_library(cleo_core
   cleo/multimethod.cpp
   cleo/print.cpp
   cleo/reader.cpp
+  cleo/small_map.cpp
   cleo/small_vector.cpp
   cleo/value.cpp
   cleo/var.cpp

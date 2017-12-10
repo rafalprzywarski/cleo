@@ -37,6 +37,7 @@ const Value CONS = create_symbol("cleo.core", "Cons");
 const Value LIST = create_symbol("cleo.core", "List");
 const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
 const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
+const Value SMALL_MAP = create_symbol("cleo.core", "SmallMap");
 const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
 const Value SEQUABLE = create_symbol("cleo.core", "Sequable");
 const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
