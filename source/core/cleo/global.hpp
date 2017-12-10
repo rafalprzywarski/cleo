@@ -67,8 +67,6 @@ struct Multimethod
 extern std::unordered_map<Value, Multimethod> multimethods;
 extern Hierachy global_hierarchy;
 
-extern const std::array<Value, 7> type_by_tag;
-
 extern const Value TRUE;
 extern const Value SEQ;
 extern const Value FIRST;
@@ -79,6 +77,7 @@ extern const Value QUOTE;
 
 namespace type
 {
+extern const Value NATIVE_FUNCTION;
 extern const Value CONS;
 extern const Value LIST;
 extern const Value SMALL_VECTOR;
@@ -86,6 +85,9 @@ extern const Value SMALL_VECTOR_SEQ;
 extern const Value MULTIMETHOD;
 extern const Value SEQUABLE;
 extern const Value SEQUENCE;
+extern const Value FN;
 }
+
+extern const std::array<Value, 7> type_by_tag;
 
 }

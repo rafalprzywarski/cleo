@@ -4,6 +4,7 @@ include_directories("../source/core")
 add_executable(cleo_test
   equality_test.cpp
   eval_test.cpp
+  fn_test.cpp
   hash_test.cpp
   list_test.cpp
   memory_test.cpp

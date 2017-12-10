@@ -21,16 +21,6 @@ std::unordered_map<Value, Value> vars;
 std::unordered_map<Value, Multimethod> multimethods;
 Hierachy global_hierarchy;
 
-const std::array<Value, 7> type_by_tag{{
-    nil,
-    create_symbol("cleo.core", "NativeFunction"),
-    create_symbol("cleo.core", "Symbol"),
-    create_symbol("cleo.core", "Keyword"),
-    create_symbol("cleo.core", "Int64"),
-    create_symbol("cleo.core", "Float64"),
-    create_symbol("cleo.core", "String")
-}};
-
 const Value TRUE = create_keyword("true");
 const Value SEQ = create_symbol("cleo.core", "seq");
 const Value FIRST = create_symbol("cleo.core", "first");
@@ -41,6 +31,7 @@ const Value QUOTE = create_symbol("quote");
 
 namespace type
 {
+const Value NATIVE_FUNCTION = create_symbol("cleo.core", "NativeFunction");
 const Value CONS = create_symbol("cleo.core", "Cons");
 const Value LIST = create_symbol("cleo.core", "List");
 const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
@@ -48,7 +39,18 @@ const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
 const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
 const Value SEQUABLE = create_symbol("cleo.core", "Sequable");
 const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
+const Value FN = create_symbol("cleo.core", "Fn");
 }
+
+const std::array<Value, 7> type_by_tag{{
+    nil,
+    type::NATIVE_FUNCTION,
+    create_symbol("cleo.core", "Symbol"),
+    create_symbol("cleo.core", "Keyword"),
+    create_symbol("cleo.core", "Int64"),
+    create_symbol("cleo.core", "Float64"),
+    create_symbol("cleo.core", "String")
+}};
 
 namespace
 {
