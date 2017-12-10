@@ -11,34 +11,38 @@ namespace test
 #define EXPECT_EQ_VALS(ex, val) \
     EXPECT_TRUE(nil != are_equal(ex, val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
 
-Force read_str(const std::string& s)
+struct reader_test : Test
 {
-    Root sr{create_string(s)};
-    return read(*sr);
-}
+    static Force read_str(const std::string& s)
+    {
+        Root sr{create_string(s)};
+        return read(*sr);
+    }
 
-void assert_read_error(const std::string& msg, const std::string& source)
-{
-    try
+    static void assert_read_error(const std::string& msg, const std::string& source)
     {
-        Root result{read_str(source)};
-        FAIL() << "expected an exception; got " << to_string(*result) << " instead; source: " << source;
+        try
+        {
+            Root result{read_str(source)};
+            FAIL() << "expected an exception; got " << to_string(*result) << " instead; source: " << source;
+        }
+        catch (ReadError const& e)
+        {
+            EXPECT_EQ(msg, e.what());
+        }
+        catch (std::exception const& e)
+        {
+            FAIL() << "unexpected exception with message: " << e.what();
+        }
+        catch (...)
+        {
+            FAIL() << "unknown exception";
+        }
     }
-    catch (ReadError const& e)
-    {
-        EXPECT_EQ(msg, e.what());
-    }
-    catch (std::exception const& e)
-    {
-        FAIL() << "unexpected exception with message: " << e.what();
-    }
-    catch (...)
-    {
-        FAIL() << "unknown exception";
-    }
-}
+};
 
-TEST(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
+
+TEST_F(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
 {
     Root val;
     val = read_str("abc123");
@@ -59,7 +63,7 @@ TEST(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
     EXPECT_EQ_VALS(create_symbol("ab.cd"), *val);
 }
 
-TEST(reader_test, should_parse_symbols_with_namespaces)
+TEST_F(reader_test, should_parse_symbols_with_namespaces)
 {
     Root val;
     val = read_str("abc123/xyz");
@@ -70,13 +74,13 @@ TEST(reader_test, should_parse_symbols_with_namespaces)
     EXPECT_EQ_VALS(SEQ, *val);
 }
 
-TEST(reader_test, should_not_treat_newline_as_part_of_symbol)
+TEST_F(reader_test, should_not_treat_newline_as_part_of_symbol)
 {
     Root val{read_str("abc123\n")};
     EXPECT_EQ(create_symbol("abc123"), *val) << to_string(*val);
 }
 
-TEST(reader_test, should_parse_a_sequence_of_digits_as_an_integer)
+TEST_F(reader_test, should_parse_a_sequence_of_digits_as_an_integer)
 {
     Root ex, val;
     ex = create_int64(1); val = read_str("1");
@@ -87,14 +91,14 @@ TEST(reader_test, should_parse_a_sequence_of_digits_as_an_integer)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_negative_integers)
+TEST_F(reader_test, should_parse_negative_integers)
 {
     Root ex, val;
     ex = create_int64(-58); val = read_str("-58");
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_an_empty_list)
+TEST_F(reader_test, should_parse_an_empty_list)
 {
     Root ex, val;
     ex = list();
@@ -104,7 +108,7 @@ TEST(reader_test, should_parse_an_empty_list)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_a_list_of_expressions)
+TEST_F(reader_test, should_parse_a_list_of_expressions)
 {
     Root ex, val;
     ex = list(1); val = read_str("(1)");
@@ -121,7 +125,7 @@ TEST(reader_test, should_parse_a_list_of_expressions)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_quoted_strings)
+TEST_F(reader_test, should_parse_quoted_strings)
 {
     Root ex, val;
     ex = create_string(""); val = read_str("\"\"");
@@ -134,7 +138,7 @@ TEST(reader_test, should_parse_quoted_strings)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_not_treat_strings_as_parts_of_symbols)
+TEST_F(reader_test, should_not_treat_strings_as_parts_of_symbols)
 {
     Root ex, val;
     ex = create_symbol("ab");
@@ -142,7 +146,7 @@ TEST(reader_test, should_not_treat_strings_as_parts_of_symbols)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_escaped_newline_in_strings)
+TEST_F(reader_test, should_parse_escaped_newline_in_strings)
 {
     Root ex, val;
     ex = create_string("ab\ncd"); val = read_str("\"ab\\ncd\"");
@@ -151,21 +155,21 @@ TEST(reader_test, should_parse_escaped_newline_in_strings)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_escaped_backslashes_in_strings)
+TEST_F(reader_test, should_parse_escaped_backslashes_in_strings)
 {
     Root ex, val;
     ex = create_string("ab\\cd"); val = read_str("\"ab\\\\cd\""); EXPECT_EQ_VALS(*ex, *val);
     ex = create_string("\\\\\\"); val = read_str("\"\\\\\\\\\\\\\""); EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_escaped_quotes_in_strings)
+TEST_F(reader_test, should_parse_escaped_quotes_in_strings)
 {
     Root ex, val;
     ex = create_string("ab\"cd"); val = read_str("\"ab\\\"cd\""); EXPECT_EQ_VALS(*ex, *val);
     ex = create_string("\"\"\""); val = read_str("\"\\\"\\\"\\\"\""); EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_a_sequence_of_characters_beginning_with_a_colon_as_a_keyword)
+TEST_F(reader_test, should_parse_a_sequence_of_characters_beginning_with_a_colon_as_a_keyword)
 {
     Root val;
     val = read_str(":abc123");
@@ -182,7 +186,7 @@ TEST(reader_test, should_parse_a_sequence_of_characters_beginning_with_a_colon_a
     EXPECT_EQ_VALS(create_keyword("-x"), *val);
 }
 
-TEST(reader_test, should_parse_an_apostrophe_as_quote)
+TEST_F(reader_test, should_parse_an_apostrophe_as_quote)
 {
     auto quote = create_symbol("quote");
     Root ex, val;
@@ -202,7 +206,7 @@ TEST(reader_test, should_parse_an_apostrophe_as_quote)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_an_empty_vector)
+TEST_F(reader_test, should_parse_an_empty_vector)
 {
     Root ex, val;
     ex = svec();
@@ -212,7 +216,7 @@ TEST(reader_test, should_parse_an_empty_vector)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_parse_a_vector_of_expressions)
+TEST_F(reader_test, should_parse_a_vector_of_expressions)
 {
     Root ex, val;
     ex = svec(1); val = read_str("[1]");
@@ -229,17 +233,17 @@ TEST(reader_test, should_parse_a_vector_of_expressions)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_fail_when_parsing_an_unmatched_closing_bracket)
+TEST_F(reader_test, should_fail_when_parsing_an_unmatched_closing_bracket)
 {
     assert_read_error("unexpected ]", "]");
 }
 
-TEST(reader_test, should_fail_when_parsing_an_unmatched_closing_paren)
+TEST_F(reader_test, should_fail_when_parsing_an_unmatched_closing_paren)
 {
     assert_read_error("unexpected )", ")");
 }
 
-TEST(reader_test, should_parse_nil)
+TEST_F(reader_test, should_parse_nil)
 {
     EXPECT_EQ(nil, *Root(read_str("nil")));
     EXPECT_EQ(nil, *Root(read_str("nil ")));
@@ -250,26 +254,26 @@ TEST(reader_test, should_parse_nil)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST(reader_test, should_fail_when_missing_a_closing_paren)
+TEST_F(reader_test, should_fail_when_missing_a_closing_paren)
 {
     assert_read_error("unexpected end of input", "(");
     assert_read_error("unexpected end of input", "( 5 ");
     assert_read_error("unexpected end of input", "(()");
 }
 
-TEST(reader_test, should_fail_when_missing_a_closing_bracket)
+TEST_F(reader_test, should_fail_when_missing_a_closing_bracket)
 {
     assert_read_error("unexpected end of input", "[");
     assert_read_error("unexpected end of input", "[ 5 ");
     assert_read_error("unexpected end of input", "[[]");
 }
 
-TEST(reader_test, should_fail_when_missing_a_closing_quote)
+TEST_F(reader_test, should_fail_when_missing_a_closing_quote)
 {
     assert_read_error("unexpected end of input", "\"");
 }
 
-TEST(reader_test, should_fail_when_invoked_with_something_else_than_a_string)
+TEST_F(reader_test, should_fail_when_invoked_with_something_else_than_a_string)
 {
     ASSERT_ANY_THROW(read(create_symbol("abc")));
 }
