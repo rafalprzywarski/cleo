@@ -72,5 +72,39 @@ TEST_F(small_map_test, contains_should_tell_if_a_map_contains_a_key)
     EXPECT_EQ_REFS(TRUE, small_map_contains(*m2, *k2));
 }
 
+TEST_F(small_map_test, should_merge_maps_with_values_from_the_second_map_overriding_values_from_the_first)
+{
+    Root k1{create_int64(10)};
+    Root k2{create_int64(20)};
+    Root k3{create_int64(30)};
+    Root v1{create_int64(101)};
+    Root v2{create_int64(102)};
+    Root v3{create_int64(103)};
+    Root v4{create_int64(104)};
+    Root l{create_small_map()};
+    l = small_map_assoc(*l, *k1, *v1);
+    l = small_map_assoc(*l, *k2, *v2);
+
+    Root r{create_small_map()};
+    r = small_map_assoc(*r, *k1, *v4);
+    r = small_map_assoc(*r, *k3, *v3);
+
+    Root empty{create_small_map()};
+    Root m{small_map_merge(*l, *empty)};
+    m = small_map_merge(*m, *r);
+
+    EXPECT_EQ_REFS(*v4, small_map_get(*m, *k1));
+    EXPECT_EQ_REFS(*v2, small_map_get(*m, *k2));
+    EXPECT_EQ_REFS(*v3, small_map_get(*m, *k3));
+
+    EXPECT_EQ_REFS(*v1, small_map_get(*l, *k1));
+    EXPECT_EQ_REFS(*v2, small_map_get(*l, *k2));
+    EXPECT_EQ_REFS(nil, small_map_get(*l, *k3));
+
+    EXPECT_EQ_REFS(*v4, small_map_get(*r, *k1));
+    EXPECT_EQ_REFS(nil, small_map_get(*r, *k2));
+    EXPECT_EQ_REFS(*v3, small_map_get(*r, *k3));
+}
+
 }
 }

@@ -52,6 +52,15 @@ Force small_map_assoc(Value m, Value k, Value v)
     return create_object(type::SMALL_MAP, kvs.data(), kvs.size());
 }
 
+Force small_map_merge(Value l, Value r)
+{
+    Root m{l};
+    auto size = get_small_map_size(r);
+    for (decltype(size) i = 0; i != size; ++i)
+        m = small_map_assoc(*m, get_object_element(r, i * 2), get_object_element(r, i * 2 + 1));
+    return *m;
+}
+
 Value small_map_contains(Value m, Value k)
 {
     auto size = get_small_map_size(m);
