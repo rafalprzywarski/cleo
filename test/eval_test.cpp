@@ -4,6 +4,7 @@
 #include <cleo/equality.hpp>
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
+#include <cleo/fn.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"
@@ -129,6 +130,35 @@ TEST_F(eval_test, quote_should_return_its_second_argument_unevaluated)
     val = list(QUOTE, *ex);
     val = eval(*val);
     ASSERT_EQ(*ex, *val);
+}
+
+TEST_F(eval_test, fn_should_return_a_new_function)
+{
+    auto s = create_symbol("s");
+    auto x = create_symbol("x");
+    Root body{list(s, x)};
+    Root params{svec(s, x)};
+    Root call{list(FN, *params, *body)};
+    Root val{eval(*call)};
+    ASSERT_TRUE(type::FN == get_value_type(*val));
+    ASSERT_TRUE(nil == get_fn_name(*val));
+    ASSERT_TRUE(*params == get_fn_params(*val));
+    ASSERT_TRUE(*body == get_fn_body(*val));
+}
+
+TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
+{
+    auto s = create_symbol("s");
+    auto x = create_symbol("x");
+    auto name = create_symbol("fname");
+    Root body{list(s, x)};
+    Root params{svec(s, x)};
+    Root call{list(FN, name, *params, *body)};
+    Root val{eval(*call)};
+    ASSERT_TRUE(type::FN == get_value_type(*val));
+    ASSERT_TRUE(name == get_fn_name(*val));
+    ASSERT_TRUE(*params == get_fn_params(*val));
+    ASSERT_TRUE(*body == get_fn_body(*val));
 }
 
 }

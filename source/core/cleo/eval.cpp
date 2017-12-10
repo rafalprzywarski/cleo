@@ -22,14 +22,34 @@ Value eval_symbol(Value sym, const Environment& env)
     return lookup(sym);
 }
 
+Value eval_quote(Value list)
+{
+    Root next{get_list_next(list)};
+    return get_list_first(*next);
+}
+
+Force eval_fn(Value list)
+{
+    Root next{get_list_next(list)};
+    auto name = nil;
+    if (get_value_tag(get_list_first(*next)) == tag::SYMBOL)
+    {
+        name = get_list_first(*next);
+        next = get_list_next(*next);
+    }
+    auto params = get_list_first(*next);
+    next = get_list_next(*next);
+    auto body = get_list_first(*next);
+    return create_fn(name, params, body);
+}
+
 Force eval_list(Value list, const Environment& env)
 {
     Value first = get_list_first(list);
     if (first == QUOTE)
-    {
-        Root next{get_list_next(list)};
-        return get_list_first(*next);
-    }
+        return eval_quote(list);
+    if (first == FN)
+        return eval_fn(list);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));
