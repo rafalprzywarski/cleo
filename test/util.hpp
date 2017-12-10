@@ -6,6 +6,9 @@
 #include <cleo/print.hpp>
 #include <gtest/gtest.h>
 
+#define EXPECT_EQ_VALS(ex, val) \
+    EXPECT_TRUE(nil != are_equal(ex, val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+
 namespace cleo
 {
 namespace test

@@ -79,6 +79,21 @@ Force eval_list(Value list, const Environment& env)
     throw CallError("call error");
 }
 
+Force eval_vector(Value v, const Environment& env)
+{
+    auto size = get_small_vector_size(v);
+    Roots roots(size);
+    std::vector<Value> vals;
+    vals.reserve(size);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        roots.set(i, eval(get_small_vector_elem(v, i), env));
+        vals.push_back(roots[i]);
+    }
+
+    return create_small_vector(vals.data(), vals.size());
+}
+
 }
 
 Force eval(Value val, const Environment& env)
@@ -87,6 +102,8 @@ Force eval(Value val, const Environment& env)
         return eval_symbol(val, env);
     if (get_value_type(val) == type::LIST)
         return eval_list(val, env);
+    if (get_value_type(val) == type::SMALL_VECTOR)
+        return eval_vector(val, env);
     return val;
 }
 

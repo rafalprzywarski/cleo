@@ -168,5 +168,19 @@ TEST_F(eval_test, should_eval_an_empty_list_as_an_empty_list)
     ASSERT_TRUE(*ex == *val);
 }
 
+TEST_F(eval_test, should_eval_vectors)
+{
+    Root x{create_int64(55)};
+    auto xs = create_symbol("x");
+    Root ex{svec(lookup(SEQ), lookup(FIRST), *x)};
+    Root val{svec(SEQ, FIRST, xs)};
+    val = eval(*val, {{xs, *x}});
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = svec();
+    val = eval(*ex);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }
