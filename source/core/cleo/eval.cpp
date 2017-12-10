@@ -45,6 +45,8 @@ Force eval_fn(Value list)
 
 Force eval_list(Value list, const Environment& env)
 {
+    if (get_int64_value(get_list_size(list)) == 0)
+        return list;
     Value first = get_list_first(list);
     if (first == QUOTE)
         return eval_quote(list);

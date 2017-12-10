@@ -161,5 +161,12 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     ASSERT_TRUE(*body == get_fn_body(*val));
 }
 
+TEST_F(eval_test, should_eval_an_empty_list_as_an_empty_list)
+{
+    Root ex{list()};
+    Root val{eval(*ex)};
+    ASSERT_TRUE(*ex == *val);
+}
+
 }
 }
