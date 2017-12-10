@@ -204,5 +204,14 @@ TEST_F(eval_test, should_eval_vectors)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, should_define_vars)
+{
+    Root ex{create_int64(55)};
+    Root val{read_str("(def clue.eval.test/var1 ((fn [] 55)))")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var1")));
+}
+
 }
 }

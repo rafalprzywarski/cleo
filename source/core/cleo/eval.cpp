@@ -43,6 +43,16 @@ Force eval_fn(Value list, Value env)
     return create_fn(env, name, params, body);
 }
 
+Force eval_def(Value list)
+{
+    Root next{get_list_next(list)};
+    auto sym = get_list_first(*next);
+    next = get_list_next(*next);
+    Root val{eval(get_list_first(*next))};
+    define(sym, *val);
+    return *val;
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -52,6 +62,8 @@ Force eval_list(Value list, Value env)
         return eval_quote(list);
     if (first == FN)
         return eval_fn(list, env);
+    if (first == DEF)
+        return eval_def(list);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));

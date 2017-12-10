@@ -29,6 +29,7 @@ const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value QUOTE = create_symbol("quote");
 const Value FN = create_symbol("fn");
+const Value DEF = create_symbol("def");
 
 namespace type
 {
