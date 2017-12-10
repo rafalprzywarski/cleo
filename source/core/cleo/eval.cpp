@@ -6,6 +6,7 @@
 #include "global.hpp"
 #include "error.hpp"
 #include "small_vector.hpp"
+#include "small_map.hpp"
 #include <vector>
 
 namespace cleo
@@ -14,11 +15,10 @@ namespace cleo
 namespace
 {
 
-Value eval_symbol(Value sym, const Environment& env)
+Value eval_symbol(Value sym, Value env)
 {
-    auto it = env.find(sym);
-    if (it != end(env))
-        return it->second;
+    if (env != nil && small_map_contains(env, sym))
+        return small_map_get(env, sym);
     return lookup(sym);
 }
 
@@ -28,7 +28,7 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
-Force eval_fn(Value list)
+Force eval_fn(Value list, Value env)
 {
     Root next{get_list_next(list)};
     auto name = nil;
@@ -40,10 +40,10 @@ Force eval_fn(Value list)
     auto params = get_list_first(*next);
     next = get_list_next(*next);
     auto body = get_list_first(*next);
-    return create_fn(name, params, body);
+    return create_fn(env, name, params, body);
 }
 
-Force eval_list(Value list, const Environment& env)
+Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
         return list;
@@ -51,7 +51,7 @@ Force eval_list(Value list, const Environment& env)
     if (first == QUOTE)
         return eval_quote(list);
     if (first == FN)
-        return eval_fn(list);
+        return eval_fn(list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));
@@ -71,15 +71,17 @@ Force eval_list(Value list, const Environment& env)
     {
         auto params = get_fn_params(*val);
         auto n = get_small_vector_size(params);
-        Environment env;
+        Root fenv{get_fn_env(*val)};
+        if (*fenv == nil && n > 0)
+            fenv = create_small_map();
         for (decltype(n) i = 0; i < n; ++i)
-            env[get_small_vector_elem(params, i)] = args[i];
-        return eval(get_fn_body(*val), env);
+            fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), args[i]);
+        return eval(get_fn_body(*val), *fenv);
     }
     throw CallError("call error");
 }
 
-Force eval_vector(Value v, const Environment& env)
+Force eval_vector(Value v, Value env)
 {
     auto size = get_small_vector_size(v);
     Roots roots(size);
@@ -96,7 +98,7 @@ Force eval_vector(Value v, const Environment& env)
 
 }
 
-Force eval(Value val, const Environment& env)
+Force eval(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);

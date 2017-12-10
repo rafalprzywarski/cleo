@@ -2,6 +2,7 @@
 #include <array>
 #include <cleo/list.hpp>
 #include <cleo/small_vector.hpp>
+#include <cleo/small_map.hpp>
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
 #include <gtest/gtest.h>
@@ -86,6 +87,20 @@ Force svec(const Ts&... elems)
 {
     Root vec{create_small_vector(nullptr, 0)};
     return svec_conj(*vec, elems...);
+}
+
+inline Force smap()
+{
+    return create_small_map();
+}
+
+template <typename K, typename V, typename... Rest>
+Force smap(const K& k, const V& v, const Rest&... rest)
+{
+    Root m{smap(rest...)};
+    Root key{to_value(k)};
+    Root val{to_value(v)};
+    return small_map_assoc(*m, *key, *val);
 }
 
 inline std::string to_string(Value val)

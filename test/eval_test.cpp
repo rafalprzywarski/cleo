@@ -5,6 +5,8 @@
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
 #include <cleo/fn.hpp>
+#include <cleo/reader.hpp>
+#include <cleo/small_map.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"
@@ -14,7 +16,14 @@ namespace cleo
 namespace test
 {
 
-struct eval_test : Test {};
+struct eval_test : Test
+{
+    Force read_str(const std::string& s)
+    {
+        Root ss{create_string(s)};
+        return read(*ss);
+    }
+};
 
 TEST_F(eval_test, should_eval_simple_values_to_themselves)
 {
@@ -161,6 +170,18 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     ASSERT_TRUE(*body == get_fn_body(*val));
 }
 
+TEST_F(eval_test, should_store_the_environment_in_created_fns)
+{
+    Root ex{svec(3, 4, 5)};
+    Root val{read_str("(((fn [x y z] (fn [] [x y z])) 3 4 5))")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    val = read_str("((((fn [x] (fn [y] (fn [z] [x y z]))) 3) 4) 5)");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, should_eval_an_empty_list_as_an_empty_list)
 {
     Root ex{list()};
@@ -174,7 +195,8 @@ TEST_F(eval_test, should_eval_vectors)
     auto xs = create_symbol("x");
     Root ex{svec(lookup(SEQ), lookup(FIRST), *x)};
     Root val{svec(SEQ, FIRST, xs)};
-    val = eval(*val, {{xs, *x}});
+    Root env{smap(xs, *x)};
+    val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = svec();
