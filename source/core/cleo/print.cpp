@@ -3,6 +3,7 @@
 #include "var.hpp"
 #include "multimethod.hpp"
 #include "small_vector.hpp"
+#include "small_map.hpp"
 #include <sstream>
 
 namespace cleo
@@ -107,6 +108,25 @@ Force pr_str_small_vector(Value v)
         str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += ']';
+    return create_string(str);
+}
+
+Force pr_str_small_map(Value m)
+{
+    std::string str;
+    str += '{';
+    auto size = get_small_map_size(m);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (i > 0)
+            str += ", ";
+        Root s{pr_str(get_small_map_key(m, i))};
+        str.append(get_string_ptr(*s), get_string_len(*s));
+        str += ' ';
+        s = pr_str(get_small_map_val(m, i));
+        str.append(get_string_ptr(*s), get_string_len(*s));
+    }
+    str += '}';
     return create_string(str);
 }
 

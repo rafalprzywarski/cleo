@@ -15,6 +15,16 @@ std::uint32_t get_small_map_size(Value m)
     return get_object_size(m) / 2;
 }
 
+Value get_small_map_key(Value m, std::uint32_t index)
+{
+    return get_object_element(m, index * 2);
+}
+
+Value get_small_map_val(Value m, std::uint32_t index)
+{
+    return get_object_element(m, index * 2 + 1);
+}
+
 Value small_map_get(Value m, Value k)
 {
     auto size = get_small_map_size(m);
