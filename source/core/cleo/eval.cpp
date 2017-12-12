@@ -68,6 +68,30 @@ Force eval_let(Value list, Value env)
     return eval(get_list_first(*n), *lenv);
 }
 
+Force eval_loop(Value list, Value env)
+{
+    Root n{get_list_next(list)};
+    auto bindings = get_list_first(*n);
+    auto size = get_small_vector_size(bindings);
+    Root lenv{env == nil && size > 0 ? create_small_map() : env};
+    for (decltype(size) i = 0; i != size; i += 2)
+    {
+        Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
+        lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i), *val);
+    }
+    n = get_list_next(*n);
+    Root val{eval(get_list_first(*n), *lenv)};
+    while (get_value_type(*val) == type::RECUR)
+    {
+        auto size = get_small_vector_size(bindings) / 2;
+        for (decltype(size) i = 0; i != size; ++i)
+            lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i * 2), get_object_element(*val, i));
+            
+        val = eval(get_list_first(*n), *lenv);
+    }
+    return *val;
+}
+
 Force eval_if(Value list, Value env)
 {
     Root n{get_list_next(list)};
@@ -94,6 +118,8 @@ Force eval_list(Value list, Value env)
         return eval_let(list, env);
     if (first == IF)
         return eval_if(list, env);
+    if (first == LOOP)
+        return eval_loop(list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));

@@ -33,6 +33,8 @@ const Value FN = create_symbol("fn");
 const Value DEF = create_symbol("def");
 const Value LET = create_symbol("let");
 const Value IF = create_symbol("if");
+const Value LOOP = create_symbol("loop");
+const Value RECUR = create_symbol("recur");
 const Value PLUS = create_symbol("+");
 const Value MINUS = create_symbol("-");
 const Value ASTERISK = create_symbol("*");
@@ -51,6 +53,7 @@ const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
 const Value SEQUABLE = create_symbol("cleo.core", "Sequable");
 const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
 const Value FN = create_symbol("cleo.core", "Fn");
+const Value RECUR = create_symbol("cleo.core", "Recur");
 }
 
 const std::array<Value, 7> type_by_tag{{
@@ -103,6 +106,11 @@ Force lt2(Value l, Value r)
 {
     return get_int64_value(l) < get_int64_value(r) ? TRUE : nil;
 }
+
+Root recur{create_native_function([](const Value *args, std::uint8_t n)
+{
+    return create_object(type::RECUR, args, n);
+})};
 
 struct Initialize
 {
@@ -167,6 +175,8 @@ struct Initialize
         define(LT, *f);
         f = create_native_function2<are_equal>();
         define(EQ, *f);
+
+        define(RECUR, *recur);
     }
 } initialize;
 

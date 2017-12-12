@@ -254,6 +254,36 @@ TEST_F(eval_test, let_should_allow_rebinding)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, should_eval_loop)
+{
+    Root val{read_str("(loop [a ((fn [] 55))] a)")};
+    Root ex{create_int64(55)};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    val = read_str("(loop [x 10 y 20] {:a x, :b y, :c z})");
+    ex = smap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
+    Root env{smap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, loop_should_allow_rebinding)
+{
+    Root val{read_str("(loop [a 10 a [a]] a)")};
+    Root ex{read_str("[10]")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, recur_should_rebinds_the_bindings_of_loop_and_reevaluate_it)
+{
+    Root val{read_str("(loop [n 5 r 1] (if (= n 0) r (recur (- n 1) (* r n))))")};
+    Root ex{create_int64(5 * 4 * 3 * 2 * 1)};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, should_eval_if)
 {
     Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw CallError("should not have been evaluated"); })};

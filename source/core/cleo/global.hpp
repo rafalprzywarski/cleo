@@ -78,6 +78,8 @@ extern const Value FN;
 extern const Value DEF;
 extern const Value LET;
 extern const Value IF;
+extern const Value LOOP;
+extern const Value RECUR;
 extern const Value PLUS;
 extern const Value MINUS;
 extern const Value ASTERISK;
@@ -96,6 +98,7 @@ extern const Value MULTIMETHOD;
 extern const Value SEQUABLE;
 extern const Value SEQUENCE;
 extern const Value FN;
+extern const Value RECUR;
 }
 
 extern const std::array<Value, 7> type_by_tag;
