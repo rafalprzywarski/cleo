@@ -4,6 +4,7 @@
 #include "equality.hpp"
 #include "list.hpp"
 #include "print.hpp"
+#include "var.hpp"
 
 namespace cleo
 {
@@ -32,6 +33,11 @@ const Value FN = create_symbol("fn");
 const Value DEF = create_symbol("def");
 const Value LET = create_symbol("let");
 const Value IF = create_symbol("if");
+const Value PLUS = create_symbol("+");
+const Value MINUS = create_symbol("-");
+const Value ASTERISK = create_symbol("*");
+const Value LT = create_symbol("<");
+const Value EQ = create_symbol("=");
 
 namespace type
 {
@@ -76,6 +82,26 @@ const Root ret_nil{create_native_function([](const Value *, std::uint8_t)
 Value identity(Value val)
 {
     return val;
+}
+
+Force add2(Value l, Value r)
+{
+    return create_int64(get_int64_value(l) + get_int64_value(r));
+}
+
+Force sub2(Value l, Value r)
+{
+    return create_int64(get_int64_value(l) - get_int64_value(r));
+}
+
+Force mult2(Value l, Value r)
+{
+    return create_int64(get_int64_value(l) * get_int64_value(r));
+}
+
+Force lt2(Value l, Value r)
+{
+    return get_int64_value(l) < get_int64_value(r) ? TRUE : nil;
 }
 
 struct Initialize
@@ -130,6 +156,17 @@ struct Initialize
         define_method(PR_STR_OBJ, type::SEQUABLE, *f);
         f = create_native_function1<pr_str_object>();
         define_method(PR_STR_OBJ, nil, *f);
+
+        f = create_native_function2<add2>();
+        define(PLUS, *f);
+        f = create_native_function2<sub2>();
+        define(MINUS, *f);
+        f = create_native_function2<mult2>();
+        define(ASTERISK, *f);
+        f = create_native_function2<lt2>();
+        define(LT, *f);
+        f = create_native_function2<are_equal>();
+        define(EQ, *f);
     }
 } initialize;
 

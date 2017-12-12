@@ -78,6 +78,11 @@ extern const Value FN;
 extern const Value DEF;
 extern const Value LET;
 extern const Value IF;
+extern const Value PLUS;
+extern const Value MINUS;
+extern const Value ASTERISK;
+extern const Value LT;
+extern const Value EQ;
 
 namespace type
 {
