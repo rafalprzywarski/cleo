@@ -231,5 +231,38 @@ TEST_F(equality_test, should_compare_sequences)
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
 }
 
+TEST_F(equality_test, should_compare_small_maps)
+{
+    Root m1, m2;
+    m1 = smap();
+    m2 = smap();
+    EXPECT_TRUE(nil != are_equal(*m1, *m2));
+
+    m1 = smap(3, 4);
+    m2 = smap();
+    EXPECT_TRUE(nil == are_equal(*m1, *m2));
+    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+
+    m1 = smap(10, 20, 30, 40, 50, 60);
+    m2 = smap(30, 40, 50, 60, 10, 20);
+    EXPECT_TRUE(nil != are_equal(*m1, *m2));
+    EXPECT_TRUE(nil != are_equal(*m2, *m1));
+
+    m1 = smap(10, 99, 30, 40, 50, 60);
+    m2 = smap(30, 40, 50, 60, 10, 20);
+    EXPECT_TRUE(nil == are_equal(*m1, *m2));
+    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+
+    m1 = smap(10, 20, 30, 99, 50, 60);
+    m2 = smap(30, 40, 50, 60, 10, 20);
+    EXPECT_TRUE(nil == are_equal(*m1, *m2));
+    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+
+    m1 = smap(10, 20, 30, 40, 50, nil);
+    m2 = smap(30, 40, 10, 20);
+    EXPECT_TRUE(nil == are_equal(*m1, *m2));
+    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+}
+
 }
 }

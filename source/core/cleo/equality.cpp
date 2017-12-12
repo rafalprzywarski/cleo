@@ -1,5 +1,6 @@
 #include "equality.hpp"
 #include "small_vector.hpp"
+#include "small_map.hpp"
 #include "global.hpp"
 #include "var.hpp"
 #include "multimethod.hpp"
@@ -43,6 +44,21 @@ Value are_seqables_equal(Value left, Value right)
     Root ls{call_multimethod1(seq, left)};
     Root rs{call_multimethod1(seq, right)};
     return are_seqs_equal(*ls, *rs);
+}
+
+Value are_small_maps_equal(Value left, Value right)
+{
+    auto size = get_small_map_size(left);
+    if (size != get_small_map_size(right))
+        return nil;
+
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (are_equal(small_map_get(right, get_small_map_key(left, i)), get_small_map_val(left, i)) == nil)
+            return nil;
+    }
+
+    return TRUE;
 }
 
 Value are_equal(Value left, Value right)

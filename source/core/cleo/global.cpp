@@ -114,6 +114,11 @@ struct Initialize
         f = create_native_function2<are_seqables_equal>();
         define_method(OBJ_EQ, *v, *f);
 
+        std::array<Value, 2> two_maps{{type::SMALL_MAP, type::SMALL_MAP}};
+        v = create_small_vector(two_maps.data(), two_maps.size());
+        f = create_native_function2<are_small_maps_equal>();
+        define_method(OBJ_EQ, *v, *f);
+
         define_multimethod(PR_STR_OBJ, *first_type, nil);
         f = create_native_function1<pr_str_small_vector>();
         define_method(PR_STR_OBJ, type::SMALL_VECTOR, *f);
