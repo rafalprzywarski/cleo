@@ -20,7 +20,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     Root s{create_string("abcd")};
     Root o{create_object0(sym)};
 
-    ASSERT_TRUE(nil != are_equal(nil, nil));
+    ASSERT_TRUE(TRUE == are_equal(nil, nil));
     ASSERT_TRUE(nil == are_equal(nil, *fn));
     ASSERT_TRUE(nil == are_equal(nil, sym));
     ASSERT_TRUE(nil == are_equal(nil, kw));
@@ -30,7 +30,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(nil == are_equal(nil, *o));
 
     ASSERT_TRUE(nil == are_equal(*fn, nil));
-    ASSERT_TRUE(nil != are_equal(*fn, *fn));
+    ASSERT_TRUE(TRUE == are_equal(*fn, *fn));
     ASSERT_TRUE(nil == are_equal(*fn, sym));
     ASSERT_TRUE(nil == are_equal(*fn, kw));
     ASSERT_TRUE(nil == are_equal(*fn, *i));
@@ -40,7 +40,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
 
     ASSERT_TRUE(nil == are_equal(sym, nil));
     ASSERT_TRUE(nil == are_equal(sym, *fn));
-    ASSERT_TRUE(nil != are_equal(sym, sym));
+    ASSERT_TRUE(TRUE == are_equal(sym, sym));
     ASSERT_TRUE(nil == are_equal(sym, kw));
     ASSERT_TRUE(nil == are_equal(sym, *i));
     ASSERT_TRUE(nil == are_equal(sym, *flt));
@@ -50,7 +50,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(nil == are_equal(kw, nil));
     ASSERT_TRUE(nil == are_equal(kw, *fn));
     ASSERT_TRUE(nil == are_equal(kw, sym));
-    ASSERT_TRUE(nil != are_equal(kw, kw));
+    ASSERT_TRUE(TRUE == are_equal(kw, kw));
     ASSERT_TRUE(nil == are_equal(kw, *i));
     ASSERT_TRUE(nil == are_equal(kw, *flt));
     ASSERT_TRUE(nil == are_equal(kw, *s));
@@ -60,7 +60,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(nil == are_equal(*i, *fn));
     ASSERT_TRUE(nil == are_equal(*i, sym));
     ASSERT_TRUE(nil == are_equal(*i, kw));
-    ASSERT_TRUE(nil != are_equal(*i, *i));
+    ASSERT_TRUE(TRUE == are_equal(*i, *i));
     ASSERT_TRUE(nil == are_equal(*i, *flt));
     ASSERT_TRUE(nil == are_equal(*i, *s));
     ASSERT_TRUE(nil == are_equal(*i, *o));
@@ -70,7 +70,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(nil == are_equal(*flt, sym));
     ASSERT_TRUE(nil == are_equal(*flt, kw));
     ASSERT_TRUE(nil == are_equal(*flt, *i));
-    ASSERT_TRUE(nil != are_equal(*flt, *flt));
+    ASSERT_TRUE(TRUE == are_equal(*flt, *flt));
     ASSERT_TRUE(nil == are_equal(*flt, *s));
     ASSERT_TRUE(nil == are_equal(*flt, *o));
 
@@ -80,7 +80,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(nil == are_equal(*s, kw));
     ASSERT_TRUE(nil == are_equal(*s, *i));
     ASSERT_TRUE(nil == are_equal(*s, *flt));
-    ASSERT_TRUE(nil != are_equal(*s, *s));
+    ASSERT_TRUE(TRUE == are_equal(*s, *s));
     ASSERT_TRUE(nil == are_equal(*s, *o));
 
     ASSERT_TRUE(nil == are_equal(*o, nil));
@@ -90,7 +90,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(nil == are_equal(*o, *i));
     ASSERT_TRUE(nil == are_equal(*o, *flt));
     ASSERT_TRUE(nil == are_equal(*o, *s));
-    ASSERT_TRUE(nil != are_equal(*o, *o));
+    ASSERT_TRUE(TRUE == are_equal(*o, *o));
 }
 
 TEST_F(equality_test, should_compare_integers)
@@ -98,7 +98,7 @@ TEST_F(equality_test, should_compare_integers)
     Root val1, val2;
     val1 = create_int64(10);
     val2 = create_int64(10);
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = create_int64(20);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
 }
@@ -108,7 +108,7 @@ TEST_F(equality_test, should_compare_floats)
     Root val1, val2;
     val1 = create_float64(10.25);
     val2 = create_float64(10.25);
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = create_float64(20.25);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
 }
@@ -118,10 +118,10 @@ TEST_F(equality_test, should_compare_strings)
     Root val1, val2;
     val1 = create_string("");
     val2 = create_string("");
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = create_string("abc");
     val2 = create_string("abc");
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = create_string("abcd");
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
     val2 = create_string("abce");
@@ -155,16 +155,16 @@ TEST_F(equality_test, should_compare_small_vectors)
 
     val1 = svec();
     val2 = svec();
-    EXPECT_TRUE(nil != are_equal(*val1, *val2));
+    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = svec(*n10);
     EXPECT_TRUE(nil == are_equal(*val1, *val2));
     val2 = svec(*n10);
-    EXPECT_TRUE(nil != are_equal(*val1, *val2));
+    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = svec(*n9);
     EXPECT_TRUE(nil == are_equal(*val1, *val2));
     val1 = svec(*n10, *n11, *n12);
     val2 = svec(*n10, *n11, *n12);
-    EXPECT_TRUE(nil != are_equal(*val1, *val2));
+    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = svec(*n9, *n11, *n12);
     EXPECT_TRUE(nil == are_equal(*val1, *val2));
     val1 = svec(*n10, *n9, *n12);
@@ -176,7 +176,7 @@ TEST_F(equality_test, should_compare_small_vectors)
     val1 = svec(*val1, *n12);
     val2 = svec(*n10, *n11);
     val2 = svec(*val2, *n12);
-    EXPECT_TRUE(nil != are_equal(*val1, *val2));
+    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = svec(*n10);
     val1 = svec(*val1, *n11, *n12);
     val2 = svec(*n10, *n11);
@@ -194,18 +194,18 @@ TEST_F(equality_test, should_compare_sequences)
 
     val1 = list();
     val2 = list();
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = list(*n10, *n20);
     val2 = list(*n1);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
     val2 = list(*n10, *n20);
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = list(*n10, *n21);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
 
     val1 = svec();
     val2 = list();
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = list(*n1);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
     val1 = svec(*n20);
@@ -215,18 +215,18 @@ TEST_F(equality_test, should_compare_sequences)
     val2 = list(*n1);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
     val2 = list(*n10, *n20);
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = list(*n10, *n21);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
 
     val1 = list();
     val2 = svec();
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val1 = list(*n10, *n20);
     val2 = svec(*n1);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
     val2 = svec(*n10, *n20);
-    ASSERT_TRUE(nil != are_equal(*val1, *val2));
+    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
     val2 = svec(*n10, *n21);
     ASSERT_TRUE(nil == are_equal(*val1, *val2));
 }
@@ -236,7 +236,7 @@ TEST_F(equality_test, should_compare_small_maps)
     Root m1, m2;
     m1 = smap();
     m2 = smap();
-    EXPECT_TRUE(nil != are_equal(*m1, *m2));
+    EXPECT_TRUE(TRUE == are_equal(*m1, *m2));
 
     m1 = smap(3, 4);
     m2 = smap();
@@ -245,8 +245,8 @@ TEST_F(equality_test, should_compare_small_maps)
 
     m1 = smap(10, 20, 30, 40, 50, 60);
     m2 = smap(30, 40, 50, 60, 10, 20);
-    EXPECT_TRUE(nil != are_equal(*m1, *m2));
-    EXPECT_TRUE(nil != are_equal(*m2, *m1));
+    EXPECT_TRUE(TRUE == are_equal(*m1, *m2));
+    EXPECT_TRUE(TRUE == are_equal(*m2, *m1));
 
     m1 = smap(10, 99, 30, 40, 50, 60);
     m2 = smap(30, 40, 50, 60, 10, 20);

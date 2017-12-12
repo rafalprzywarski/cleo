@@ -35,7 +35,7 @@ Value are_seqs_equal(Value left_, Value right_)
         if (!are_equal(*lf, *rf))
             return nil;
     }
-    return *left == *right;
+    return *left == *right ? TRUE : nil;
 }
 
 Value are_seqables_equal(Value left, Value right)
@@ -75,13 +75,15 @@ Value are_equal(Value left, Value right)
     switch (left_tag)
     {
         case tag::INT64:
-            return get_int64_value(left) == get_int64_value(right);
+            return get_int64_value(left) == get_int64_value(right) ? TRUE : nil;
         case tag::FLOAT64:
-            return get_float64_value(left) == get_float64_value(right);
+            return get_float64_value(left) == get_float64_value(right) ? TRUE : nil;
         case tag::STRING:
             return
                 get_string_len(left) == get_string_len(right) &&
-                std::memcmp(get_string_ptr(left), get_string_ptr(right), get_string_len(left)) == 0;
+                std::memcmp(get_string_ptr(left), get_string_ptr(right), get_string_len(left)) == 0 ?
+                TRUE :
+                nil;
         case tag::OBJECT:
             if (get_object_type(left) == type::SMALL_VECTOR && get_object_type(right) == type::SMALL_VECTOR)
                 return are_small_vectors_equal(left, right);
