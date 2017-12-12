@@ -76,6 +76,7 @@ extern const Value PR_STR_OBJ;
 extern const Value QUOTE;
 extern const Value FN;
 extern const Value DEF;
+extern const Value LET;
 
 namespace type
 {

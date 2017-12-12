@@ -53,6 +53,21 @@ Force eval_def(Value list, Value env)
     return *val;
 }
 
+Force eval_let(Value list, Value env)
+{
+    Root n{get_list_next(list)};
+    auto bindings = get_list_first(*n);
+    auto size = get_small_vector_size(bindings);
+    Root lenv{env == nil && size > 0 ? create_small_map() : env};
+    for (decltype(size) i = 0; i != size; i += 2)
+    {
+        Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
+        lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i), *val);
+    }
+    n = get_list_next(*n);
+    return eval(get_list_first(*n), *lenv);
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -64,6 +79,8 @@ Force eval_list(Value list, Value env)
         return eval_fn(list, env);
     if (first == DEF)
         return eval_def(list, env);
+    if (first == LET)
+        return eval_let(list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));

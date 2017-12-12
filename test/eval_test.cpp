@@ -232,5 +232,27 @@ TEST_F(eval_test, should_eval_maps)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, should_eval_let)
+{
+    Root val{read_str("(let [a ((fn [] 55))] a)")};
+    Root ex{create_int64(55)};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    val = read_str("(let [x 10 y 20] {:a x, :b y, :c z})");
+    ex = smap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
+    Root env{smap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, let_should_allow_rebinding)
+{
+    Root val{read_str("(let [a 10 a [a]] a)")};
+    Root ex{read_str("[10]")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }
