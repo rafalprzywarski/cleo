@@ -263,6 +263,7 @@ TEST_F(reader_test, should_fail_when_missing_a_closing_bracket)
     assert_read_error("unexpected end of input", "[");
     assert_read_error("unexpected end of input", "[ 5 ");
     assert_read_error("unexpected end of input", "[[]");
+    assert_read_error("unexpected end of input", "{");
 }
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_quote)
@@ -275,6 +276,35 @@ TEST_F(reader_test, should_fail_when_invoked_with_something_else_than_a_string)
     ASSERT_ANY_THROW(read(create_symbol("abc")));
 }
 
+TEST_F(reader_test, should_parse_an_empty_map)
+{
+    Root ex, val;
+    ex = smap();
+    val = read_str("{}");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("{ }");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_parse_a_map_of_expressions)
+{
+    Root ex, val;
+    ex = smap(1, 2); val = read_str("{1 2}");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = smap(create_symbol("+"), create_keyword("abc"), -3, nil); val = read_str("{+ :abc, -3 nil}");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = smap(create_symbol("x"), -3);
+    ex = smap(*ex, 1);
+    ex = smap(*ex, 7);
+    val = read_str("{{{x -3} 1} 7}");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_fail_when_a_value_in_a_map_is_missing)
+{
+    assert_read_error("map literal must contain an even number of forms", "{1}");
+    assert_read_error("map literal must contain an even number of forms", "{1 3 4}");
+}
 
 }
 }

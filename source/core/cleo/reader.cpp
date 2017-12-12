@@ -1,6 +1,7 @@
 #include "reader.hpp"
 #include "list.hpp"
 #include "small_vector.hpp"
+#include "small_map.hpp"
 #include "global.hpp"
 #include "error.hpp"
 #include <cctype>
@@ -75,7 +76,7 @@ Force read_keyword(Stream& s)
 
 void eat_ws(Stream& s)
 {
-    while (!s.eos() && s.peek() <= ' ')
+    while ((!s.eos() && s.peek() <= ' ') || s.peek() == ',')
         s.next();
 }
 
@@ -120,6 +121,31 @@ Force read_vector(Stream& s)
         throw ReadError("unexpected end of input");
     s.next(); // ']'
     return *v;
+}
+
+Force read_map(Stream& s)
+{
+    s.next(); // '{'
+    eat_ws(s);
+    Root m{create_small_map()};
+
+    while (!s.eos() && s.peek() != '}')
+    {
+        Root k{read(s)};
+        eat_ws(s);
+
+        if (s.peek() == '}')
+            throw ReadError("map literal must contain an even number of forms");
+
+        Root v{read(s)};
+        eat_ws(s);
+
+        m = small_map_assoc(*m, *k, *v);
+    }
+    if (s.eos())
+        throw ReadError("unexpected end of input");
+    s.next(); // '}'
+    return *m;
 }
 
 Force read_string(Stream& s)
@@ -168,6 +194,8 @@ Force read(Stream& s)
         return read_list(s);
     if (s.peek() == '[')
         return read_vector(s);
+    if (s.peek() == '{')
+        return read_map(s);
     if (s.peek() == '\"')
         return read_string(s);
     if (s.peek() == '\'')
