@@ -213,5 +213,22 @@ TEST_F(eval_test, should_define_vars)
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var1")));
 }
 
+TEST_F(eval_test, should_eval_maps)
+{
+    Root x{create_int64(55)};
+    Root y{create_int64(77)};
+    auto xs = create_symbol("x");
+    auto ys = create_symbol("y");
+    Root ex{smap(lookup(SEQ), lookup(FIRST), *x, *y)};
+    Root val{smap(SEQ, FIRST, xs, ys)};
+    Root env{smap(xs, *x, ys, *y)};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = smap();
+    val = eval(*ex);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }

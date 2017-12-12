@@ -108,16 +108,33 @@ Force eval_vector(Value v, Value env)
     return create_small_vector(vals.data(), vals.size());
 }
 
+Force eval_map(Value m, Value env)
+{
+    auto size = get_small_map_size(m);
+    Root e{create_small_map()};
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        Root k{eval(get_small_map_key(m, i), env)};
+        Root v{eval(get_small_map_val(m, i), env)};
+        e = small_map_assoc(*e, *k, *v);
+    }
+
+    return *e;
+}
+
 }
 
 Force eval(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);
-    if (get_value_type(val) == type::LIST)
+    auto type = get_value_type(val);
+    if (type == type::LIST)
         return eval_list(val, env);
-    if (get_value_type(val) == type::SMALL_VECTOR)
+    if (type == type::SMALL_VECTOR)
         return eval_vector(val, env);
+    if (type == type::SMALL_MAP)
+        return eval_map(val, env);
     return val;
 }
 
