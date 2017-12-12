@@ -207,8 +207,10 @@ TEST_F(eval_test, should_eval_vectors)
 TEST_F(eval_test, should_define_vars)
 {
     Root ex{create_int64(55)};
-    Root val{read_str("(def clue.eval.test/var1 ((fn [] 55)))")};
-    val = eval(*val);
+    auto x = create_symbol("x");
+    Root env{smap(x, *ex)};
+    Root val{read_str("(def clue.eval.test/var1 ((fn [] x)))")};
+    val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var1")));
 }
