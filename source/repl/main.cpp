@@ -6,7 +6,7 @@
 #include <iostream>
 #include <readline/readline.h>
 
-void eval_line(const std::string& line)
+bool eval_source(const std::string& line)
 {
     try
     {
@@ -14,7 +14,11 @@ void eval_line(const std::string& line)
         cleo::Root expr{cleo::read(*str)};
         cleo::Root result{cleo::eval(*expr)};
         cleo::Root text{cleo::pr_str(*result)};
-        std::cout << "> " << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+    }
+    catch (const cleo::UnexpectedEndOfInput& )
+    {
+        return false;
     }
     catch (cleo::Error const& e)
     {
@@ -28,6 +32,7 @@ void eval_line(const std::string& line)
     {
         std::cout << "unknown internal error" << std::endl;
     }
+    return true;
 }
 
 int main()
@@ -36,8 +41,19 @@ int main()
 
     while ((line = readline("$ ")) != nullptr)
     {
-        add_history(line);
-        eval_line(line);
+        std::string source = line;
         std::free(line);
+
+        char *extra;
+        while (
+            !eval_source(source) &&
+            (extra = readline("> ")) != nullptr)
+        {
+            source += '\n';
+            source += extra;
+            std::free(extra);
+        }
+
+        add_history(source.c_str());
     }
 }

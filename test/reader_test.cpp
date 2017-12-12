@@ -16,6 +16,7 @@ struct reader_test : Test
         return read(*sr);
     }
 
+    template <typename E = ReadError>
     static void assert_read_error(const std::string& msg, const std::string& source)
     {
         try
@@ -25,6 +26,7 @@ struct reader_test : Test
         }
         catch (ReadError const& e)
         {
+            EXPECT_TRUE(typeid(E) == typeid(e));
             EXPECT_EQ(msg, e.what());
         }
         catch (std::exception const& e)
@@ -35,6 +37,11 @@ struct reader_test : Test
         {
             FAIL() << "unknown exception";
         }
+    }
+
+    static void assert_unexpected_end_of_input(const std::string& source)
+    {
+        assert_read_error<UnexpectedEndOfInput>("unexpected end of input", source);
     }
 };
 
@@ -253,22 +260,22 @@ TEST_F(reader_test, should_parse_nil)
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_paren)
 {
-    assert_read_error("unexpected end of input", "(");
-    assert_read_error("unexpected end of input", "( 5 ");
-    assert_read_error("unexpected end of input", "(()");
+    assert_unexpected_end_of_input("(");
+    assert_unexpected_end_of_input("( 5 ");
+    assert_unexpected_end_of_input("(()");
 }
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_bracket)
 {
-    assert_read_error("unexpected end of input", "[");
-    assert_read_error("unexpected end of input", "[ 5 ");
-    assert_read_error("unexpected end of input", "[[]");
-    assert_read_error("unexpected end of input", "{");
+    assert_unexpected_end_of_input("[");
+    assert_unexpected_end_of_input("[ 5 ");
+    assert_unexpected_end_of_input("[[]");
+    assert_unexpected_end_of_input("{");
 }
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_quote)
 {
-    assert_read_error("unexpected end of input", "\"");
+    assert_unexpected_end_of_input("\"");
 }
 
 TEST_F(reader_test, should_fail_when_invoked_with_something_else_than_a_string)

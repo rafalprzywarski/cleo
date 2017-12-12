@@ -14,6 +14,11 @@ struct ReadError : Error
     ReadError(const std::string& msg) : Error(msg) {}
 };
 
+struct UnexpectedEndOfInput : ReadError
+{
+    UnexpectedEndOfInput() : ReadError("unexpected end of input") { }
+};
+
 struct IllegalArgument : Error
 {
     IllegalArgument(const std::string& msg) : Error(msg) {}

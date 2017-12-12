@@ -93,7 +93,7 @@ Force read_list(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw ReadError("unexpected end of input");
+        throw UnexpectedEndOfInput();
     s.next(); // ')'
     l = list_seq(*l);
     Root lr{create_list(nullptr, 0)};
@@ -118,7 +118,7 @@ Force read_vector(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw ReadError("unexpected end of input");
+        throw UnexpectedEndOfInput();
     s.next(); // ']'
     return *v;
 }
@@ -143,7 +143,7 @@ Force read_map(Stream& s)
         m = small_map_assoc(*m, *k, *v);
     }
     if (s.eos())
-        throw ReadError("unexpected end of input");
+        throw UnexpectedEndOfInput();
     s.next(); // '}'
     return *m;
 }
@@ -167,7 +167,7 @@ Force read_string(Stream& s)
             str += s.next();
     }
     if (s.eos())
-        throw ReadError("unexpected end of input");
+        throw UnexpectedEndOfInput();
     s.next();
     return create_string(str);
 }
