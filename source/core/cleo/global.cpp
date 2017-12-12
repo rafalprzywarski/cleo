@@ -31,6 +31,7 @@ const Value QUOTE = create_symbol("quote");
 const Value FN = create_symbol("fn");
 const Value DEF = create_symbol("def");
 const Value LET = create_symbol("let");
+const Value IF = create_symbol("if");
 
 namespace type
 {

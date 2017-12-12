@@ -68,6 +68,17 @@ Force eval_let(Value list, Value env)
     return eval(get_list_first(*n), *lenv);
 }
 
+Force eval_if(Value list, Value env)
+{
+    Root n{get_list_next(list)};
+    Root cond{eval(get_list_first(*n), env)};
+    n = get_list_next(*n);
+    if (*cond != nil)
+        return eval(get_list_first(*n), env);
+    n = get_list_next(*n);
+    return *n == nil ? nil : eval(get_list_first(*n), env);
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -81,6 +92,8 @@ Force eval_list(Value list, Value env)
         return eval_def(list, env);
     if (first == LET)
         return eval_let(list, env);
+    if (first == IF)
+        return eval_if(list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));

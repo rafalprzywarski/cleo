@@ -254,5 +254,27 @@ TEST_F(eval_test, let_should_allow_rebinding)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, should_eval_if)
+{
+    Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw CallError("should not have been evaluated"); })};
+    Root val{read_str("(if c a (bad))")};
+    Root ex{create_int64(55)};
+    Root env{smap(create_symbol("c"), 11111, create_symbol("a"), 55, create_symbol("bad"), *bad)};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    val = read_str("(if c (bad) a)");
+    env = smap(create_symbol("c"), nil, create_symbol("a"), 55, create_symbol("bad"), *bad);
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, if_should_return_nil_when_the_condition_is_false_and_there_is_no_else_value)
+{
+    Root val{read_str("(if nil 10)")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(nil, *val);
+}
+
 }
 }
