@@ -4,6 +4,8 @@
 namespace cleo
 {
 
+struct Exception { };
+
 struct Error : std::runtime_error
 {
     Error(const std::string& msg) : std::runtime_error(msg) {}

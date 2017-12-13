@@ -103,6 +103,14 @@ Force eval_if(Value list, Value env)
     return *n == nil ? nil : eval(get_list_first(*n), env);
 }
 
+Force eval_throw(Value list, Value env)
+{
+    Root n{get_list_next(list)};
+    Root ex{eval(get_list_first(*n), env)};
+    current_exception = *ex;
+    throw Exception();
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -120,6 +128,8 @@ Force eval_list(Value list, Value env)
         return eval_if(list, env);
     if (first == LOOP)
         return eval_loop(list, env);
+    if (first == THROW)
+        return eval_throw(list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));

@@ -22,6 +22,8 @@ std::unordered_map<Value, Value> vars;
 std::unordered_map<Value, Multimethod> multimethods;
 Hierachy global_hierarchy;
 
+Root current_exception;
+
 const Value TRUE = create_keyword("true");
 const Value SEQ = create_symbol("cleo.core", "seq");
 const Value FIRST = create_symbol("cleo.core", "first");
@@ -40,6 +42,7 @@ const Value MINUS = create_symbol("-");
 const Value ASTERISK = create_symbol("*");
 const Value LT = create_symbol("<");
 const Value EQ = create_symbol("=");
+const Value THROW = create_symbol("throw");
 
 namespace type
 {

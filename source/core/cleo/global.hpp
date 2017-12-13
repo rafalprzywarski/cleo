@@ -67,6 +67,8 @@ struct Multimethod
 extern std::unordered_map<Value, Multimethod> multimethods;
 extern Hierachy global_hierarchy;
 
+extern Root current_exception;
+
 extern const Value TRUE;
 extern const Value SEQ;
 extern const Value FIRST;
@@ -85,6 +87,7 @@ extern const Value MINUS;
 extern const Value ASTERISK;
 extern const Value LT;
 extern const Value EQ;
+extern const Value THROW;
 
 namespace type
 {

@@ -7,6 +7,7 @@
 #include <cleo/fn.hpp>
 #include <cleo/reader.hpp>
 #include <cleo/small_map.hpp>
+#include <cleo/memory.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"
@@ -312,6 +313,25 @@ TEST_F(eval_test, if_should_return_nil_when_the_condition_is_false_and_there_is_
     Root val{read_str("(if nil 10)")};
     val = eval(*val);
     EXPECT_EQ_VALS(nil, *val);
+}
+
+TEST_F(eval_test, should_eval_throw)
+{
+    Root val{read_str("(throw x)")};
+    Root env{smap(create_symbol("x"), 107)};
+    Root ex{create_int64(107)};
+    try
+    {
+        eval(*val, *env);
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& e)
+    {
+        env = nil;
+        val = nil;
+        gc();
+        EXPECT_EQ_VALS(*ex, *current_exception);
+    }
 }
 
 }
