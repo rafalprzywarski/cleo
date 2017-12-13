@@ -86,7 +86,7 @@ Force eval_loop(Value list, Value env)
         auto size = get_small_vector_size(bindings) / 2;
         for (decltype(size) i = 0; i != size; ++i)
             lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i * 2), get_object_element(*val, i));
-            
+
         val = eval(get_list_first(*n), *lenv);
     }
     return *val;
@@ -144,7 +144,15 @@ Force eval_list(Value list, Value env)
             fenv = create_small_map();
         for (decltype(n) i = 0; i < n; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), args[i]);
-        return eval(get_fn_body(*val), *fenv);
+        auto body = get_fn_body(*val);
+        Root val{eval(body, *fenv)};
+        while (get_value_type(*val) == type::RECUR)
+        {
+            for (decltype(n) i = 0; i < n; ++i)
+                fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
+            val = eval(body, *fenv);
+        }
+        return *val;
     }
     throw CallError("call error");
 }

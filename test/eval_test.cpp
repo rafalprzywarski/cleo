@@ -284,6 +284,14 @@ TEST_F(eval_test, recur_should_rebinds_the_bindings_of_loop_and_reevaluate_it)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, recur_should_rebinds_the_bindings_of_fn_and_reevaluate_it)
+{
+    Root val{read_str("((fn [n r] (if (= n 0) r (recur (- n 1) (* r n)))) 5 1)")};
+    Root ex{create_int64(5 * 4 * 3 * 2 * 1)};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, should_eval_if)
 {
     Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw CallError("should not have been evaluated"); })};
