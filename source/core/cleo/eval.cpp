@@ -111,6 +111,52 @@ Force eval_throw(Value list, Value env)
     throw Exception();
 }
 
+Force eval_try(Value list, Value env)
+{
+    Root n{get_list_next(list)};
+    auto expr = get_list_first(*n);
+    n = get_list_next(*n);
+    auto catch_ = get_list_first(*n);
+    Root val;
+    try
+    {
+        val = eval(expr, env);
+    }
+    catch (const Exception& )
+    {
+        Root ex{*current_exception};
+        current_exception = nil;
+        if (get_list_first(catch_) == CATCH)
+        {
+            n = get_list_next(catch_);
+            auto type = get_list_first(*n);
+            if (!isa(get_value_type(*ex), type))
+            {
+                current_exception = *ex;
+                throw;
+            }
+            n = get_list_next(*n);
+            auto name = get_list_first(*n);
+            n = get_list_next(*n);
+            Root lenv{env != nil ? env : create_small_map()};
+            lenv = small_map_assoc(*lenv, name, *ex);
+            return eval(get_list_first(*n), *lenv);
+        }
+        else { // finally
+            n = get_list_next(catch_);
+            eval(get_list_first(*n), env);
+            current_exception = *ex;
+            throw;
+        }
+    }
+    if (get_list_first(catch_) == FINALLY)
+    {
+        n = get_list_next(catch_);
+        eval(get_list_first(*n), env);
+    }
+    return *val;
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -130,6 +176,8 @@ Force eval_list(Value list, Value env)
         return eval_loop(list, env);
     if (first == THROW)
         return eval_throw(list, env);
+    if (first == TRY)
+        return eval_try(list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));

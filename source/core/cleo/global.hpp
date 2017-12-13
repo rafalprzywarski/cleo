@@ -88,6 +88,9 @@ extern const Value ASTERISK;
 extern const Value LT;
 extern const Value EQ;
 extern const Value THROW;
+extern const Value TRY;
+extern const Value CATCH;
+extern const Value FINALLY;
 
 namespace type
 {
@@ -98,7 +101,7 @@ extern const Value SMALL_VECTOR;
 extern const Value SMALL_VECTOR_SEQ;
 extern const Value SMALL_MAP;
 extern const Value MULTIMETHOD;
-extern const Value SEQUABLE;
+extern const Value SEQABLE;
 extern const Value SEQUENCE;
 extern const Value FN;
 extern const Value RECUR;

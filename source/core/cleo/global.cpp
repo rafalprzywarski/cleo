@@ -43,6 +43,9 @@ const Value ASTERISK = create_symbol("*");
 const Value LT = create_symbol("<");
 const Value EQ = create_symbol("=");
 const Value THROW = create_symbol("throw");
+const Value TRY = create_symbol("try");
+const Value CATCH = create_symbol("catch");
+const Value FINALLY = create_symbol("finally");
 
 namespace type
 {
@@ -53,7 +56,7 @@ const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
 const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
 const Value SMALL_MAP = create_symbol("cleo.core", "SmallMap");
 const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
-const Value SEQUABLE = create_symbol("cleo.core", "Sequable");
+const Value SEQABLE = create_symbol("cleo.core", "Seqable");
 const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
 const Value FN = create_symbol("cleo.core", "Fn");
 const Value RECUR = create_symbol("cleo.core", "Recur");
@@ -123,7 +126,7 @@ struct Initialize
         define_multimethod(FIRST, *first_type, nil);
         define_multimethod(NEXT, *first_type, nil);
 
-        derive(type::LIST, type::SEQUABLE);
+        derive(type::LIST, type::SEQABLE);
         Root f;
         f = create_native_function1<list_seq>();
         define_method(SEQ, type::LIST, *f);
@@ -132,7 +135,7 @@ struct Initialize
         f = create_native_function1<get_list_next>();
         define_method(NEXT, type::LIST, *f);
 
-        derive(type::SMALL_VECTOR, type::SEQUABLE);
+        derive(type::SMALL_VECTOR, type::SEQABLE);
         f = create_native_function1<small_vector_seq>();
         define_method(SEQ, type::SMALL_VECTOR, *f);
         f = create_native_function1<get_small_vector_seq_first>();
@@ -141,14 +144,14 @@ struct Initialize
         define_method(NEXT, type::SMALL_VECTOR_SEQ, *f);
 
         derive(type::SMALL_VECTOR_SEQ, type::SEQUENCE);
-        derive(type::SEQUENCE, type::SEQUABLE);
+        derive(type::SEQUENCE, type::SEQABLE);
         f = create_native_function1<identity>();
         define_method(SEQ, type::SEQUENCE, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
 
-        std::array<Value, 2> two_seq{{type::SEQUABLE, type::SEQUABLE}};
+        std::array<Value, 2> two_seq{{type::SEQABLE, type::SEQABLE}};
         Root v{create_small_vector(two_seq.data(), two_seq.size())};
         f = create_native_function2<are_seqables_equal>();
         define_method(OBJ_EQ, *v, *f);
@@ -163,8 +166,8 @@ struct Initialize
         define_method(PR_STR_OBJ, type::SMALL_VECTOR, *f);
         f = create_native_function1<pr_str_small_map>();
         define_method(PR_STR_OBJ, type::SMALL_MAP, *f);
-        f = create_native_function1<pr_str_sequable>();
-        define_method(PR_STR_OBJ, type::SEQUABLE, *f);
+        f = create_native_function1<pr_str_seqable>();
+        define_method(PR_STR_OBJ, type::SEQABLE, *f);
         f = create_native_function1<pr_str_object>();
         define_method(PR_STR_OBJ, nil, *f);
 

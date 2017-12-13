@@ -4,7 +4,10 @@
 namespace cleo
 {
 
-struct Exception { };
+struct Exception : std::runtime_error
+{
+    Exception() : std::runtime_error("clue exception") { }
+};
 
 struct Error : std::runtime_error
 {

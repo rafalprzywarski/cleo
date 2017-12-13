@@ -130,7 +130,7 @@ Force pr_str_small_map(Value m)
     return create_string(str);
 }
 
-Force pr_str_sequable(Value v)
+Force pr_str_seqable(Value v)
 {
     auto seq = lookup(SEQ);
     auto first = lookup(FIRST);

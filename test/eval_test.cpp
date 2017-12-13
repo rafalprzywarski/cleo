@@ -331,7 +331,87 @@ TEST_F(eval_test, should_eval_throw)
         val = nil;
         gc();
         EXPECT_EQ_VALS(*ex, *current_exception);
+        current_exception = nil;
     }
+}
+
+TEST_F(eval_test, should_eval_try_catch)
+{
+    Root val{read_str("(try (throw x) (catch cleo.core/Int64 e (+ e a)))")};
+    Root env{smap(create_symbol("x"), 107, create_symbol("a"), 2)};
+    Root ex{create_int64(109)};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_VALS(nil, *current_exception);
+    current_exception = nil;
+
+    val = read_str("(try (throw [1 2]) (catch cleo.core/Seqable x x))");
+    ex = svec(1, 2);
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_VALS(nil, *current_exception);
+
+    val = read_str("(try (throw [1 2]) (catch cleo.core/Int64 x x))");
+    EXPECT_THROW(eval(*val), Exception);
+    EXPECT_EQ_VALS(*ex, *current_exception);
+    current_exception = nil;
+
+    val = read_str("(try 777 (catch cleo.core/Int64 x x))");
+    ex = create_int64(777);
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_VALS(nil, *current_exception);
+}
+
+namespace
+{
+bool finally_called_too_early = false;
+bool finally_called = false;
+
+Force on_before_finally(Value)
+{
+    finally_called_too_early = finally_called;
+    return nil;
+}
+
+Force on_finally(Value)
+{
+    finally_called = true;
+    return nil;
+}
+}
+
+TEST_F(eval_test, should_eval_try_finally)
+{
+    Root call_me{create_native_function1<on_finally>()};
+    Root call_me_before{create_native_function1<on_before_finally>()};
+    Root env{smap(create_symbol("call-me"), *call_me, create_symbol("call-me-before"), *call_me_before)};
+
+    Root val{read_str("(try (throw [1 2]) (finally (call-me nil)))")};
+    Root ex{svec(1, 2)};
+    finally_called = false;
+    try
+    {
+        val = eval(*val, *env);
+    }
+    catch (const Exception& )
+    {
+        EXPECT_EQ_VALS(*ex, *current_exception);
+        current_exception = nil;
+    }
+    EXPECT_TRUE(finally_called);
+
+    finally_called = false;
+    val = read_str("(try [1 2] (finally (call-me nil)))");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_TRUE(finally_called);
+
+    finally_called = false;
+    finally_called_too_early = false;
+    val = read_str("(try (call-me-before nil) (finally (call-me nil)))");
+    eval(*val, *env);
+    EXPECT_FALSE(finally_called_too_early);
 }
 
 }
