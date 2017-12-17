@@ -168,6 +168,11 @@ Force create_object0(Value type)
     return create_object(type, nullptr, 0);
 }
 
+Force create_object1(Value type, Value elem)
+{
+    return create_object(type, &elem, 1);
+}
+
 Force create_object2(Value type, Value elem0, Value elem1)
 {
     std::array<Value, 2> elems{{elem0, elem1}};

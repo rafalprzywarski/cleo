@@ -53,6 +53,15 @@ inline void *get_value_ptr(Value ptr)
 
 Force create_native_function(NativeFunction f);
 
+template <Force f()>
+Force create_native_function0()
+{
+    return create_native_function([](const Value *, std::uint8_t)
+    {
+        return f();
+    });
+}
+
 template <Force f(Value)>
 Force create_native_function1()
 {
@@ -113,6 +122,7 @@ std::uint32_t get_string_len(Value val);
 
 Force create_object(Value type, const Value *elems, std::uint32_t size);
 Force create_object0(Value type);
+Force create_object1(Value type, Value elem);
 Force create_object2(Value type, Value elem0, Value elem1);
 Value get_object_type(Value obj);
 std::uint32_t get_object_size(Value obj);

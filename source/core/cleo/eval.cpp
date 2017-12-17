@@ -124,16 +124,14 @@ Force eval_try(Value list, Value env)
     }
     catch (const Exception& )
     {
-        Root ex{*current_exception};
-        current_exception = nil;
+        Root ex{catch_exception()};
         if (get_list_first(catch_) == CATCH)
         {
             n = get_list_next(catch_);
             auto type = get_list_first(*n);
             if (!isa(get_value_type(*ex), type))
             {
-                current_exception = *ex;
-                throw;
+                throw_exception(*ex);
             }
             n = get_list_next(*n);
             auto name = get_list_first(*n);
@@ -145,8 +143,7 @@ Force eval_try(Value list, Value env)
         else { // finally
             n = get_list_next(catch_);
             eval(get_list_first(*n), env);
-            current_exception = *ex;
-            throw;
+            throw_exception(*ex);
         }
     }
     if (get_list_first(catch_) == FINALLY)

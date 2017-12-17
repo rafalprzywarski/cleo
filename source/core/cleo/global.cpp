@@ -5,6 +5,7 @@
 #include "list.hpp"
 #include "print.hpp"
 #include "var.hpp"
+#include "error.hpp"
 
 namespace cleo
 {
@@ -30,6 +31,7 @@ const Value FIRST = create_symbol("cleo.core", "first");
 const Value NEXT = create_symbol("cleo.core", "next");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
+const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
 const Value FN = create_symbol("fn");
 const Value DEF = create_symbol("def");
@@ -60,6 +62,9 @@ const Value SEQABLE = create_symbol("cleo.core", "Seqable");
 const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
 const Value FN = create_symbol("cleo.core", "Fn");
 const Value RECUR = create_symbol("cleo.core", "Recur");
+const Value Exception = create_symbol("cleo.core", "Exception");
+const Value ReadError = create_symbol("cleo.core", "ReadError");
+const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
 }
 
 const std::array<Value, 7> type_by_tag{{
@@ -117,6 +122,17 @@ Root recur{create_native_function([](const Value *args, std::uint8_t n)
 {
     return create_object(type::RECUR, args, n);
 })};
+
+Force pr_str_exception(Value e)
+{
+    auto get_message = lookup(GET_MESSAGE);
+    cleo::Root msg{call_multimethod1(get_message, e)};
+    cleo::Root type{cleo::pr_str(cleo::get_value_type(e))};
+
+    return create_string(
+        std::string(get_string_ptr(*type), get_string_len(*type)) + ": " +
+        std::string(get_string_ptr(*msg), get_string_len(*msg)));
+}
 
 struct Initialize
 {
@@ -183,6 +199,23 @@ struct Initialize
         define(EQ, *f);
 
         define(RECUR, *recur);
+
+        f = create_native_function1<pr_str_exception>();
+        define_method(PR_STR_OBJ, type::Exception, *f);
+
+        define_multimethod(GET_MESSAGE, *first_type, nil);
+
+        derive(type::ReadError, type::Exception);
+        f = create_native_function1<new_read_error>();
+        define(create_symbol("cleo.core", "ReadError."), *f);
+        f = create_native_function1<read_error_message>();
+        define_method(GET_MESSAGE, type::ReadError, *f);
+
+        derive(type::UnexpectedEndOfInput, type::ReadError);
+        f = create_native_function0<new_unexpected_end_of_input>();
+        define(create_symbol("cleo.core", "UnexpectedEndOfInput."), *f);
+        f = create_native_function1<unexpected_end_of_input_message>();
+        define_method(GET_MESSAGE, type::UnexpectedEndOfInput, *f);
     }
 } initialize;
 

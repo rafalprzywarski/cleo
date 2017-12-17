@@ -1,5 +1,6 @@
 #pragma once
 #include <stdexcept>
+#include "value.hpp"
 
 namespace cleo
 {
@@ -12,16 +13,6 @@ struct Exception : std::runtime_error
 struct Error : std::runtime_error
 {
     Error(const std::string& msg) : std::runtime_error(msg) {}
-};
-
-struct ReadError : Error
-{
-    ReadError(const std::string& msg) : Error(msg) {}
-};
-
-struct UnexpectedEndOfInput : ReadError
-{
-    UnexpectedEndOfInput() : ReadError("unexpected end of input") { }
 };
 
 struct IllegalArgument : Error
@@ -38,5 +29,14 @@ struct CallError : Error
 {
     CallError(const std::string& msg) : Error(msg) {}
 };
+
+[[noreturn]] void throw_exception(Force e);
+Force catch_exception();
+
+Force new_read_error(Value msg);
+Force read_error_message(Value e);
+
+Force new_unexpected_end_of_input();
+Force unexpected_end_of_input_message(Value e);
 
 }

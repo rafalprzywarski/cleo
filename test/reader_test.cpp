@@ -1,5 +1,7 @@
 #include <cleo/reader.hpp>
 #include <cleo/equality.hpp>
+#include <cleo/multimethod.hpp>
+#include <cleo/var.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -16,18 +18,20 @@ struct reader_test : Test
         return read(*sr);
     }
 
-    template <typename E = ReadError>
-    static void assert_read_error(const std::string& msg, const std::string& source)
+    static void assert_read_error(Value exType, const std::string& msg, const std::string& source)
     {
         try
         {
             Root result{read_str(source)};
             FAIL() << "expected an exception; got " << to_string(*result) << " instead; source: " << source;
         }
-        catch (ReadError const& e)
+        catch (Exception const& )
         {
-            EXPECT_TRUE(typeid(E) == typeid(e));
-            EXPECT_EQ(msg, e.what());
+            cleo::Root e{cleo::catch_exception()};
+            EXPECT_TRUE(exType == get_value_type(*e));
+            auto get_message = lookup(GET_MESSAGE);
+            cleo::Root exMsg{call_multimethod1(get_message, *e)};
+            EXPECT_EQ(msg, std::string(get_string_ptr(*exMsg), get_string_len(*exMsg)));
         }
         catch (std::exception const& e)
         {
@@ -39,9 +43,14 @@ struct reader_test : Test
         }
     }
 
+    static void assert_read_error(const std::string& msg, const std::string& source)
+    {
+        assert_read_error(type::ReadError, msg, source);
+    }
+
     static void assert_unexpected_end_of_input(const std::string& source)
     {
-        assert_read_error<UnexpectedEndOfInput>("unexpected end of input", source);
+        assert_read_error(type::UnexpectedEndOfInput, "unexpected end of input", source);
     }
 };
 

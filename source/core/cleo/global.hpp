@@ -75,6 +75,7 @@ extern const Value FIRST;
 extern const Value NEXT;
 extern const Value OBJ_EQ;
 extern const Value PR_STR_OBJ;
+extern const Value GET_MESSAGE;
 extern const Value QUOTE;
 extern const Value FN;
 extern const Value DEF;
@@ -105,6 +106,9 @@ extern const Value SEQABLE;
 extern const Value SEQUENCE;
 extern const Value FN;
 extern const Value RECUR;
+extern const Value Exception;
+extern const Value ReadError;
+extern const Value UnexpectedEndOfInput;
 }
 
 extern const std::array<Value, 7> type_by_tag;

@@ -2,6 +2,7 @@ include_directories("../core")
 
 add_library(cleo_core
   cleo/equality.cpp
+  cleo/error.cpp
   cleo/eval.cpp
   cleo/fn.cpp
   cleo/global.cpp

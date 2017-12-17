@@ -93,7 +93,7 @@ Force read_list(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw UnexpectedEndOfInput();
+        throw_exception(new_unexpected_end_of_input());
     s.next(); // ')'
     l = list_seq(*l);
     Root lr{create_list(nullptr, 0)};
@@ -118,7 +118,7 @@ Force read_vector(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw UnexpectedEndOfInput();
+        throw_exception(new_unexpected_end_of_input());
     s.next(); // ']'
     return *v;
 }
@@ -135,7 +135,11 @@ Force read_map(Stream& s)
         eat_ws(s);
 
         if (s.peek() == '}')
-            throw ReadError("map literal must contain an even number of forms");
+        {
+            Root e{create_string("map literal must contain an even number of forms")};
+            e = new_read_error(*e);
+            throw_exception(*e);
+        }
 
         Root v{read(s)};
         eat_ws(s);
@@ -143,7 +147,7 @@ Force read_map(Stream& s)
         m = small_map_assoc(*m, *k, *v);
     }
     if (s.eos())
-        throw UnexpectedEndOfInput();
+        throw_exception(new_unexpected_end_of_input());
     s.next(); // '}'
     return *m;
 }
@@ -167,7 +171,7 @@ Force read_string(Stream& s)
             str += s.next();
     }
     if (s.eos())
-        throw UnexpectedEndOfInput();
+        throw_exception(new_unexpected_end_of_input());
     s.next();
     return create_string(str);
 }
@@ -200,7 +204,9 @@ Force read(Stream& s)
         return read_string(s);
     if (s.peek() == '\'')
         return read_quote(s);
-    throw ReadError(std::string("unexpected ") + s.peek());
+    Root e{create_string(std::string("unexpected ") + s.peek())};
+    e = new_read_error(*e);
+    throw_exception(*e);
 }
 
 Force read(Value source)

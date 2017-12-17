@@ -18,13 +18,12 @@ bool eval_source(const std::string& line)
     }
     catch (const cleo::Exception& )
     {
-        cleo::Root value{cleo::pr_str(*cleo::current_exception)};
-        cleo::current_exception = cleo::nil;
-        std::cout << "exception: " << std::string(cleo::get_string_ptr(*value), cleo::get_string_len(*value)) << std::endl;
-    }
-    catch (const cleo::UnexpectedEndOfInput& )
-    {
-        return false;
+        cleo::Root e{cleo::catch_exception()};
+        auto type = cleo::get_value_type(*e);
+        if (type == cleo::type::UnexpectedEndOfInput)
+            return false;
+        cleo::Root text{cleo::pr_str(*e)};
+        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
     }
     catch (cleo::Error const& e)
     {
