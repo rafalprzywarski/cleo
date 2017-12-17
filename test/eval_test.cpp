@@ -330,8 +330,7 @@ TEST_F(eval_test, should_eval_throw)
         env = nil;
         val = nil;
         gc();
-        EXPECT_EQ_VALS(*ex, *current_exception);
-        current_exception = nil;
+        EXPECT_EQ_VALS(*ex, *Root(catch_exception()));
     }
 }
 
@@ -342,25 +341,23 @@ TEST_F(eval_test, should_eval_try_catch)
     Root ex{create_int64(109)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(nil, *current_exception);
-    current_exception = nil;
+    EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 
     val = read_str("(try (throw [1 2]) (catch cleo.core/Seqable x x))");
     ex = svec(1, 2);
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(nil, *current_exception);
+    EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 
     val = read_str("(try (throw [1 2]) (catch cleo.core/Int64 x x))");
     EXPECT_THROW(eval(*val), Exception);
-    EXPECT_EQ_VALS(*ex, *current_exception);
-    current_exception = nil;
+    EXPECT_EQ_VALS(*ex, *Root(catch_exception()));
 
     val = read_str("(try 777 (catch cleo.core/Int64 x x))");
     ex = create_int64(777);
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(nil, *current_exception);
+    EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 }
 
 namespace
@@ -396,8 +393,7 @@ TEST_F(eval_test, should_eval_try_finally)
     }
     catch (const Exception& )
     {
-        EXPECT_EQ_VALS(*ex, *current_exception);
-        current_exception = nil;
+        EXPECT_EQ_VALS(*ex, *Root(catch_exception()));
     }
     EXPECT_TRUE(finally_called);
 

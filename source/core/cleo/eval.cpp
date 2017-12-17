@@ -107,8 +107,7 @@ Force eval_throw(Value list, Value env)
 {
     Root n{get_list_next(list)};
     Root ex{eval(get_list_first(*n), env)};
-    current_exception = *ex;
-    throw Exception();
+    throw_exception(*ex);
 }
 
 Force eval_try(Value list, Value env)
