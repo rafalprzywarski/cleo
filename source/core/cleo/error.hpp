@@ -25,11 +25,6 @@ struct SymbolNotFound : Error
     SymbolNotFound(const std::string& msg) : Error(msg) {}
 };
 
-struct CallError : Error
-{
-    CallError(const std::string& msg) : Error(msg) {}
-};
-
 [[noreturn]] void throw_exception(Force e);
 Force catch_exception();
 
@@ -38,5 +33,8 @@ Force read_error_message(Value e);
 
 Force new_unexpected_end_of_input();
 Force unexpected_end_of_input_message(Value e);
+
+Force new_call_error(Value msg);
+Force call_error_message(Value e);
 
 }

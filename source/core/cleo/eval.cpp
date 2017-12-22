@@ -208,7 +208,8 @@ Force eval_list(Value list, Value env)
         }
         return *val;
     }
-    throw CallError("call error");
+    Root msg{create_string("call error")};
+    throw_exception(new_call_error(*msg));
 }
 
 Force eval_vector(Value v, Value env)

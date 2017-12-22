@@ -108,6 +108,7 @@ extern const Value FN;
 extern const Value RECUR;
 extern const Value Exception;
 extern const Value ReadError;
+extern const Value CallError;
 extern const Value UnexpectedEndOfInput;
 }
 

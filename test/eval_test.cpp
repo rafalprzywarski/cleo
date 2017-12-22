@@ -104,8 +104,10 @@ TEST_F(eval_test, should_fail_when_trying_to_call_a_non_function)
         eval(*val);
         FAIL() << "expected an exception";
     }
-    catch (const CallError& e)
+    catch (const Exception& )
     {
+        Root e{catch_exception()};
+        ASSERT_EQ(type::CallError, get_value_type(*e));
     }
 }
 
@@ -295,7 +297,7 @@ TEST_F(eval_test, recur_should_rebinds_the_bindings_of_fn_and_reevaluate_it)
 
 TEST_F(eval_test, should_eval_if)
 {
-    Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw CallError("should not have been evaluated"); })};
+    Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw std::runtime_error("should not have been evaluated"); })};
     Root val{read_str("(if c a (bad))")};
     Root ex{create_int64(55)};
     Root env{smap(create_symbol("c"), 11111, create_symbol("a"), 55, create_symbol("bad"), *bad)};

@@ -64,6 +64,7 @@ const Value FN = create_symbol("cleo.core", "Fn");
 const Value RECUR = create_symbol("cleo.core", "Recur");
 const Value Exception = create_symbol("cleo.core", "Exception");
 const Value ReadError = create_symbol("cleo.core", "ReadError");
+const Value CallError = create_symbol("cleo.core", "CallError");
 const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
 }
 
@@ -216,6 +217,12 @@ struct Initialize
         define(create_symbol("cleo.core", "UnexpectedEndOfInput."), *f);
         f = create_native_function1<unexpected_end_of_input_message>();
         define_method(GET_MESSAGE, type::UnexpectedEndOfInput, *f);
+
+        derive(type::CallError, type::Exception);
+        f = create_native_function1<new_call_error>();
+        define(create_symbol("cleo.core", "CallError."), *f);
+        f = create_native_function1<call_error_message>();
+        define_method(GET_MESSAGE, type::CallError, *f);
     }
 } initialize;
 
