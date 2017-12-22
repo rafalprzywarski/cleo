@@ -71,7 +71,7 @@ Force read_keyword(Stream& s)
     std::string str;
     while (is_symbol_char(s.peek()))
         str += s.next();
-    return str == "nil" ? nil : create_keyword(str);
+    return create_keyword(str);
 }
 
 void eat_ws(Stream& s)
