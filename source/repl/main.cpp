@@ -25,10 +25,6 @@ bool eval_source(const std::string& line)
         cleo::Root text{cleo::pr_str(*e)};
         std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
     }
-    catch (cleo::Error const& e)
-    {
-        std::cout << "error: " << e.what() << std::endl;
-    }
     catch (std::exception const& e)
     {
         std::cout << "internal error: " << e.what() << std::endl;

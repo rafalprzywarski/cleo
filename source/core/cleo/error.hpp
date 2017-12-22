@@ -10,11 +10,6 @@ struct Exception : std::runtime_error
     Exception() : std::runtime_error("clue exception") { }
 };
 
-struct Error : std::runtime_error
-{
-    Error(const std::string& msg) : std::runtime_error(msg) {}
-};
-
 [[noreturn]] void throw_exception(Force e);
 Force catch_exception();
 
