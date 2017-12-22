@@ -47,4 +47,14 @@ Force call_error_message(Value e)
     return get_object_element(e, 0);
 }
 
+Force new_symbol_not_found(Value msg)
+{
+    return create_object1(type::SymbolNotFound, msg);
+}
+
+Force symbol_not_found_message(Value e)
+{
+    return get_object_element(e, 0);
+}
+
 }

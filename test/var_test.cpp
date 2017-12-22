@@ -38,7 +38,15 @@ TEST_F(var_test, should_redefine_vars)
 TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
 {
     auto sym = create_symbol("cleo.var.test", "missing");
-    ASSERT_THROW(lookup(sym), SymbolNotFound);
+    try
+    {
+        lookup(sym);
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ(type::SymbolNotFound, get_value_type(*e));
+    }
 }
 
 }

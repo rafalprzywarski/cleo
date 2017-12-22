@@ -65,6 +65,7 @@ const Value RECUR = create_symbol("cleo.core", "Recur");
 const Value Exception = create_symbol("cleo.core", "Exception");
 const Value ReadError = create_symbol("cleo.core", "ReadError");
 const Value CallError = create_symbol("cleo.core", "CallError");
+const Value SymbolNotFound = create_symbol("cleo.core", "SymbolNotFound");
 const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
 }
 
@@ -223,6 +224,12 @@ struct Initialize
         define(create_symbol("cleo.core", "CallError."), *f);
         f = create_native_function1<call_error_message>();
         define_method(GET_MESSAGE, type::CallError, *f);
+
+        derive(type::SymbolNotFound, type::Exception);
+        f = create_native_function1<new_symbol_not_found>();
+        define(create_symbol("cleo.core", "SymbolNotFound."), *f);
+        f = create_native_function1<symbol_not_found_message>();
+        define_method(GET_MESSAGE, type::SymbolNotFound, *f);
     }
 } initialize;
 

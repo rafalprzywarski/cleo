@@ -66,8 +66,10 @@ TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
         eval(sym);
         FAIL() << "expected an exception";
     }
-    catch (const SymbolNotFound& e)
+    catch (const Exception& )
     {
+        Root e{catch_exception()};
+        ASSERT_EQ(type::SymbolNotFound, get_value_type(*e));
     }
 }
 

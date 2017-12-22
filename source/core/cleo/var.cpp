@@ -17,7 +17,8 @@ Value lookup(Value sym)
     if (it == end(vars))
     {
         Root ss{pr_str(sym)};
-        throw SymbolNotFound("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_len(*ss)));
+        Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_len(*ss)))};
+        throw_exception(new_symbol_not_found(*msg));
     }
     return it->second;
 }
