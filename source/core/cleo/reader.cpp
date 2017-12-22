@@ -212,7 +212,10 @@ Force read(Stream& s)
 Force read(Value source)
 {
     if (get_value_tag(source) != tag::STRING)
-        throw IllegalArgument("expected a string");
+    {
+        Root msg{create_string("expected a string")};
+        throw_exception(new_illegal_argument(*msg));
+    }
     Stream s(source);
     return read(s);
 }

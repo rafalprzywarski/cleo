@@ -57,4 +57,14 @@ Force symbol_not_found_message(Value e)
     return get_object_element(e, 0);
 }
 
+Force new_illegal_argument(Value msg)
+{
+    return create_object1(type::IllegalArgument, msg);
+}
+
+Force illegal_argument_message(Value e)
+{
+    return get_object_element(e, 0);
+}
+
 }

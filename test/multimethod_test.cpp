@@ -124,7 +124,15 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     define_method(name, a, *fn1);
     define_method(name, b, *fn2);
 
-    EXPECT_THROW(get_method(multi, c), IllegalArgument);
+    try
+    {
+        get_method(multi, c);
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ(type::IllegalArgument, get_value_type(*e));
+    }
 }
 
 TEST_F(multimethod_test, should_dispatch_to_the_right_method)
@@ -171,8 +179,10 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
         eval(*l);
         FAIL() << "expected an exception";
     }
-    catch (const IllegalArgument& )
+    catch (const Exception& )
     {
+        Root e{catch_exception()};
+        ASSERT_EQ(type::IllegalArgument, get_value_type(*e));
     }
 }
 

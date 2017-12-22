@@ -15,11 +15,6 @@ struct Error : std::runtime_error
     Error(const std::string& msg) : std::runtime_error(msg) {}
 };
 
-struct IllegalArgument : Error
-{
-    IllegalArgument(const std::string& msg) : Error(msg) {}
-};
-
 [[noreturn]] void throw_exception(Force e);
 Force catch_exception();
 
@@ -34,5 +29,8 @@ Force call_error_message(Value e);
 
 Force new_symbol_not_found(Value msg);
 Force symbol_not_found_message(Value e);
+
+Force new_illegal_argument(Value msg);
+Force illegal_argument_message(Value e);
 
 }

@@ -110,6 +110,7 @@ extern const Value Exception;
 extern const Value ReadError;
 extern const Value CallError;
 extern const Value SymbolNotFound;
+extern const Value IllegalArgument;
 extern const Value UnexpectedEndOfInput;
 }
 

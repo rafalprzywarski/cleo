@@ -75,7 +75,10 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
             if (best.first == nil || isa(fn.first, best.first))
                 best = fn;
             else if (!isa(best.first, fn.first))
-                throw IllegalArgument("ambiguous multimethod call");
+            {
+                Root msg{create_string("ambiguous multimethod call")};
+                throw_exception(new_illegal_argument(*msg));
+            }
         }
 
     if (best.first == nil)
@@ -101,7 +104,10 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
     Root dispatchVal{get_native_function_ptr(multimethod.dispatchFn)(args, numArgs)};
     auto fn = get_method(multimethod, *dispatchVal);
     if (fn == nil)
-        throw IllegalArgument("multimethod not matched");
+    {
+        Root msg{create_string("multimethod not matched")};
+        throw_exception(new_illegal_argument(*msg));
+    }
     return get_native_function_ptr(fn)(args, numArgs);
 }
 

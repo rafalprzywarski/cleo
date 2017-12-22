@@ -66,6 +66,7 @@ const Value Exception = create_symbol("cleo.core", "Exception");
 const Value ReadError = create_symbol("cleo.core", "ReadError");
 const Value CallError = create_symbol("cleo.core", "CallError");
 const Value SymbolNotFound = create_symbol("cleo.core", "SymbolNotFound");
+const Value IllegalArgument = create_symbol("cleo.core", "IllegalArgument");
 const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
 }
 
@@ -230,6 +231,12 @@ struct Initialize
         define(create_symbol("cleo.core", "SymbolNotFound."), *f);
         f = create_native_function1<symbol_not_found_message>();
         define_method(GET_MESSAGE, type::SymbolNotFound, *f);
+
+        derive(type::IllegalArgument, type::Exception);
+        f = create_native_function1<new_illegal_argument>();
+        define(create_symbol("cleo.core", "IllegalArgument."), *f);
+        f = create_native_function1<illegal_argument_message>();
+        define_method(GET_MESSAGE, type::IllegalArgument, *f);
     }
 } initialize;
 
