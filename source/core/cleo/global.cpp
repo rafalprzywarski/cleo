@@ -6,6 +6,7 @@
 #include "print.hpp"
 #include "var.hpp"
 #include "error.hpp"
+#include "eval.hpp"
 
 namespace cleo
 {
@@ -141,6 +142,11 @@ Force pr_str_exception(Value e)
         std::string(get_string_ptr(*msg), get_string_len(*msg)));
 }
 
+Root mk_list{create_native_function([](const Value *args, std::uint8_t n)
+{
+    return create_list(args, n);
+})};
+
 struct Initialize
 {
     Initialize()
@@ -241,6 +247,11 @@ struct Initialize
         define(create_symbol("cleo.core", "IllegalArgument."), *f);
         f = create_native_function1<illegal_argument_message>();
         define_method(GET_MESSAGE, type::IllegalArgument, *f);
+
+        f = create_native_function1<macroexpand1>();
+        define(create_symbol("cleo.core", "macroexpand1"), *f);
+
+        define(create_symbol("cleo.core", "list"), *mk_list);
     }
 } initialize;
 
