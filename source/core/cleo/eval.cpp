@@ -274,7 +274,7 @@ Force macroexpand1(Value val)
     auto n = get_small_vector_size(params);
     Root args{get_list_next(val)};
     if (*args == nil)
-        args = create_list(nullptr, 0);
+        args = *EMPTY_LIST;
     if (get_int64_value(get_list_size(*args)) != n)
     {
         Root msg{create_string("arity error")};

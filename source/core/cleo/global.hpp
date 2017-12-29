@@ -118,4 +118,6 @@ extern const Value UnexpectedEndOfInput;
 
 extern const std::array<Value, 7> type_by_tag;
 
+extern const Root EMPTY_LIST;
+
 }

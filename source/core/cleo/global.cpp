@@ -82,6 +82,8 @@ const std::array<Value, 7> type_by_tag{{
     create_symbol("cleo.core", "String")
 }};
 
+const Root EMPTY_LIST{create_list(nullptr, 0)};
+
 namespace
 {
 

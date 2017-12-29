@@ -84,7 +84,7 @@ Force read_list(Stream& s)
 {
     s.next(); // '('
     eat_ws(s);
-    Root l{create_list(nullptr, 0)};
+    Root l{*EMPTY_LIST};
 
     while (!s.eos() && s.peek() != ')')
     {
@@ -96,7 +96,7 @@ Force read_list(Stream& s)
         throw_exception(new_unexpected_end_of_input());
     s.next(); // ')'
     l = list_seq(*l);
-    Root lr{create_list(nullptr, 0)};
+    Root lr{*EMPTY_LIST};
     while (*l != nil)
     {
         lr = list_conj(*lr, get_list_first(*l));
