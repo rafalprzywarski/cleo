@@ -3,6 +3,7 @@
 #include "list.hpp"
 #include "multimethod.hpp"
 #include "fn.hpp"
+#include "macro.hpp"
 #include "global.hpp"
 #include "error.hpp"
 #include "small_vector.hpp"
@@ -41,6 +42,21 @@ Force eval_fn(Value list, Value env)
     next = get_list_next(*next);
     auto body = get_list_first(*next);
     return create_fn(env, name, params, body);
+}
+
+Force eval_macro(Value list)
+{
+    Root next{get_list_next(list)};
+    auto name = nil;
+    if (get_value_tag(get_list_first(*next)) == tag::SYMBOL)
+    {
+        name = get_list_first(*next);
+        next = get_list_next(*next);
+    }
+    auto params = get_list_first(*next);
+    next = get_list_next(*next);
+    auto body = get_list_first(*next);
+    return create_macro(name, params, body);
 }
 
 Force eval_def(Value list, Value env)
@@ -162,6 +178,8 @@ Force eval_list(Value list, Value env)
         return eval_quote(list);
     if (first == FN)
         return eval_fn(list, env);
+    if (first == MACRO)
+        return eval_macro(list);
     if (first == DEF)
         return eval_def(list, env);
     if (first == LET)

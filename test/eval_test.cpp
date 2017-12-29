@@ -5,6 +5,7 @@
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
 #include <cleo/fn.hpp>
+#include <cleo/macro.hpp>
 #include <cleo/reader.hpp>
 #include <cleo/small_map.hpp>
 #include <cleo/memory.hpp>
@@ -173,6 +174,35 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     ASSERT_TRUE(name == get_fn_name(*val));
     ASSERT_TRUE(*params == get_fn_params(*val));
     ASSERT_TRUE(*body == get_fn_body(*val));
+}
+
+TEST_F(eval_test, macro_should_return_a_new_function)
+{
+    auto s = create_symbol("s");
+    auto x = create_symbol("x");
+    Root body{list(s, x)};
+    Root params{svec(s, x)};
+    Root call{list(MACRO, *params, *body)};
+    Root val{eval(*call)};
+    ASSERT_TRUE(type::Macro == get_value_type(*val));
+    ASSERT_TRUE(nil == get_macro_name(*val));
+    ASSERT_TRUE(*params == get_macro_params(*val));
+    ASSERT_TRUE(*body == get_macro_body(*val));
+}
+
+TEST_F(eval_test, macro_should_return_a_new_function_with_a_name)
+{
+    auto s = create_symbol("s");
+    auto x = create_symbol("x");
+    auto name = create_symbol("fname");
+    Root body{list(s, x)};
+    Root params{svec(s, x)};
+    Root call{list(MACRO, name, *params, *body)};
+    Root val{eval(*call)};
+    ASSERT_TRUE(type::Macro == get_value_type(*val));
+    ASSERT_TRUE(name == get_macro_name(*val));
+    ASSERT_TRUE(*params == get_macro_params(*val));
+    ASSERT_TRUE(*body == get_macro_body(*val));
 }
 
 TEST_F(eval_test, should_store_the_environment_in_created_fns)
