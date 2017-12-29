@@ -74,5 +74,41 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     }
 }
 
+TEST_F(macro_test, macroexpand_should_return_the_given_form_if_its_not_a_list_with_a_macro)
+{
+    Root val, exp;
+    val = i64(1234);
+    exp = macroexpand(*val);
+    EXPECT_EQ_REFS(*val, *exp);
+    val = list();
+    exp = macroexpand(*val);
+    EXPECT_EQ_REFS(*val, *exp);
+    val = list(SEQ);
+    exp = macroexpand(*val);
+    EXPECT_EQ_REFS(*val, *exp);
+}
+
+TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
+{
+    Root params{svec()};
+    auto x = create_keyword("x");
+    Root m{create_macro(nil, *params, x)};
+    Root call{list(*m)};
+    Root val{macroexpand(*call)};
+    EXPECT_EQ_VALS(x, *val);
+
+    Root q{list(QUOTE, *call)};
+    m = create_macro(nil, *params, *q);
+    call = list(*m);
+    val = macroexpand(*call);
+    EXPECT_EQ_VALS(x, *val);
+
+    q = list(QUOTE, *call);
+    m = create_macro(nil, *params, *q);
+    call = list(*m);
+    val = macroexpand(*call);
+    EXPECT_EQ_VALS(x, *val);
+}
+
 }
 }

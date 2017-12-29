@@ -290,6 +290,14 @@ Force macroexpand1(Value val)
     return eval(get_macro_body(m), *env);
 }
 
+Force macroexpand(Value val)
+{
+    Root exp{macroexpand1(val)};
+    if (*exp != val)
+        return macroexpand(*exp);
+    return *exp;
+}
+
 Force eval(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)

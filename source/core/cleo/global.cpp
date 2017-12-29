@@ -251,6 +251,9 @@ struct Initialize
         f = create_native_function1<macroexpand1>();
         define(create_symbol("cleo.core", "macroexpand-1"), *f);
 
+        f = create_native_function1<macroexpand>();
+        define(create_symbol("cleo.core", "macroexpand"), *f);
+
         define(create_symbol("cleo.core", "list"), *mk_list);
     }
 } initialize;
