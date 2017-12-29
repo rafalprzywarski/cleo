@@ -127,6 +127,7 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     try
     {
         get_method(multi, c);
+        FAIL() << "expected an exception";
     }
     catch (const Exception& )
     {
