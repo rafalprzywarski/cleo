@@ -249,7 +249,7 @@ struct Initialize
         define_method(GET_MESSAGE, type::IllegalArgument, *f);
 
         f = create_native_function1<macroexpand1>();
-        define(create_symbol("cleo.core", "macroexpand1"), *f);
+        define(create_symbol("cleo.core", "macroexpand-1"), *f);
 
         define(create_symbol("cleo.core", "list"), *mk_list);
     }
