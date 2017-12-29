@@ -261,6 +261,35 @@ Force eval_map(Value m, Value env)
 
 }
 
+Force macroexpand1(Value val)
+{
+    if (get_value_type(val) != type::LIST || get_list_size(val) == 0)
+        return val;
+
+    auto m = get_list_first(val);
+    if (get_value_type(m) != type::Macro)
+        return val;
+
+    auto params = get_macro_params(m);
+    auto n = get_small_vector_size(params);
+    Root args{get_list_next(val)};
+    if (*args == nil)
+        args = create_list(nullptr, 0);
+    if (get_int64_value(get_list_size(*args)) != n)
+    {
+        Root msg{create_string("arity error")};
+        throw_exception(new_call_error(*msg));
+    }
+    Root env{create_small_map()};
+    for (decltype(n) i = 0; i < n; ++i)
+    {
+        env = small_map_assoc(*env, get_small_vector_elem(params, i), get_list_first(*args));
+        args = get_list_next(*args);
+    }
+
+    return eval(get_macro_body(m), *env);
+}
+
 Force eval(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)

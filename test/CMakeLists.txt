@@ -7,6 +7,7 @@ add_executable(cleo_test
   fn_test.cpp
   hash_test.cpp
   list_test.cpp
+  macro_test.cpp
   memory_test.cpp
   multimethod_test.cpp
   print_test.cpp

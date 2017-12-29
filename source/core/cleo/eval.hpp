@@ -4,6 +4,7 @@
 namespace cleo
 {
 
+Force macroexpand1(Value val);
 Force eval(Value val, Value env = nil);
 
 }
