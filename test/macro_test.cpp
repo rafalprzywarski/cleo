@@ -1,6 +1,7 @@
 #include <cleo/macro.hpp>
 #include <cleo/eval.hpp>
 #include <cleo/error.hpp>
+#include <cleo/var.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -108,6 +109,29 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
     call = list(*m);
     val = macroexpand(*call);
     EXPECT_EQ_VALS(x, *val);
+}
+
+TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
+{
+    auto s = create_symbol("s");
+    Root env{smap(s, lookup(SEQ))};
+    Root v{svec(5, 6, 7)};
+    Root seq{list(s, *v)};
+    Root body{list(FIRST, *seq)};
+    body = list(QUOTE, *body);
+    Root params{svec()};
+    Root m{create_macro(nil, *params, *body)};
+    Root call{list(*m)};
+    Root val{eval(*call, *env)};
+    EXPECT_EQ_REFS(get_small_vector_elem(*v, 0), *val);
+
+    auto a = create_symbol("a");
+    auto x = create_keyword("x");
+    params = svec(a);
+    body = list(MACRO, *params, a);
+    call = list(*body, x);
+    val = eval(*call, *env);
+    EXPECT_EQ_REFS(x, *val);
 }
 
 }

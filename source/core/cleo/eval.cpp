@@ -192,6 +192,17 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first == TRY)
         return eval_try(list, env);
+    Root val{eval(first, env)};
+    auto type = get_value_type(*val);
+    if (type == type::Macro)
+    {
+        Root args{get_list_next(list)};
+        if (*args == nil)
+            args = *EMPTY_LIST;
+        Root form{list_conj(*args, *val)};
+        Root exp{macroexpand(*form)};
+        return eval(*exp, env);
+    }
     Roots arg_roots(get_int64_value(get_list_size(list)));
     std::vector<Value> args;
     args.reserve(get_int64_value(get_list_size(list)));
@@ -201,8 +212,6 @@ Force eval_list(Value list, Value env)
         arg_roots.set(i, eval(get_list_first(*arg_list), env));
         args.push_back(arg_roots[i]);
     }
-    Root val{eval(first, env)};
-    auto type = get_value_type(*val);
     if (type == type::NATIVE_FUNCTION)
         return get_native_function_ptr(*val)(args.data(), args.size());
     if (type == type::MULTIMETHOD)
