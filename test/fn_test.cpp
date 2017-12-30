@@ -1,6 +1,7 @@
 #include <cleo/fn.hpp>
 #include <cleo/eval.hpp>
 #include <cleo/var.hpp>
+#include <cleo/reader.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -50,7 +51,44 @@ TEST_F(fn_test, should_use_values_from_the_env)
     Root call{list(*fn)};
     Root val{eval(*call)};
     ASSERT_TRUE(get_small_vector_elem(*v, 0) == *val);
+}
 
+TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
+{
+    Root fn{create_string("(fn xyz ([] :a) ([x] :b) ([x y] :c))")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    auto k = create_keyword("k");
+    Root call{list(*fn, k, k, k)};
+
+    try
+    {
+        eval(*call);
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ(type::CallError, get_value_type(*e));
+    }
+}
+
+TEST_F(fn_test, should_dispatch_to_the_right_arity)
+{
+    Root fn{create_string("(fn xyz ([] :a) ([x] :b) ([x y] :c))")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    Root call{list(*fn)};
+    Root val{eval(*call)};
+    EXPECT_EQ_VALS(create_keyword("a"), *val);
+
+    auto k = create_keyword("k");
+    call = list(*fn, k);
+    val = eval(*call);
+    EXPECT_EQ_VALS(create_keyword("b"), *val);
+
+    call = list(*fn, k, k);
+    val = eval(*call);
+    EXPECT_EQ_VALS(create_keyword("c"), *val);
 }
 
 }

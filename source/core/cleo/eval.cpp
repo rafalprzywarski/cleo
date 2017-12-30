@@ -182,6 +182,17 @@ Force eval_try(Value list, Value env)
     return *val;
 }
 
+std::uint8_t find_fn_index(Value fn, std::uint8_t n)
+{
+    auto size = get_fn_size(fn);
+    for (std::uint8_t i = 0; i < size; ++i)
+        if (get_small_vector_size(get_fn_params(fn, i)) == n)
+            return i;
+
+    Root msg{create_string("arity error")};
+    throw_exception(new_call_error(*msg));
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -231,14 +242,15 @@ Force eval_list(Value list, Value env)
         return call_multimethod(*val, args.data(), args.size());
     if (type == type::FN)
     {
-        auto params = get_fn_params(*val, 0);
-        auto n = get_small_vector_size(params);
+        auto n = args.size();
+        auto fni = find_fn_index(*val, n);
+        auto params = get_fn_params(*val, fni);
         Root fenv{get_fn_env(*val)};
         if (*fenv == nil && n > 0)
             fenv = create_small_map();
         for (decltype(n) i = 0; i < n; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), args[i]);
-        auto body = get_fn_body(*val, 0);
+        auto body = get_fn_body(*val, fni);
         Root val{eval(body, *fenv)};
         while (get_value_type(*val) == type::RECUR)
         {
