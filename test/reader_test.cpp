@@ -76,6 +76,10 @@ TEST_F(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
     EXPECT_EQ_VALS(create_symbol("ab.cd"), *val);
     val = read_str("*<=");
     EXPECT_EQ_VALS(create_symbol("*<="), *val);
+    val = read_str("&");
+    EXPECT_EQ_VALS(create_symbol("&"), *val);
+    val = read_str("&abc");
+    EXPECT_EQ_VALS(create_symbol("&abc"), *val);
 }
 
 TEST_F(reader_test, should_parse_symbols_with_namespaces)
