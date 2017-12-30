@@ -38,10 +38,23 @@ Force eval_fn(Value list, Value env)
         name = get_list_first(*next);
         next = get_list_next(*next);
     }
-    auto params = get_list_first(*next);
-    next = get_list_next(*next);
-    auto body = get_list_first(*next);
-    return create_fn(env, name, params, body);
+    if (get_value_type(get_list_first(*next)) == type::SMALL_VECTOR)
+    {
+        auto params = get_list_first(*next);
+        next = get_list_next(*next);
+        auto body = get_list_first(*next);
+        return create_fn(env, name, params, body);
+    }
+    std::vector<Value> params, bodies;
+    while (*next != nil)
+    {
+        Root pb{get_list_first(*next)};
+        params.push_back(get_list_first(*pb));
+        pb = get_list_next(*pb);
+        bodies.push_back(get_list_first(*pb));
+        next = get_list_next(*next);
+    }
+    return create_fn(env, name, params.data(), bodies.data(), params.size());
 }
 
 Force eval_macro(Value list)
@@ -218,14 +231,14 @@ Force eval_list(Value list, Value env)
         return call_multimethod(*val, args.data(), args.size());
     if (type == type::FN)
     {
-        auto params = get_fn_params(*val);
+        auto params = get_fn_params(*val, 0);
         auto n = get_small_vector_size(params);
         Root fenv{get_fn_env(*val)};
         if (*fenv == nil && n > 0)
             fenv = create_small_map();
         for (decltype(n) i = 0; i < n; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), args[i]);
-        auto body = get_fn_body(*val);
+        auto body = get_fn_body(*val, 0);
         Root val{eval(body, *fenv)};
         while (get_value_type(*val) == type::RECUR)
         {

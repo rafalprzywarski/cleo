@@ -7,6 +7,9 @@
 #include <cleo/print.hpp>
 #include <gtest/gtest.h>
 
+#define ASSERT_EQ_VALS(ex, val) \
+    ASSERT_TRUE(nil != are_equal(ex, val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+
 #define EXPECT_EQ_VALS(ex, val) \
     EXPECT_TRUE(nil != are_equal(ex, val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
 
