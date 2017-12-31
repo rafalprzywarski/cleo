@@ -113,6 +113,11 @@ Value identity(Value val)
     return val;
 }
 
+Value nil_seq(Value)
+{
+    return nil;
+}
+
 Force add2(Value l, Value r)
 {
     return create_int64(get_int64_value(l) + get_int64_value(r));
@@ -158,12 +163,20 @@ struct Initialize
 {
     Initialize()
     {
-        define_multimethod(SEQ, *first_type, nil);
-        define_multimethod(FIRST, *first_type, nil);
-        define_multimethod(NEXT, *first_type, nil);
+        auto undefined = create_symbol("cleo.core/-UNDEFINED-");
+        define_multimethod(SEQ, *first_type, undefined);
+        define_multimethod(FIRST, *first_type, undefined);
+        define_multimethod(NEXT, *first_type, undefined);
+
+        Root f;
+        f = create_native_function1<nil_seq>();
+        define_method(SEQ, nil, *f);
+        f = create_native_function1<nil_seq>();
+        define_method(FIRST, nil, *f);
+        f = create_native_function1<nil_seq>();
+        define_method(NEXT, nil, *f);
 
         derive(type::LIST, type::SEQABLE);
-        Root f;
         f = create_native_function1<list_seq>();
         define_method(SEQ, type::LIST, *f);
         f = create_native_function1<get_list_first>();
