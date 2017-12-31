@@ -264,5 +264,33 @@ TEST_F(equality_test, should_compare_small_maps)
     EXPECT_TRUE(nil == are_equal(*m2, *m1));
 }
 
+TEST_F(equality_test, should_compare_small_sets)
+{
+    Root s1, s2;
+    s1 = sset();
+    s2 = sset();
+    EXPECT_TRUE(TRUE == are_equal(*s1, *s2));
+
+    s1 = sset(3, 4);
+    s2 = sset();
+    EXPECT_TRUE(nil == are_equal(*s1, *s2));
+    EXPECT_TRUE(nil == are_equal(*s2, *s1));
+
+    s1 = sset(10, 20, 30, 40, 50, 60);
+    s2 = sset(30, 40, 50, 60, 10, 20);
+    EXPECT_TRUE(TRUE == are_equal(*s1, *s2));
+    EXPECT_TRUE(TRUE == are_equal(*s2, *s1));
+
+    s1 = sset(10, 99, 30, 40, 50, 60);
+    s2 = sset(30, 40, 50, 60, 10, 20);
+    EXPECT_TRUE(nil == are_equal(*s1, *s2));
+    EXPECT_TRUE(nil == are_equal(*s2, *s1));
+
+    s1 = sset(10, 20, 30, 40, nil);
+    s2 = sset(30, 40, 10, 20);
+    EXPECT_TRUE(nil == are_equal(*s1, *s2));
+    EXPECT_TRUE(nil == are_equal(*s2, *s1));
+}
+
 }
 }

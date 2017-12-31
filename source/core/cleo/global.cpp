@@ -193,9 +193,27 @@ struct Initialize
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
 
-        std::array<Value, 2> two_seq{{type::SEQABLE, type::SEQABLE}};
-        Root v{create_small_vector(two_seq.data(), two_seq.size())};
-        f = create_native_function2<are_seqables_equal>();
+        auto define_seq_eq = [&](auto type1, auto type2)
+        {
+            std::array<Value, 2> two{{type1, type2}};
+            Root v{create_small_vector(two.data(), two.size())};
+            Root f{create_native_function2<are_seqables_equal>()};
+            define_method(OBJ_EQ, *v, *f);
+        };
+
+        define_seq_eq(type::SMALL_VECTOR, type::SMALL_VECTOR);
+        define_seq_eq(type::SMALL_VECTOR, type::LIST);
+        define_seq_eq(type::SMALL_VECTOR, type::SEQUENCE);
+        define_seq_eq(type::SEQUENCE, type::SMALL_VECTOR);
+        define_seq_eq(type::SEQUENCE, type::LIST);
+        define_seq_eq(type::SEQUENCE, type::SEQUENCE);
+        define_seq_eq(type::LIST, type::SMALL_VECTOR);
+        define_seq_eq(type::LIST, type::LIST);
+        define_seq_eq(type::LIST, type::SEQUENCE);
+
+        std::array<Value, 2> two_sets{{type::SMALL_SET, type::SMALL_SET}};
+        Root v{create_small_vector(two_sets.data(), two_sets.size())};
+        f = create_native_function2<are_small_sets_equal>();
         define_method(OBJ_EQ, *v, *f);
 
         std::array<Value, 2> two_maps{{type::SMALL_MAP, type::SMALL_MAP}};
