@@ -7,6 +7,7 @@
 #include "var.hpp"
 #include "error.hpp"
 #include "eval.hpp"
+#include "small_set.hpp"
 
 namespace cleo
 {
@@ -175,7 +176,16 @@ struct Initialize
         f = create_native_function1<get_small_vector_seq_next>();
         define_method(NEXT, type::SMALL_VECTOR_SEQ, *f);
 
+        derive(type::SMALL_SET, type::SEQABLE);
+        f = create_native_function1<small_set_seq>();
+        define_method(SEQ, type::SMALL_SET, *f);
+        f = create_native_function1<get_small_set_seq_first>();
+        define_method(FIRST, type::SMALL_SET_SEQ, *f);
+        f = create_native_function1<get_small_set_seq_next>();
+        define_method(NEXT, type::SMALL_SET_SEQ, *f);
+
         derive(type::SMALL_VECTOR_SEQ, type::SEQUENCE);
+        derive(type::SMALL_SET_SEQ, type::SEQUENCE);
         derive(type::SEQUENCE, type::SEQABLE);
         f = create_native_function1<identity>();
         define_method(SEQ, type::SEQUENCE, *f);

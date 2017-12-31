@@ -2,8 +2,10 @@
 #include "list.hpp"
 #include "small_vector.hpp"
 #include "small_map.hpp"
+#include "small_set.hpp"
 #include "global.hpp"
 #include "error.hpp"
+#include "print.hpp"
 #include <cctype>
 #include <sstream>
 
@@ -184,6 +186,31 @@ Force read_quote(Stream& s)
     return create_list(elems.data(), elems.size());
 }
 
+Force read_set(Stream& s)
+{
+    s.next(); // '#'
+    s.next(); // '{'
+    eat_ws(s);
+    Root set{create_small_set()};
+
+    while (!s.eos() && s.peek() != '}')
+    {
+        Root e{read(s)};
+        if (small_set_contains(*set, *e))
+        {
+            Root text{pr_str(*e)};
+            Root e{create_string("duplicate key: " + std::string(get_string_ptr(*text), get_string_len(*text)))};
+            throw_exception(new_read_error(*e));
+        }
+        set = small_set_conj(*set, *e);
+        eat_ws(s);
+    }
+    if (s.eos())
+        throw_exception(new_unexpected_end_of_input());
+    s.next(); // '}'
+    return *set;
+}
+
 Force read(Stream& s)
 {
     eat_ws(s);
@@ -204,6 +231,8 @@ Force read(Stream& s)
         return read_string(s);
     if (s.peek() == '\'')
         return read_quote(s);
+    if (s.peek() == '#' && s.peek(1) == '{')
+        return read_set(s);
     Root e{create_string(std::string("unexpected ") + s.peek())};
     e = new_read_error(*e);
     throw_exception(*e);

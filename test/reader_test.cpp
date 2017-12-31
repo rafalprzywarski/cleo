@@ -286,6 +286,7 @@ TEST_F(reader_test, should_fail_when_missing_a_closing_bracket)
     assert_unexpected_end_of_input("[ 5 ");
     assert_unexpected_end_of_input("[[]");
     assert_unexpected_end_of_input("{");
+    assert_unexpected_end_of_input("#{");
 }
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_quote)
@@ -326,6 +327,43 @@ TEST_F(reader_test, should_fail_when_a_value_in_a_map_is_missing)
 {
     assert_read_error("map literal must contain an even number of forms", "{1}");
     assert_read_error("map literal must contain an even number of forms", "{1 3 4}");
+}
+
+TEST_F(reader_test, should_parse_an_empty_set)
+{
+    Root ex, val;
+    ex = create_small_set();
+    val = read_str("#{}");
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_VALS(type::SMALL_SET, get_value_type(*val));
+    val = read_str("#{ }");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_parse_a_set_of_expressions)
+{
+    Root ex, val;
+    ex = sset(1, 2); val = read_str("#{1 2}");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = sset(create_symbol("+"), create_keyword("abc"), -3, nil); val = read_str("#{ + :abc -3 nil}");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = sset(create_symbol("x"), -3);
+    ex = sset(*ex, 1);
+    ex = sset(*ex, 7);
+    val = read_str("#{#{#{x -3} 1} 7}");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_when_given_a_single_hash)
+{
+    assert_read_error("unexpected #", "# {1}");
+    assert_read_error("unexpected #", "# ");
+    assert_read_error("unexpected #", "#");
+}
+
+TEST_F(reader_test, should_fail_when_a_key_in_a_set_is_duplicated)
+{
+    assert_read_error("duplicate key: 6", "#{5 6 6 7}");
 }
 
 }

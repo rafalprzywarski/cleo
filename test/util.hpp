@@ -3,6 +3,7 @@
 #include <cleo/list.hpp>
 #include <cleo/small_vector.hpp>
 #include <cleo/small_map.hpp>
+#include <cleo/small_set.hpp>
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
 #include <gtest/gtest.h>
@@ -88,8 +89,28 @@ Force svec_conj(Value vec, const T& first, const Ts&... elems)
 template <typename... Ts>
 Force svec(const Ts&... elems)
 {
-    Root vec{create_small_vector(nullptr, 0)};
-    return svec_conj(*vec, elems...);
+    Root s{create_small_vector(nullptr, 0)};
+    return svec_conj(*s, elems...);
+}
+
+inline Force sset_conj(Value s)
+{
+    return force(s);
+}
+
+template <typename T, typename... Ts>
+Force sset_conj(Value s, const T& first, const Ts&... elems)
+{
+    Root val{to_value(first)};
+    Root ns{small_set_conj(s, *val)};
+    return sset_conj(*ns, elems...);
+}
+
+template <typename... Ts>
+Force sset(const Ts&... elems)
+{
+    Root vec{create_small_set()};
+    return sset_conj(*vec, elems...);
 }
 
 inline Force smap()
