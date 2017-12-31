@@ -13,6 +13,7 @@ add_executable(cleo_test
   print_test.cpp
   reader_test.cpp
   small_map_test.cpp
+  small_set_test.cpp
   small_vector_test.cpp
   value_test.cpp
   var_test.cpp

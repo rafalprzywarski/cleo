@@ -103,6 +103,8 @@ extern const Value LIST;
 extern const Value SMALL_VECTOR;
 extern const Value SMALL_VECTOR_SEQ;
 extern const Value SMALL_MAP;
+extern const Value SMALL_SET;
+extern const Value SMALL_SET_SEQ;
 extern const Value MULTIMETHOD;
 extern const Value SEQABLE;
 extern const Value SEQUENCE;
