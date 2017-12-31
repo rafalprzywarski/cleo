@@ -263,6 +263,21 @@ TEST_F(eval_test, should_eval_vectors)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, should_eval_setd)
+{
+    Root x{create_int64(55)};
+    auto xs = create_symbol("x");
+    Root ex{sset(lookup(SEQ), lookup(FIRST), *x)};
+    Root val{sset(SEQ, FIRST, xs)};
+    Root env{smap(xs, *x)};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = sset();
+    val = eval(*ex);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, should_define_vars)
 {
     Root ex{create_int64(55)};

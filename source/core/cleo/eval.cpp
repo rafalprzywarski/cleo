@@ -7,6 +7,7 @@
 #include "global.hpp"
 #include "error.hpp"
 #include "small_vector.hpp"
+#include "small_set.hpp"
 #include "small_map.hpp"
 #include <vector>
 
@@ -315,6 +316,18 @@ Force eval_vector(Value v, Value env)
     return create_small_vector(vals.data(), vals.size());
 }
 
+Force eval_set(Value s, Value env)
+{
+    auto size = get_small_set_size(s);
+    Root e{create_small_set()};
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        Root val{eval(get_small_set_elem(s, i), env)};
+        e = small_set_conj(*e, *val);
+    }
+    return *e;
+}
+
 Force eval_map(Value m, Value env)
 {
     auto size = get_small_map_size(m);
@@ -377,6 +390,8 @@ Force eval(Value val, Value env)
         return eval_list(val, env);
     if (type == type::SMALL_VECTOR)
         return eval_vector(val, env);
+    if (type == type::SMALL_SET)
+        return eval_set(val, env);
     if (type == type::SMALL_MAP)
         return eval_map(val, env);
     return val;
