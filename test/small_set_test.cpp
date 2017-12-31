@@ -1,5 +1,6 @@
 #include <cleo/small_set.hpp>
 #include <cleo/global.hpp>
+#include <cleo/eval.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"
@@ -118,6 +119,21 @@ TEST_F(small_set_test, seq_should_return_a_sequence_of_the_set_elements)
     seq = get_small_set_seq_next(*seq);
     ASSERT_TRUE(*elem2 == get_small_set_seq_first(*seq));
     ASSERT_TRUE(nil == *Root(get_small_set_seq_next(*seq)));
+}
+
+TEST_F(small_set_test, should_delegate_to_get_when_called)
+{
+    Root s{create_small_set()};
+    Root e0{create_int64(101)};
+    Root e1{create_int64(102)};
+    s = small_set_conj(*s, *e0);
+    Root call{list(*s, *e0)};
+    Root val{eval(*call)};
+    EXPECT_EQ_VALS(*e0, *val);
+
+    call = list(*s, *e1);
+    val = eval(*call);
+    EXPECT_EQ_VALS(nil, *val);
 }
 
 }

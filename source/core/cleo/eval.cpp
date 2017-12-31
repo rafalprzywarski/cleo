@@ -256,21 +256,22 @@ Force eval_list(Value list, Value env)
         return eval(*exp, env);
     }
     Roots arg_roots(get_int64_value(get_list_size(list)));
-    std::vector<Value> args;
-    args.reserve(get_int64_value(get_list_size(list)));
+    std::vector<Value> elems;
+    elems.reserve(get_int64_value(get_list_size(list)));
+    elems.push_back(*val);
     Roots::size_type i = 0;
     for (Root arg_list{get_list_next(list)}; *arg_list != nil; arg_list = get_list_next(*arg_list), ++i)
     {
         arg_roots.set(i, eval(get_list_first(*arg_list), env));
-        args.push_back(arg_roots[i]);
+        elems.push_back(arg_roots[i]);
     }
     if (type == type::NATIVE_FUNCTION)
-        return get_native_function_ptr(*val)(args.data(), args.size());
+        return get_native_function_ptr(*val)(elems.data() + 1, elems.size() - 1);
     if (type == type::MULTIMETHOD)
-        return call_multimethod(*val, args.data(), args.size());
+        return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
     if (type == type::FN)
     {
-        auto n = args.size();
+        auto n = elems.size() - 1;
         auto fni = find_fn_index(*val, n);
         auto va = is_va(*val, fni);
         auto params = get_fn_params(*val, fni);
@@ -278,13 +279,13 @@ Force eval_list(Value list, Value env)
         if (*fenv == nil && (n > 0 || va))
             fenv = create_small_map();
         for (decltype(n) i = 0; i < n; ++i)
-            fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), args[i]);
+            fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
         if (va)
         {
             Root vargs;
             auto nn = get_small_vector_size(params) - 2;
-            if (args.size() > nn)
-                vargs = create_list(args.data() + nn, args.size() - nn);
+            if (elems.size() - 1 > nn)
+                vargs = create_list(elems.data() + nn + 1, elems.size() - nn - 1);
             fenv = small_map_assoc(*fenv, get_var_arg(params), *vargs);
         }
         auto body = get_fn_body(*val, fni);
@@ -296,6 +297,10 @@ Force eval_list(Value list, Value env)
             val = eval(body, *fenv);
         }
         return *val;
+    }
+    if (isa(type, type::Callable))
+    {
+        return call_multimethod(lookup(OBJ_CALL), elems.data(), elems.size());
     }
     Root msg{create_string("call error")};
     throw_exception(new_call_error(*msg));

@@ -32,6 +32,7 @@ const Value SEQ = create_symbol("cleo.core", "seq");
 const Value FIRST = create_symbol("cleo.core", "first");
 const Value NEXT = create_symbol("cleo.core", "next");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
+const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
@@ -66,6 +67,7 @@ const Value SMALL_SET_SEQ = create_symbol("cleo.core", "SmallSetSeq");
 const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
 const Value SEQABLE = create_symbol("cleo.core", "Seqable");
 const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
+const Value Callable = create_symbol("cleo.core", "Callable");
 const Value FN = create_symbol("cleo.core", "Fn");
 const Value Macro = create_symbol("cleo.core", "Macro");
 const Value RECUR = create_symbol("cleo.core", "Recur");
@@ -189,6 +191,12 @@ struct Initialize
         derive(type::SEQUENCE, type::SEQABLE);
         f = create_native_function1<identity>();
         define_method(SEQ, type::SEQUENCE, *f);
+
+        define_multimethod(OBJ_CALL, *first_type, nil);
+
+        derive(type::SMALL_SET, type::Callable);
+        f = create_native_function2<small_set_get>();
+        define_method(OBJ_CALL, type::SMALL_SET, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
