@@ -8,6 +8,7 @@
 #include "error.hpp"
 #include "eval.hpp"
 #include "small_set.hpp"
+#include "small_map.hpp"
 
 namespace cleo
 {
@@ -197,6 +198,10 @@ struct Initialize
         derive(type::SMALL_SET, type::Callable);
         f = create_native_function2<small_set_get>();
         define_method(OBJ_CALL, type::SMALL_SET, *f);
+
+        derive(type::SMALL_MAP, type::Callable);
+        f = create_native_function2<small_map_get>();
+        define_method(OBJ_CALL, type::SMALL_MAP, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);

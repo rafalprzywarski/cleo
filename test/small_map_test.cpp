@@ -1,4 +1,5 @@
 #include <cleo/small_map.hpp>
+#include <cleo/eval.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -104,6 +105,22 @@ TEST_F(small_map_test, should_merge_maps_with_values_from_the_second_map_overrid
     EXPECT_EQ_REFS(*v4, small_map_get(*r, *k1));
     EXPECT_EQ_REFS(nil, small_map_get(*r, *k2));
     EXPECT_EQ_REFS(*v3, small_map_get(*r, *k3));
+}
+
+TEST_F(small_map_test, should_delegate_to_get_when_called)
+{
+    Root k1{create_int64(10)};
+    Root k2{create_int64(20)};
+    Root v1{create_int64(101)};
+    Root m{create_small_map()};
+    m = small_map_assoc(*m, *k1, *v1);
+    Root call{list(*m, *k1)};
+    Root val{eval(*call)};
+    EXPECT_EQ_VALS(*v1, *val);
+
+    call = list(*m, *k2);
+    val = eval(*call);
+    EXPECT_EQ_VALS(nil, *val);
 }
 
 }
