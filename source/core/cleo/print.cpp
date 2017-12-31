@@ -3,6 +3,7 @@
 #include "var.hpp"
 #include "multimethod.hpp"
 #include "small_vector.hpp"
+#include "small_set.hpp"
 #include "small_map.hpp"
 #include <sstream>
 
@@ -108,6 +109,22 @@ Force pr_str_small_vector(Value v)
         str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += ']';
+    return create_string(str);
+}
+
+Force pr_str_small_set(Value s)
+{
+    std::string str;
+    str += "#{";
+    auto size = get_small_set_size(s);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (i > 0)
+            str += ' ';
+        Root ss{pr_str(get_small_set_elem(s, i))};
+        str.append(get_string_ptr(*ss), get_string_len(*ss));
+    }
+    str += '}';
     return create_string(str);
 }
 

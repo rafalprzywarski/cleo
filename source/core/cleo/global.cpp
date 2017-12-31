@@ -206,6 +206,8 @@ struct Initialize
         define_multimethod(PR_STR_OBJ, *first_type, nil);
         f = create_native_function1<pr_str_small_vector>();
         define_method(PR_STR_OBJ, type::SMALL_VECTOR, *f);
+        f = create_native_function1<pr_str_small_set>();
+        define_method(PR_STR_OBJ, type::SMALL_SET, *f);
         f = create_native_function1<pr_str_small_map>();
         define_method(PR_STR_OBJ, type::SMALL_MAP, *f);
         f = create_native_function1<pr_str_seqable>();

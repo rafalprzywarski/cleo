@@ -6,6 +6,7 @@ namespace cleo
 
 Force pr_str_object(Value val);
 Force pr_str_small_vector(Value val);
+Force pr_str_small_set(Value s);
 Force pr_str_small_map(Value val);
 Force pr_str_seqable(Value v);
 

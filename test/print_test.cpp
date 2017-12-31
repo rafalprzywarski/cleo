@@ -124,6 +124,19 @@ TEST_F(pr_str_test, should_print_maps)
     EXPECT_EQ("{30 40, :c 20, :a :b}", str(pr_str(*val)));
 }
 
+TEST_F(pr_str_test, should_print_sets)
+{
+    Root val{sset()};
+    EXPECT_EQ("#{}", str(pr_str(*val)));
+    val = sset(nil, nil);
+    EXPECT_EQ("#{nil}", str(pr_str(*val)));
+    auto a = create_keyword("a");
+    auto b = create_keyword("b");
+    auto c = create_keyword("c");
+    val = sset(a, b, c, 20, 30, 40);
+    EXPECT_EQ("#{:a :b :c 20 30 40}", str(pr_str(*val)));
+}
+
 TEST_F(pr_str_test, should_print_sequences)
 {
     Root val;
