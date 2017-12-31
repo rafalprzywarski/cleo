@@ -263,7 +263,7 @@ TEST_F(eval_test, should_eval_vectors)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST_F(eval_test, should_eval_setd)
+TEST_F(eval_test, should_eval_set)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
