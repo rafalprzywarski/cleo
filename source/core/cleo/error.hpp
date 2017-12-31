@@ -5,9 +5,12 @@
 namespace cleo
 {
 
-struct Exception : std::runtime_error
+class Exception : public std::exception
 {
-    Exception() : std::runtime_error("clue exception") { }
+public:
+    const char *what() const noexcept override;
+private:
+    mutable std::string buffer;
 };
 
 [[noreturn]] void throw_exception(Force e);

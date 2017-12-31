@@ -1,8 +1,25 @@
 #include "error.hpp"
 #include "global.hpp"
+#include "print.hpp"
 
 namespace cleo
 {
+
+const char *Exception::what() const noexcept
+{
+    if (*current_exception == nil)
+        return "nil";
+    try
+    {
+        Root text{pr_str(*current_exception)};
+        buffer = std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
+    }
+    catch (...)
+    {
+        return "<what() error>";
+    }
+    return buffer.c_str();
+}
 
 void throw_exception(Force e)
 {

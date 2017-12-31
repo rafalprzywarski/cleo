@@ -121,6 +121,11 @@ struct Test : testing::Test
 {
     Override<decltype(gc_frequency)> ovf{gc_frequency, 1};
     Override<decltype(gc_counter)> ovc{gc_counter, 1};
+
+    void TearDown() override
+    {
+        current_exception = nil;
+    }
 };
 
 }

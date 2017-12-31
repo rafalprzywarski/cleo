@@ -93,6 +93,7 @@ extern const Value THROW;
 extern const Value TRY;
 extern const Value CATCH;
 extern const Value FINALLY;
+extern const Value VA;
 
 namespace type
 {

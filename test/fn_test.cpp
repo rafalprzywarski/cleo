@@ -91,5 +91,53 @@ TEST_F(fn_test, should_dispatch_to_the_right_arity)
     EXPECT_EQ_VALS(create_keyword("c"), *val);
 }
 
+TEST_F(fn_test, should_dispatch_to_vararg)
+{
+    Root fn{create_string("(fn xyz [& a] a)")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    Root call{list(*fn)};
+    Root val{eval(*call)};
+    Root ex{nil};
+    EXPECT_EQ_VALS(*ex, *val);
+
+    auto x = create_keyword("x");
+    auto y = create_keyword("y");
+    call = list(*fn, x, y);
+    val = eval(*call);
+    ex = list(x, y);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    fn = create_string("(fn xyz ([a b] :a) ([a b & c] (cleo.core/list a b c)))");
+    fn = read(*fn);
+    fn = eval(*fn);
+    call = list(*fn, x, y);
+    val = eval(*call);
+    ex = create_keyword("a");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    fn = create_string("(fn xyz ([a b & c] (cleo.core/list a b c)) ([a b] :a))");
+    fn = read(*fn);
+    fn = eval(*fn);
+    call = list(*fn, x, y);
+    val = eval(*call);
+    ex = create_keyword("a");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    call = list(*fn, y, x, x, y);
+    val = eval(*call);
+    ex = list(x, y);
+    ex = list(y, x, *ex);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    fn = create_string("(fn xyz ([a b & c] (cleo.core/list a b c)))");
+    fn = read(*fn);
+    fn = eval(*fn);
+    call = list(*fn, x, y);
+    val = eval(*call);
+    ex = list(x, y, nil);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }

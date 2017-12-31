@@ -50,6 +50,7 @@ const Value THROW = create_symbol("throw");
 const Value TRY = create_symbol("try");
 const Value CATCH = create_symbol("catch");
 const Value FINALLY = create_symbol("finally");
+const Value VA = create_symbol("&");
 
 namespace type
 {

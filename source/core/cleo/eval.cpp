@@ -182,12 +182,39 @@ Force eval_try(Value list, Value env)
     return *val;
 }
 
+bool is_va(Value fn, std::uint8_t i)
+{
+    auto params = get_fn_params(fn, i);
+    auto size = get_small_vector_size(params);
+    return
+        size >= 2 &&
+        get_small_vector_elem(params, size - 2) == VA;
+}
+
+Value get_var_arg(Value params)
+{
+    auto size = get_small_vector_size(params);
+    return get_small_vector_elem(params, size - 1);
+}
+
 std::uint8_t find_fn_index(Value fn, std::uint8_t n)
 {
     auto size = get_fn_size(fn);
     for (std::uint8_t i = 0; i < size; ++i)
-        if (get_small_vector_size(get_fn_params(fn, i)) == n)
+    {
+        auto va = is_va(fn, i);
+        auto size = get_small_vector_size(get_fn_params(fn, i));
+        if (!va && size == n)
             return i;
+    }
+
+    for (std::uint8_t i = 0; i < size; ++i)
+    {
+        auto va = is_va(fn, i);
+        auto size = get_small_vector_size(get_fn_params(fn, i));
+        if (va && (size - 2) <= n)
+            return i;
+    }
 
     Root msg{create_string("arity error")};
     throw_exception(new_call_error(*msg));
@@ -244,12 +271,21 @@ Force eval_list(Value list, Value env)
     {
         auto n = args.size();
         auto fni = find_fn_index(*val, n);
+        auto va = is_va(*val, fni);
         auto params = get_fn_params(*val, fni);
         Root fenv{get_fn_env(*val)};
-        if (*fenv == nil && n > 0)
+        if (*fenv == nil && (n > 0 || va))
             fenv = create_small_map();
         for (decltype(n) i = 0; i < n; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), args[i]);
+        if (va)
+        {
+            Root vargs;
+            auto nn = get_small_vector_size(params) - 2;
+            if (args.size() > nn)
+                vargs = create_list(args.data() + nn, args.size() - nn);
+            fenv = small_map_assoc(*fenv, get_var_arg(params), *vargs);
+        }
         auto body = get_fn_body(*val, fni);
         Root val{eval(body, *fenv)};
         while (get_value_type(*val) == type::RECUR)
