@@ -266,7 +266,7 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first == TRY)
         return eval_try(list, env);
-    Root val{eval(first, env)};
+    Root val{first == RECUR ? *recur : eval(first, env)};
     auto type = get_value_type(*val);
     if (type == type::Macro)
     {

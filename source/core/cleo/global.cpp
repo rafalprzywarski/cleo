@@ -44,7 +44,7 @@ const Value DEF = create_symbol("def");
 const Value LET = create_symbol("let");
 const Value IF = create_symbol("if");
 const Value LOOP = create_symbol("loop");
-const Value RECUR = create_symbol("cleo.core", "recur");
+const Value RECUR = create_symbol("recur");
 const Value PLUS = create_symbol("cleo.core", "+");
 const Value MINUS = create_symbol("cleo.core", "-");
 const Value ASTERISK = create_symbol("cleo.core", "*");
@@ -95,6 +95,11 @@ const std::array<Value, 7> type_by_tag{{
 
 const Root EMPTY_LIST{create_list(nullptr, 0)};
 
+const Root recur{create_native_function([](const Value *args, std::uint8_t n)
+{
+    return create_object(type::RECUR, args, n);
+})};
+
 namespace
 {
 
@@ -140,11 +145,6 @@ Force lt2(Value l, Value r)
 {
     return get_int64_value(l) < get_int64_value(r) ? TRUE : nil;
 }
-
-Root recur{create_native_function([](const Value *args, std::uint8_t n)
-{
-    return create_object(type::RECUR, args, n);
-})};
 
 Force pr_str_exception(Value e)
 {
@@ -277,8 +277,6 @@ struct Initialize
         define(LT, *f);
         f = create_native_function2<are_equal>();
         define(EQ, *f);
-
-        define(RECUR, *recur);
 
         f = create_native_function1<pr_str_exception>();
         define_method(PR_STR_OBJ, type::Exception, *f);
