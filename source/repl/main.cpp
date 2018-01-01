@@ -50,6 +50,7 @@ int main()
     char *line;
 
     cleo::in_ns(cleo::create_symbol("user"));
+    cleo::refer(cleo::create_symbol("cleo.core"));
     while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)
     {
         std::string source = line;
