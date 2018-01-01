@@ -4,6 +4,7 @@
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
+#include <cleo/namespace.hpp>
 #include <iostream>
 #include <readline/readline.h>
 
@@ -48,6 +49,7 @@ int main()
 {
     char *line;
 
+    cleo::in_ns(cleo::create_symbol("user"));
     while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)
     {
         std::string source = line;
