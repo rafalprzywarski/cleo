@@ -3,8 +3,16 @@
 #include <cleo/print.hpp>
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
+#include <cleo/var.hpp>
 #include <iostream>
 #include <readline/readline.h>
+
+std::string get_current_ns()
+{
+    auto ns = cleo::lookup(cleo::CURRENT_NS);
+    cleo::Root text{cleo::pr_str(ns)};
+    return std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
+}
 
 bool eval_source(const std::string& line)
 {
@@ -40,7 +48,7 @@ int main()
 {
     char *line;
 
-    while ((line = readline("$ ")) != nullptr)
+    while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)
     {
         std::string source = line;
         std::free(line);
@@ -48,7 +56,7 @@ int main()
         char *extra;
         while (
             !eval_source(source) &&
-            (extra = readline("> ")) != nullptr)
+            (extra = readline((get_current_ns() + " > ").c_str())) != nullptr)
         {
             source += '\n';
             source += extra;
