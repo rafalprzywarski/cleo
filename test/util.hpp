@@ -6,6 +6,7 @@
 #include <cleo/small_set.hpp>
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
+#include <cleo/namespace.hpp>
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
@@ -146,6 +147,7 @@ struct Test : testing::Test
     void TearDown() override
     {
         current_exception = nil;
+        in_ns(nil);
     }
 };
 

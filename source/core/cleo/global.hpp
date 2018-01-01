@@ -95,6 +95,8 @@ extern const Value TRY;
 extern const Value CATCH;
 extern const Value FINALLY;
 extern const Value VA;
+extern const Value CURRENT_NS;
+extern const Value IN_NS;
 
 namespace type
 {

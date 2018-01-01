@@ -9,6 +9,7 @@
 #include "eval.hpp"
 #include "small_set.hpp"
 #include "small_map.hpp"
+#include "namespace.hpp"
 
 namespace cleo
 {
@@ -54,6 +55,8 @@ const Value TRY = create_symbol("try");
 const Value CATCH = create_symbol("catch");
 const Value FINALLY = create_symbol("finally");
 const Value VA = create_symbol("&");
+const Value CURRENT_NS = create_symbol("cleo.core", "*ns*");
+const Value IN_NS = create_symbol("cleo.core", "in-ns");
 
 namespace type
 {
@@ -163,12 +166,17 @@ struct Initialize
 {
     Initialize()
     {
+        Root f;
+
+        define(CURRENT_NS, nil);
+        f = create_native_function1<in_ns>();
+        define(IN_NS, *f);
+
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
         define_multimethod(FIRST, *first_type, undefined);
         define_multimethod(NEXT, *first_type, undefined);
 
-        Root f;
         f = create_native_function1<nil_seq>();
         define_method(SEQ, nil, *f);
         f = create_native_function1<nil_seq>();
