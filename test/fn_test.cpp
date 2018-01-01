@@ -139,5 +139,21 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(fn_test, should_not_bind_the_ampersand)
+{
+    Root call{create_string("((fn [a & b] &) 1 2 3)")};
+    call = read(*call);
+    try
+    {
+        eval(*call);
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_VALS(type::SymbolNotFound, get_value_type(*e));
+    }
+}
+
 }
 }

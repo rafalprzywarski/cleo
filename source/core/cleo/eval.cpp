@@ -271,37 +271,46 @@ Force eval_list(Value list, Value env)
         return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
     if (type == type::FN)
     {
-        auto n = elems.size() - 1;
-        auto fni = find_fn_index(*val, n);
+        auto fni = find_fn_index(*val, elems.size() - 1);
         auto va = is_va(*val, fni);
         auto params = get_fn_params(*val, fni);
+        auto n_params = va ? get_small_vector_size(params) - 1 : get_small_vector_size(params);
+        auto n_fixed_params = va ? n_params - 1 : n_params;
         Root fenv{get_fn_env(*val)};
-        if (*fenv == nil && (n > 0 || va))
+        if (*fenv == nil && (n_params > 0 || va))
             fenv = create_small_map();
-        for (decltype(n) i = 0; i < n; ++i)
+        for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
         if (va)
         {
             Root vargs;
-            auto nn = get_small_vector_size(params) - 2;
-            if (elems.size() - 1 > nn)
-                vargs = create_list(elems.data() + nn + 1, elems.size() - nn - 1);
+            if (elems.size() - 1 > n_fixed_params)
+                vargs = create_list(elems.data() + n_fixed_params + 1, elems.size() - n_fixed_params - 1);
             fenv = small_map_assoc(*fenv, get_var_arg(params), *vargs);
         }
         auto body = get_fn_body(*val, fni);
         Root val{eval(body, *fenv)};
         while (get_value_type(*val) == type::RECUR)
         {
-            for (decltype(n) i = 0; i < n; ++i)
+            for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
                 fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
+            if (va)
+            {
+                Root vargs;
+                if (get_object_size(*val) > n_fixed_params)
+                {
+                    vargs = create_list(elems.data() + n_fixed_params + 1, elems.size() - n_fixed_params - 1);
+                    for (std::uint8_t i = get_object_size(*val); i > n_fixed_params; --i)
+                        vargs = list_conj(*vargs, get_object_element(*val, i - 1));
+                }
+                fenv = small_map_assoc(*fenv, get_var_arg(params), *vargs);
+            }
             val = eval(body, *fenv);
         }
         return *val;
     }
     if (isa(type, type::Callable))
-    {
         return call_multimethod(lookup(OBJ_CALL), elems.data(), elems.size());
-    }
     Root msg{create_string("call error")};
     throw_exception(new_call_error(*msg));
 }
