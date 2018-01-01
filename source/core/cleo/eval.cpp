@@ -77,8 +77,21 @@ Force eval_def(Value list, Value env)
 {
     Root next{get_list_next(list)};
     auto sym = get_list_first(*next);
+    auto ns = get_symbol_namespace(sym);
+    auto current_ns = lookup(CURRENT_NS);
+    if (current_ns == nil ||
+        (ns != nil && are_equal(ns, get_symbol_name(current_ns)) == nil))
+    {
+        Root msg{create_string("illegal namespace")};
+        throw_exception(new_illegal_argument(*msg));
+    }
     next = get_list_next(*next);
     Root val{eval(get_list_first(*next), env)};
+    auto current_ns_name = get_symbol_name(current_ns);
+    auto sym_name = get_symbol_name(sym);
+    sym = create_symbol(
+        {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
+        {get_string_ptr(sym_name), get_string_len(sym_name)});
     define(sym, *val);
     return *val;
 }

@@ -278,15 +278,54 @@ TEST_F(eval_test, should_eval_set)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST_F(eval_test, should_define_vars)
+TEST_F(eval_test, should_define_vars_in_the_current_ns)
 {
     Root ex{create_int64(55)};
     auto x = create_symbol("x");
     Root env{smap(x, *ex)};
-    Root val{read_str("(def clue.eval.test/var1 ((fn [] x)))")};
+    in_ns(create_symbol("clue.eval.test"));
+    Root val{read_str("(def var1 ((fn [] x)))")};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var1")));
+}
+
+TEST_F(eval_test, def_should_fail_when_ns_is_specified)
+{
+    auto x = create_symbol("x");
+    Root env{smap(x, 55)};
+    in_ns(create_symbol("clue.eval.test"));
+    Root val{read_str("(def clue.eval.test.other/var2 ((fn [] x)))")};
+    try
+    {
+        eval(*val, *env);
+        FAIL() << "expected IllegalArgument";
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_VALS(type::IllegalArgument, get_value_type(*e));
+    }
+    ASSERT_THROW(lookup(create_symbol("clue.eval.test.other", "var2")), Exception);
+}
+
+TEST_F(eval_test, def_should_fail_when_current_ns_is_nil)
+{
+    in_ns(nil);
+    Root val{read_str("(def var4 10)")};
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_current_one)
+{
+    Root ex{create_int64(55)};
+    auto x = create_symbol("x");
+    Root env{smap(x, *ex)};
+    in_ns(create_symbol("clue.eval.test"));
+    Root val{read_str("(def clue.eval.test/var3 ((fn [] x)))")};
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var3")));
 }
 
 TEST_F(eval_test, should_eval_maps)
