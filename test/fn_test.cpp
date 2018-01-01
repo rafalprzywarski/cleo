@@ -10,7 +10,10 @@ namespace cleo
 namespace test
 {
 
-struct fn_test : Test {};
+struct fn_test : Test
+{
+    fn_test() : Test("cleo.fn.test") { }
+};
 
 TEST_F(fn_test, should_eval_the_body)
 {

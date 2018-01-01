@@ -10,7 +10,10 @@ namespace cleo
 namespace test
 {
 
-struct small_set_test : Test {};
+struct small_set_test : Test
+{
+    small_set_test() : Test("cleo.small-set.test") { }
+};
 
 TEST_F(small_set_test, should_create_an_empty_set)
 {

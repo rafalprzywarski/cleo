@@ -10,7 +10,10 @@ namespace cleo
 namespace test
 {
 
-struct macro_test : Test {};
+struct macro_test : Test
+{
+    macro_test() : Test("cleo.macro.test") {}
+};
 
 TEST_F(macro_test, macroexpand1_should_return_the_given_form_if_its_not_a_list_with_a_macro)
 {

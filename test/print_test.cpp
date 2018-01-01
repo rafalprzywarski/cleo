@@ -10,6 +10,8 @@ namespace test
 
 struct pr_str_test : Test
 {
+    pr_str_test() : Test("cleo.pr-str.test") { }
+
     static std::string str(Force f)
     {
         Root val{f};

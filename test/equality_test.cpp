@@ -8,7 +8,10 @@ namespace cleo
 namespace test
 {
 
-struct equality_test : testing::Test {};
+struct equality_test : Test
+{
+    equality_test() : Test("cleo.equality.test") { }
+};
 
 TEST_F(equality_test, same_instances_should_be_equal)
 {

@@ -9,7 +9,10 @@ namespace cleo
 namespace test
 {
 
-struct small_vector_test : Test {};
+struct small_vector_test : Test
+{
+    small_vector_test() : Test("cleo.small-vector.test") { }
+};
 
 TEST_F(small_vector_test, should_create_an_empty_vector)
 {

@@ -9,7 +9,10 @@ namespace cleo
 namespace test
 {
 
-struct var_test : Test {};
+struct var_test : Test
+{
+    var_test() : Test("cleo.var.test") { }
+};
 
 TEST_F(var_test, should_define_vars)
 {

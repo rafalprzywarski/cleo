@@ -21,6 +21,8 @@ namespace test
 
 struct eval_test : Test
 {
+    eval_test() : Test("cleo.eval.test") { }
+
     Force read_str(const std::string& s)
     {
         Root ss{create_string(s)};
@@ -58,6 +60,16 @@ TEST_F(eval_test, should_eval_symbols_to_var_values)
     val = create_int64(7);
     define(sym, *val);
     ASSERT_TRUE(*val == *Root(eval(sym)));
+}
+
+TEST_F(eval_test, should_eval_symbols_in_the_current_ns)
+{
+    auto sym = create_symbol("cleo.eval.test", "eight");
+    Root val;
+    val = create_int64(8);
+    define(sym, *val);
+    in_ns(create_symbol("cleo.eval.test"));
+    ASSERT_TRUE(*val == *Root(eval(create_symbol("eight"))));
 }
 
 TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
@@ -391,7 +403,7 @@ TEST_F(eval_test, loop_should_allow_rebinding)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_loop_and_reevaluate_it)
 {
-    Root val{read_str("(loop [n 5 r 1] (if (= n 0) r (recur (- n 1) (* r n))))")};
+    Root val{read_str("(loop [n 5 r 1] (if (cleo.core/= n 0) r (cleo.core/recur (cleo.core/- n 1) (cleo.core/* r n))))")};
     Root ex{create_int64(5 * 4 * 3 * 2 * 1)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -399,7 +411,7 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_loop_and_reevaluate_it)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 {
-    Root val{read_str("((fn [n r] (if (= n 0) r (recur (- n 1) (* r n)))) 5 1)")};
+    Root val{read_str("((fn [n r] (if (cleo.core/= n 0) r (cleo.core/recur (cleo.core/- n 1) (cleo.core/* r n)))) 5 1)")};
     Root ex{create_int64(5 * 4 * 3 * 2 * 1)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -407,16 +419,16 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_with_varargs_and_reevaluate_it)
 {
-    Root val{read_str("((fn [cond & xs] (if cond xs (recur :true 1 2 3))) nil)")};
+    Root val{read_str("((fn [cond & xs] (if cond xs (cleo.core/recur :true 1 2 3))) nil)")};
     Root ex{list(1, 2, 3)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("((fn [& xs] (if xs xs (recur 1 2 3))))");
+    val = read_str("((fn [& xs] (if xs xs (cleo.core/recur 1 2 3))))");
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("((fn [cond & xs] (if cond xs (recur :true))) nil)");
+    val = read_str("((fn [cond & xs] (if cond xs (cleo.core/recur :true))) nil)");
     val = eval(*val);
     EXPECT_EQ_VALS(nil, *val);
 }
@@ -464,7 +476,7 @@ TEST_F(eval_test, should_eval_throw)
 
 TEST_F(eval_test, should_eval_try_catch)
 {
-    Root val{read_str("(try (throw x) (catch cleo.core/Int64 e (+ e a)))")};
+    Root val{read_str("(try (throw x) (catch cleo.core/Int64 e (cleo.core/+ e a)))")};
     Root env{smap(create_symbol("x"), 107, create_symbol("a"), 2)};
     Root ex{create_int64(109)};
     val = eval(*val, *env);

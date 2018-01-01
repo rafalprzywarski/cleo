@@ -9,6 +9,7 @@ namespace test
 
 struct hash_test : Test
 {
+    hash_test() : Test("cleo.hash.test") { }
     Int64 hash(Value val)
     {
         Root h{cleo::hash(val)};

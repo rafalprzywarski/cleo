@@ -12,6 +12,8 @@ namespace test
 
 struct reader_test : Test
 {
+    reader_test() : Test("cleo.reader.test") { }
+
     static Force read_str(const std::string& s)
     {
         Root sr{create_string(s)};

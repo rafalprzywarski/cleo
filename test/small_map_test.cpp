@@ -8,7 +8,10 @@ namespace cleo
 namespace test
 {
 
-struct small_map_test : Test {};
+struct small_map_test : Test
+{
+    small_map_test() : Test("cleo.small-map.test") { }
+};
 
 TEST_F(small_map_test, should_create_an_empty_map)
 {

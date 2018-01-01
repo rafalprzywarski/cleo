@@ -144,6 +144,11 @@ struct Test : testing::Test
     Override<decltype(gc_frequency)> ovf{gc_frequency, 1};
     Override<decltype(gc_counter)> ovc{gc_counter, 1};
 
+    Test(const std::string& ns)
+    {
+        in_ns(create_symbol(ns));
+    }
+
     void TearDown() override
     {
         current_exception = nil;

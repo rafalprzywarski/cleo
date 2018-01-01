@@ -11,7 +11,10 @@ namespace cleo
 namespace test
 {
 
-struct value_test : Test {};
+struct value_test : Test
+{
+    value_test() : Test("cleo.value.test") { }
+};
 
 TEST_F(value_test, nil_should_have_tag_NIL)
 {

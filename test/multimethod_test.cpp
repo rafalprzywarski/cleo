@@ -13,6 +13,8 @@ namespace test
 
 struct multimethod_test : Test
 {
+    multimethod_test() : Test("cleo.multimethod.test") {}
+
     static auto mk_fn()
     {
         return create_native_function([](const Value *args, std::uint8_t) { return force(nil); });

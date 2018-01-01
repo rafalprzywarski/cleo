@@ -9,7 +9,10 @@ namespace cleo
 namespace test
 {
 
-struct list_test : Test {};
+struct list_test : Test
+{
+    list_test() : Test("cleo.list.test") { }
+};
 
 TEST_F(list_test, should_create_an_empty_list)
 {
