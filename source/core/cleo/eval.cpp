@@ -111,7 +111,7 @@ Force eval_let(Value list, Value env)
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
     auto size = get_small_vector_size(bindings);
-    Root lenv{env == nil && size > 0 ? create_small_map() : env};
+    Root lenv{env == nil && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
@@ -126,7 +126,7 @@ Force eval_loop(Value list, Value env)
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
     auto size = get_small_vector_size(bindings);
-    Root lenv{env == nil && size > 0 ? create_small_map() : env};
+    Root lenv{env == nil && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
@@ -188,7 +188,7 @@ Force eval_try(Value list, Value env)
             n = get_list_next(*n);
             auto name = get_list_first(*n);
             n = get_list_next(*n);
-            Root lenv{env != nil ? env : create_small_map()};
+            Root lenv{env != nil ? env : *EMPTY_MAP};
             lenv = small_map_assoc(*lenv, name, *ex);
             return eval(get_list_first(*n), *lenv);
         }
@@ -301,7 +301,7 @@ Force eval_list(Value list, Value env)
         auto n_fixed_params = va ? n_params - 1 : n_params;
         Root fenv{get_fn_env(*val)};
         if (*fenv == nil && (n_params > 0 || va))
-            fenv = create_small_map();
+            fenv = *EMPTY_MAP;
         for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
         if (va)
@@ -368,7 +368,7 @@ Force eval_set(Value s, Value env)
 Force eval_map(Value m, Value env)
 {
     auto size = get_small_map_size(m);
-    Root e{create_small_map()};
+    Root e{*EMPTY_MAP};
     for (decltype(size) i = 0; i != size; ++i)
     {
         Root k{eval(get_small_map_key(m, i), env)};
@@ -400,7 +400,7 @@ Force macroexpand1(Value val)
         Root msg{create_string("arity error")};
         throw_exception(new_call_error(*msg));
     }
-    Root env{create_small_map()};
+    Root env{*EMPTY_MAP};
     for (decltype(n) i = 0; i < n; ++i)
     {
         env = small_map_assoc(*env, get_small_vector_elem(params, i), get_list_first(*args));

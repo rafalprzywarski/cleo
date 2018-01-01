@@ -125,9 +125,11 @@ extern const Value UnexpectedEndOfInput;
 
 extern const std::array<Value, 7> type_by_tag;
 
-extern Root namespaces;
-
 extern const Root EMPTY_LIST;
+extern const Root EMPTY_VECTOR;
+extern const Root EMPTY_MAP;
 extern const Root recur;
+
+extern Root namespaces;
 
 }

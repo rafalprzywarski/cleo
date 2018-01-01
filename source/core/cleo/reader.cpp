@@ -111,7 +111,7 @@ Force read_vector(Stream& s)
 {
     s.next(); // '['
     eat_ws(s);
-    Root v{create_small_vector(nullptr, 0)};
+    Root v{*EMPTY_VECTOR};
 
     while (!s.eos() && s.peek() != ']')
     {
@@ -129,7 +129,7 @@ Force read_map(Stream& s)
 {
     s.next(); // '{'
     eat_ws(s);
-    Root m{create_small_map()};
+    Root m{*EMPTY_MAP};
 
     while (!s.eos() && s.peek() != '}')
     {

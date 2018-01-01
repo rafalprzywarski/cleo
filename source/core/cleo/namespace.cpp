@@ -23,7 +23,7 @@ Value refer(Value ns)
     auto current_ns_name = get_symbol_name(lookup_var(CURRENT_NS));
     Root current_ns{small_map_get(*namespaces, current_ns_name)};
     if (*current_ns == nil)
-        current_ns = create_small_map();
+        current_ns = *EMPTY_MAP;
     ns = small_map_get(*namespaces, get_symbol_name(ns));
     if (ns == nil)
         return nil;
@@ -37,7 +37,7 @@ Value define(Value sym, Value val)
     assert(get_value_tag(sym) == tag::SYMBOL);
     Root ns{small_map_get(*namespaces, get_symbol_namespace(sym))};
     if (*ns == nil)
-        ns = create_small_map();
+        ns = *EMPTY_MAP;
     ns = small_map_assoc(*ns, get_symbol_name(sym), sym);
     namespaces = small_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
     define_var(sym, val);
