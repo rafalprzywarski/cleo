@@ -93,6 +93,8 @@ const std::array<Value, 7> type_by_tag{{
     create_symbol("cleo.core", "String")
 }};
 
+Root namespaces{create_small_map()};
+
 const Root EMPTY_LIST{create_list(nullptr, 0)};
 
 const Root recur{create_native_function([](const Value *args, std::uint8_t n)
@@ -148,7 +150,7 @@ Force lt2(Value l, Value r)
 
 Force pr_str_exception(Value e)
 {
-    auto get_message = lookup(GET_MESSAGE);
+    auto get_message = lookup_var(GET_MESSAGE);
     cleo::Root msg{call_multimethod1(get_message, e)};
     cleo::Root type{cleo::pr_str(cleo::get_value_type(e))};
 
@@ -320,6 +322,9 @@ struct Initialize
         define(create_symbol("cleo.core", "macroexpand"), *f);
 
         define(create_symbol("cleo.core", "list"), *mk_list);
+
+        f = create_native_function1<refer>();
+        define(create_symbol("cleo.core", "refer"), *f);
     }
 } initialize;
 

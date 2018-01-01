@@ -10,7 +10,7 @@
 
 std::string get_current_ns()
 {
-    auto ns = cleo::lookup(cleo::CURRENT_NS);
+    auto ns = cleo::lookup_var(cleo::CURRENT_NS);
     cleo::Root text{cleo::pr_str(ns)};
     return std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
 }

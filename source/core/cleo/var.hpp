@@ -4,7 +4,7 @@
 namespace cleo
 {
 
-void define(Value sym, Value val);
-Value lookup(Value sym);
+void define_var(Value sym, Value val);
+Value lookup_var(Value sym);
 
 }

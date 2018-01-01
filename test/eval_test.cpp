@@ -264,7 +264,7 @@ TEST_F(eval_test, should_eval_vectors)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
-    Root ex{svec(lookup(SEQ), lookup(FIRST), *x)};
+    Root ex{svec(lookup_var(SEQ), lookup_var(FIRST), *x)};
     Root val{svec(SEQ, FIRST, xs)};
     Root env{smap(xs, *x)};
     val = eval(*val, *env);
@@ -279,7 +279,7 @@ TEST_F(eval_test, should_eval_set)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
-    Root ex{sset(lookup(SEQ), lookup(FIRST), *x)};
+    Root ex{sset(lookup_var(SEQ), lookup_var(FIRST), *x)};
     Root val{sset(SEQ, FIRST, xs)};
     Root env{smap(xs, *x)};
     val = eval(*val, *env);
@@ -346,7 +346,7 @@ TEST_F(eval_test, should_eval_maps)
     Root y{create_int64(77)};
     auto xs = create_symbol("x");
     auto ys = create_symbol("y");
-    Root ex{smap(lookup(SEQ), lookup(FIRST), *x, *y)};
+    Root ex{smap(lookup_var(SEQ), lookup_var(FIRST), *x, *y)};
     Root val{smap(SEQ, FIRST, xs, ys)};
     Root env{smap(xs, *x, ys, *y)};
     val = eval(*val, *env);

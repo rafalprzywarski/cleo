@@ -1,5 +1,5 @@
 #include "multimethod.hpp"
-#include "var.hpp"
+#include "namespace.hpp"
 #include "hash.hpp"
 #include "equality.hpp"
 #include "small_vector.hpp"

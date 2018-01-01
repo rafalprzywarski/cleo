@@ -9,6 +9,7 @@
 #include "small_vector.hpp"
 #include "small_set.hpp"
 #include "small_map.hpp"
+#include "namespace.hpp"
 #include <vector>
 
 namespace cleo
@@ -21,7 +22,7 @@ Value eval_symbol(Value sym, Value env)
 {
     if (env != nil && small_map_contains(env, sym))
         return small_map_get(env, sym);
-    auto current_ns = lookup(CURRENT_NS);
+    auto current_ns = lookup_var(CURRENT_NS);
     if (current_ns != nil && get_symbol_namespace(sym) == nil)
     {
         auto current_ns_name = get_symbol_name(current_ns);
@@ -87,7 +88,7 @@ Force eval_def(Value list, Value env)
     Root next{get_list_next(list)};
     auto sym = get_list_first(*next);
     auto ns = get_symbol_namespace(sym);
-    auto current_ns = lookup(CURRENT_NS);
+    auto current_ns = lookup_var(CURRENT_NS);
     if (current_ns == nil ||
         (ns != nil && are_equal(ns, get_symbol_name(current_ns)) == nil))
     {
@@ -332,7 +333,7 @@ Force eval_list(Value list, Value env)
         return *val;
     }
     if (isa(type, type::Callable))
-        return call_multimethod(lookup(OBJ_CALL), elems.data(), elems.size());
+        return call_multimethod(lookup_var(OBJ_CALL), elems.data(), elems.size());
     Root msg{create_string("call error")};
     throw_exception(new_call_error(*msg));
 }

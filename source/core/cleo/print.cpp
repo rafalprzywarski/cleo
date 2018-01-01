@@ -149,9 +149,9 @@ Force pr_str_small_map(Value m)
 
 Force pr_str_seqable(Value v)
 {
-    auto seq = lookup(SEQ);
-    auto first = lookup(FIRST);
-    auto next = lookup(NEXT);
+    auto seq = lookup_var(SEQ);
+    auto first = lookup_var(FIRST);
+    auto next = lookup_var(NEXT);
     std::string str;
     str += '(';
     bool first_elem = true;
@@ -182,7 +182,7 @@ Force pr_str(Value val)
         case tag::FLOAT64: return pr_str_float(val);
         case tag::STRING: return pr_str_string(val);
         default: // tag::OBJECT
-            return call_multimethod(lookup(PR_STR_OBJ), &val, 1);
+            return call_multimethod(lookup_var(PR_STR_OBJ), &val, 1);
     }
 }
 

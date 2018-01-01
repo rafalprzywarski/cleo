@@ -10,6 +10,7 @@ add_executable(cleo_test
   macro_test.cpp
   memory_test.cpp
   multimethod_test.cpp
+  namespace_test.cpp
   print_test.cpp
   reader_test.cpp
   small_map_test.cpp

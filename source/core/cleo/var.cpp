@@ -6,12 +6,12 @@
 namespace cleo
 {
 
-void define(Value sym, Value val)
+void define_var(Value sym, Value val)
 {
     vars[sym] = val;
 }
 
-Value lookup(Value sym)
+Value lookup_var(Value sym)
 {
     auto it = vars.find(sym);
     if (it == end(vars))
