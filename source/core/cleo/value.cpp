@@ -179,6 +179,12 @@ Force create_object2(Value type, Value elem0, Value elem1)
     return create_object(type, elems.data(), elems.size());
 }
 
+Force create_object3(Value type, Value elem0, Value elem1, Value elem2)
+{
+    std::array<Value, 3> elems{{elem0, elem1, elem2}};
+    return create_object(type, elems.data(), elems.size());
+}
+
 
 Value get_object_type(Value obj)
 {

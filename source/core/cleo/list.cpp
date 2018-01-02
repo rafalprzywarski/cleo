@@ -7,12 +7,20 @@ namespace cleo
 
 Force create_list(const Value *elems, std::uint32_t size)
 {
-    Root cons;
-    for (auto i = size; i > 0; --i)
-        cons = create_object2(type::CONS, elems[i - 1], *cons);
+    if (size == 0)
+    {
+        Root size_{create_int64(0)};
+        return create_object3(type::LIST, *size_, nil, nil);
+    }
 
-    Root size_{create_int64(size)};
-    return create_object2(type::LIST, *size_, *cons);
+    Root list, size_;
+    for (auto i = size; i > 0; --i)
+    {
+        size_ = create_int64(size - i + 1);
+        list = create_object3(type::LIST, *size_, elems[i - 1], *list);
+    }
+
+    return force(*list);
 }
 
 Value get_list_size(Value list)
@@ -22,28 +30,21 @@ Value get_list_size(Value list)
 
 Value get_list_first(Value list)
 {
-    auto cons = get_object_element(list, 1);
-    if (cons == nil)
-        return nil;
-    return get_object_element(get_object_element(list, 1), 0);
+    return get_object_element(list, 1);
 }
 
-Force get_list_next(Value list)
+Value get_list_next(Value list)
 {
-    auto size = get_int64_value(get_list_size(list));
-    if (size <= 1)
-        return nil;
-    auto cons = get_object_element(get_object_element(list, 1), 1);
-    Root new_size{create_int64(size - 1)};
-    return create_object2(type::LIST, *new_size, cons);
+    return get_object_element(list, 2);
 }
 
 Force list_conj(Value list, Value elem)
 {
-    Root cons, size;
-    cons = create_object2(type::CONS, elem, get_object_element(list, 1));
-    size = create_int64(get_int64_value(get_list_size(list)) + 1);
-    return create_object2(type::LIST, *size, *cons);
+    auto size = get_int64_value(get_list_size(list));
+    if (size == 0)
+        list = nil;
+    Root new_size{create_int64(size + 1)};
+    return create_object3(type::LIST, *new_size, elem, list);
 }
 
 Value list_seq(Value list)

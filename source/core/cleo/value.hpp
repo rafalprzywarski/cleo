@@ -124,6 +124,7 @@ Force create_object(Value type, const Value *elems, std::uint32_t size);
 Force create_object0(Value type);
 Force create_object1(Value type, Value elem);
 Force create_object2(Value type, Value elem0, Value elem1);
+Force create_object3(Value type, Value elem0, Value elem1, Value elem2);
 Value get_object_type(Value obj);
 std::uint32_t get_object_size(Value obj);
 Value get_object_element(Value obj, std::uint32_t index);
