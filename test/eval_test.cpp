@@ -500,6 +500,24 @@ TEST_F(eval_test, should_eval_try_catch)
     EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 }
 
+TEST_F(eval_test, should_eval_do)
+{
+    Root env{smap(create_symbol("a"), create_keyword("z"))};
+    Root val, ex;
+    val = read_str("(do)");
+    val = eval(*val);
+    EXPECT_EQ_VALS(nil, *val);
+
+    val = read_str("(do a)");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(create_keyword("z"), *val);
+
+    val = read_str("(do (cleo.core/in-ns 'cleo.eval.do.test) a)");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(create_keyword("z"), *val);
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.do.test"), lookup_var(CURRENT_NS));
+}
+
 namespace
 {
 bool finally_called_too_early = false;

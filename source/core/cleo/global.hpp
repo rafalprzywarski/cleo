@@ -82,6 +82,7 @@ extern const Value FN;
 extern const Value MACRO;
 extern const Value DEF;
 extern const Value LET;
+extern const Value DO;
 extern const Value IF;
 extern const Value LOOP;
 extern const Value RECUR;

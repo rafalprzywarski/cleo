@@ -113,6 +113,18 @@ Force eval_let(Value list, Value env)
     return eval(get_list_first(*n), *lenv);
 }
 
+Force eval_do(Value list, Value env)
+{
+    list = get_list_next(list);
+    Root ret;
+    while (list != nil)
+    {
+        ret = eval(get_list_first(list), env);
+        list = get_list_next(list);
+    }
+    return *ret;
+}
+
 Force eval_loop(Value list, Value env)
 {
     Root n{get_list_next(list)};
@@ -251,6 +263,8 @@ Force eval_list(Value list, Value env)
         return eval_def(list, env);
     if (first == LET)
         return eval_let(list, env);
+    if (first == DO)
+        return eval_do(list, env);
     if (first == IF)
         return eval_if(list, env);
     if (first == LOOP)

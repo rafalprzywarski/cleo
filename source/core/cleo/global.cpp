@@ -42,6 +42,7 @@ const Value FN = create_symbol("fn");
 const Value MACRO = create_symbol("macro");
 const Value DEF = create_symbol("def");
 const Value LET = create_symbol("let");
+const Value DO = create_symbol("do");
 const Value IF = create_symbol("if");
 const Value LOOP = create_symbol("loop");
 const Value RECUR = create_symbol("recur");
