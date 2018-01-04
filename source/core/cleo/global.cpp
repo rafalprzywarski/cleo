@@ -10,6 +10,7 @@
 #include "small_set.hpp"
 #include "small_map.hpp"
 #include "namespace.hpp"
+#include "reader.hpp"
 
 namespace cleo
 {
@@ -58,6 +59,7 @@ const Value FINALLY = create_symbol("finally");
 const Value VA = create_symbol("&");
 const Value CURRENT_NS = create_symbol("cleo.core", "*ns*");
 const Value IN_NS = create_symbol("cleo.core", "in-ns");
+const Value NS = create_symbol("cleo.core", "ns");
 
 namespace type
 {
@@ -163,6 +165,17 @@ Force pr_str_exception(Value e)
         std::string(get_string_ptr(*msg), get_string_len(*msg)));
 }
 
+Force create_ns_macro()
+{
+    Root form{create_string(
+        "(macro ns [ns] (let [list (fn [& xs] xs)]"
+        "                (list 'do"
+        "                 (list 'cleo.core/in-ns (list 'quote ns))"
+        "                 (list 'cleo.core/refer ''cleo.core))))")};
+    form = read(*form);
+    return eval(*form);
+}
+
 struct Initialize
 {
     Initialize()
@@ -172,6 +185,8 @@ struct Initialize
         define(CURRENT_NS, create_symbol("cleo.core"));
         f = create_native_function1<in_ns>();
         define(IN_NS, *f);
+        f = create_ns_macro();
+        define(NS, *f);
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
