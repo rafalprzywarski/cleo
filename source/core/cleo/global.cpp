@@ -160,11 +160,6 @@ Force pr_str_exception(Value e)
         std::string(get_string_ptr(*msg), get_string_len(*msg)));
 }
 
-Root mk_list{create_native_function([](const Value *args, std::uint8_t n)
-{
-    return create_list(args, n);
-})};
-
 struct Initialize
 {
     Initialize()
@@ -321,8 +316,6 @@ struct Initialize
 
         f = create_native_function1<macroexpand>();
         define(create_symbol("cleo.core", "macroexpand"), *f);
-
-        define(create_symbol("cleo.core", "list"), *mk_list);
 
         f = create_native_function1<refer>();
         define(create_symbol("cleo.core", "refer"), *f);
