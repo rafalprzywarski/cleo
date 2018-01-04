@@ -10,6 +10,7 @@
 #include "small_set.hpp"
 #include "small_map.hpp"
 #include "namespace.hpp"
+#include "reader.hpp"
 #include <vector>
 
 namespace cleo
@@ -423,6 +424,23 @@ Force eval(Value val, Value env)
     if (type == type::SMALL_MAP)
         return eval_map(val, env);
     return val;
+}
+
+Force load(Value source)
+{
+    Root bindings{small_map_assoc(*EMPTY_MAP, CURRENT_NS, lookup(CURRENT_NS))};
+    PushBindingsGuard guard{*bindings};
+    Root forms{read_forms(source)};
+    forms = small_vector_seq(*forms);
+    Root ret;
+
+    while (*forms)
+    {
+        ret = eval(get_small_vector_seq_first(*forms));
+        forms = get_small_vector_seq_next(*forms);
+    }
+
+    return *ret;
 }
 
 }

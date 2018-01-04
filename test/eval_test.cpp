@@ -550,5 +550,17 @@ TEST_F(eval_test, should_eval_try_finally)
     EXPECT_FALSE(finally_called_too_early);
 }
 
+TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
+{
+    in_ns(create_symbol("cleo.eval.load.test"));
+    Root source{create_string("(def y :xyz) (cleo.core/in-ns 'cleo.eval.load2.test) (def x :abc) x")};
+    Root val{load(*source)};
+    auto ex = create_keyword("abc");
+    EXPECT_EQ_VALS(ex, *val);
+    EXPECT_EQ_VALS(ex, lookup_var(create_symbol("cleo.eval.load2.test", "x")));
+    EXPECT_EQ_VALS(create_keyword("xyz"), lookup_var(create_symbol("cleo.eval.load.test", "y")));
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), lookup_var(CURRENT_NS));
+}
+
 }
 }
