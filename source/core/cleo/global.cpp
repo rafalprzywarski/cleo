@@ -97,6 +97,7 @@ const Root EMPTY_VECTOR{create_small_vector(nullptr, 0)};
 const Root EMPTY_MAP{create_small_map()};
 
 Root namespaces{*EMPTY_MAP};
+Root bindings;
 
 const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 {

@@ -130,5 +130,6 @@ extern const Root EMPTY_MAP;
 extern const Root recur;
 
 extern Root namespaces;
+extern Root bindings;
 
 }

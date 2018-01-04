@@ -52,5 +52,35 @@ TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
     }
 }
 
+TEST_F(var_test, binding_should_override)
+{
+    auto a = create_symbol("cleo.var.test/a");
+    auto b = create_symbol("cleo.var.test/b");
+    auto ka = create_keyword("a");
+    auto kb = create_keyword("b");
+    auto ka2 = create_keyword("a2");
+    auto kb2 = create_keyword("b2");
+    auto ka3 = create_keyword("a3");
+
+    define_var(a, ka);
+    define_var(b, kb);
+    {
+        Root bindings1{smap(a, ka2)};
+        PushBindingsGuard bind1{*bindings1};
+        EXPECT_EQ_VALS(ka2, lookup_var(a));
+        EXPECT_EQ_VALS(kb, lookup_var(b));
+        {
+            Root bindings2{smap(a, ka3, b, kb2)};
+            PushBindingsGuard bind1{*bindings2};
+            EXPECT_EQ_VALS(ka3, lookup_var(a));
+            EXPECT_EQ_VALS(kb2, lookup_var(b));
+        }
+        EXPECT_EQ_VALS(ka2, lookup_var(a));
+        EXPECT_EQ_VALS(kb, lookup_var(b));
+    }
+    EXPECT_EQ_VALS(ka, lookup_var(a));
+    EXPECT_EQ_VALS(kb, lookup_var(b));
+}
+
 }
 }
