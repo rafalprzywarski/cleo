@@ -46,14 +46,17 @@ Value define(Value sym, Value val)
 
 Value lookup(Value sym)
 {
-    auto ns = small_map_get(*namespaces, get_symbol_namespace(sym));
-    if (ns != nil)
+    auto sym_ns = get_symbol_namespace(sym);
+    if (sym_ns == nil)
     {
-        auto found = small_map_get(ns, get_symbol_name(sym));
-        if (found != nil)
-            sym = found;
+        auto ns = small_map_get(*namespaces, get_symbol_name(lookup_var(CURRENT_NS)));
+        if (ns != nil)
+        {
+            auto found = small_map_get(ns, get_symbol_name(sym));
+            if (found != nil)
+                sym = found;
+        }
     }
-
     return lookup_var(sym);
 }
 

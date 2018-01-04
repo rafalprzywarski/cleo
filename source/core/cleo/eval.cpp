@@ -22,15 +22,6 @@ Value eval_symbol(Value sym, Value env)
 {
     if (env != nil && small_map_contains(env, sym))
         return small_map_get(env, sym);
-    auto current_ns = lookup_var(CURRENT_NS);
-    if (current_ns != nil && get_symbol_namespace(sym) == nil)
-    {
-        auto current_ns_name = get_symbol_name(current_ns);
-        auto sym_name = get_symbol_name(sym);
-        sym = create_symbol(
-            {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
-            {get_string_ptr(sym_name), get_string_len(sym_name)});
-    }
     return lookup(sym);
 }
 
