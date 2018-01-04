@@ -6,5 +6,6 @@ namespace cleo
 {
 
 Force read(Value source);
+Force read_forms(Value source);
 
 }

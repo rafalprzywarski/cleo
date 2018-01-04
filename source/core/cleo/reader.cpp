@@ -12,6 +12,9 @@
 namespace cleo
 {
 
+namespace
+{
+
 class Stream
 {
 public:
@@ -238,6 +241,8 @@ Force read(Stream& s)
     throw_exception(*e);
 }
 
+}
+
 Force read(Value source)
 {
     if (get_value_tag(source) != tag::STRING)
@@ -247,6 +252,28 @@ Force read(Value source)
     }
     Stream s(source);
     return read(s);
+}
+
+Force read_forms(Value source)
+{
+    if (get_value_tag(source) != tag::STRING)
+    {
+        Root msg{create_string("expected a string")};
+        throw_exception(new_illegal_argument(*msg));
+    }
+
+    Stream s(source);
+    Root forms{*EMPTY_VECTOR}, form;
+
+    eat_ws(s);
+    while (!s.eos())
+    {
+        form = read(s);
+        forms = small_vector_conj(*forms, *form);
+        eat_ws(s);
+    }
+
+    return *forms;
 }
 
 }

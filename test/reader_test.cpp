@@ -368,5 +368,23 @@ TEST_F(reader_test, should_fail_when_a_key_in_a_set_is_duplicated)
     assert_read_error("duplicate key: 6", "#{5 6 6 7}");
 }
 
+TEST_F(reader_test, read_forms_should_read_multiple_forms)
+{
+    Root source, forms, ex;
+    source = create_string("  ");
+    forms = read_forms(*source);
+    EXPECT_EQ_VALS(*EMPTY_VECTOR, *forms);
+
+    source = create_string(":a");
+    forms = read_forms(*source);
+    ex = svec(create_keyword("a"));
+    EXPECT_EQ_VALS(*ex, *forms);
+
+    source = create_string(":a :b :c , ");
+    forms = read_forms(*source);
+    ex = svec(create_keyword("a"), create_keyword("b"), create_keyword("c"));
+    EXPECT_EQ_VALS(*ex, *forms);
+}
+
 }
 }
