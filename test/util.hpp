@@ -7,6 +7,7 @@
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
 #include <cleo/namespace.hpp>
+#include <cleo/var.hpp>
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
@@ -143,9 +144,12 @@ struct Test : testing::Test
 {
     Override<decltype(gc_frequency)> ovf{gc_frequency, 1};
     Override<decltype(gc_counter)> ovc{gc_counter, 1};
+    std::unique_ptr<PushBindingsGuard> bindings_guard;
 
     Test(const std::string& ns)
     {
+        Root bindings{smap(CURRENT_NS, lookup(CURRENT_NS))};
+        bindings_guard.reset(new PushBindingsGuard(*bindings));
         in_ns(create_symbol(ns));
     }
 

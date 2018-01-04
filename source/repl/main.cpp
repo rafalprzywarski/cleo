@@ -5,6 +5,7 @@
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
 #include <cleo/namespace.hpp>
+#include <cleo/small_map.hpp>
 #include <iostream>
 #include <readline/readline.h>
 
@@ -49,6 +50,8 @@ int main()
 {
     char *line;
 
+    cleo::Root ns_bindings{cleo::small_map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, cleo::lookup(cleo::CURRENT_NS))};
+    cleo::PushBindingsGuard bindings_guard{*ns_bindings};
     cleo::in_ns(cleo::create_symbol("user"));
     cleo::refer(cleo::create_symbol("cleo.core"));
     while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)

@@ -31,4 +31,7 @@ Force symbol_not_found_message(Value e);
 Force new_illegal_argument(Value msg);
 Force illegal_argument_message(Value e);
 
+Force new_illegal_state(Value msg);
+Force illegal_state_message(Value e);
+
 }

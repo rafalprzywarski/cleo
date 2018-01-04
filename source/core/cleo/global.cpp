@@ -79,6 +79,7 @@ const Value ReadError = create_symbol("cleo.core", "ReadError");
 const Value CallError = create_symbol("cleo.core", "CallError");
 const Value SymbolNotFound = create_symbol("cleo.core", "SymbolNotFound");
 const Value IllegalArgument = create_symbol("cleo.core", "IllegalArgument");
+const Value IllegalState = create_symbol("cleo.core", "IllegalState");
 const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
 }
 
@@ -167,7 +168,7 @@ struct Initialize
     {
         Root f;
 
-        define(CURRENT_NS, nil);
+        define(CURRENT_NS, create_symbol("cleo.core"));
         f = create_native_function1<in_ns>();
         define(IN_NS, *f);
 
@@ -311,6 +312,12 @@ struct Initialize
         define(create_symbol("cleo.core", "IllegalArgument."), *f);
         f = create_native_function1<illegal_argument_message>();
         define_method(GET_MESSAGE, type::IllegalArgument, *f);
+
+        derive(type::IllegalState, type::Exception);
+        f = create_native_function1<new_illegal_state>();
+        define(create_symbol("cleo.core", "IllegalState."), *f);
+        f = create_native_function1<illegal_state_message>();
+        define_method(GET_MESSAGE, type::IllegalState, *f);
 
         f = create_native_function1<macroexpand1>();
         define(create_symbol("cleo.core", "macroexpand-1"), *f);

@@ -84,4 +84,15 @@ Force illegal_argument_message(Value e)
     return get_object_element(e, 0);
 }
 
+Force new_illegal_state(Value msg)
+{
+    return create_object1(type::IllegalState, msg);
+}
+
+Force illegal_state_message(Value e)
+{
+    return get_object_element(e, 0);
+}
+
+
 }

@@ -82,5 +82,80 @@ TEST_F(var_test, binding_should_override)
     EXPECT_EQ_VALS(kb, lookup_var(b));
 }
 
+TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
+{
+    auto s = create_symbol("cleo.var.test/nob");
+    define_var(s, create_keyword("xxx"));
+    try
+    {
+        set_var(s, create_keyword("yyy"));
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_VALS(type::IllegalState, get_value_type(*e));
+    }
+
+    PushBindingsGuard bind1{*EMPTY_MAP};
+
+    try
+    {
+        set_var(s, create_keyword("yyy"));
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_VALS(type::IllegalState, get_value_type(*e));
+    }
+
+    ASSERT_EQ_VALS(create_keyword("xxx"), lookup_var(s));
+}
+
+TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
+{
+    auto a = create_symbol("cleo.var.test/ba");
+    auto b = create_symbol("cleo.var.test/bb");
+    auto ka = create_keyword("a");
+    auto kb = create_keyword("b");
+    auto ka2 = create_keyword("a2");
+    auto kb2 = create_keyword("b2");
+    auto ka3 = create_keyword("a3");
+    auto kax = create_keyword("ax");
+    auto kbx = create_keyword("bx");
+
+    define_var(a, ka);
+    define_var(b, kb);
+    {
+        Root bindings1{smap(a, ka2)};
+        PushBindingsGuard bind1{*bindings1};
+
+        set_var(a, kax);
+        EXPECT_EQ_VALS(kax, lookup_var(a));
+
+        {
+            Root bindings2{smap(a, ka3, b, kb2)};
+            PushBindingsGuard bind1{*bindings2};
+            EXPECT_EQ_VALS(ka3, lookup_var(a));
+            EXPECT_EQ_VALS(kb2, lookup_var(b));
+
+            set_var(a, kax);
+            EXPECT_EQ_VALS(kax, lookup_var(a));
+            set_var(b, kbx);
+            EXPECT_EQ_VALS(kbx, lookup_var(b));
+
+            set_var(a, ka3);
+            EXPECT_EQ_VALS(ka3, lookup_var(a));
+            set_var(b, kb2);
+            EXPECT_EQ_VALS(kb2, lookup_var(b));
+        }
+        EXPECT_EQ_VALS(kax, lookup_var(a));
+        EXPECT_EQ_VALS(kb, lookup_var(b));
+    }
+    EXPECT_EQ_VALS(ka, lookup_var(a));
+    EXPECT_EQ_VALS(kb, lookup_var(b));
+}
+
 }
 }

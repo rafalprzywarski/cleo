@@ -14,7 +14,7 @@ Value in_ns(Value ns)
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    define_var(CURRENT_NS, ns);
+    set_var(CURRENT_NS, ns);
     return nil;
 }
 

@@ -8,6 +8,7 @@ void define_var(Value sym, Value val);
 Value lookup_var(Value sym);
 void push_bindings(Value bindings);
 void pop_bindings();
+void set_var(Value sym, Value val);
 
 struct PushBindingsGuard
 {
