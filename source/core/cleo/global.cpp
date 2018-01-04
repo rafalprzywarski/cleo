@@ -343,6 +343,12 @@ struct Initialize
 
         f = create_native_function1<refer>();
         define(create_symbol("cleo.core", "refer"), *f);
+
+        f = create_native_function1<read>();
+        define(create_symbol("cleo.core", "read-string"), *f);
+
+        f = create_native_function1<load>();
+        define(create_symbol("cleo.core", "load-string"), *f);
     }
 } initialize;
 
