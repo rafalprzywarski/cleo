@@ -65,6 +65,7 @@ const Value LIB_PATH = create_symbol("cleo.core", "*lib-path*");
 namespace type
 {
 const Value NATIVE_FUNCTION = create_symbol("cleo.core", "NativeFunction");
+const Value KEYWORD = create_symbol("cleo.core", "Keyword");
 const Value LIST = create_symbol("cleo.core", "List");
 const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
 const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
@@ -92,7 +93,7 @@ const std::array<Value, 7> type_by_tag{{
     nil,
     type::NATIVE_FUNCTION,
     create_symbol("cleo.core", "Symbol"),
-    create_symbol("cleo.core", "Keyword"),
+    type::KEYWORD,
     create_symbol("cleo.core", "Int64"),
     create_symbol("cleo.core", "Float64"),
     create_symbol("cleo.core", "String")
@@ -178,6 +179,12 @@ Force create_ns_macro()
     return eval(*form);
 }
 
+Force keyword_get(Value k, Value coll)
+{
+    std::array<Value, 2> args{{coll, k}};
+    return call_multimethod(lookup(OBJ_CALL), args.data(), args.size());
+}
+
 struct Initialize
 {
     Initialize()
@@ -244,6 +251,10 @@ struct Initialize
         derive(type::SMALL_MAP, type::Callable);
         f = create_native_function2<small_map_get>();
         define_method(OBJ_CALL, type::SMALL_MAP, *f);
+
+        derive(type::KEYWORD, type::Callable);
+        f = create_native_function2<keyword_get>();
+        define_method(OBJ_CALL, type::KEYWORD, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
