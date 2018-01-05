@@ -94,5 +94,15 @@ Force illegal_state_message(Value e)
     return get_object_element(e, 0);
 }
 
+Force new_file_not_found(Value msg)
+{
+    return create_object1(type::FileNotFound, msg);
+}
+
+Force file_not_found_message(Value e)
+{
+    return get_object_element(e, 0);
+}
+
 
 }

@@ -3,6 +3,8 @@
 #include "var.hpp"
 #include "error.hpp"
 #include "small_map.hpp"
+#include "eval.hpp"
+#include <fstream>
 
 namespace cleo
 {
@@ -58,6 +60,30 @@ Value lookup(Value sym)
         }
     }
     return lookup_var(sym);
+}
+
+Value require(Value ns)
+{
+    if (get_value_tag(ns) != tag::SYMBOL)
+    {
+        Root msg{create_string("ns must be a symbol")};
+        throw_exception(new_illegal_argument(*msg));
+    }
+    auto ns_name = get_symbol_name(ns);
+    auto lib_path = lookup(LIB_PATH);
+    std::string path =
+        std::string(get_string_ptr(lib_path), get_string_len(lib_path)) + "/" +
+        std::string(get_string_ptr(ns_name), get_string_len(ns_name)) + ".cleo";
+    std::ifstream f(path);
+    if (!f)
+    {
+        Root msg{create_string("Could not locate " + path)};
+        throw_exception(new_file_not_found(*msg));
+    }
+    std::string source{std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>()};
+    Root ssource{create_string(source)};
+    load(*ssource);
+    return nil;
 }
 
 }

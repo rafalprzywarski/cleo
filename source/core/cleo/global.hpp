@@ -99,6 +99,7 @@ extern const Value VA;
 extern const Value CURRENT_NS;
 extern const Value IN_NS;
 extern const Value NS;
+extern const Value LIB_PATH;
 
 namespace type
 {
@@ -123,6 +124,7 @@ extern const Value SymbolNotFound;
 extern const Value IllegalArgument;
 extern const Value IllegalState;
 extern const Value UnexpectedEndOfInput;
+extern const Value FileNotFound;
 }
 
 extern const std::array<Value, 7> type_by_tag;

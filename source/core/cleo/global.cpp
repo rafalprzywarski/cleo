@@ -60,6 +60,7 @@ const Value VA = create_symbol("&");
 const Value CURRENT_NS = create_symbol("cleo.core", "*ns*");
 const Value IN_NS = create_symbol("cleo.core", "in-ns");
 const Value NS = create_symbol("cleo.core", "ns");
+const Value LIB_PATH = create_symbol("cleo.core", "*lib-path*");
 
 namespace type
 {
@@ -84,6 +85,7 @@ const Value SymbolNotFound = create_symbol("cleo.core", "SymbolNotFound");
 const Value IllegalArgument = create_symbol("cleo.core", "IllegalArgument");
 const Value IllegalState = create_symbol("cleo.core", "IllegalState");
 const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
+const Value FileNotFound = create_symbol("cleo.core", "FileNotFound");
 }
 
 const std::array<Value, 7> type_by_tag{{
@@ -187,6 +189,9 @@ struct Initialize
         define(IN_NS, *f);
         f = create_ns_macro();
         define(NS, *f);
+
+        f = create_string(".");
+        define(LIB_PATH, *f);
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
@@ -335,6 +340,12 @@ struct Initialize
         f = create_native_function1<illegal_state_message>();
         define_method(GET_MESSAGE, type::IllegalState, *f);
 
+        derive(type::FileNotFound, type::Exception);
+        f = create_native_function1<new_file_not_found>();
+        define(create_symbol("cleo.core", "FileNotFound."), *f);
+        f = create_native_function1<file_not_found_message>();
+        define_method(GET_MESSAGE, type::FileNotFound, *f);
+
         f = create_native_function1<macroexpand1>();
         define(create_symbol("cleo.core", "macroexpand-1"), *f);
 
@@ -349,6 +360,9 @@ struct Initialize
 
         f = create_native_function1<load>();
         define(create_symbol("cleo.core", "load-string"), *f);
+
+        f = create_native_function1<require>();
+        define(create_symbol("cleo.core", "require"), *f);
     }
 } initialize;
 

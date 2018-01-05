@@ -34,4 +34,7 @@ Force illegal_argument_message(Value e);
 Force new_illegal_state(Value msg);
 Force illegal_state_message(Value e);
 
+Force new_file_not_found(Value msg);
+Force file_not_found_message(Value e);
+
 }
