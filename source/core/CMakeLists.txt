@@ -1,6 +1,7 @@
 include_directories("../core")
 
 add_library(cleo_core
+  cleo/atom.cpp
   cleo/equality.cpp
   cleo/error.cpp
   cleo/eval.cpp

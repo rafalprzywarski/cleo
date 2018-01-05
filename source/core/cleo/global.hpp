@@ -100,6 +100,10 @@ extern const Value CURRENT_NS;
 extern const Value IN_NS;
 extern const Value NS;
 extern const Value LIB_PATH;
+extern const Value ATOM;
+extern const Value DEREF;
+extern const Value RESET;
+extern const Value SWAP;
 
 namespace type
 {
@@ -118,6 +122,7 @@ extern const Value Callable;
 extern const Value FN;
 extern const Value Macro;
 extern const Value RECUR;
+extern const Value Atom;
 extern const Value Exception;
 extern const Value ReadError;
 extern const Value CallError;

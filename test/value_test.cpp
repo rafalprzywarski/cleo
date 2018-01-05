@@ -174,6 +174,27 @@ TEST_F(value_test, should_store_object_values)
     ASSERT_EQ(0u, get_object_size(*obj));
 }
 
+TEST_F(value_test, should_modify_objects)
+{
+    auto type = create_symbol("org.xxx");
+    Root elem0, elem1, elem2;
+    elem0 = create_int64(10);
+    elem1 = create_float64(20);
+    elem2 = create_symbol("elem3");
+    const std::array<Value, 2> elems{{*elem0, *elem1}};
+    Root obj{create_object(type, elems.data(), elems.size())};
+
+    set_object_element(*obj, 0, *elem2);
+
+    ASSERT_TRUE(*elem2 == get_object_element(*obj, 0));
+    ASSERT_TRUE(*elem1 == get_object_element(*obj, 1));
+
+    set_object_element(*obj, 1, *elem0);
+
+    ASSERT_TRUE(*elem2 == get_object_element(*obj, 0));
+    ASSERT_TRUE(*elem0 == get_object_element(*obj, 1));
+}
+
 TEST_F(value_test, should_create_a_new_instance_for_each_object)
 {
     auto type = create_symbol("org.xxx");

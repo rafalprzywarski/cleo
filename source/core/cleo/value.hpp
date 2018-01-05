@@ -128,6 +128,7 @@ Force create_object3(Value type, Value elem0, Value elem1, Value elem2);
 Value get_object_type(Value obj);
 std::uint32_t get_object_size(Value obj);
 Value get_object_element(Value obj, std::uint32_t index);
+void set_object_element(Value obj, std::uint32_t index, Value val);
 
 Value get_value_type(Value val);
 

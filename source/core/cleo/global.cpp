@@ -11,6 +11,7 @@
 #include "small_map.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
+#include "atom.hpp"
 
 namespace cleo
 {
@@ -61,6 +62,10 @@ const Value CURRENT_NS = create_symbol("cleo.core", "*ns*");
 const Value IN_NS = create_symbol("cleo.core", "in-ns");
 const Value NS = create_symbol("cleo.core", "ns");
 const Value LIB_PATH = create_symbol("cleo.core", "*lib-path*");
+const Value ATOM = create_symbol("cleo.core", "atom");
+const Value DEREF = create_symbol("cleo.core", "deref");
+const Value RESET = create_symbol("cleo.core", "reset!");
+const Value SWAP = create_symbol("cleo.core", "swap!");
 
 namespace type
 {
@@ -79,6 +84,7 @@ const Value Callable = create_symbol("cleo.core", "Callable");
 const Value FN = create_symbol("cleo.core", "Fn");
 const Value Macro = create_symbol("cleo.core", "Macro");
 const Value RECUR = create_symbol("cleo.core", "Recur");
+const Value Atom = create_symbol("cleo.core", "Atom");
 const Value Exception = create_symbol("cleo.core", "Exception");
 const Value ReadError = create_symbol("cleo.core", "ReadError");
 const Value CallError = create_symbol("cleo.core", "CallError");
@@ -175,6 +181,16 @@ Force create_ns_macro()
         "                (list 'do"
         "                 (list 'cleo.core/in-ns (list 'quote ns))"
         "                 (list 'cleo.core/refer ''cleo.core))))")};
+    form = read(*form);
+    return eval(*form);
+}
+
+Force create_swap_fn()
+{
+    Root form{create_string("(fn swap!"
+                            " ([a f] (do (reset! a (f (deref a))) (deref a)))"
+                            " ([a f x] (do (reset! a (f (deref a) x)) (deref a)))"
+                            " ([a f x y] (do (reset! a (f (deref a) x y)) (deref a))))")};
     form = read(*form);
     return eval(*form);
 }
@@ -388,6 +404,20 @@ struct Initialize
 
         f = create_native_function1<require>();
         define(create_symbol("cleo.core", "require"), *f);
+
+        f = create_native_function1<create_atom>();
+        define(ATOM, *f);
+
+        define_multimethod(DEREF, *first_type, nil);
+        f = create_native_function1<atom_deref>();
+        define_method(DEREF, type::Atom, *f);
+
+        define_multimethod(RESET, *first_type, nil);
+        f = create_native_function2<atom_reset>();
+        define_method(RESET, type::Atom, *f);
+
+        f = create_swap_fn();
+        define(SWAP, *f);
     }
 } initialize;
 
