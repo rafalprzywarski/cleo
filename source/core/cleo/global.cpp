@@ -66,6 +66,7 @@ const Value ATOM = create_symbol("cleo.core", "atom");
 const Value DEREF = create_symbol("cleo.core", "deref");
 const Value RESET = create_symbol("cleo.core", "reset!");
 const Value SWAP = create_symbol("cleo.core", "swap!");
+const Value APPLY = create_symbol("cleo.core", "apply*");
 
 namespace type
 {
@@ -418,6 +419,9 @@ struct Initialize
 
         f = create_swap_fn();
         define(SWAP, *f);
+
+        f = create_native_function2<apply>();
+        define(APPLY, *f);
     }
 } initialize;
 

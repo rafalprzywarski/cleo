@@ -424,6 +424,31 @@ Force macroexpand(Value val)
     return *exp;
 }
 
+Force apply(Value fn, Value args)
+{
+    auto seq = lookup_var(SEQ);
+    auto first = lookup_var(FIRST);
+    auto next = lookup_var(NEXT);
+
+    std::uint32_t len = 0;
+    for (Root s{call_multimethod1(seq, args)}; *s != nil; s = call_multimethod1(next, *s))
+        ++len;
+    Roots roots{len};
+
+    std::uint32_t i = 0;
+    std::vector<Value> form;
+    form.push_back(fn);
+    for (Root s{call_multimethod1(seq, args)}; *s != nil; s = call_multimethod1(next, *s))
+    {
+        roots.set(i, call_multimethod1(first, *s));
+        form.push_back(roots[i]);
+        ++i;
+    }
+
+    Root list{create_list(form.data(), form.size())};
+    return eval(*list);
+}
+
 Force eval(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)

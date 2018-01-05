@@ -580,5 +580,24 @@ TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
     EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), lookup_var(CURRENT_NS));
 }
 
+TEST_F(eval_test, apply_should_call_functions)
+{
+    Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return create_list(args, num_args); })};
+    Root args{svec(4, 3, 2, 1)};
+    Root val{apply(*fn, *args)};
+    Root ex{list(4, 3, 2, 1)};
+    ASSERT_EQ_VALS(*ex, *val);
+
+    args = list(4);
+    val = apply(*fn, *args);
+    ex = list(4);
+    ASSERT_EQ_VALS(*ex, *val);
+
+    args = svec();
+    val = apply(*fn, *args);
+    ex = list();
+    ASSERT_EQ_VALS(*ex, *val);
+}
+
 }
 }

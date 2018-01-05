@@ -104,6 +104,7 @@ extern const Value ATOM;
 extern const Value DEREF;
 extern const Value RESET;
 extern const Value SWAP;
+extern const Value APPLY;
 
 namespace type
 {
