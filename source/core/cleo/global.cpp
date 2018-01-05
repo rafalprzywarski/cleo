@@ -185,6 +185,16 @@ Force keyword_get(Value k, Value coll)
     return call_multimethod(lookup(OBJ_CALL), args.data(), args.size());
 }
 
+Value small_vector_get(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        return nil;
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_small_vector_size(v))
+        return nil;
+    return get_small_vector_elem(v, i);
+}
+
 struct Initialize
 {
     Initialize()
@@ -255,6 +265,10 @@ struct Initialize
         derive(type::KEYWORD, type::Callable);
         f = create_native_function2<keyword_get>();
         define_method(OBJ_CALL, type::KEYWORD, *f);
+
+        derive(type::SMALL_VECTOR, type::Callable);
+        f = create_native_function2<small_vector_get>();
+        define_method(OBJ_CALL, type::SMALL_VECTOR, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
