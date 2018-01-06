@@ -46,7 +46,7 @@ Value define(Value sym, Value val)
     return nil;
 }
 
-Value lookup(Value sym)
+Value resolve(Value sym)
 {
     auto sym_ns = get_symbol_namespace(sym);
     if (sym_ns == nil)
@@ -59,6 +59,12 @@ Value lookup(Value sym)
                 sym = found;
         }
     }
+    return sym;
+}
+
+Value lookup(Value sym)
+{
+    sym = resolve(sym);
     return lookup_var(sym);
 }
 

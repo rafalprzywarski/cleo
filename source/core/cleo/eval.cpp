@@ -31,6 +31,27 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
+Force eval_syntax_quote(Value list)
+{
+    if (get_list_next(list) == nil || get_list_next(get_list_next(list)) != nil)
+    {
+        Root msg{create_string("syntax-quote requires exactly 1 argument")};
+        throw_exception(new_illegal_argument(*msg));
+    }
+    auto val = get_list_first(get_list_next(list));
+    if (get_value_tag(val) == tag::SYMBOL)
+    {
+        val = resolve(val);
+        if (get_symbol_namespace(val) == nil)
+        {
+            auto sym_ns = get_symbol_name(lookup(CURRENT_NS));
+            auto sym_name = get_symbol_name(val);
+            return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
+        }
+    }
+    return val;
+}
+
 template <typename CreateFn>
 Force eval_fn(Value list, CreateFn create_fn)
 {
@@ -320,6 +341,8 @@ Force eval_list(Value list, Value env)
     Value first = get_list_first(list);
     if (first == QUOTE)
         return eval_quote(list);
+    if (first == SYNTAX_QUOTE)
+        return eval_syntax_quote(list);
     if (first == FN)
         return eval_fn(list, env);
     if (first == MACRO)

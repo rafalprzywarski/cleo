@@ -600,5 +600,51 @@ TEST_F(eval_test, apply_should_call_functions)
     ASSERT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, syntax_quote_should_fail_when_given_zero_or_more_than_one_argument)
+{
+    Root val;
+    val = list(SYNTAX_QUOTE);
+    EXPECT_ANY_THROW(eval(*val));
+
+    val = list(SYNTAX_QUOTE, 1, 2);
+    EXPECT_ANY_THROW(eval(*val));
+}
+
+TEST_F(eval_test, syntax_quote_should_forward_simple_values)
+{
+    Root val, ex;
+    ex = read_str("7");
+    val = read_str("`7");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str(":k");
+    val = read_str("`:k");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, syntax_quote_should_resolve_symbols)
+{
+    in_ns(create_symbol("cleo.eval.syntax-quote.test"));
+    Root val;
+    val = read_str("`x");
+    val = eval(*val);
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.syntax-quote.test", "x"), *val);
+
+    in_ns(create_symbol("cleo.eval.syntax-quote.test2"));
+    define(create_symbol("cleo.eval.syntax-quote.test2", "z"), create_keyword(":zz"));
+    in_ns(create_symbol("cleo.eval.syntax-quote.test"));
+    refer(create_symbol("cleo.eval.syntax-quote.test2"));
+
+    val = read_str("`z");
+    val = eval(*val);
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.syntax-quote.test2", "z"), *val);
+
+    val = read_str("`some/abc");
+    val = eval(*val);
+    EXPECT_EQ_VALS(create_symbol("some", "abc"), *val);
+}
+
 }
 }
