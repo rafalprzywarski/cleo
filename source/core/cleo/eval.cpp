@@ -31,7 +31,8 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
-Force eval_fn(Value list, Value env)
+template <typename CreateFn>
+Force eval_fn(Value list, CreateFn create_fn)
 {
     Root next{get_list_next(list)};
     auto name = nil;
@@ -45,7 +46,7 @@ Force eval_fn(Value list, Value env)
         auto params = get_list_first(*next);
         next = get_list_next(*next);
         auto body = get_list_first(*next);
-        return create_fn(env, name, params, body);
+        return create_fn(name, &params, &body, 1);
     }
     std::vector<Value> params, bodies;
     while (*next != nil)
@@ -56,22 +57,20 @@ Force eval_fn(Value list, Value env)
         bodies.push_back(get_list_first(*pb));
         next = get_list_next(*next);
     }
-    return create_fn(env, name, params.data(), bodies.data(), params.size());
+    return create_fn(name, params.data(), bodies.data(), params.size());
+}
+
+Force eval_fn(Value list, Value env)
+{
+    return eval_fn(list, [env](auto name, auto params, auto body, auto n)
+    {
+        return create_fn(env, name, params, body, n);
+    });
 }
 
 Force eval_macro(Value list)
 {
-    Root next{get_list_next(list)};
-    auto name = nil;
-    if (get_value_tag(get_list_first(*next)) == tag::SYMBOL)
-    {
-        name = get_list_first(*next);
-        next = get_list_next(*next);
-    }
-    auto params = get_list_first(*next);
-    next = get_list_next(*next);
-    auto body = get_list_first(*next);
-    return create_macro(name, params, body);
+    return eval_fn(list, static_cast<Force(*)(Value, const Value*, const Value*, std::uint8_t)>(create_macro));
 }
 
 Force eval_def(Value list, Value env)
@@ -409,24 +408,13 @@ Force macroexpand1(Value val)
     if (get_value_type(m) != type::Macro)
         return val;
 
-    auto params = get_fn_params(m, 0);
-    auto n = get_small_vector_size(params);
-    Root args{get_list_next(val)};
-    if (*args == nil)
-        args = *EMPTY_LIST;
-    if (get_int64_value(get_list_size(*args)) != n)
-    {
-        Root msg{create_string("arity error")};
-        throw_exception(new_call_error(*msg));
-    }
-    Root env{*EMPTY_MAP};
-    for (decltype(n) i = 0; i < n; ++i)
-    {
-        env = small_map_assoc(*env, get_small_vector_elem(params, i), get_list_first(*args));
-        args = get_list_next(*args);
-    }
+    std::vector<Value> elems;
+    elems.reserve(get_int64_value(get_list_size(val)));
+    elems.push_back(m);
+    for (Root arg_list{get_list_next(val)}; *arg_list != nil; arg_list = get_list_next(*arg_list))
+        elems.push_back(get_list_first(*arg_list));
 
-    return eval(get_fn_body(m, 0), *env);
+    return call_fn(elems);
 }
 
 Force macroexpand(Value val)
