@@ -208,6 +208,15 @@ Force read_unquote(Stream& s)
     return create_list(elems.data(), elems.size());
 }
 
+Force read_unquote_splicing(Stream& s)
+{
+    s.next(); // '~'
+    s.next(); // '@'
+    Root val{read(s)};
+    std::array<Value, 2> elems{{UNQUOTE_SPLICING, *val}};
+    return create_list(elems.data(), elems.size());
+}
+
 Force read_set(Stream& s)
 {
     s.next(); // '#'
@@ -255,6 +264,8 @@ Force read(Stream& s)
         return read_quote(s);
     if (s.peek() == '@')
         return read_deref(s);
+    if (s.peek() == '~' && s.peek(1) == '@')
+        return read_unquote_splicing(s);
     if (s.peek() == '~')
         return read_unquote(s);
     if (s.peek() == '#' && s.peek(1) == '{')

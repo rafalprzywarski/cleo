@@ -406,6 +406,30 @@ TEST_F(reader_test, should_parse_tilde_as_unquote)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(reader_test, should_parse_tilde_and_the_at_symbol_as_unquote_splicing)
+{
+    Root ex, val;
+    ex = list(UNQUOTE_SPLICING, 7);
+    val = read_str("~@7");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("~@ 7");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = list(UNQUOTE_SPLICING, create_symbol("abc123"));
+    val = read_str("~@abc123");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = list(1);
+    ex = list(UNQUOTE_SPLICING, *ex);
+    val = read_str("~@(1)");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("~@ (1)");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = list(DEREF, create_symbol("abc123"));
+    ex = list(UNQUOTE, *ex);
+    val = read_str("~ @abc123");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
 {
     Root source, forms, ex;

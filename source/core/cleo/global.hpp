@@ -79,6 +79,7 @@ extern const Value PR_STR_OBJ;
 extern const Value GET_MESSAGE;
 extern const Value QUOTE;
 extern const Value UNQUOTE;
+extern const Value UNQUOTE_SPLICING;
 extern const Value FN;
 extern const Value MACRO;
 extern const Value DEF;
