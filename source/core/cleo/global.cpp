@@ -192,9 +192,9 @@ Force create_ns_macro()
 Force create_swap_fn()
 {
     Root form{create_string("(fn* swap!"
-                            " ([a f] (do (reset! a (f (deref a))) (deref a)))"
-                            " ([a f x] (do (reset! a (f (deref a) x)) (deref a)))"
-                            " ([a f x y] (do (reset! a (f (deref a) x y)) (deref a))))")};
+                            " ([a f] (do (cleo.core/reset! a (f @a)) @a))"
+                            " ([a f x] (do (cleo.core/reset! a (f @a x)) @a))"
+                            " ([a f x y] (do (cleo.core/reset! a (f @a x y)) @a)))")};
     form = read(*form);
     return eval(*form);
 }
