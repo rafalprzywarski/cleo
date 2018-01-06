@@ -40,6 +40,7 @@ const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
+const Value UNQUOTE = create_symbol("unquote");
 const Value FN = create_symbol("fn*");
 const Value MACRO = create_symbol("macro*");
 const Value DEF = create_symbol("def");
