@@ -198,7 +198,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
     Root params1{svec()};
     Root params2{svec(x)};
     Root params3{svec(x, y)};
-    Root call{create_string("(fn xyz ([] :a) ([x] :b) ([x y] :c))")};
+    Root call{create_string("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
     call = read(*call);
     Root val{eval(*call)};
     ASSERT_EQ_VALS(type::FN, get_value_type(*val));
@@ -244,11 +244,11 @@ TEST_F(eval_test, macro_should_return_a_new_macro_with_a_name)
 TEST_F(eval_test, should_store_the_environment_in_created_fns)
 {
     Root ex{svec(3, 4, 5)};
-    Root val{read_str("(((fn [x y z] (fn [] [x y z])) 3 4 5))")};
+    Root val{read_str("(((fn* [x y z] (fn* [] [x y z])) 3 4 5))")};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("((((fn [x] (fn [y] (fn [z] [x y z]))) 3) 4) 5)");
+    val = read_str("((((fn* [x] (fn* [y] (fn* [z] [x y z]))) 3) 4) 5)");
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -296,7 +296,7 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
     auto x = create_symbol("x");
     Root env{smap(x, *ex)};
     in_ns(create_symbol("clue.eval.test"));
-    Root val{read_str("(def var1 ((fn [] x)))")};
+    Root val{read_str("(def var1 ((fn* [] x)))")};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var1")));
@@ -307,7 +307,7 @@ TEST_F(eval_test, def_should_fail_when_ns_is_specified)
     auto x = create_symbol("x");
     Root env{smap(x, 55)};
     in_ns(create_symbol("clue.eval.test"));
-    Root val{read_str("(def clue.eval.test.other/var2 ((fn [] x)))")};
+    Root val{read_str("(def clue.eval.test.other/var2 ((fn* [] x)))")};
     try
     {
         eval(*val, *env);
@@ -334,7 +334,7 @@ TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_c
     auto x = create_symbol("x");
     Root env{smap(x, *ex)};
     in_ns(create_symbol("clue.eval.test"));
-    Root val{read_str("(def clue.eval.test/var3 ((fn [] x)))")};
+    Root val{read_str("(def clue.eval.test/var3 ((fn* [] x)))")};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var3")));
@@ -359,12 +359,12 @@ TEST_F(eval_test, should_eval_maps)
 
 TEST_F(eval_test, should_eval_let)
 {
-    Root val{read_str("(let [a ((fn [] 55))] a)")};
+    Root val{read_str("(let* [a ((fn* [] 55))] a)")};
     Root ex{create_int64(55)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("(let [x 10 y 20] {:a x, :b y, :c z})");
+    val = read_str("(let* [x 10 y 20] {:a x, :b y, :c z})");
     ex = smap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
     Root env{smap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
     val = eval(*val, *env);
@@ -373,7 +373,7 @@ TEST_F(eval_test, should_eval_let)
 
 TEST_F(eval_test, let_should_allow_rebinding)
 {
-    Root val{read_str("(let [a 10 a [a]] a)")};
+    Root val{read_str("(let* [a 10 a [a]] a)")};
     Root ex{read_str("[10]")};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -381,12 +381,12 @@ TEST_F(eval_test, let_should_allow_rebinding)
 
 TEST_F(eval_test, should_eval_loop)
 {
-    Root val{read_str("(loop [a ((fn [] 55))] a)")};
+    Root val{read_str("(loop* [a ((fn* [] 55))] a)")};
     Root ex{create_int64(55)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("(loop [x 10 y 20] {:a x, :b y, :c z})");
+    val = read_str("(loop* [x 10 y 20] {:a x, :b y, :c z})");
     ex = smap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
     Root env{smap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
     val = eval(*val, *env);
@@ -395,7 +395,7 @@ TEST_F(eval_test, should_eval_loop)
 
 TEST_F(eval_test, loop_should_allow_rebinding)
 {
-    Root val{read_str("(loop [a 10 a [a]] a)")};
+    Root val{read_str("(loop* [a 10 a [a]] a)")};
     Root ex{read_str("[10]")};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -403,7 +403,7 @@ TEST_F(eval_test, loop_should_allow_rebinding)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_loop_and_reevaluate_it)
 {
-    Root val{read_str("(loop [n 5 r 1] (if (cleo.core/= n 0) r (recur (cleo.core/- n 1) (cleo.core/* r n))))")};
+    Root val{read_str("(loop* [n 5 r 1] (if (cleo.core/= n 0) r (recur (cleo.core/- n 1) (cleo.core/* r n))))")};
     Root ex{create_int64(5 * 4 * 3 * 2 * 1)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -411,7 +411,7 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_loop_and_reevaluate_it)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 {
-    Root val{read_str("((fn [n r] (if (cleo.core/= n 0) r (recur (cleo.core/- n 1) (cleo.core/* r n)))) 5 1)")};
+    Root val{read_str("((fn* [n r] (if (cleo.core/= n 0) r (recur (cleo.core/- n 1) (cleo.core/* r n)))) 5 1)")};
     Root ex{create_int64(5 * 4 * 3 * 2 * 1)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -419,16 +419,16 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_with_varargs_and_reevaluate_it)
 {
-    Root val{read_str("((fn [cond & xs] (if cond xs (recur :true 1 2 3))) nil)")};
+    Root val{read_str("((fn* [cond & xs] (if cond xs (recur :true 1 2 3))) nil)")};
     Root ex{list(1, 2, 3)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("((fn [& xs] (if xs xs (recur 1 2 3))))");
+    val = read_str("((fn* [& xs] (if xs xs (recur 1 2 3))))");
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("((fn [cond & xs] (if cond xs (recur :true))) nil)");
+    val = read_str("((fn* [cond & xs] (if cond xs (recur :true))) nil)");
     val = eval(*val);
     EXPECT_EQ_VALS(nil, *val);
 }

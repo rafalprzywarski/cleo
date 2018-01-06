@@ -40,13 +40,13 @@ const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
-const Value FN = create_symbol("fn");
-const Value MACRO = create_symbol("macro");
+const Value FN = create_symbol("fn*");
+const Value MACRO = create_symbol("macro*");
 const Value DEF = create_symbol("def");
-const Value LET = create_symbol("let");
+const Value LET = create_symbol("let*");
 const Value DO = create_symbol("do");
 const Value IF = create_symbol("if");
-const Value LOOP = create_symbol("loop");
+const Value LOOP = create_symbol("loop*");
 const Value RECUR = create_symbol("recur");
 const Value PLUS = create_symbol("cleo.core", "+");
 const Value MINUS = create_symbol("cleo.core", "-");
@@ -178,17 +178,17 @@ Force pr_str_exception(Value e)
 Force create_ns_macro()
 {
     Root form{create_string(
-        "(macro ns [ns] (let [list (fn [& xs] xs)]"
-        "                (list 'do"
-        "                 (list 'cleo.core/in-ns (list 'quote ns))"
-        "                 (list 'cleo.core/refer ''cleo.core))))")};
+        "(macro* ns [ns] (let* [list (fn* [& xs] xs)]"
+        "                 (list 'do"
+        "                  (list 'cleo.core/in-ns (list 'quote ns))"
+        "                  (list 'cleo.core/refer ''cleo.core))))")};
     form = read(*form);
     return eval(*form);
 }
 
 Force create_swap_fn()
 {
-    Root form{create_string("(fn swap!"
+    Root form{create_string("(fn* swap!"
                             " ([a f] (do (reset! a (f (deref a))) (deref a)))"
                             " ([a f x] (do (reset! a (f (deref a) x)) (deref a)))"
                             " ([a f x y] (do (reset! a (f (deref a) x y)) (deref a))))")};

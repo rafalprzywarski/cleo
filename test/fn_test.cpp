@@ -58,7 +58,7 @@ TEST_F(fn_test, should_use_values_from_the_env)
 
 TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
 {
-    Root fn{create_string("(fn xyz ([] :a) ([x] :b) ([x y] :c))")};
+    Root fn{create_string("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
     fn = read(*fn);
     fn = eval(*fn);
     auto k = create_keyword("k");
@@ -77,7 +77,7 @@ TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
 
 TEST_F(fn_test, should_dispatch_to_the_right_arity)
 {
-    Root fn{create_string("(fn xyz ([] :a) ([x] :b) ([x y] :c))")};
+    Root fn{create_string("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
     fn = read(*fn);
     fn = eval(*fn);
     Root call{list(*fn)};
@@ -96,7 +96,7 @@ TEST_F(fn_test, should_dispatch_to_the_right_arity)
 
 TEST_F(fn_test, should_dispatch_to_vararg)
 {
-    Root fn{create_string("(fn xyz [& a] a)")};
+    Root fn{create_string("(fn* xyz [& a] a)")};
     fn = read(*fn);
     fn = eval(*fn);
     Root call{list(*fn)};
@@ -111,7 +111,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     ex = svec(x, y);
     EXPECT_EQ_VALS(*ex, *val);
 
-    fn = create_string("(fn xyz ([a b] :a) ([a b & c] [a b c]))");
+    fn = create_string("(fn* xyz ([a b] :a) ([a b & c] [a b c]))");
     fn = read(*fn);
     fn = eval(*fn);
     call = list(*fn, x, y);
@@ -119,7 +119,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     ex = create_keyword("a");
     EXPECT_EQ_VALS(*ex, *val);
 
-    fn = create_string("(fn xyz ([a b & c] [a b c]) ([a b] :a))");
+    fn = create_string("(fn* xyz ([a b & c] [a b c]) ([a b] :a))");
     fn = read(*fn);
     fn = eval(*fn);
     call = list(*fn, x, y);
@@ -133,7 +133,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     ex = svec(y, x, *ex);
     EXPECT_EQ_VALS(*ex, *val);
 
-    fn = create_string("(fn xyz ([a b & c] [a b c]))");
+    fn = create_string("(fn* xyz ([a b & c] [a b c]))");
     fn = read(*fn);
     fn = eval(*fn);
     call = list(*fn, x, y);
@@ -144,7 +144,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
 
 TEST_F(fn_test, should_not_bind_the_ampersand)
 {
-    Root call{create_string("((fn [a & b] &) 1 2 3)")};
+    Root call{create_string("((fn* [a & b] &) 1 2 3)")};
     call = read(*call);
     try
     {
