@@ -356,7 +356,7 @@ TEST_F(reader_test, should_parse_a_set_of_expressions)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST_F(reader_test, should_when_given_a_single_hash)
+TEST_F(reader_test, should_fail_when_given_a_single_hash)
 {
     assert_read_error("unexpected #", "# {1}");
     assert_read_error("unexpected #", "# ");
@@ -366,6 +366,25 @@ TEST_F(reader_test, should_when_given_a_single_hash)
 TEST_F(reader_test, should_fail_when_a_key_in_a_set_is_duplicated)
 {
     assert_read_error("duplicate key: 6", "#{5 6 6 7}");
+}
+
+TEST_F(reader_test, should_parse_the_at_symbol_as_deref)
+{
+    Root ex, val;
+    ex = list(DEREF, 7);
+    val = read_str("@7");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("@ 7");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = list(DEREF, create_symbol("abc123"));
+    val = read_str("@abc123");
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = list(1);
+    ex = list(DEREF, *ex);
+    val = read_str("@(1)");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("@ (1)");
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
