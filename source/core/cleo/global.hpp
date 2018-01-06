@@ -108,21 +108,21 @@ extern const Value APPLY;
 
 namespace type
 {
-extern const Value NATIVE_FUNCTION;
-extern const Value KEYWORD;
-extern const Value LIST;
-extern const Value SMALL_VECTOR;
-extern const Value SMALL_VECTOR_SEQ;
-extern const Value SMALL_MAP;
-extern const Value SMALL_SET;
-extern const Value SMALL_SET_SEQ;
-extern const Value MULTIMETHOD;
-extern const Value SEQABLE;
-extern const Value SEQUENCE;
+extern const Value NativeFunction;
+extern const Value Keyword;
+extern const Value List;
+extern const Value SmallVector;
+extern const Value SmallVectorSeq;
+extern const Value SmallMap;
+extern const Value SmallSet;
+extern const Value SmallSetSeq;
+extern const Value Multimethod;
+extern const Value Seqable;
+extern const Value Sequence;
 extern const Value Callable;
-extern const Value FN;
+extern const Value Fn;
 extern const Value Macro;
-extern const Value RECUR;
+extern const Value Recur;
 extern const Value Atom;
 extern const Value Exception;
 extern const Value ReadError;

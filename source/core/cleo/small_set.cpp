@@ -6,7 +6,7 @@ namespace cleo
 
 Force create_small_set()
 {
-    return create_object0(type::SMALL_SET);
+    return create_object0(type::SmallSet);
 }
 
 std::uint32_t get_small_set_size(Value s)
@@ -34,7 +34,7 @@ Force small_set_conj(Value s, Value k)
     for (decltype(size) i = 0; i < size; ++i)
         new_elems.push_back(get_small_set_elem(s, i));
     new_elems.push_back(k);
-    return create_object(type::SMALL_SET, new_elems.data(), new_elems.size());
+    return create_object(type::SmallSet, new_elems.data(), new_elems.size());
 }
 
 Value small_set_contains(Value s, Value k)
@@ -53,7 +53,7 @@ Force small_set_seq(Value s)
     if (get_small_set_size(s) == 0)
         return nil;
     Root index{create_int64(0)};
-    return create_object2(type::SMALL_SET_SEQ, s, *index);
+    return create_object2(type::SmallSetSeq, s, *index);
 }
 
 Value get_small_set_seq_first(Value s)
@@ -68,7 +68,7 @@ Force get_small_set_seq_next(Value s)
     if (get_small_set_size(set) == i)
         return nil;
     Root index{create_int64(i)};
-    return create_object2(type::SMALL_SET_SEQ, set, *index);
+    return create_object2(type::SmallSetSeq, set, *index);
 }
 
 }

@@ -41,7 +41,7 @@ Force eval_fn(Value list, Value env)
         name = get_list_first(*next);
         next = get_list_next(*next);
     }
-    if (get_value_type(get_list_first(*next)) == type::SMALL_VECTOR)
+    if (get_value_type(get_list_first(*next)) == type::SmallVector)
     {
         auto params = get_list_first(*next);
         next = get_list_next(*next);
@@ -138,7 +138,7 @@ Force eval_loop(Value list, Value env)
     }
     n = get_list_next(*n);
     Root val{eval(get_list_first(*n), *lenv)};
-    while (get_value_type(*val) == type::RECUR)
+    while (get_value_type(*val) == type::Recur)
     {
         auto size = get_small_vector_size(bindings) / 2;
         for (decltype(size) i = 0; i != size; ++i)
@@ -294,11 +294,11 @@ Force eval_list(Value list, Value env)
         arg_roots.set(i, eval(get_list_first(*arg_list), env));
         elems.push_back(arg_roots[i]);
     }
-    if (type == type::NATIVE_FUNCTION)
+    if (type == type::NativeFunction)
         return get_native_function_ptr(*val)(elems.data() + 1, elems.size() - 1);
-    if (type == type::MULTIMETHOD)
+    if (type == type::Multimethod)
         return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
-    if (type == type::FN)
+    if (type == type::Fn)
     {
         auto fni = find_fn_index(*val, elems.size() - 1);
         auto va = is_va(*val, fni);
@@ -319,7 +319,7 @@ Force eval_list(Value list, Value env)
         }
         auto body = get_fn_body(*val, fni);
         Root val{eval(body, *fenv)};
-        while (get_value_type(*val) == type::RECUR)
+        while (get_value_type(*val) == type::Recur)
         {
             for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
                 fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
@@ -389,7 +389,7 @@ Force eval_map(Value m, Value env)
 
 Force macroexpand1(Value val)
 {
-    if (get_value_type(val) != type::LIST || get_list_size(val) == 0)
+    if (get_value_type(val) != type::List || get_list_size(val) == 0)
         return val;
 
     auto m = get_list_first(val);
@@ -454,13 +454,13 @@ Force eval(Value val, Value env)
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);
     auto type = get_value_type(val);
-    if (type == type::LIST)
+    if (type == type::List)
         return eval_list(val, env);
-    if (type == type::SMALL_VECTOR)
+    if (type == type::SmallVector)
         return eval_vector(val, env);
-    if (type == type::SMALL_SET)
+    if (type == type::SmallSet)
         return eval_set(val, env);
-    if (type == type::SMALL_MAP)
+    if (type == type::SmallMap)
         return eval_map(val, env);
     return val;
 }

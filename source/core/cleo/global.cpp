@@ -70,21 +70,21 @@ const Value APPLY = create_symbol("cleo.core", "apply*");
 
 namespace type
 {
-const Value NATIVE_FUNCTION = create_symbol("cleo.core", "NativeFunction");
-const Value KEYWORD = create_symbol("cleo.core", "Keyword");
-const Value LIST = create_symbol("cleo.core", "List");
-const Value SMALL_VECTOR = create_symbol("cleo.core", "SmallVector");
-const Value SMALL_VECTOR_SEQ = create_symbol("cleo.core", "SmallVectorSeq");
-const Value SMALL_MAP = create_symbol("cleo.core", "SmallMap");
-const Value SMALL_SET = create_symbol("cleo.core", "SmallSet");
-const Value SMALL_SET_SEQ = create_symbol("cleo.core", "SmallSetSeq");
-const Value MULTIMETHOD = create_symbol("cleo.core", "Multimethod");
-const Value SEQABLE = create_symbol("cleo.core", "Seqable");
-const Value SEQUENCE = create_symbol("cleo.core", "Sequence");
+const Value NativeFunction = create_symbol("cleo.core", "NativeFunction");
+const Value Keyword = create_symbol("cleo.core", "Keyword");
+const Value List = create_symbol("cleo.core", "List");
+const Value SmallVector = create_symbol("cleo.core", "SmallVector");
+const Value SmallVectorSeq = create_symbol("cleo.core", "SmallVectorSeq");
+const Value SmallMap = create_symbol("cleo.core", "SmallMap");
+const Value SmallSet = create_symbol("cleo.core", "SmallSet");
+const Value SmallSetSeq = create_symbol("cleo.core", "SmallSetSeq");
+const Value Multimethod = create_symbol("cleo.core", "Multimethod");
+const Value Seqable = create_symbol("cleo.core", "Seqable");
+const Value Sequence = create_symbol("cleo.core", "Sequence");
 const Value Callable = create_symbol("cleo.core", "Callable");
-const Value FN = create_symbol("cleo.core", "Fn");
+const Value Fn = create_symbol("cleo.core", "Fn");
 const Value Macro = create_symbol("cleo.core", "Macro");
-const Value RECUR = create_symbol("cleo.core", "Recur");
+const Value Recur = create_symbol("cleo.core", "Recur");
 const Value Atom = create_symbol("cleo.core", "Atom");
 const Value Exception = create_symbol("cleo.core", "Exception");
 const Value ReadError = create_symbol("cleo.core", "ReadError");
@@ -98,9 +98,9 @@ const Value FileNotFound = create_symbol("cleo.core", "FileNotFound");
 
 const std::array<Value, 7> type_by_tag{{
     nil,
-    type::NATIVE_FUNCTION,
+    type::NativeFunction,
     create_symbol("cleo.core", "Symbol"),
-    type::KEYWORD,
+    type::Keyword,
     create_symbol("cleo.core", "Int64"),
     create_symbol("cleo.core", "Float64"),
     create_symbol("cleo.core", "String")
@@ -115,7 +115,7 @@ Root bindings;
 
 const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 {
-    return create_object(type::RECUR, args, n);
+    return create_object(type::Recur, args, n);
 })};
 
 namespace
@@ -239,53 +239,53 @@ struct Initialize
         f = create_native_function1<nil_seq>();
         define_method(NEXT, nil, *f);
 
-        derive(type::LIST, type::SEQABLE);
+        derive(type::List, type::Seqable);
         f = create_native_function1<list_seq>();
-        define_method(SEQ, type::LIST, *f);
+        define_method(SEQ, type::List, *f);
         f = create_native_function1<get_list_first>();
-        define_method(FIRST, type::LIST, *f);
+        define_method(FIRST, type::List, *f);
         f = create_native_function1<get_list_next>();
-        define_method(NEXT, type::LIST, *f);
+        define_method(NEXT, type::List, *f);
 
-        derive(type::SMALL_VECTOR, type::SEQABLE);
+        derive(type::SmallVector, type::Seqable);
         f = create_native_function1<small_vector_seq>();
-        define_method(SEQ, type::SMALL_VECTOR, *f);
+        define_method(SEQ, type::SmallVector, *f);
         f = create_native_function1<get_small_vector_seq_first>();
-        define_method(FIRST, type::SMALL_VECTOR_SEQ, *f);
+        define_method(FIRST, type::SmallVectorSeq, *f);
         f = create_native_function1<get_small_vector_seq_next>();
-        define_method(NEXT, type::SMALL_VECTOR_SEQ, *f);
+        define_method(NEXT, type::SmallVectorSeq, *f);
 
-        derive(type::SMALL_SET, type::SEQABLE);
+        derive(type::SmallSet, type::Seqable);
         f = create_native_function1<small_set_seq>();
-        define_method(SEQ, type::SMALL_SET, *f);
+        define_method(SEQ, type::SmallSet, *f);
         f = create_native_function1<get_small_set_seq_first>();
-        define_method(FIRST, type::SMALL_SET_SEQ, *f);
+        define_method(FIRST, type::SmallSetSeq, *f);
         f = create_native_function1<get_small_set_seq_next>();
-        define_method(NEXT, type::SMALL_SET_SEQ, *f);
+        define_method(NEXT, type::SmallSetSeq, *f);
 
-        derive(type::SMALL_VECTOR_SEQ, type::SEQUENCE);
-        derive(type::SMALL_SET_SEQ, type::SEQUENCE);
-        derive(type::SEQUENCE, type::SEQABLE);
+        derive(type::SmallVectorSeq, type::Sequence);
+        derive(type::SmallSetSeq, type::Sequence);
+        derive(type::Sequence, type::Seqable);
         f = create_native_function1<identity>();
-        define_method(SEQ, type::SEQUENCE, *f);
+        define_method(SEQ, type::Sequence, *f);
 
         define_multimethod(OBJ_CALL, *first_type, nil);
 
-        derive(type::SMALL_SET, type::Callable);
+        derive(type::SmallSet, type::Callable);
         f = create_native_function2<small_set_get>();
-        define_method(OBJ_CALL, type::SMALL_SET, *f);
+        define_method(OBJ_CALL, type::SmallSet, *f);
 
-        derive(type::SMALL_MAP, type::Callable);
+        derive(type::SmallMap, type::Callable);
         f = create_native_function2<small_map_get>();
-        define_method(OBJ_CALL, type::SMALL_MAP, *f);
+        define_method(OBJ_CALL, type::SmallMap, *f);
 
-        derive(type::KEYWORD, type::Callable);
+        derive(type::Keyword, type::Callable);
         f = create_native_function2<keyword_get>();
-        define_method(OBJ_CALL, type::KEYWORD, *f);
+        define_method(OBJ_CALL, type::Keyword, *f);
 
-        derive(type::SMALL_VECTOR, type::Callable);
+        derive(type::SmallVector, type::Callable);
         f = create_native_function2<small_vector_get>();
-        define_method(OBJ_CALL, type::SMALL_VECTOR, *f);
+        define_method(OBJ_CALL, type::SmallVector, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
@@ -298,35 +298,35 @@ struct Initialize
             define_method(OBJ_EQ, *v, *f);
         };
 
-        define_seq_eq(type::SMALL_VECTOR, type::SMALL_VECTOR);
-        define_seq_eq(type::SMALL_VECTOR, type::LIST);
-        define_seq_eq(type::SMALL_VECTOR, type::SEQUENCE);
-        define_seq_eq(type::SEQUENCE, type::SMALL_VECTOR);
-        define_seq_eq(type::SEQUENCE, type::LIST);
-        define_seq_eq(type::SEQUENCE, type::SEQUENCE);
-        define_seq_eq(type::LIST, type::SMALL_VECTOR);
-        define_seq_eq(type::LIST, type::LIST);
-        define_seq_eq(type::LIST, type::SEQUENCE);
+        define_seq_eq(type::SmallVector, type::SmallVector);
+        define_seq_eq(type::SmallVector, type::List);
+        define_seq_eq(type::SmallVector, type::Sequence);
+        define_seq_eq(type::Sequence, type::SmallVector);
+        define_seq_eq(type::Sequence, type::List);
+        define_seq_eq(type::Sequence, type::Sequence);
+        define_seq_eq(type::List, type::SmallVector);
+        define_seq_eq(type::List, type::List);
+        define_seq_eq(type::List, type::Sequence);
 
-        std::array<Value, 2> two_sets{{type::SMALL_SET, type::SMALL_SET}};
+        std::array<Value, 2> two_sets{{type::SmallSet, type::SmallSet}};
         Root v{create_small_vector(two_sets.data(), two_sets.size())};
         f = create_native_function2<are_small_sets_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        std::array<Value, 2> two_maps{{type::SMALL_MAP, type::SMALL_MAP}};
+        std::array<Value, 2> two_maps{{type::SmallMap, type::SmallMap}};
         v = create_small_vector(two_maps.data(), two_maps.size());
         f = create_native_function2<are_small_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
         f = create_native_function1<pr_str_small_vector>();
-        define_method(PR_STR_OBJ, type::SMALL_VECTOR, *f);
+        define_method(PR_STR_OBJ, type::SmallVector, *f);
         f = create_native_function1<pr_str_small_set>();
-        define_method(PR_STR_OBJ, type::SMALL_SET, *f);
+        define_method(PR_STR_OBJ, type::SmallSet, *f);
         f = create_native_function1<pr_str_small_map>();
-        define_method(PR_STR_OBJ, type::SMALL_MAP, *f);
+        define_method(PR_STR_OBJ, type::SmallMap, *f);
         f = create_native_function1<pr_str_seqable>();
-        define_method(PR_STR_OBJ, type::SEQABLE, *f);
+        define_method(PR_STR_OBJ, type::Seqable, *f);
         f = create_native_function1<pr_str_object>();
         define_method(PR_STR_OBJ, nil, *f);
 

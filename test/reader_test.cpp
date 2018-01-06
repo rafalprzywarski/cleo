@@ -337,7 +337,7 @@ TEST_F(reader_test, should_parse_an_empty_set)
     ex = create_small_set();
     val = read_str("#{}");
     EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(type::SMALL_SET, get_value_type(*val));
+    EXPECT_EQ_VALS(type::SmallSet, get_value_type(*val));
     val = read_str("#{ }");
     EXPECT_EQ_VALS(*ex, *val);
 }

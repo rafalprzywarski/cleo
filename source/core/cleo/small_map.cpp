@@ -7,7 +7,7 @@ namespace cleo
 
 Force create_small_map()
 {
-    return create_object(type::SMALL_MAP, nullptr, 0);
+    return create_object(type::SmallMap, nullptr, 0);
 }
 
 std::uint32_t get_small_map_size(Value m)
@@ -59,7 +59,7 @@ Force small_map_assoc(Value m, Value k, Value v)
         kvs.push_back(k);
         kvs.push_back(v);
     }
-    return create_object(type::SMALL_MAP, kvs.data(), kvs.size());
+    return create_object(type::SmallMap, kvs.data(), kvs.size());
 }
 
 Force small_map_merge(Value l, Value r)

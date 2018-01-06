@@ -11,7 +11,7 @@ namespace cleo
 
 Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 {
-    Root multi{create_object(type::MULTIMETHOD, &name, 1)};
+    Root multi{create_object(type::Multimethod, &name, 1)};
     define(name, *multi);
     auto& desc = multimethods[name];
     desc.dispatchFn = dispatchFn;
@@ -62,7 +62,7 @@ Value isa(Value child, Value parent)
 {
     return (
         are_equal(child, parent) != nil ||
-        (get_value_type(child) == type::SMALL_VECTOR && get_value_type(parent) == type::SMALL_VECTOR && isa_vectors(child, parent)) ||
+        (get_value_type(child) == type::SmallVector && get_value_type(parent) == type::SmallVector && isa_vectors(child, parent)) ||
         is_ancestor(child, parent)) ? TRUE : nil;
 }
 

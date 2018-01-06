@@ -22,7 +22,7 @@ Force create_fn(Value env, Value name, const Value *params, const Value *bodies,
         ms.push_back(bodies[i]);
     }
 
-    return create_object(type::FN, ms.data(), ms.size());
+    return create_object(type::Fn, ms.data(), ms.size());
 }
 
 Value get_fn_env(Value fn)
