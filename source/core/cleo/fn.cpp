@@ -5,12 +5,10 @@
 namespace cleo
 {
 
-Force create_fn(Value env, Value name, Value params, Value body)
+namespace
 {
-    return create_fn(env, name, &params, &body, 1);
-}
 
-Force create_fn(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
+Force create_fn(Value type, Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
 {
     std::vector<Value> ms;
     ms.reserve(2 + 2 * n);
@@ -22,7 +20,29 @@ Force create_fn(Value env, Value name, const Value *params, const Value *bodies,
         ms.push_back(bodies[i]);
     }
 
-    return create_object(type::Fn, ms.data(), ms.size());
+    return create_object(type, ms.data(), ms.size());
+}
+
+}
+
+Force create_fn(Value env, Value name, Value params, Value body)
+{
+    return create_fn(env, name, &params, &body, 1);
+}
+
+Force create_fn(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
+{
+    return create_fn(type::Fn, env, name, params, bodies, n);
+}
+
+Force create_macro(Value name, Value params, Value body)
+{
+    return create_macro(name, &params, &body, 1);
+}
+
+Force create_macro(Value name, const Value *params, const Value *bodies, std::uint8_t n)
+{
+    return create_fn(type::Macro, nil, name, params, bodies, n);
 }
 
 Value get_fn_env(Value fn)

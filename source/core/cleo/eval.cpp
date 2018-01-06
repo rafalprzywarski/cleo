@@ -3,7 +3,6 @@
 #include "list.hpp"
 #include "multimethod.hpp"
 #include "fn.hpp"
-#include "macro.hpp"
 #include "global.hpp"
 #include "error.hpp"
 #include "small_vector.hpp"
@@ -396,7 +395,7 @@ Force macroexpand1(Value val)
     if (get_value_type(m) != type::Macro)
         return val;
 
-    auto params = get_macro_params(m);
+    auto params = get_fn_params(m, 0);
     auto n = get_small_vector_size(params);
     Root args{get_list_next(val)};
     if (*args == nil)
@@ -413,7 +412,7 @@ Force macroexpand1(Value val)
         args = get_list_next(*args);
     }
 
-    return eval(get_macro_body(m), *env);
+    return eval(get_fn_body(m, 0), *env);
 }
 
 Force macroexpand(Value val)

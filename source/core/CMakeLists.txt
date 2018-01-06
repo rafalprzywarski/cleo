@@ -9,7 +9,6 @@ add_library(cleo_core
   cleo/global.cpp
   cleo/hash.cpp
   cleo/list.cpp
-  cleo/macro.cpp
   cleo/memory.cpp
   cleo/multimethod.cpp
   cleo/namespace.cpp
