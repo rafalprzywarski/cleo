@@ -217,6 +217,14 @@ Force read_unquote_splicing(Stream& s)
     return create_list(elems.data(), elems.size());
 }
 
+Force read_syntax_quote(Stream& s)
+{
+    s.next(); // '`'
+    Root val{read(s)};
+    std::array<Value, 2> elems{{SYNTAX_QUOTE, *val}};
+    return create_list(elems.data(), elems.size());
+}
+
 Force read_set(Stream& s)
 {
     s.next(); // '#'
@@ -250,26 +258,22 @@ Force read(Stream& s)
         return read_number(s);
     if (is_symbol_char(s.peek()))
         return read_symbol(s);
-    if (s.peek() == ':')
-        return read_keyword(s);
-    if (s.peek() == '(')
-        return read_list(s);
-    if (s.peek() == '[')
-        return read_vector(s);
-    if (s.peek() == '{')
-        return read_map(s);
-    if (s.peek() == '\"')
-        return read_string(s);
-    if (s.peek() == '\'')
-        return read_quote(s);
-    if (s.peek() == '@')
-        return read_deref(s);
-    if (s.peek() == '~' && s.peek(1) == '@')
-        return read_unquote_splicing(s);
-    if (s.peek() == '~')
-        return read_unquote(s);
-    if (s.peek() == '#' && s.peek(1) == '{')
-        return read_set(s);
+    switch (s.peek())
+    {
+        case ':': return read_keyword(s);
+        case '(': return read_list(s);
+        case '[': return read_vector(s);
+        case '{': return read_map(s);
+        case '\"': return read_string(s);
+        case '\'': return read_quote(s);
+        case '@': return read_deref(s);
+        case '~': return (s.peek(1) == '@') ? read_unquote_splicing(s) : read_unquote(s);
+        case '`': return read_syntax_quote(s);
+        case '#':
+            if (s.peek(1) == '{')
+                return read_set(s);
+            break;
+    }
     Root e{create_string(std::string("unexpected ") + s.peek())};
     e = new_read_error(*e);
     throw_exception(*e);
