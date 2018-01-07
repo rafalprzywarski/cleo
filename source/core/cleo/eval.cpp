@@ -33,6 +33,14 @@ Value eval_quote(Value list)
 
 Force syntax_quote_val(Value val, Value env);
 
+bool is_unquote_splicing(Value val)
+{
+    return
+        get_value_type(val) == type::List &&
+        get_int64_value(get_list_size(val)) == 2 &&
+        get_list_first(val) == UNQUOTE_SPLICING;
+}
+
 Force syntax_quote_symbol(Value sym)
 {
     if (SPECIAL_SYMBOLS.count(sym))
@@ -47,12 +55,28 @@ Force syntax_quote_symbol(Value sym)
 
 Force syntax_quote_vector(Value v, Value env)
 {
+    auto seq = lookup(SEQ);
+    auto first = lookup(FIRST);
+    auto next = lookup(NEXT);
     Root ret{*EMPTY_VECTOR}, val;
     auto size = get_small_vector_size(v);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        val = syntax_quote_val(get_small_vector_elem(v, i), env);
-        ret = small_vector_conj(*ret, *val);
+        auto elem = get_small_vector_elem(v, i);
+        if (is_unquote_splicing(elem))
+        {
+            Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
+            for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
+            {
+                val = call_multimethod1(first, *s);
+                ret = small_vector_conj(*ret, *val);
+            }
+        }
+        else
+        {
+            val = syntax_quote_val(elem, env);
+            ret = small_vector_conj(*ret, *val);
+        }
     }
     return *ret;
 }

@@ -804,5 +804,19 @@ TEST_F(eval_test, unquote_should_evaluate_expressions_in_syntax_quote)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, unquote_splicing_should_splice_a_sequence_into_a_vector)
+{
+    in_ns(create_symbol("cleo.eval.syntax-quote.unquote-splicing.test"));
+    define(create_symbol("cleo.eval.syntax-quote.unquote-splicing.test", "abc"), create_keyword("abc"));
+
+    Root val, ex, env;
+    val = read_str("(:x :y :z)");
+    env = smap(create_symbol("xyz"), *val);
+    ex = read_str("[1 2 :abc :x :y :z 3]");
+    val = read_str("`[1 2 ~@[] ~@[abc] ~@xyz 3]");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }
