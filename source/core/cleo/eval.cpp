@@ -31,6 +31,39 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
+Force syntax_quote_val(Value val);
+
+Force syntax_quote_symbol(Value sym)
+{
+    sym = resolve(sym);
+    if (get_symbol_namespace(sym) != nil)
+        return sym;
+    auto sym_ns = get_symbol_name(lookup(CURRENT_NS));
+    auto sym_name = get_symbol_name(sym);
+    return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
+}
+
+Force syntax_quote_vector(Value v)
+{
+    Root ret{*EMPTY_VECTOR}, val;
+    auto size = get_small_vector_size(v);
+    for (decltype(size) i = 0; i < size; ++i)
+    {
+        val = syntax_quote_val(get_small_vector_elem(v, i));
+        ret = small_vector_conj(*ret, *val);
+    }
+    return *ret;
+}
+
+Force syntax_quote_val(Value val)
+{
+    if (get_value_tag(val) == tag::SYMBOL)
+        return syntax_quote_symbol(val);
+    if (get_value_type(val) == type::SmallVector)
+        return syntax_quote_vector(val);
+    return val;
+}
+
 Force eval_syntax_quote(Value list)
 {
     if (get_list_next(list) == nil || get_list_next(get_list_next(list)) != nil)
@@ -38,18 +71,7 @@ Force eval_syntax_quote(Value list)
         Root msg{create_string("syntax-quote requires exactly 1 argument")};
         throw_exception(new_illegal_argument(*msg));
     }
-    auto val = get_list_first(get_list_next(list));
-    if (get_value_tag(val) == tag::SYMBOL)
-    {
-        val = resolve(val);
-        if (get_symbol_namespace(val) == nil)
-        {
-            auto sym_ns = get_symbol_name(lookup(CURRENT_NS));
-            auto sym_name = get_symbol_name(val);
-            return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
-        }
-    }
-    return val;
+    return syntax_quote_val(get_list_first(get_list_next(list)));
 }
 
 template <typename CreateFn>
