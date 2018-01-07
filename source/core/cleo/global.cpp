@@ -206,11 +206,7 @@ Force pr_str_exception(Value e)
 
 Force create_ns_macro()
 {
-    Root form{create_string(
-        "(macro* ns [ns] (let* [list (fn* [& xs] xs)]"
-        "                 (list 'do"
-        "                  (list 'cleo.core/in-ns (list 'quote ns))"
-        "                  (list 'cleo.core/refer ''cleo.core))))")};
+    Root form{create_string("(macro* ns [ns] `(do (cleo.core/in-ns '~ns) (cleo.core/refer 'cleo.core)))")};
     form = read(*form);
     return eval(*form);
 }
