@@ -646,6 +646,31 @@ TEST_F(eval_test, syntax_quote_should_resolve_symbols)
     EXPECT_EQ_VALS(create_symbol("some", "abc"), *val);
 }
 
+TEST_F(eval_test, syntax_quote_should_not_quote_special_symbols)
+{
+    auto expect_no_quote = [](Value sym)
+    {
+        Root val{list(SYNTAX_QUOTE, sym)};
+        val = eval(*val);
+        EXPECT_EQ_VALS(sym, *val);
+    };
+    expect_no_quote(QUOTE);
+    expect_no_quote(SYNTAX_QUOTE);
+    expect_no_quote(FN);
+    expect_no_quote(MACRO);
+    expect_no_quote(DEF);
+    expect_no_quote(LET);
+    expect_no_quote(DO);
+    expect_no_quote(IF);
+    expect_no_quote(LOOP);
+    expect_no_quote(RECUR);
+    expect_no_quote(THROW);
+    expect_no_quote(TRY);
+    expect_no_quote(CATCH);
+    expect_no_quote(FINALLY);
+    expect_no_quote(VA);
+}
+
 TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_vectors)
 {
     in_ns(create_symbol("cleo.eval.syntax-quote.test"));

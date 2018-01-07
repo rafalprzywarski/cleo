@@ -35,6 +35,8 @@ Force syntax_quote_val(Value val);
 
 Force syntax_quote_symbol(Value sym)
 {
+    if (SPECIAL_SYMBOLS.count(sym))
+        return sym;
     sym = resolve(sym);
     if (get_symbol_namespace(sym) != nil)
         return sym;

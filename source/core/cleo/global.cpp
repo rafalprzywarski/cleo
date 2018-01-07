@@ -71,6 +71,24 @@ const Value RESET = create_symbol("cleo.core", "reset!");
 const Value SWAP = create_symbol("cleo.core", "swap!");
 const Value APPLY = create_symbol("cleo.core", "apply*");
 
+const std::unordered_set<Value> SPECIAL_SYMBOLS{
+    QUOTE,
+    SYNTAX_QUOTE,
+    FN,
+    MACRO,
+    DEF,
+    LET,
+    DO,
+    IF,
+    LOOP,
+    RECUR,
+    THROW,
+    TRY,
+    CATCH,
+    FINALLY,
+    VA
+};
+
 namespace type
 {
 const Value NativeFunction = create_symbol("cleo.core", "NativeFunction");

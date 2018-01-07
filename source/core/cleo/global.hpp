@@ -109,6 +109,8 @@ extern const Value RESET;
 extern const Value SWAP;
 extern const Value APPLY;
 
+extern const std::unordered_set<Value> SPECIAL_SYMBOLS;
+
 namespace type
 {
 extern const Value NativeFunction;
