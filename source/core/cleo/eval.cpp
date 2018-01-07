@@ -87,6 +87,19 @@ Force syntax_quote_set(Value s)
     return *ret;
 }
 
+Force syntax_quote_map(Value m)
+{
+    Root ret{*EMPTY_MAP}, key, val;
+    auto size = get_small_map_size(m);
+    for (decltype(size) i = 0; i < size; ++i)
+    {
+        key = syntax_quote_val(get_small_map_key(m, i));
+        val = syntax_quote_val(get_small_map_val(m, i));
+        ret = small_map_assoc(*ret, *key, *val);
+    }
+    return *ret;
+}
+
 Force syntax_quote_val(Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
@@ -97,6 +110,8 @@ Force syntax_quote_val(Value val)
         return syntax_quote_list(val);
     if (get_value_type(val) == type::SmallSet)
         return syntax_quote_set(val);
+    if (get_value_type(val) == type::SmallMap)
+        return syntax_quote_map(val);
     return val;
 }
 

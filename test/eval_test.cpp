@@ -715,5 +715,28 @@ TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_sets)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_maps)
+{
+    in_ns(create_symbol("cleo.eval.syntax-quote.test"));
+    Root val, ex;
+    ex = read_str("{}");
+    val = read_str("`{}");
+    val = eval(*val);
+    EXPECT_EQ_VALS(type::SmallMap, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("{7 9}");
+    val = read_str("`{7 9}");
+    val = eval(*val);
+    EXPECT_EQ_VALS(type::SmallMap, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("{7 cleo.eval.syntax-quote.test/x cleo.eval.syntax-quote.test/y 20}");
+    val = read_str("`{7 x y 20}");
+    val = eval(*val);
+    EXPECT_EQ_VALS(type::SmallMap, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }
