@@ -81,8 +81,21 @@ Force syntax_quote_vector(Value v, Value env)
     return *ret;
 }
 
+Force reverse_list(Value l)
+{
+    if (get_int64_value(get_list_size(l)) == 0)
+        return l;
+    Root ret{*EMPTY_LIST};
+    for (Root f{l}; *f != nil; f = get_list_next(*f))
+        ret = list_conj(*ret, get_list_first(*f));
+    return *ret;
+}
+
 Force syntax_quote_list(Value l, Value env)
 {
+    auto seq = lookup(SEQ);
+    auto first = lookup(FIRST);
+    auto next = lookup(NEXT);
     auto size = get_int64_value(get_list_size(l));
     if (size == 0)
         return *EMPTY_LIST;
@@ -95,19 +108,28 @@ Force syntax_quote_list(Value l, Value env)
         }
         return eval(get_list_first(get_list_next(l)), env);
     }
-    Roots roots(size);
-    std::vector<Value> vals;
-    vals.reserve(size);
-    Root val;
-    decltype(size) i = 0;
-    for (; l != nil; l = get_list_next(l), ++i)
+    Root ret{*EMPTY_LIST}, val;
+    for (; l != nil; l = get_list_next(l))
     {
-        val = syntax_quote_val(get_list_first(l), env);
-        roots.set(i, *val);
-        vals.push_back(*val);
+        auto elem = get_list_first(l);
+        if (is_unquote_splicing(elem))
+        {
+            Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
+            s = call_multimethod1(seq, *s);
+            for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
+            {
+                val = call_multimethod1(first, *s);
+                ret = list_conj(*ret, *val);
+            }
+        }
+        else
+        {
+            val = syntax_quote_val(elem, env);
+            ret = list_conj(*ret, *val);
+        }
     }
 
-    return create_list(vals.data(), vals.size());
+    return reverse_list(*ret);
 }
 
 Force syntax_quote_set(Value s, Value env)
