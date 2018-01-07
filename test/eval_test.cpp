@@ -846,5 +846,22 @@ TEST_F(eval_test, unquote_splicing_should_splice_a_sequence_into_a_set)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, unquote_splicing_should_fail_when_trying_to_splice_a_sequence_into_a_map)
+{
+    Root val;
+    val = read_str("`{1 2 ~@[7 8 9] 3}");
+    EXPECT_ANY_THROW(eval(*val));
+
+    val = read_str("`{1 ~@[7 8 9] 2 3}");
+    EXPECT_ANY_THROW(eval(*val));
+}
+
+TEST_F(eval_test, unquote_splicing_should_fail_when_trying_to_splice_not_a_sequence)
+{
+    Root val;
+    val = read_str("`[1 2 ~@5]");
+    EXPECT_ANY_THROW(eval(*val));
+}
+
 }
 }

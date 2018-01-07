@@ -165,8 +165,15 @@ Force syntax_quote_map(Value m, Value env)
     auto size = get_small_map_size(m);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        key = syntax_quote_val(get_small_map_key(m, i), env);
-        val = syntax_quote_val(get_small_map_val(m, i), env);
+        key = get_small_map_key(m, i);
+        val = get_small_map_val(m, i);
+        if (is_unquote_splicing(*key) || is_unquote_splicing(*val))
+        {
+            Root msg{create_string("unquote-splicing only supports lists, vectors, and sets")};
+            throw_exception(new_illegal_argument(*msg));
+        }
+        key = syntax_quote_val(*key, env);
+        val = syntax_quote_val(*val, env);
         ret = small_map_assoc(*ret, *key, *val);
     }
     return *ret;
