@@ -115,7 +115,6 @@ Force syntax_quote_list(Value l, Value env)
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            s = call_multimethod1(seq, *s);
             for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
             {
                 val = call_multimethod1(first, *s);
@@ -134,12 +133,28 @@ Force syntax_quote_list(Value l, Value env)
 
 Force syntax_quote_set(Value s, Value env)
 {
+    auto seq = lookup(SEQ);
+    auto first = lookup(FIRST);
+    auto next = lookup(NEXT);
     Root ret{*EMPTY_SET}, val;
     auto size = get_small_set_size(s);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        val = syntax_quote_val(get_small_set_elem(s, i), env);
-        ret = small_set_conj(*ret, *val);
+        auto elem = get_small_set_elem(s, i);
+        if (is_unquote_splicing(elem))
+        {
+            Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
+            for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
+            {
+                val = call_multimethod1(first, *s);
+                ret = small_set_conj(*ret, *val);
+            }
+        }
+        else
+        {
+            val = syntax_quote_val(elem, env);
+            ret = small_set_conj(*ret, *val);
+        }
     }
     return *ret;
 }
