@@ -763,5 +763,46 @@ TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_maps)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, unquote_should_fail_when_not_given_exactly_one_argument)
+{
+    Root val;
+    val = list(UNQUOTE);
+    val = list(SYNTAX_QUOTE, *val);
+    EXPECT_ANY_THROW(eval(*val));
+
+    val = list(UNQUOTE, 1, 2);
+    val = list(SYNTAX_QUOTE, *val);
+    EXPECT_ANY_THROW(eval(*val));
+}
+
+TEST_F(eval_test, unquote_should_evaluate_expressions_in_syntax_quote)
+{
+    in_ns(create_symbol("cleo.eval.syntax-quote.unquote.test"));
+    auto k = create_keyword("abc");
+    define(create_symbol("cleo.eval.syntax-quote.unquote.test", "with-val"), k);
+
+    Root val, ex, env;
+    env = smap(create_symbol("z"), create_keyword("z"));
+    ex = k;
+    val = read_str("`~with-val");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str(":z");
+    val = read_str("`~z");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(7 [:abc :z 8])");
+    val = read_str("`(7 ~[with-val z 8])");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("{7 #{:abc 8} #{:z} nil}");
+    val = read_str("`{7 ~#{with-val 8} ~#{z} nil}");
+    val = eval(*val, *env);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }

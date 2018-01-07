@@ -31,7 +31,7 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
-Force syntax_quote_val(Value val);
+Force syntax_quote_val(Value val, Value env);
 
 Force syntax_quote_symbol(Value sym)
 {
@@ -45,23 +45,32 @@ Force syntax_quote_symbol(Value sym)
     return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
 }
 
-Force syntax_quote_vector(Value v)
+Force syntax_quote_vector(Value v, Value env)
 {
     Root ret{*EMPTY_VECTOR}, val;
     auto size = get_small_vector_size(v);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        val = syntax_quote_val(get_small_vector_elem(v, i));
+        val = syntax_quote_val(get_small_vector_elem(v, i), env);
         ret = small_vector_conj(*ret, *val);
     }
     return *ret;
 }
 
-Force syntax_quote_list(Value l)
+Force syntax_quote_list(Value l, Value env)
 {
     auto size = get_int64_value(get_list_size(l));
     if (size == 0)
         return *EMPTY_LIST;
+    if (get_list_first(l) == UNQUOTE)
+    {
+        if (get_int64_value(get_list_size(l)) != 2)
+        {
+            Root msg{create_string("syntax-quote requires exactly 1 argument")};
+            throw_exception(new_illegal_argument(*msg));
+        }
+        return eval(get_list_first(get_list_next(l)), env);
+    }
     Roots roots(size);
     std::vector<Value> vals;
     vals.reserve(size);
@@ -69,7 +78,7 @@ Force syntax_quote_list(Value l)
     decltype(size) i = 0;
     for (; l != nil; l = get_list_next(l), ++i)
     {
-        val = syntax_quote_val(get_list_first(l));
+        val = syntax_quote_val(get_list_first(l), env);
         roots.set(i, *val);
         vals.push_back(*val);
     }
@@ -77,54 +86,54 @@ Force syntax_quote_list(Value l)
     return create_list(vals.data(), vals.size());
 }
 
-Force syntax_quote_set(Value s)
+Force syntax_quote_set(Value s, Value env)
 {
     Root ret{*EMPTY_SET}, val;
     auto size = get_small_set_size(s);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        val = syntax_quote_val(get_small_set_elem(s, i));
+        val = syntax_quote_val(get_small_set_elem(s, i), env);
         ret = small_set_conj(*ret, *val);
     }
     return *ret;
 }
 
-Force syntax_quote_map(Value m)
+Force syntax_quote_map(Value m, Value env)
 {
     Root ret{*EMPTY_MAP}, key, val;
     auto size = get_small_map_size(m);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        key = syntax_quote_val(get_small_map_key(m, i));
-        val = syntax_quote_val(get_small_map_val(m, i));
+        key = syntax_quote_val(get_small_map_key(m, i), env);
+        val = syntax_quote_val(get_small_map_val(m, i), env);
         ret = small_map_assoc(*ret, *key, *val);
     }
     return *ret;
 }
 
-Force syntax_quote_val(Value val)
+Force syntax_quote_val(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return syntax_quote_symbol(val);
     if (get_value_type(val) == type::SmallVector)
-        return syntax_quote_vector(val);
+        return syntax_quote_vector(val, env);
     if (get_value_type(val) == type::List)
-        return syntax_quote_list(val);
+        return syntax_quote_list(val, env);
     if (get_value_type(val) == type::SmallSet)
-        return syntax_quote_set(val);
+        return syntax_quote_set(val, env);
     if (get_value_type(val) == type::SmallMap)
-        return syntax_quote_map(val);
+        return syntax_quote_map(val, env);
     return val;
 }
 
-Force eval_syntax_quote(Value list)
+Force eval_syntax_quote(Value list, Value env)
 {
     if (get_list_next(list) == nil || get_list_next(get_list_next(list)) != nil)
     {
         Root msg{create_string("syntax-quote requires exactly 1 argument")};
         throw_exception(new_illegal_argument(*msg));
     }
-    return syntax_quote_val(get_list_first(get_list_next(list)));
+    return syntax_quote_val(get_list_first(get_list_next(list)), env);
 }
 
 template <typename CreateFn>
@@ -417,7 +426,7 @@ Force eval_list(Value list, Value env)
     if (first == QUOTE)
         return eval_quote(list);
     if (first == SYNTAX_QUOTE)
-        return eval_syntax_quote(list);
+        return eval_syntax_quote(list, env);
     if (first == FN)
         return eval_fn(list, env);
     if (first == MACRO)
