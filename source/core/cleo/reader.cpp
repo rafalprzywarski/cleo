@@ -276,8 +276,6 @@ Force read(Stream& s)
         case '#':
             if (s.peek(1) == '{')
                 return read_set(s);
-            if (s.eos(1))
-                throw_exception(new_unexpected_end_of_input());
             throw_unexpected(s.peek());
             break;
     }
