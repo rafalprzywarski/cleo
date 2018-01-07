@@ -55,12 +55,34 @@ Force syntax_quote_vector(Value v)
     return *ret;
 }
 
+Force syntax_quote_list(Value l)
+{
+    auto size = get_int64_value(get_list_size(l));
+    if (size == 0)
+        return *EMPTY_LIST;
+    Roots roots(size);
+    std::vector<Value> vals;
+    vals.reserve(size);
+    Root val;
+    decltype(size) i = 0;
+    for (; l != nil; l = get_list_next(l), ++i)
+    {
+        val = syntax_quote_val(get_list_first(l));
+        roots.set(i, *val);
+        vals.push_back(*val);
+    }
+
+    return create_list(vals.data(), vals.size());
+}
+
 Force syntax_quote_val(Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return syntax_quote_symbol(val);
     if (get_value_type(val) == type::SmallVector)
         return syntax_quote_vector(val);
+    if (get_value_type(val) == type::List)
+        return syntax_quote_list(val);
     return val;
 }
 
