@@ -763,6 +763,44 @@ TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_maps)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, syntax_quote_should_non_namespace_qualified_generate_symbols)
+{
+    in_ns(create_symbol("cleo.eval.syntax-quote.gen.test"));
+    define(create_symbol("cleo.eval.syntax-quote.gen.test", "some#"), create_keyword("bad"));
+
+    Override<Int64> override_next_id(next_id, 37);
+    Root val, ex;
+    ex = read_str("some__37__auto__");
+    val = read_str("`some#");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("abc/some#");
+    val = read_str("`abc/some#");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("[x__38__auto__ y__39__auto__ z__40__auto__]");
+    val = read_str("`[x# y# z#]");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("[x__41__auto__ y__42__auto__ x__41__auto__ y__42__auto__]");
+    val = read_str("`[x# y# x# y#]");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("[([x__43__auto__] {x__43__auto__ x__43__auto__} #{x__43__auto__}) x__43__auto__]");
+    val = read_str("`[([x#] {x# x#} #{x#}) x#]");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("[x__44__auto__ x__45__auto__]");
+    val = read_str("`[x# ~`x#]");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, unquote_should_fail_when_not_given_exactly_one_argument)
 {
     Root val;

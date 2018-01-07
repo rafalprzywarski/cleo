@@ -135,6 +135,13 @@ const Root EMPTY_MAP{create_small_map()};
 Root namespaces{*EMPTY_MAP};
 Root bindings;
 
+Int64 next_id = 0;
+
+Int64 gen_id()
+{
+    return next_id++;
+}
+
 const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 {
     return create_object(type::Recur, args, n);

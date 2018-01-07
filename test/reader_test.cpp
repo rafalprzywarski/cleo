@@ -82,6 +82,10 @@ TEST_F(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
     EXPECT_EQ_VALS(create_symbol("&"), *val);
     val = read_str("&abc");
     EXPECT_EQ_VALS(create_symbol("&abc"), *val);
+    val = read_str("abc#");
+    EXPECT_EQ_VALS(create_symbol("abc#"), *val);
+    val = read_str("__abc__");
+    EXPECT_EQ_VALS(create_symbol("__abc__"), *val);
 }
 
 TEST_F(reader_test, should_parse_symbols_with_namespaces)
@@ -360,7 +364,7 @@ TEST_F(reader_test, should_fail_when_given_a_single_hash)
 {
     assert_read_error("unexpected #", "# {1}");
     assert_read_error("unexpected #", "# ");
-    assert_read_error("unexpected #", "#");
+    assert_unexpected_end_of_input("#");
 }
 
 TEST_F(reader_test, should_fail_when_a_key_in_a_set_is_duplicated)

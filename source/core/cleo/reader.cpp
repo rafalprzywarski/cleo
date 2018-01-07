@@ -42,7 +42,7 @@ bool is_symbol_char(char c)
     return
         std::isalpha(c) || std::isdigit(c) || c == '-' || c == '+' ||
         c == '.' || c == '*' || c == '=' || c == '<' || c == '&' ||
-        c == '!' || c == '?';
+        c == '!' || c == '?' || c == '#' || c == '_';
 }
 
 Force read_number(Stream& s)
@@ -250,14 +250,18 @@ Force read_set(Stream& s)
     return *set;
 }
 
+[[noreturn]] void throw_unexpected(char c)
+{
+    Root e{create_string(std::string("unexpected ") + c)};
+    throw_exception(new_read_error(*e));
+}
+
 Force read(Stream& s)
 {
     eat_ws(s);
 
     if (std::isdigit(s.peek()) || (s.peek() == '-' && std::isdigit(s.peek(1))))
         return read_number(s);
-    if (is_symbol_char(s.peek()))
-        return read_symbol(s);
     switch (s.peek())
     {
         case ':': return read_keyword(s);
@@ -272,11 +276,14 @@ Force read(Stream& s)
         case '#':
             if (s.peek(1) == '{')
                 return read_set(s);
+            if (s.eos(1))
+                throw_exception(new_unexpected_end_of_input());
+            throw_unexpected(s.peek());
             break;
     }
-    Root e{create_string(std::string("unexpected ") + s.peek())};
-    e = new_read_error(*e);
-    throw_exception(*e);
+    if (is_symbol_char(s.peek()))
+        return read_symbol(s);
+    throw_unexpected(s.peek());
 }
 
 }

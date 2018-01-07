@@ -31,7 +31,7 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
-Force syntax_quote_val(Value val, Value env);
+Force syntax_quote_val(Root& generated, Value val, Value env);
 
 bool is_unquote_splicing(Value val)
 {
@@ -41,10 +41,33 @@ bool is_unquote_splicing(Value val)
         get_list_first(val) == UNQUOTE_SPLICING;
 }
 
-Force syntax_quote_symbol(Value sym)
+bool is_generating(Value sym)
+{
+    auto name = get_symbol_name(sym);
+    return
+        get_symbol_namespace(sym) == nil &&
+        get_string_len(name) > 0 &&
+        get_string_ptr(name)[get_string_len(name) - 1] == '#';
+}
+
+Force generate_symbol(Root& generated, Value sym)
+{
+    auto found = small_map_get(*generated, sym);
+    if (found != nil)
+        return found;
+    auto name = get_symbol_name(sym);
+    auto id = gen_id();
+    Root g{create_symbol(std::string(get_string_ptr(name), get_string_len(name) - 1) + "__" + std::to_string(id) + "__auto__")};
+    generated = small_map_assoc(*generated, sym, *g);
+    return *g;
+}
+
+Force syntax_quote_symbol(Root& generated, Value sym)
 {
     if (SPECIAL_SYMBOLS.count(sym))
         return sym;
+    if (is_generating(sym))
+        return generate_symbol(generated, sym);
     sym = resolve(sym);
     if (get_symbol_namespace(sym) != nil)
         return sym;
@@ -53,7 +76,7 @@ Force syntax_quote_symbol(Value sym)
     return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
 }
 
-Force syntax_quote_vector(Value v, Value env)
+Force syntax_quote_vector(Root& generated, Value v, Value env)
 {
     auto seq = lookup(SEQ);
     auto first = lookup(FIRST);
@@ -74,7 +97,7 @@ Force syntax_quote_vector(Value v, Value env)
         }
         else
         {
-            val = syntax_quote_val(elem, env);
+            val = syntax_quote_val(generated, elem, env);
             ret = small_vector_conj(*ret, *val);
         }
     }
@@ -91,7 +114,7 @@ Force reverse_list(Value l)
     return *ret;
 }
 
-Force syntax_quote_list(Value l, Value env)
+Force syntax_quote_list(Root& generated, Value l, Value env)
 {
     auto seq = lookup(SEQ);
     auto first = lookup(FIRST);
@@ -123,7 +146,7 @@ Force syntax_quote_list(Value l, Value env)
         }
         else
         {
-            val = syntax_quote_val(elem, env);
+            val = syntax_quote_val(generated, elem, env);
             ret = list_conj(*ret, *val);
         }
     }
@@ -131,7 +154,7 @@ Force syntax_quote_list(Value l, Value env)
     return reverse_list(*ret);
 }
 
-Force syntax_quote_set(Value s, Value env)
+Force syntax_quote_set(Root& generated, Value s, Value env)
 {
     auto seq = lookup(SEQ);
     auto first = lookup(FIRST);
@@ -152,14 +175,14 @@ Force syntax_quote_set(Value s, Value env)
         }
         else
         {
-            val = syntax_quote_val(elem, env);
+            val = syntax_quote_val(generated, elem, env);
             ret = small_set_conj(*ret, *val);
         }
     }
     return *ret;
 }
 
-Force syntax_quote_map(Value m, Value env)
+Force syntax_quote_map(Root& generated, Value m, Value env)
 {
     Root ret{*EMPTY_MAP}, key, val;
     auto size = get_small_map_size(m);
@@ -172,36 +195,37 @@ Force syntax_quote_map(Value m, Value env)
             Root msg{create_string("unquote-splicing only supports lists, vectors, and sets")};
             throw_exception(new_illegal_argument(*msg));
         }
-        key = syntax_quote_val(*key, env);
-        val = syntax_quote_val(*val, env);
+        key = syntax_quote_val(generated, *key, env);
+        val = syntax_quote_val(generated, *val, env);
         ret = small_map_assoc(*ret, *key, *val);
     }
     return *ret;
 }
 
-Force syntax_quote_val(Value val, Value env)
+Force syntax_quote_val(Root& generated, Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
-        return syntax_quote_symbol(val);
+        return syntax_quote_symbol(generated, val);
     if (get_value_type(val) == type::SmallVector)
-        return syntax_quote_vector(val, env);
+        return syntax_quote_vector(generated, val, env);
     if (get_value_type(val) == type::List)
-        return syntax_quote_list(val, env);
+        return syntax_quote_list(generated, val, env);
     if (get_value_type(val) == type::SmallSet)
-        return syntax_quote_set(val, env);
+        return syntax_quote_set(generated, val, env);
     if (get_value_type(val) == type::SmallMap)
-        return syntax_quote_map(val, env);
+        return syntax_quote_map(generated, val, env);
     return val;
 }
 
 Force eval_syntax_quote(Value list, Value env)
 {
+    Root generated{*EMPTY_MAP};
     if (get_list_next(list) == nil || get_list_next(get_list_next(list)) != nil)
     {
         Root msg{create_string("syntax-quote requires exactly 1 argument")};
         throw_exception(new_illegal_argument(*msg));
     }
-    return syntax_quote_val(get_list_first(get_list_next(list)), env);
+    return syntax_quote_val(generated, get_list_first(get_list_next(list)), env);
 }
 
 template <typename CreateFn>

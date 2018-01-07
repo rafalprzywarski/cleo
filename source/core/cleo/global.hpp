@@ -150,4 +150,8 @@ extern const Root recur;
 extern Root namespaces;
 extern Root bindings;
 
+extern Int64 next_id;
+
+Int64 gen_id();
+
 }
