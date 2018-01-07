@@ -141,6 +141,7 @@ extern const std::array<Value, 7> type_by_tag;
 
 extern const Root EMPTY_LIST;
 extern const Root EMPTY_VECTOR;
+extern const Root EMPTY_SET;
 extern const Root EMPTY_MAP;
 extern const Root recur;
 

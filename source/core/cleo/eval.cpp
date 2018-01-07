@@ -75,6 +75,18 @@ Force syntax_quote_list(Value l)
     return create_list(vals.data(), vals.size());
 }
 
+Force syntax_quote_set(Value s)
+{
+    Root ret{*EMPTY_SET}, val;
+    auto size = get_small_set_size(s);
+    for (decltype(size) i = 0; i < size; ++i)
+    {
+        val = syntax_quote_val(get_small_set_elem(s, i));
+        ret = small_set_conj(*ret, *val);
+    }
+    return *ret;
+}
+
 Force syntax_quote_val(Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
@@ -83,6 +95,8 @@ Force syntax_quote_val(Value val)
         return syntax_quote_vector(val);
     if (get_value_type(val) == type::List)
         return syntax_quote_list(val);
+    if (get_value_type(val) == type::SmallSet)
+        return syntax_quote_set(val);
     return val;
 }
 

@@ -111,6 +111,7 @@ const std::array<Value, 7> type_by_tag{{
 
 const Root EMPTY_LIST{create_list(nullptr, 0)};
 const Root EMPTY_VECTOR{create_small_vector(nullptr, 0)};
+const Root EMPTY_SET{create_small_set()};
 const Root EMPTY_MAP{create_small_map()};
 
 Root namespaces{*EMPTY_MAP};
