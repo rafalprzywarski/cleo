@@ -12,6 +12,7 @@
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "atom.hpp"
+#include <iostream>
 
 namespace cleo
 {
@@ -237,6 +238,20 @@ Value small_vector_get(Value v, Value index)
     return get_small_vector_elem(v, i);
 }
 
+Force pr(const Value *args, std::uint8_t n)
+{
+    Root s;
+    for (decltype(n) i = 0; i < n; ++i)
+    {
+        s = pr_str(args[i]);
+        if (i > 0)
+            std::cout << ' ';
+        std::cout << std::string(get_string_ptr(*s), get_string_len(*s));
+    }
+    std::cout << std::flush;
+    return force(nil);
+}
+
 struct Initialize
 {
     Initialize()
@@ -447,6 +462,9 @@ struct Initialize
 
         f = create_native_function2<apply>();
         define(APPLY, *f);
+
+        f = create_native_function(pr);
+        define(create_symbol("cleo.core", "pr"), *f);
     }
 } initialize;
 
