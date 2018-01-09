@@ -46,12 +46,12 @@ Value define(Value sym, Value val)
     return nil;
 }
 
-Value resolve(Value sym)
+Value resolve(Value ns, Value sym)
 {
     auto sym_ns = get_symbol_namespace(sym);
     if (sym_ns == nil)
     {
-        auto ns = small_map_get(*namespaces, get_symbol_name(lookup_var(CURRENT_NS)));
+        ns = small_map_get(*namespaces, get_symbol_name(ns));
         if (ns != nil)
         {
             auto found = small_map_get(ns, get_symbol_name(sym));
@@ -62,10 +62,20 @@ Value resolve(Value sym)
     return sym;
 }
 
+Value resolve(Value sym)
+{
+    return resolve(lookup_var(CURRENT_NS), sym);
+}
+
+Value lookup(Value ns, Value sym)
+{
+    sym = resolve(ns, sym);
+    return lookup_var(sym);
+}
+
 Value lookup(Value sym)
 {
-    sym = resolve(sym);
-    return lookup_var(sym);
+    return lookup(lookup_var(CURRENT_NS), sym);
 }
 
 Value require(Value ns)

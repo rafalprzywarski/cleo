@@ -158,5 +158,34 @@ TEST_F(fn_test, should_not_bind_the_ampersand)
     }
 }
 
+TEST_F(fn_test, should_correctly_resolve_symbols_from_fns_namespace)
+{
+    in_ns(create_symbol("cleo.fn.resolve.test1"));
+    define(create_symbol("cleo.fn.resolve.test1", "x"), create_keyword("ok"));
+    Root fn{create_string("(fn* [] [x `x `y])")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    in_ns(create_symbol("cleo.fn.resolve.test2"));
+    Root val{list(*fn)}, ex;
+    val = eval(*val);
+    ex = svec(create_keyword("ok"), create_symbol("cleo.fn.resolve.test1", "x"), create_symbol("cleo.fn.resolve.test1", "y"));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(fn_test, should_correctly_resolve_symbols_from_fns_created_in_fns_from_other_namespaces)
+{
+    in_ns(create_symbol("cleo.fn.resolve.test1"));
+    define(create_symbol("cleo.fn.resolve.test1", "x"), create_keyword("ok"));
+    Root fn{create_string("(fn* [] (fn* [] [x `x `y]))")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    in_ns(create_symbol("cleo.fn.resolve.test2"));
+    Root val{list(*fn)}, ex;
+    val = list(*val);
+    val = eval(*val);
+    ex = svec(create_keyword("ok"), create_symbol("cleo.fn.resolve.test1", "x"), create_symbol("cleo.fn.resolve.test1", "y"));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 }
 }

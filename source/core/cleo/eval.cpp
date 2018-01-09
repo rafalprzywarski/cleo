@@ -20,8 +20,13 @@ namespace
 
 Value eval_symbol(Value sym, Value env)
 {
-    if (env != nil && small_map_contains(env, sym))
-        return small_map_get(env, sym);
+    if (env != nil)
+    {
+        if (small_map_contains(env, sym))
+            return small_map_get(env, sym);
+        if (small_map_contains(env, ENV_NS))
+            return lookup(small_map_get(env, ENV_NS), sym);
+    }
     return lookup(sym);
 }
 
@@ -62,16 +67,17 @@ Force generate_symbol(Root& generated, Value sym)
     return *g;
 }
 
-Force syntax_quote_symbol(Root& generated, Value sym)
+Force syntax_quote_symbol(Root& generated, Value sym, Value env)
 {
     if (SPECIAL_SYMBOLS.count(sym))
         return sym;
     if (is_generating(sym))
         return generate_symbol(generated, sym);
-    sym = resolve(sym);
+    auto ns = (env != nil && small_map_contains(env, ENV_NS)) ? small_map_get(env, ENV_NS) : lookup_var(CURRENT_NS);
+    sym = resolve(ns, sym);
     if (get_symbol_namespace(sym) != nil)
         return sym;
-    auto sym_ns = get_symbol_name(lookup(CURRENT_NS));
+    auto sym_ns = get_symbol_name(ns);
     auto sym_name = get_symbol_name(sym);
     return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
 }
@@ -205,7 +211,7 @@ Force syntax_quote_map(Root& generated, Value m, Value env)
 Force syntax_quote_val(Root& generated, Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
-        return syntax_quote_symbol(generated, val);
+        return syntax_quote_symbol(generated, val, env);
     if (get_value_type(val) == type::SmallVector)
         return syntax_quote_vector(generated, val, env);
     if (get_value_type(val) == type::List)
@@ -229,8 +235,11 @@ Force eval_syntax_quote(Value list, Value env)
 }
 
 template <typename CreateFn>
-Force eval_fn(Value list, CreateFn create_fn)
+Force eval_fn(Value list, Value env, CreateFn create_fn)
 {
+    Root lenv{(env == nil || small_map_contains(env, ENV_NS) == nil) ?
+        small_map_assoc(env != nil ? env : *EMPTY_MAP, ENV_NS, lookup_var(CURRENT_NS)) :
+        env};
     Root next{get_list_next(list)};
     auto name = nil;
     if (get_value_tag(get_list_first(*next)) == tag::SYMBOL)
@@ -243,7 +252,7 @@ Force eval_fn(Value list, CreateFn create_fn)
         auto params = get_list_first(*next);
         next = get_list_next(*next);
         auto body = get_list_first(*next);
-        return create_fn(name, &params, &body, 1);
+        return create_fn(*lenv, name, &params, &body, 1);
     }
     std::vector<Value> params, bodies;
     while (*next != nil)
@@ -254,20 +263,17 @@ Force eval_fn(Value list, CreateFn create_fn)
         bodies.push_back(get_list_first(*pb));
         next = get_list_next(*next);
     }
-    return create_fn(name, params.data(), bodies.data(), params.size());
+    return create_fn(*lenv, name, params.data(), bodies.data(), params.size());
 }
 
 Force eval_fn(Value list, Value env)
 {
-    return eval_fn(list, [env](auto name, auto params, auto body, auto n)
-    {
-        return create_fn(env, name, params, body, n);
-    });
+    return eval_fn(list, env, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_fn));
 }
 
-Force eval_macro(Value list)
+Force eval_macro(Value list, Value env)
 {
-    return eval_fn(list, static_cast<Force(*)(Value, const Value*, const Value*, std::uint8_t)>(create_macro));
+    return eval_fn(list, env, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_macro));
 }
 
 Force eval_def(Value list, Value env)
@@ -522,7 +528,7 @@ Force eval_list(Value list, Value env)
     if (first == FN)
         return eval_fn(list, env);
     if (first == MACRO)
-        return eval_macro(list);
+        return eval_macro(list, env);
     if (first == DEF)
         return eval_def(list, env);
     if (first == LET)

@@ -35,14 +35,14 @@ Force create_fn(Value env, Value name, const Value *params, const Value *bodies,
     return create_fn(type::Fn, env, name, params, bodies, n);
 }
 
-Force create_macro(Value name, Value params, Value body)
+Force create_macro(Value env, Value name, Value params, Value body)
 {
-    return create_macro(name, &params, &body, 1);
+    return create_macro(env, name, &params, &body, 1);
 }
 
-Force create_macro(Value name, const Value *params, const Value *bodies, std::uint8_t n)
+Force create_macro(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
 {
-    return create_fn(type::Macro, nil, name, params, bodies, n);
+    return create_fn(type::Macro, env, name, params, bodies, n);
 }
 
 Value get_fn_env(Value fn)
