@@ -152,5 +152,30 @@ TEST_F(macro_test, should_correctly_resolve_symbols_from_macros_namespace)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(macro_test, should_pass_the_form_as_a_hidden_parameter)
+{
+    in_ns(create_symbol("cleo.macro.form.test"));
+    Root decl{create_string("(def ff (macro* [& args] `(quote ~&form)))")};
+    decl = read(*decl);
+    eval(*decl);
+    Root form{create_string("(ff 1 (+ 2 3) 4)")};
+    form = read(*form);
+    Root val{eval(*form)};
+    EXPECT_EQ_VALS(*form, *val);
+}
+
+TEST_F(macro_test, should_pass_the_env_as_a_hidden_parameter)
+{
+    in_ns(create_symbol("cleo.macro.env.test"));
+    Root decl{create_string("(def ff (macro* [& args] `(quote ~&env)))")};
+    decl = read(*decl);
+    eval(*decl);
+    Root form{create_string("(ff 1)")};
+    form = read(*form);
+    Root env{smap(create_symbol("x"), 7, create_symbol("y"), 8)};
+    Root val{eval(*form, *env)};
+    EXPECT_EQ_VALS(*env, *val);
+}
+
 }
 }

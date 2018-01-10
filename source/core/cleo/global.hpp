@@ -109,6 +109,8 @@ extern const Value DEREF;
 extern const Value RESET;
 extern const Value SWAP;
 extern const Value APPLY;
+extern const Value FORM;
+extern const Value ENV;
 
 extern const std::unordered_set<Value> SPECIAL_SYMBOLS;
 

@@ -217,13 +217,14 @@ TEST_F(eval_test, macro_should_return_a_new_macro)
     auto x = create_symbol("x");
     Root body{list(s, x)};
     Root params{svec(s, x)};
+    Root exparams{svec(FORM, ENV, s, x)};
     Root call{list(MACRO, *params, *body)};
     Root val{eval(*call)};
-    ASSERT_TRUE(type::Macro == get_value_type(*val));
-    ASSERT_TRUE(nil == get_fn_name(*val));
+    ASSERT_EQ_VALS(type::Macro, get_value_type(*val));
+    EXPECT_EQ_VALS(nil, get_fn_name(*val));
     ASSERT_EQ(1u, get_fn_size(*val));
-    ASSERT_TRUE(*params == get_fn_params(*val, 0));
-    ASSERT_TRUE(*body == get_fn_body(*val, 0));
+    EXPECT_EQ_VALS(*exparams, get_fn_params(*val, 0));
+    EXPECT_EQ_VALS(*body, get_fn_body(*val, 0));
 }
 
 TEST_F(eval_test, macro_should_return_a_new_macro_with_a_name)
@@ -233,13 +234,38 @@ TEST_F(eval_test, macro_should_return_a_new_macro_with_a_name)
     auto name = create_symbol("fname");
     Root body{list(s, x)};
     Root params{svec(s, x)};
+    Root exparams{svec(FORM, ENV, s, x)};
     Root call{list(MACRO, name, *params, *body)};
     Root val{eval(*call)};
-    ASSERT_TRUE(type::Macro == get_value_type(*val));
-    ASSERT_TRUE(name == get_fn_name(*val));
+    ASSERT_EQ_VALS(type::Macro, get_value_type(*val));
+    EXPECT_EQ_VALS(name, get_fn_name(*val));
     ASSERT_EQ(1u, get_fn_size(*val));
-    ASSERT_TRUE(*params == get_fn_params(*val, 0));
-    ASSERT_TRUE(*body == get_fn_body(*val, 0));
+    EXPECT_EQ_VALS(*exparams, get_fn_params(*val, 0));
+    EXPECT_EQ_VALS(*body, get_fn_body(*val, 0));
+}
+
+TEST_F(eval_test, macro_should_return_a_new_macro_with_multiple_arities)
+{
+    auto x = create_symbol("x");
+    auto y = create_symbol("y");
+    Root params1{svec()};
+    Root params2{svec(x)};
+    Root params3{svec(x, y)};
+    Root exparams1{svec(FORM, ENV)};
+    Root exparams2{svec(FORM, ENV, x)};
+    Root exparams3{svec(FORM, ENV, x, y)};
+    Root call{create_string("(macro* xyz ([] :a) ([x] :b) ([x y] :c))")};
+    call = read(*call);
+    Root val{eval(*call)};
+    ASSERT_EQ_VALS(type::Macro, get_value_type(*val));
+    EXPECT_EQ_VALS(create_symbol("xyz"), get_fn_name(*val));
+    ASSERT_EQ(3u, get_fn_size(*val));
+    EXPECT_EQ_VALS(*exparams1, get_fn_params(*val, 0));
+    EXPECT_EQ_VALS(*exparams2, get_fn_params(*val, 1));
+    EXPECT_EQ_VALS(*exparams3, get_fn_params(*val, 2));
+    EXPECT_EQ_VALS(create_keyword("a"), get_fn_body(*val, 0));
+    EXPECT_EQ_VALS(create_keyword("b"), get_fn_body(*val, 1));
+    EXPECT_EQ_VALS(create_keyword("c"), get_fn_body(*val, 2));
 }
 
 TEST_F(eval_test, should_store_the_environment_in_created_fns)

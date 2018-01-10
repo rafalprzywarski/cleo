@@ -512,7 +512,7 @@ Force call_macro(Value fn, Value list, Value env)
     if (*args == nil)
         args = *EMPTY_LIST;
     Root form{list_conj(*args, fn)};
-    Root exp{macroexpand(*form)};
+    Root exp{macroexpand(*form, list, env)};
     return eval(*exp, env);
 }
 
@@ -604,7 +604,7 @@ Force eval_map(Value m, Value env)
 
 }
 
-Force macroexpand1(Value val)
+Force macroexpand1(Value val, Value form, Value env)
 {
     if (get_value_type(val) != type::List || get_list_size(val) == 0)
         return val;
@@ -614,19 +614,21 @@ Force macroexpand1(Value val)
         return val;
 
     std::vector<Value> elems;
-    elems.reserve(get_int64_value(get_list_size(val)));
+    elems.reserve(get_int64_value(get_list_size(val)) + 2);
     elems.push_back(m);
+    elems.push_back(form);
+    elems.push_back(env);
     for (Root arg_list{get_list_next(val)}; *arg_list != nil; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
     return call_fn(elems);
 }
 
-Force macroexpand(Value val)
+Force macroexpand(Value val, Value form, Value env)
 {
-    Root exp{macroexpand1(val)};
+    Root exp{macroexpand1(val, form, env)};
     if (*exp != val)
-        return macroexpand(*exp);
+        return macroexpand(*exp, *exp, env);
     return *exp;
 }
 

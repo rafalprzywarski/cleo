@@ -72,6 +72,8 @@ const Value DEREF = create_symbol("cleo.core", "deref");
 const Value RESET = create_symbol("cleo.core", "reset!");
 const Value SWAP = create_symbol("cleo.core", "swap!");
 const Value APPLY = create_symbol("cleo.core", "apply*");
+const Value FORM = create_symbol("&form");
+const Value ENV = create_symbol("&env");
 
 const std::unordered_set<Value> SPECIAL_SYMBOLS{
     QUOTE,
@@ -253,6 +255,16 @@ Force pr(const Value *args, std::uint8_t n)
     return force(nil);
 }
 
+Force macroexpand_noenv(Value val)
+{
+    return macroexpand(val, nil);
+}
+
+Force macroexpand1_noenv(Value val)
+{
+    return macroexpand1(val, nil);
+}
+
 struct Initialize
 {
     Initialize()
@@ -429,10 +441,10 @@ struct Initialize
         f = create_native_function1<file_not_found_message>();
         define_method(GET_MESSAGE, type::FileNotFound, *f);
 
-        f = create_native_function1<macroexpand1>();
+        f = create_native_function1<macroexpand1_noenv>();
         define(create_symbol("cleo.core", "macroexpand-1"), *f);
 
-        f = create_native_function1<macroexpand>();
+        f = create_native_function1<macroexpand_noenv>();
         define(create_symbol("cleo.core", "macroexpand"), *f);
 
         f = create_native_function1<refer>();
