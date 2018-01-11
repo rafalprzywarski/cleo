@@ -73,6 +73,8 @@ extern const Value TRUE;
 extern const Value SEQ;
 extern const Value FIRST;
 extern const Value NEXT;
+extern const Value CONJ;
+extern const Value ASSOC;
 extern const Value OBJ_EQ;
 extern const Value OBJ_CALL;
 extern const Value PR_STR_OBJ;

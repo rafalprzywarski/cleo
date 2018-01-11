@@ -36,6 +36,8 @@ const Value TRUE = create_keyword("true");
 const Value SEQ = create_symbol("cleo.core", "seq");
 const Value FIRST = create_symbol("cleo.core", "first");
 const Value NEXT = create_symbol("cleo.core", "next");
+const Value CONJ = create_symbol("cleo.core", "conj");
+const Value ASSOC = create_symbol("cleo.core", "assoc");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
@@ -338,6 +340,22 @@ struct Initialize
         define_method(FIRST, type::Seqable, *f);
         f = create_native_function1<get_seqable_next>();
         define_method(NEXT, type::Seqable, *f);
+
+        define_multimethod(CONJ, *first_type, undefined);
+
+        f = create_native_function2<small_vector_conj>();
+        define_method(CONJ, type::SmallVector, *f);
+
+        f = create_native_function2<small_set_conj>();
+        define_method(CONJ, type::SmallSet, *f);
+
+        f = create_native_function2<list_conj>();
+        define_method(CONJ, type::List, *f);
+
+        define_multimethod(ASSOC, *first_type, undefined);
+
+        f = create_native_function3<small_map_assoc>();
+        define_method(ASSOC, type::SmallMap, *f);
 
         define_multimethod(OBJ_CALL, *first_type, nil);
 

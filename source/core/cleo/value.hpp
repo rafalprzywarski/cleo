@@ -98,6 +98,15 @@ Force create_native_function2()
     });
 }
 
+template <Force f(Value, Value, Value)>
+Force create_native_function3()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args)
+    {
+        return f(args[0], args[1], args[2]);
+    });
+}
+
 NativeFunction get_native_function_ptr(Value val);
 
 Value create_symbol(const std::string& ns, const std::string& name);
