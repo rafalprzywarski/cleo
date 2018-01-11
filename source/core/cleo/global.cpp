@@ -265,6 +265,18 @@ Force macroexpand1_noenv(Value val)
     return macroexpand1(val, nil);
 }
 
+Force get_seqable_first(Value val)
+{
+    Root s{call_multimethod1(lookup(SEQ), val)};
+    return call_multimethod1(lookup(FIRST), *s);
+}
+
+Force get_seqable_next(Value val)
+{
+    Root s{call_multimethod1(lookup(SEQ), val)};
+    return call_multimethod1(lookup(NEXT), *s);
+}
+
 struct Initialize
 {
     Initialize()
@@ -321,6 +333,11 @@ struct Initialize
         derive(type::Sequence, type::Seqable);
         f = create_native_function1<identity>();
         define_method(SEQ, type::Sequence, *f);
+
+        f = create_native_function1<get_seqable_first>();
+        define_method(FIRST, type::Seqable, *f);
+        f = create_native_function1<get_seqable_next>();
+        define_method(NEXT, type::Seqable, *f);
 
         define_multimethod(OBJ_CALL, *first_type, nil);
 
