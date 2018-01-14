@@ -529,7 +529,7 @@ struct Initialize
         f = create_native_function1<require, &REQUIRE>();
         define(REQUIRE, *f);
 
-        f = create_native_function1<create_atom>();
+        f = create_native_function1<create_atom, &ATOM>();
         define(ATOM, *f);
 
         define_multimethod(DEREF, *first_type, nil);
