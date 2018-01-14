@@ -403,7 +403,7 @@ struct Initialize
         define_method(OBJ_CALL, type::SmallMap, *f);
 
         derive(type::Keyword, type::Callable);
-        f = create_native_function2<keyword_get>();
+        f = create_native_function2<keyword_get, &type::Keyword>();
         define_method(OBJ_CALL, type::Keyword, *f);
 
         derive(type::SmallVector, type::Callable);

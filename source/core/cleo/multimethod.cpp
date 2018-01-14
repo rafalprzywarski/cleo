@@ -105,7 +105,16 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
     auto fn = get_method(multimethod, *dispatchVal);
     if (fn == nil)
     {
-        Root msg{create_string("multimethod not matched")};
+        auto mns = get_symbol_namespace(name);
+        auto mname = get_symbol_name(name);
+        std::string sname;
+        if (mns != nil)
+        {
+            sname.assign(get_string_ptr(mns), get_string_len(mns));
+            sname += '/';
+        }
+        sname.append(get_string_ptr(mname), get_string_len(mname));
+        Root msg{create_string("multimethod not matched: " + sname)};
         throw_exception(new_illegal_argument(*msg));
     }
     return get_native_function_ptr(fn)(args, numArgs);
