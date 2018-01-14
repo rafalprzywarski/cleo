@@ -427,7 +427,7 @@ Value get_var_arg(Value params)
     return get_small_vector_elem(params, size - 1);
 }
 
-std::uint8_t find_fn_index(Value fn, std::uint8_t n)
+std::uint8_t find_fn_index(Value fn, std::uint8_t n, std::uint8_t public_n)
 {
     auto size = get_fn_size(fn);
     for (std::uint8_t i = 0; i < size; ++i)
@@ -446,7 +446,7 @@ std::uint8_t find_fn_index(Value fn, std::uint8_t n)
             return i;
     }
 
-    throw_arity_error(get_fn_name(fn), n);
+    throw_arity_error(get_fn_name(fn), public_n);
 }
 
 std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value list, Value env)
@@ -464,10 +464,10 @@ std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value list, Value
     return elems;
 }
 
-Force call_fn(const std::vector<Value>& elems)
+Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
 {
     const auto fn = elems[0];
-    auto fni = find_fn_index(fn, elems.size() - 1);
+    auto fni = find_fn_index(fn, elems.size() - 1, public_n);
     auto va = is_va(fn, fni);
     auto params = get_fn_params(fn, fni);
     auto n_params = va ? get_small_vector_size(params) - 1 : get_small_vector_size(params);
@@ -554,7 +554,7 @@ Force eval_list(Value list, Value env)
     if (type == type::Multimethod)
         return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
     if (type == type::Fn)
-        return call_fn(elems);
+        return call_fn(elems, elems.size());
     if (isa(type, type::Callable))
         return call_multimethod(lookup_var(OBJ_CALL), elems.data(), elems.size());
     Root msg{create_string("call error")};
@@ -621,7 +621,7 @@ Force macroexpand1(Value val, Value form, Value env)
     for (Root arg_list{get_list_next(val)}; *arg_list != nil; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
-    return call_fn(elems);
+    return call_fn(elems, elems.size() - 3);
 }
 
 Force macroexpand(Value val, Value form, Value env)

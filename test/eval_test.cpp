@@ -9,6 +9,7 @@
 #include <cleo/small_map.hpp>
 #include <cleo/memory.hpp>
 #include <cleo/reader.hpp>
+#include <cleo/util.hpp>
 #include <gtest/gtest.h>
 #include <array>
 #include "util.hpp"

@@ -18,4 +18,11 @@ void throw_arity_error(Value name, std::uint8_t n)
     throw_exception(new_call_error(*msg));
 }
 
+void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args)
+{
+    if (num_args != actual_num_args)
+        throw_arity_error(name, actual_num_args);
+}
+
+
 }

@@ -53,60 +53,6 @@ inline void *get_value_ptr(Value ptr)
 
 Force create_native_function(NativeFunction f);
 
-template <Force f()>
-Force create_native_function0()
-{
-    return create_native_function([](const Value *, std::uint8_t)
-    {
-        return f();
-    });
-}
-
-template <Force f(Value)>
-Force create_native_function1()
-{
-    return create_native_function([](const Value *args, std::uint8_t num_args)
-    {
-        return f(args[0]);
-    });
-}
-
-template <Value f(Value)>
-Force create_native_function1()
-{
-    return create_native_function([](const Value *args, std::uint8_t num_args)
-    {
-        return force(f(args[0]));
-    });
-}
-
-template <Force f(Value, Value)>
-Force create_native_function2()
-{
-    return create_native_function([](const Value *args, std::uint8_t num_args)
-    {
-        return f(args[0], args[1]);
-    });
-}
-
-template <Value f(Value, Value)>
-Force create_native_function2()
-{
-    return create_native_function([](const Value *args, std::uint8_t num_args)
-    {
-        return force(f(args[0], args[1]));
-    });
-}
-
-template <Force f(Value, Value, Value)>
-Force create_native_function3()
-{
-    return create_native_function([](const Value *args, std::uint8_t num_args)
-    {
-        return f(args[0], args[1], args[2]);
-    });
-}
-
 NativeFunction get_native_function_ptr(Value val);
 
 Value create_symbol(const std::string& ns, const std::string& name);

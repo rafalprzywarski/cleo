@@ -12,6 +12,7 @@
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "atom.hpp"
+#include "util.hpp"
 #include <iostream>
 
 namespace cleo
@@ -156,10 +157,29 @@ const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 namespace
 {
 
-const Root first_type{create_native_function1<get_value_type>()};
+const Value ReadErrorCtor = create_symbol("cleo.core", "ReadError.");
+const Value CallErrorCtor = create_symbol("cleo.core", "CallError.");
+const Value SymbolNotFoundCtor = create_symbol("cleo.core", "SymbolNotFound.");
+const Value IllegalArgumentCtor = create_symbol("cleo.core", "IllegalArgument.");
+const Value IllegalStateCtor = create_symbol("cleo.core", "IllegalState.");
+const Value UnexpectedEndOfInputCtor = create_symbol("cleo.core", "UnexpectedEndOfInput.");
+const Value FileNotFoundCtor = create_symbol("cleo.core", "FileNotFound.");
+const Value MACROEXPAND1 = create_symbol("cleo.core", "macroexpand-1");
+const Value MACROEXPAND = create_symbol("cleo.core", "macroexpand");
+const Value REFER = create_symbol("cleo.core", "refer");
+const Value READ_STRING = create_symbol("cleo.core", "read-string");
+const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
+const Value REQUIRE = create_symbol("cleo.core", "require");
 
-const Root equal_dispatch{create_native_function([](const Value *args, std::uint8_t numArgs)
+
+const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
+    return (num_args < 1) ? nil : get_value_type(args[0]);
+})};
+
+const Root equal_dispatch{create_native_function([](const Value *args, std::uint8_t num_args)
+{
+    check_arity(OBJ_EQ, 2, num_args);
     std::array<Value, 2> types{{get_value_type(args[0]), get_value_type(args[1])}};
     return create_small_vector(types.data(), types.size());
 })};
@@ -286,7 +306,7 @@ struct Initialize
         Root f;
 
         define(CURRENT_NS, create_symbol("cleo.core"));
-        f = create_native_function1<in_ns>();
+        f = create_native_function1<in_ns, &IN_NS>();
         define(IN_NS, *f);
         f = create_ns_macro();
         define(NS, *f);
@@ -418,15 +438,15 @@ struct Initialize
         f = create_native_function1<pr_str_object>();
         define_method(PR_STR_OBJ, nil, *f);
 
-        f = create_native_function2<add2>();
+        f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);
-        f = create_native_function2<sub2>();
+        f = create_native_function2<sub2, &MINUS>();
         define(MINUS, *f);
-        f = create_native_function2<mult2>();
+        f = create_native_function2<mult2, &ASTERISK>();
         define(ASTERISK, *f);
-        f = create_native_function2<lt2>();
+        f = create_native_function2<lt2, &LT>();
         define(LT, *f);
-        f = create_native_function2<are_equal>();
+        f = create_native_function2<are_equal, &EQ>();
         define(EQ, *f);
 
         f = create_native_function1<pr_str_exception>();
@@ -435,64 +455,64 @@ struct Initialize
         define_multimethod(GET_MESSAGE, *first_type, nil);
 
         derive(type::ReadError, type::Exception);
-        f = create_native_function1<new_read_error>();
-        define(create_symbol("cleo.core", "ReadError."), *f);
+        f = create_native_function1<new_read_error, &ReadErrorCtor>();
+        define(ReadErrorCtor, *f);
         f = create_native_function1<read_error_message>();
         define_method(GET_MESSAGE, type::ReadError, *f);
 
         derive(type::UnexpectedEndOfInput, type::ReadError);
-        f = create_native_function0<new_unexpected_end_of_input>();
-        define(create_symbol("cleo.core", "UnexpectedEndOfInput."), *f);
+        f = create_native_function0<new_unexpected_end_of_input, &UnexpectedEndOfInputCtor>();
+        define(UnexpectedEndOfInputCtor, *f);
         f = create_native_function1<unexpected_end_of_input_message>();
         define_method(GET_MESSAGE, type::UnexpectedEndOfInput, *f);
 
         derive(type::CallError, type::Exception);
-        f = create_native_function1<new_call_error>();
-        define(create_symbol("cleo.core", "CallError."), *f);
+        f = create_native_function1<new_call_error, &CallErrorCtor>();
+        define(CallErrorCtor, *f);
         f = create_native_function1<call_error_message>();
         define_method(GET_MESSAGE, type::CallError, *f);
 
         derive(type::SymbolNotFound, type::Exception);
-        f = create_native_function1<new_symbol_not_found>();
-        define(create_symbol("cleo.core", "SymbolNotFound."), *f);
+        f = create_native_function1<new_symbol_not_found, &SymbolNotFoundCtor>();
+        define(SymbolNotFoundCtor, *f);
         f = create_native_function1<symbol_not_found_message>();
         define_method(GET_MESSAGE, type::SymbolNotFound, *f);
 
         derive(type::IllegalArgument, type::Exception);
-        f = create_native_function1<new_illegal_argument>();
-        define(create_symbol("cleo.core", "IllegalArgument."), *f);
+        f = create_native_function1<new_illegal_argument, &IllegalArgumentCtor>();
+        define(IllegalArgumentCtor, *f);
         f = create_native_function1<illegal_argument_message>();
         define_method(GET_MESSAGE, type::IllegalArgument, *f);
 
         derive(type::IllegalState, type::Exception);
-        f = create_native_function1<new_illegal_state>();
-        define(create_symbol("cleo.core", "IllegalState."), *f);
+        f = create_native_function1<new_illegal_state, &IllegalStateCtor>();
+        define(IllegalStateCtor, *f);
         f = create_native_function1<illegal_state_message>();
         define_method(GET_MESSAGE, type::IllegalState, *f);
 
         derive(type::FileNotFound, type::Exception);
-        f = create_native_function1<new_file_not_found>();
-        define(create_symbol("cleo.core", "FileNotFound."), *f);
+        f = create_native_function1<new_file_not_found, &FileNotFoundCtor>();
+        define(FileNotFoundCtor, *f);
         f = create_native_function1<file_not_found_message>();
         define_method(GET_MESSAGE, type::FileNotFound, *f);
 
-        f = create_native_function1<macroexpand1_noenv>();
-        define(create_symbol("cleo.core", "macroexpand-1"), *f);
+        f = create_native_function1<macroexpand1_noenv, &MACROEXPAND1>();
+        define(MACROEXPAND1, *f);
 
-        f = create_native_function1<macroexpand_noenv>();
-        define(create_symbol("cleo.core", "macroexpand"), *f);
+        f = create_native_function1<macroexpand_noenv, &MACROEXPAND>();
+        define(MACROEXPAND, *f);
 
-        f = create_native_function1<refer>();
-        define(create_symbol("cleo.core", "refer"), *f);
+        f = create_native_function1<refer, &REFER>();
+        define(REFER, *f);
 
-        f = create_native_function1<read>();
-        define(create_symbol("cleo.core", "read-string"), *f);
+        f = create_native_function1<read, &READ_STRING>();
+        define(READ_STRING, *f);
 
-        f = create_native_function1<load>();
-        define(create_symbol("cleo.core", "load-string"), *f);
+        f = create_native_function1<load, &LOAD_STRING>();
+        define(LOAD_STRING, *f);
 
-        f = create_native_function1<require>();
-        define(create_symbol("cleo.core", "require"), *f);
+        f = create_native_function1<require, &REQUIRE>();
+        define(REQUIRE, *f);
 
         f = create_native_function1<create_atom>();
         define(ATOM, *f);
@@ -508,7 +528,7 @@ struct Initialize
         f = create_swap_fn();
         define(SWAP, *f);
 
-        f = create_native_function2<apply>();
+        f = create_native_function2<apply, &APPLY>();
         define(APPLY, *f);
 
         f = create_native_function(pr);
