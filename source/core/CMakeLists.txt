@@ -17,6 +17,7 @@ add_library(cleo_core
   cleo/small_map.cpp
   cleo/small_set.cpp
   cleo/small_vector.cpp
+  cleo/util.cpp
   cleo/value.cpp
   cleo/var.cpp
 )

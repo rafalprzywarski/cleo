@@ -10,6 +10,7 @@
 #include "small_map.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
+#include "util.hpp"
 #include <vector>
 
 namespace cleo
@@ -445,8 +446,7 @@ std::uint8_t find_fn_index(Value fn, std::uint8_t n)
             return i;
     }
 
-    Root msg{create_string("arity error")};
-    throw_exception(new_call_error(*msg));
+    throw_arity_error(get_fn_name(fn), n);
 }
 
 std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value list, Value env)
