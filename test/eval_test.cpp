@@ -351,7 +351,7 @@ TEST_F(eval_test, def_should_fail_when_ns_is_specified)
 
 TEST_F(eval_test, def_should_fail_when_current_ns_is_nil)
 {
-    in_ns(nil);
+    set_var(CURRENT_NS, nil);
     Root val{read_str("(def var4 10)")};
     ASSERT_THROW(eval(*val), Exception);
 }

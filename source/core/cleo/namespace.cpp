@@ -11,7 +11,7 @@ namespace cleo
 
 Value in_ns(Value ns)
 {
-    if (ns != nil && get_value_tag(ns) != tag::SYMBOL)
+    if (get_value_tag(ns) != tag::SYMBOL)
     {
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
@@ -22,6 +22,11 @@ Value in_ns(Value ns)
 
 Value refer(Value ns)
 {
+    if (get_value_tag(ns) != tag::SYMBOL)
+    {
+        Root msg{create_string("ns must be a symbol")};
+        throw_exception(new_illegal_argument(*msg));
+    }
     auto current_ns_name = get_symbol_name(lookup_var(CURRENT_NS));
     Root current_ns{small_map_get(*namespaces, current_ns_name)};
     if (*current_ns == nil)

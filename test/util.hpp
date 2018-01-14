@@ -156,7 +156,7 @@ struct Test : testing::Test
     void TearDown() override
     {
         current_exception = nil;
-        in_ns(nil);
+        set_var(CURRENT_NS, nil);
     }
 };
 

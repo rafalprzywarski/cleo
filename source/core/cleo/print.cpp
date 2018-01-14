@@ -5,6 +5,7 @@
 #include "small_vector.hpp"
 #include "small_set.hpp"
 #include "small_map.hpp"
+#include "error.hpp"
 #include <sstream>
 
 namespace cleo
@@ -90,6 +91,11 @@ Force pr_str_string(Value val)
 
 Force pr_str_object(Value val)
 {
+    if (get_value_tag(val) != tag::OBJECT)
+    {
+        Root msg{create_string("expected an object")};
+        throw_exception(new_illegal_argument(*msg));
+    }
     Root type{pr_str(get_object_type(val))};
     std::ostringstream os;
     os << '#' << std::string(get_string_ptr(*type), get_string_len(*type)) << "[0x" << std::hex << val << "]";

@@ -199,23 +199,36 @@ Value nil_seq(Value)
     return nil;
 }
 
+void check_ints(Value l, Value r)
+{
+    if (get_value_tag(l) != tag::INT64 || get_value_tag(r) != tag::INT64)
+    {
+        Root msg{create_string("expected Int64")};
+        throw_exception(new_illegal_argument(*msg));
+    }
+}
+
 Force add2(Value l, Value r)
 {
+    check_ints(l, r);
     return create_int64(get_int64_value(l) + get_int64_value(r));
 }
 
 Force sub2(Value l, Value r)
 {
+    check_ints(l, r);
     return create_int64(get_int64_value(l) - get_int64_value(r));
 }
 
 Force mult2(Value l, Value r)
 {
+    check_ints(l, r);
     return create_int64(get_int64_value(l) * get_int64_value(r));
 }
 
 Force lt2(Value l, Value r)
 {
+    check_ints(l, r);
     return get_int64_value(l) < get_int64_value(r) ? TRUE : nil;
 }
 
@@ -249,6 +262,8 @@ Force create_swap_fn()
 
 Force keyword_get(Value k, Value coll)
 {
+    if (get_value_tag(coll) != tag::OBJECT)
+        return nil;
     std::array<Value, 2> args{{coll, k}};
     return call_multimethod(lookup(OBJ_CALL), args.data(), args.size());
 }
