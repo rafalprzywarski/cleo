@@ -207,8 +207,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
     Root params1{svec()};
     Root params2{svec(x)};
     Root params3{svec(x, y)};
-    Root call{create_string("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
-    call = read(*call);
+    Root call{read_str("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
     Root val{eval(*call)};
     ASSERT_EQ_VALS(type::Fn, get_value_type(*val));
     EXPECT_EQ_VALS(create_symbol("xyz"), get_fn_name(*val));
@@ -219,6 +218,71 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
     EXPECT_EQ_VALS(create_keyword("a"), get_fn_body(*val, 0));
     EXPECT_EQ_VALS(create_keyword("b"), get_fn_body(*val, 1));
     EXPECT_EQ_VALS(create_keyword("c"), get_fn_body(*val, 2));
+}
+
+TEST_F(eval_test, fn_should_return_a_new_function_with_no_arities)
+{
+    Root call{read_str("(fn*)")};
+    Root val{eval(*call)};
+    ASSERT_EQ_VALS(type::Fn, get_value_type(*val));
+    ASSERT_EQ_VALS(nil, get_fn_name(*val));
+    ASSERT_EQ(0u, get_fn_size(*val));
+
+    call = read_str("(fn* some)");
+    val = eval(*call);
+    ASSERT_EQ_VALS(type::Fn, get_value_type(*val));
+    ASSERT_EQ_VALS(create_symbol("some"), get_fn_name(*val));
+    ASSERT_EQ(0u, get_fn_size(*val));
+}
+
+TEST_F(eval_test, fn_should_return_a_new_function_with_no_body)
+{
+    Root params{svec()};
+    Root call{read_str("(fn* [])")};
+    Root val{eval(*call)};
+    ASSERT_EQ_VALS(type::Fn, get_value_type(*val));
+    ASSERT_EQ_VALS(nil, get_fn_name(*val));
+    ASSERT_EQ(1u, get_fn_size(*val));
+    EXPECT_EQ_VALS(*params, get_fn_params(*val, 0));
+    EXPECT_EQ_VALS(nil, get_fn_body(*val, 0));
+
+    call = read_str("(fn* some [])");
+    val = eval(*call);
+    ASSERT_EQ_VALS(type::Fn, get_value_type(*val));
+    ASSERT_EQ_VALS(create_symbol("some"), get_fn_name(*val));
+    ASSERT_EQ(1u, get_fn_size(*val));
+    EXPECT_EQ_VALS(*params, get_fn_params(*val, 0));
+    EXPECT_EQ_VALS(nil, get_fn_body(*val, 0));
+}
+
+TEST_F(eval_test, fn_should_fail_when_param_list_is_not_a_vector)
+{
+    Root call{read_str("(fn* 10 nil)")};
+    EXPECT_ANY_THROW(eval(*call));
+
+    call = read_str("(fn* some 10 nil)");
+    EXPECT_ANY_THROW(eval(*call));
+
+    call = read_str("(fn* (10 nil))");
+    EXPECT_ANY_THROW(eval(*call));
+
+    call = read_str("(fn* some (10 nil))");
+    EXPECT_ANY_THROW(eval(*call));
+}
+
+TEST_F(eval_test, fn_should_fail_when_param_list_is_not_a_vector_of_unqualified_symbols)
+{
+    Root call{read_str("(fn* [10] nil)")};
+    EXPECT_ANY_THROW(eval(*call));
+
+    call = read_str("(fn* [x y 20] nil)");
+    EXPECT_ANY_THROW(eval(*call));
+
+    call = read_str("(fn* [a/x y] nil)");
+    EXPECT_ANY_THROW(eval(*call));
+
+    call = read_str("(fn* [x b/y] nil)");
+    EXPECT_ANY_THROW(eval(*call));
 }
 
 TEST_F(eval_test, macro_should_return_a_new_macro)

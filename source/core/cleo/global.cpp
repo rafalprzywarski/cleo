@@ -99,6 +99,7 @@ const std::unordered_set<Value> SPECIAL_SYMBOLS{
 namespace type
 {
 const Value NativeFunction = create_symbol("cleo.core", "NativeFunction");
+const Value Symbol = create_symbol("cleo.core", "Symbol");
 const Value Keyword = create_symbol("cleo.core", "Keyword");
 const Value List = create_symbol("cleo.core", "List");
 const Value SmallVector = create_symbol("cleo.core", "SmallVector");
@@ -127,7 +128,7 @@ const Value FileNotFound = create_symbol("cleo.core", "FileNotFound");
 const std::array<Value, 7> type_by_tag{{
     nil,
     type::NativeFunction,
-    create_symbol("cleo.core", "Symbol"),
+    type::Symbol,
     type::Keyword,
     create_symbol("cleo.core", "Int64"),
     create_symbol("cleo.core", "Float64"),

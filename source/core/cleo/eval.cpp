@@ -244,27 +244,35 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
         env};
     Root next{get_list_next(list)};
     auto name = nil;
-    if (get_value_tag(get_list_first(*next)) == tag::SYMBOL)
+    if (*next != nil && get_value_tag(get_list_first(*next)) == tag::SYMBOL)
     {
         name = get_list_first(*next);
         next = get_list_next(*next);
     }
-    if (get_value_type(get_list_first(*next)) == type::SmallVector)
-    {
-        auto params = get_list_first(*next);
-        next = get_list_next(*next);
-        auto body = get_list_first(*next);
-        return create_fn(*lenv, name, &params, &body, 1);
-    }
+    if (*next == nil)
+        return create_fn(*lenv, name, nullptr, nullptr, 0);
     std::vector<Value> params, bodies;
-    while (*next != nil)
+    auto parse_fn = [&](Value list)
     {
-        Root pb{get_list_first(*next)};
-        params.push_back(get_list_first(*pb));
-        pb = get_list_next(*pb);
-        bodies.push_back(get_list_first(*pb));
-        next = get_list_next(*next);
-    }
+        params.push_back(get_list_first(list));
+        check_type("fn parameter list", params.back(), type::SmallVector);
+        auto n = get_small_vector_size(params.back());
+        for (decltype(n) i = 0; i < n; ++i)
+        {
+            auto p = get_small_vector_elem(params.back(), i);
+            check_type("fn parameters", p, type::Symbol);
+            if (get_symbol_namespace(p) != nil)
+                throw_illegal_argument("Can't use qualified name as parameter: " + to_string(p));
+        }
+        auto body = get_list_next(list);
+        bodies.push_back(body != nil ? get_list_first(body) : nil);
+    };
+
+    if (get_value_type(get_list_first(*next)) == type::List)
+        for (; *next != nil; next = get_list_next(*next))
+            parse_fn(get_list_first(*next));
+    else
+        parse_fn(*next);
     return create_fn(*lenv, name, params.data(), bodies.data(), params.size());
 }
 

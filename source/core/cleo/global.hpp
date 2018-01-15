@@ -119,6 +119,7 @@ extern const std::unordered_set<Value> SPECIAL_SYMBOLS;
 namespace type
 {
 extern const Value NativeFunction;
+extern const Value Symbol;
 extern const Value Keyword;
 extern const Value List;
 extern const Value SmallVector;
