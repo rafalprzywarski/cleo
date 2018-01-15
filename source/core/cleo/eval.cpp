@@ -33,6 +33,7 @@ Value eval_symbol(Value sym, Value env)
 
 Value eval_quote(Value list)
 {
+    check_arity(QUOTE, 1, get_int64_value(get_list_size(list)) - 1);
     Root next{get_list_next(list)};
     return get_list_first(*next);
 }

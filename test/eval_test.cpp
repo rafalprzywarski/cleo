@@ -160,6 +160,15 @@ TEST_F(eval_test, quote_should_return_its_second_argument_unevaluated)
     ASSERT_EQ(*ex, *val);
 }
 
+TEST_F(eval_test, quote_should_fail_when_not_given_one_argument)
+{
+    Root val;
+    val = list(QUOTE, 10, 20);
+    ASSERT_ANY_THROW(eval(*val));
+    val = list(QUOTE);
+    ASSERT_ANY_THROW(eval(*val));
+}
+
 TEST_F(eval_test, fn_should_return_a_new_function)
 {
     auto s = create_symbol("s");
