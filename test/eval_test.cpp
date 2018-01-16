@@ -622,6 +622,15 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_loop_and_reevaluate_it)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, recur_should_fail_when_the_number_of_bindings_does_not_match_a_loop)
+{
+    Root val{read_str("(loop* [n 5] (recur))")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(loop* [n 5] (recur 1 2))");
+    EXPECT_THROW(eval(*val), Exception);
+}
+
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 {
     Root val{read_str("((fn* [n r] (if (cleo.core/= n 0) r (recur (cleo.core/- n 1) (cleo.core/* r n)))) 5 1)")};

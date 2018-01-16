@@ -375,6 +375,7 @@ Force eval_loop(Value list, Value env)
     Root val{eval(get_list_first(*n), *lenv)};
     while (get_value_type(*val) == type::Recur)
     {
+        check_arity(RECUR, get_small_vector_size(bindings) / 2, get_object_size(*val));
         auto size = get_small_vector_size(bindings) / 2;
         for (decltype(size) i = 0; i != size; ++i)
             lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i * 2), get_object_element(*val, i));
