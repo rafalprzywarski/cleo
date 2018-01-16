@@ -526,19 +526,11 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     Root val{eval(body, *fenv)};
     while (get_value_type(*val) == type::Recur)
     {
+        check_arity(RECUR, n_params, get_object_size(*val));
         for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
             fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
         if (va)
-        {
-            Root vargs;
-            if (get_object_size(*val) > n_fixed_params)
-            {
-                vargs = create_list(elems.data() + n_fixed_params + 1, elems.size() - n_fixed_params - 1);
-                for (std::uint8_t i = get_object_size(*val); i > n_fixed_params; --i)
-                    vargs = list_conj(*vargs, get_object_element(*val, i - 1));
-            }
-            fenv = small_map_assoc(*fenv, get_var_arg(params), *vargs);
-        }
+            fenv = small_map_assoc(*fenv, get_var_arg(params), get_object_element(*val, n_params - 1));
         val = eval(body, *fenv);
     }
     return *val;

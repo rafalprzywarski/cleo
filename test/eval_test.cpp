@@ -641,18 +641,31 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_with_varargs_and_reevaluate_it)
 {
-    Root val{read_str("((fn* [cond & xs] (if cond xs (recur :true 1 2 3))) nil)")};
+    Root val{read_str("((fn* [cond & xs] (if cond xs (recur :true xs))) nil 1 2 3)")};
     Root ex{list(1, 2, 3)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("((fn* [& xs] (if xs xs (recur 1 2 3))))");
+    val = read_str("((fn* [& xs] (if xs xs (recur [1 2 3]))))");
     val = eval(*val);
+    ex = svec(1, 2, 3);
+    EXPECT_EQ_VALS(type::SmallVector, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
+}
 
-    val = read_str("((fn* [cond & xs] (if cond xs (recur :true))) nil)");
-    val = eval(*val);
-    EXPECT_EQ_VALS(nil, *val);
+TEST_F(eval_test, recur_should_fail_when_the_number_of_bindings_does_not_match_a_fn)
+{
+    Root val{read_str("((fn* [n 5] (recur)) 7)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("((fn* [n 5] (recur 1 2)) 7)");
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("((fn* [n & ns] (recur 1 2 3)) 7)");
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("((fn* [n & ns] (recur 1)) 7)");
+    EXPECT_THROW(eval(*val), Exception);
 }
 
 TEST_F(eval_test, should_eval_if)
