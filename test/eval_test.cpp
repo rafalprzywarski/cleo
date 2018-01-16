@@ -285,7 +285,7 @@ TEST_F(eval_test, fn_should_fail_when_param_list_is_not_a_vector_of_unqualified_
     EXPECT_ANY_THROW(eval(*call));
 }
 
-TEST_F(eval_test, fn_should_fail_when_given_too_many_forms)
+TEST_F(eval_test, fn_should_fail_when_given_too_many_expressions)
 {
     Root call{read_str("(fn* [] 10 20)")};
     EXPECT_ANY_THROW(eval(*call));
@@ -512,6 +512,45 @@ TEST_F(eval_test, let_should_allow_rebinding)
     Root ex{read_str("[10]")};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, let_should_fail_when_not_given_bindings_and_body)
+{
+    Root val{read_str("(let*)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(let* [a 10])");
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, let_should_fail_when_given_too_many_expressions)
+{
+    Root val{read_str("(let* [a 10] a 10)")};
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, let_should_fail_when_bindings_are_not_a_vector)
+{
+    Root val{read_str("(let* {a 10} a)")};
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, let_should_fail_when_the_last_binding_is_missing_a_value)
+{
+    Root val{read_str("(let* [a] a)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(let* [a 10 b] a)");
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, let_should_fail_when_the_binding_names_are_not_unqualified_symbols)
+{
+    Root val{read_str("(let* [10 20] 10)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(let* [a/x 10] a/x)");
+    EXPECT_THROW(eval(*val), Exception);
 }
 
 TEST_F(eval_test, should_eval_loop)

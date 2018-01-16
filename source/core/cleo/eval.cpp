@@ -315,14 +315,24 @@ Force eval_def(Value list, Value env)
 
 Force eval_let(Value list, Value env)
 {
+    check_arity(LET, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
+    if (get_value_type(bindings) != type::SmallVector)
+        throw_illegal_argument("let* requires a vector for its binding");
     auto size = get_small_vector_size(bindings);
+    if (size % 2 == 1)
+        throw_illegal_argument("let* requires an even number of forms in binding vector");
     Root lenv{env == nil && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
-        lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i), *val);
+        auto binding = get_small_vector_elem(bindings, i);
+        if (get_value_type(binding) != type::Symbol)
+            throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
+        if (get_symbol_namespace(binding) != nil)
+            throw_illegal_argument("Can't let qualified name: " + to_string(binding));
+        lenv = small_map_assoc(*lenv, binding, *val);
     }
     n = get_list_next(*n);
     return eval(get_list_first(*n), *lenv);
