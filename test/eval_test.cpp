@@ -575,6 +575,45 @@ TEST_F(eval_test, loop_should_allow_rebinding)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, loop_should_fail_when_not_given_bindings_and_body)
+{
+    Root val{read_str("(loop*)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(let* [a 10])");
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, loop_should_fail_when_given_too_many_expressions)
+{
+    Root val{read_str("(loop* [a 10] a 10)")};
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, loop_should_fail_when_bindings_are_not_a_vector)
+{
+    Root val{read_str("(loop* {a 10} a)")};
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, loop_should_fail_when_the_last_binding_is_missing_a_value)
+{
+    Root val{read_str("(loop* [a] a)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(loop* [a 10 b] a)");
+    EXPECT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, loop_should_fail_when_the_binding_names_are_not_unqualified_symbols)
+{
+    Root val{read_str("(loop* [10 20] 10)")};
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = read_str("(loop* [a/x 10] a/x)");
+    EXPECT_THROW(eval(*val), Exception);
+}
+
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_loop_and_reevaluate_it)
 {
     Root val{read_str("(loop* [n 5 r 1] (if (cleo.core/= n 0) r (recur (cleo.core/- n 1) (cleo.core/* r n))))")};
