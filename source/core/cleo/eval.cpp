@@ -380,6 +380,7 @@ Force eval_if(Value list, Value env)
 
 Force eval_throw(Value list, Value env)
 {
+    check_arity(THROW, 1, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     Root ex{eval(get_list_first(*n), env)};
     throw_exception(*ex);
