@@ -429,6 +429,34 @@ TEST_F(eval_test, def_should_fail_when_current_ns_is_nil)
     ASSERT_THROW(eval(*val), Exception);
 }
 
+TEST_F(eval_test, def_should_fail_when_the_name_is_not_provided)
+{
+    Root val{read_str("(def)")};
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, def_should_fail_when_name_is_not_a_symbol)
+{
+    Root val{read_str("(def 20 10)")};
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, def_should_fail_when_given_too_many_arguments)
+{
+    Root val{read_str("(def x 10 20 30)")};
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, should_define_a_var_with_nil_value_when_not_given_a_value)
+{
+    in_ns(create_symbol("clue.eval.var.default.test"));
+    Root val{read_str("(def var1)")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(nil, *val);
+    EXPECT_EQ_VALS(nil, lookup(create_symbol("clue.eval.var.default.test", "var1")));
+}
+
+
 TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_current_one)
 {
     Root ex{create_int64(55)};

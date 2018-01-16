@@ -289,17 +289,19 @@ Force eval_macro(Value list, Value env)
 Force eval_def(Value list, Value env)
 {
     Root next{get_list_next(list)};
+    if (*next == nil)
+        throw_arity_error(DEF, 0);
     auto sym = get_list_first(*next);
+    check_type("Symbol name", sym, type::Symbol);
     auto ns = get_symbol_namespace(sym);
     auto current_ns = lookup_var(CURRENT_NS);
     if (current_ns == nil ||
         (ns != nil && are_equal(ns, get_symbol_name(current_ns)) == nil))
-    {
-        Root msg{create_string("illegal namespace")};
-        throw_exception(new_illegal_argument(*msg));
-    }
+        throw_illegal_argument("Can't refer to qualified var that doesn't exist: " + to_string(sym));
     next = get_list_next(*next);
-    Root val{eval(get_list_first(*next), env)};
+    if (*next != nil && get_list_next(*next) != nil)
+        throw_arity_error(DEF, get_int64_value(get_list_size(list)) - 1);
+    Root val{eval(*next == nil ? nil : get_list_first(*next), env)};
     auto current_ns_name = get_symbol_name(current_ns);
     auto sym_name = get_symbol_name(sym);
     sym = create_symbol(
