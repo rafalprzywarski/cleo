@@ -266,6 +266,8 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
         }
         auto body = get_list_next(list);
         bodies.push_back(body != nil ? get_list_first(body) : nil);
+        if (body != nil && get_list_next(body) != nil)
+            throw_illegal_argument("fn* can contain only one expression");
     };
 
     if (get_value_type(get_list_first(*next)) == type::List)

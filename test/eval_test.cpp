@@ -285,6 +285,12 @@ TEST_F(eval_test, fn_should_fail_when_param_list_is_not_a_vector_of_unqualified_
     EXPECT_ANY_THROW(eval(*call));
 }
 
+TEST_F(eval_test, fn_should_fail_when_given_too_many_forms)
+{
+    Root call{read_str("(fn* [] 10 20)")};
+    EXPECT_ANY_THROW(eval(*call));
+}
+
 TEST_F(eval_test, macro_should_return_a_new_macro)
 {
     auto s = create_symbol("s");
