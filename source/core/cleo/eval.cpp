@@ -364,6 +364,9 @@ Force eval_loop(Value list, Value env)
 
 Force eval_if(Value list, Value env)
 {
+    auto size = get_int64_value(get_list_size(list));
+    if (size < 3 || size > 4)
+        throw_arity_error(IF, size - 1);
     Root n{get_list_next(list)};
     Root cond{eval(get_list_first(*n), env)};
     n = get_list_next(*n);

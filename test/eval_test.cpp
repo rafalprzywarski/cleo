@@ -584,6 +584,21 @@ TEST_F(eval_test, if_should_return_nil_when_the_condition_is_false_and_there_is_
     EXPECT_EQ_VALS(nil, *val);
 }
 
+TEST_F(eval_test, if_should_fail_when_given_too_few_arguments)
+{
+    Root val{read_str("(if)")};
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(if 1)");
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, if_should_fail_when_given_too_many_arguments)
+{
+    Root val{read_str("(if 3 4 5 6)")};
+    ASSERT_THROW(eval(*val), Exception);
+}
+
 TEST_F(eval_test, should_eval_throw)
 {
     Root val{read_str("(throw x)")};
