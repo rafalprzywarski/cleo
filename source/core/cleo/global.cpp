@@ -77,6 +77,7 @@ const Value SWAP = create_symbol("cleo.core", "swap!");
 const Value APPLY = create_symbol("cleo.core", "apply*");
 const Value FORM = create_symbol("&form");
 const Value ENV = create_symbol("&env");
+const Value CLEO_CORE = create_symbol("cleo.core");
 
 const std::unordered_set<Value> SPECIAL_SYMBOLS{
     QUOTE,
@@ -321,7 +322,7 @@ struct Initialize
     {
         Root f;
 
-        define(CURRENT_NS, create_symbol("cleo.core"));
+        define(CURRENT_NS, CLEO_CORE);
         f = create_native_function1<in_ns, &IN_NS>();
         define(IN_NS, *f);
         f = create_ns_macro();

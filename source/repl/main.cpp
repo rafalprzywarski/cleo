@@ -53,7 +53,7 @@ int main()
     cleo::Root ns_bindings{cleo::small_map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, cleo::lookup(cleo::CURRENT_NS))};
     cleo::PushBindingsGuard bindings_guard{*ns_bindings};
     cleo::in_ns(cleo::create_symbol("user"));
-    cleo::refer(cleo::create_symbol("cleo.core"));
+    cleo::refer(cleo::CLEO_CORE);
     while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)
     {
         std::string source = line;
