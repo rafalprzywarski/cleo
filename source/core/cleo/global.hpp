@@ -144,6 +144,7 @@ extern const Value IllegalArgument;
 extern const Value IllegalState;
 extern const Value UnexpectedEndOfInput;
 extern const Value FileNotFound;
+extern const Value ArithmeticException;
 }
 
 extern const std::array<Value, 7> type_by_tag;

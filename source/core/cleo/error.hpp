@@ -37,4 +37,7 @@ Force illegal_state_message(Value e);
 Force new_file_not_found(Value msg);
 Force file_not_found_message(Value e);
 
+Force new_arithmetic_exception(Value msg);
+Force arithmetic_exceptio_message(Value e);
+
 }

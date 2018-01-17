@@ -39,4 +39,10 @@ void throw_illegal_argument(const std::string& msg)
 }
 
 
+void throw_integer_overflow()
+{
+    Root s{create_string("Integer overflow")};
+    throw_exception(new_arithmetic_exception(*s));
+}
+
 }

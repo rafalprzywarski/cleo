@@ -124,6 +124,7 @@ const Value IllegalArgument = create_symbol("cleo.core", "IllegalArgument");
 const Value IllegalState = create_symbol("cleo.core", "IllegalState");
 const Value UnexpectedEndOfInput = create_symbol("cleo.core", "UnexpectedEndOfInput");
 const Value FileNotFound = create_symbol("cleo.core", "FileNotFound");
+const Value ArithmeticException = create_symbol("cleo.core", "ArithmeticException");
 }
 
 const std::array<Value, 7> type_by_tag{{
@@ -166,6 +167,7 @@ const Value IllegalArgumentCtor = create_symbol("cleo.core", "IllegalArgument.")
 const Value IllegalStateCtor = create_symbol("cleo.core", "IllegalState.");
 const Value UnexpectedEndOfInputCtor = create_symbol("cleo.core", "UnexpectedEndOfInput.");
 const Value FileNotFoundCtor = create_symbol("cleo.core", "FileNotFound.");
+const Value ArithmeticExceptionCtor = create_symbol("cleo.core", "ArithmeticException.");
 const Value MACROEXPAND1 = create_symbol("cleo.core", "macroexpand-1");
 const Value MACROEXPAND = create_symbol("cleo.core", "macroexpand");
 const Value REFER = create_symbol("cleo.core", "refer");
@@ -213,7 +215,11 @@ void check_ints(Value l, Value r)
 Force add2(Value l, Value r)
 {
     check_ints(l, r);
-    return create_int64(get_int64_value(l) + get_int64_value(r));
+    std::uint64_t ul{std::uint64_t(get_int64_value(l))}, ur{std::uint64_t(get_int64_value(r))}, ret{ul + ur};
+    auto overflow = Int64((ul ^ ret) & (ur ^ ret)) < 0;
+    if (overflow)
+        throw_integer_overflow();
+    return create_int64(Int64(ret));
 }
 
 Force sub2(Value l, Value r)
@@ -512,6 +518,12 @@ struct Initialize
         define(FileNotFoundCtor, *f);
         f = create_native_function1<file_not_found_message>();
         define_method(GET_MESSAGE, type::FileNotFound, *f);
+
+        derive(type::ArithmeticException, type::Exception);
+        f = create_native_function1<new_arithmetic_exception, &ArithmeticExceptionCtor>();
+        define(ArithmeticExceptionCtor, *f);
+        f = create_native_function1<arithmetic_exceptio_message>();
+        define_method(GET_MESSAGE, type::ArithmeticException, *f);
 
         f = create_native_function1<macroexpand1_noenv, &MACROEXPAND1>();
         define(MACROEXPAND1, *f);

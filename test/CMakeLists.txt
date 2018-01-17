@@ -8,6 +8,7 @@ add_executable(cleo_test
   hash_test.cpp
   list_test.cpp
   macro_test.cpp
+  math_test.cpp
   memory_test.cpp
   multimethod_test.cpp
   namespace_test.cpp

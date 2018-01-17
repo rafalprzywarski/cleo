@@ -8,7 +8,8 @@ std::string to_string(Value val);
 [[noreturn]] void throw_arity_error(Value name, std::uint8_t n);
 void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args);
 void check_type(const std::string& name, Value val, Value type);
-void throw_illegal_argument(const std::string& msg);
+[[noreturn]] void throw_illegal_argument(const std::string& msg);
+[[noreturn]] void throw_integer_overflow();
 
 template <Force f(), const Value *name>
 Force create_native_function0()
