@@ -818,6 +818,51 @@ TEST_F(eval_test, should_eval_try_finally)
     EXPECT_FALSE(finally_called_too_early);
 }
 
+TEST_F(eval_test, try_should_fail_when_given_too_few_or_too_many_expressions)
+{
+    Root val{read_str("(try*)")};
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10)");
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10 (catch* cleo.core/Int64 e e) (finally* nil))");
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, try_should_fail_when_the_second_for_is_neither_catch_nor_finally)
+{
+    Root val{read_str("(try* 10 (bad 20))")};
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, try_should_fail_when_finally_has_too_few_or_too_many_expressions)
+{
+    Root val{read_str("(try* 10 (finally*))")};
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10 (finally* 20 30))");
+    ASSERT_THROW(eval(*val), Exception);
+}
+
+TEST_F(eval_test, try_should_fail_when_catch_is_malformed)
+{
+    Root val{read_str("(try* 10 (catch*))")};
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10 (catch* some))");
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10 (catch* some binding))");
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10 (catch* some :not-binding 20))");
+    ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(try* 10 (catch* some bad/binding 20))");
+    ASSERT_THROW(eval(*val), Exception);
+}
+
 TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
 {
     in_ns(create_symbol("cleo.eval.load.test"));

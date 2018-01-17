@@ -409,10 +409,22 @@ Force eval_throw(Value list, Value env)
 
 Force eval_try(Value list, Value env)
 {
+    check_arity(TRY, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto expr = get_list_first(*n);
     n = get_list_next(*n);
-    auto catch_ = get_list_first(*n);
+    auto clause = get_list_first(*n);
+    if (get_list_first(clause) == FINALLY)
+        check_arity(FINALLY, 1, get_int64_value(get_list_size(clause)) - 1);
+    else if (get_list_first(clause) == CATCH)
+    {
+        check_arity(CATCH, 3, get_int64_value(get_list_size(clause)) - 1);
+        auto name = get_list_first(get_list_next(get_list_next(clause)));
+        if (get_value_tag(name) != tag::SYMBOL || get_symbol_namespace(name))
+            throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(name));
+    }
+    else
+        throw_illegal_argument("Expected " + to_string(CATCH) + " or " + to_string(FINALLY));
     Root val;
     try
     {
@@ -421,9 +433,9 @@ Force eval_try(Value list, Value env)
     catch (const Exception& )
     {
         Root ex{catch_exception()};
-        if (get_list_first(catch_) == CATCH)
+        if (get_list_first(clause) == CATCH)
         {
-            n = get_list_next(catch_);
+            n = get_list_next(clause);
             auto type = get_list_first(*n);
             if (!isa(get_value_type(*ex), type))
             {
@@ -437,14 +449,14 @@ Force eval_try(Value list, Value env)
             return eval(get_list_first(*n), *lenv);
         }
         else { // finally
-            n = get_list_next(catch_);
+            n = get_list_next(clause);
             eval(get_list_first(*n), env);
             throw_exception(*ex);
         }
     }
-    if (get_list_first(catch_) == FINALLY)
+    if (get_list_first(clause) == FINALLY)
     {
-        n = get_list_next(catch_);
+        n = get_list_next(clause);
         eval(get_list_first(*n), env);
     }
     return *val;
