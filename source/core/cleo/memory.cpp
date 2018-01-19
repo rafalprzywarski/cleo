@@ -16,9 +16,14 @@ char& tag_ref(void *ptr)
     return *(reinterpret_cast<char *>(ptr) - OFFSET);
 }
 
+bool is_marked(void *ptr)
+{
+    return tag_ref(ptr) != 0;
+}
+
 void mark_value(Value val)
 {
-    if (val == nil)
+    if (val == nil || is_marked(get_value_ptr(val)))
         return;
     tag_ref(get_value_ptr(val)) = 1;
 
@@ -47,11 +52,6 @@ void mark_value(Value val)
 void unmark(void *ptr)
 {
     tag_ref(ptr) = 0;
-}
-
-bool is_marked(void *ptr)
-{
-    return tag_ref(ptr) != 0;
 }
 
 void mark_symbols()

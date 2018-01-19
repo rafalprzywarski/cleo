@@ -201,6 +201,11 @@ Value get_object_element(Value obj, std::uint32_t index)
     return (&get_ptr<Object>(obj)->firstElem)[index];
 }
 
+void set_object_type(Value obj, Value type)
+{
+    get_ptr<Object>(obj)->type = type;
+}
+
 void set_object_element(Value obj, std::uint32_t index, Value val)
 {
     (&get_ptr<Object>(obj)->firstElem)[index] = val;
