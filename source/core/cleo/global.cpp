@@ -225,7 +225,11 @@ Force add2(Value l, Value r)
 Force sub2(Value l, Value r)
 {
     check_ints(l, r);
-    return create_int64(get_int64_value(l) - get_int64_value(r));
+    std::uint64_t ul{std::uint64_t(get_int64_value(l))}, ur{std::uint64_t(get_int64_value(r))}, ret{ul - ur};
+    auto overflow = Int64((ul ^ ret) & (~ur ^ ret)) < 0;
+    if (overflow)
+        throw_integer_overflow();
+    return create_int64(ret);
 }
 
 Force mult2(Value l, Value r)
