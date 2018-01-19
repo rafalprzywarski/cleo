@@ -210,17 +210,17 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     Root val;
     ASSERT_TRUE(nil == get_value_type(nil));
     val = create_native_function(f);
-    ASSERT_TRUE(create_symbol("cleo.core", "NativeFunction") == get_value_type(*val));
+    ASSERT_TRUE(*type::NativeFunction == get_value_type(*val));
     val = create_symbol("abc");
-    ASSERT_TRUE(create_symbol("cleo.core", "Symbol") == get_value_type(*val));
+    ASSERT_TRUE(*type::Symbol == get_value_type(*val));
     val = create_keyword("abc");
-    ASSERT_TRUE(create_symbol("cleo.core", "Keyword") == get_value_type(*val));
+    ASSERT_TRUE(*type::Keyword == get_value_type(*val));
     val = create_int64(11);
-    ASSERT_TRUE(create_symbol("cleo.core", "Int64") == get_value_type(*val));
+    ASSERT_TRUE(*type::Int64 == get_value_type(*val));
     val = create_float64(3.5);
-    ASSERT_TRUE(create_symbol("cleo.core", "Float64") == get_value_type(*val));
+    ASSERT_TRUE(*type::Float64 == get_value_type(*val));
     val = create_string("abc");
-    ASSERT_TRUE(create_symbol("cleo.core", "String") == get_value_type(*val));
+    ASSERT_TRUE(*type::String == get_value_type(*val));
     val = create_object(type, nullptr, 0);
     ASSERT_TRUE(type == get_value_type(*val));
 }

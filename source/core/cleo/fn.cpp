@@ -33,7 +33,7 @@ Force create_fn(Value env, Value name, Value params, Value body)
 
 Force create_fn(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
 {
-    return create_fn(type::Fn, env, name, params, bodies, n);
+    return create_fn(*type::Fn, env, name, params, bodies, n);
 }
 
 Force create_macro(Value env, Value name, Value params, Value body)
@@ -55,7 +55,7 @@ Force create_macro(Value env, Value name, const Value *params, const Value *bodi
         complete_params[i] = roots[i];
     }
 
-    return create_fn(type::Macro, env, name, complete_params.data(), bodies, n);
+    return create_fn(*type::Macro, env, name, complete_params.data(), bodies, n);
 }
 
 Value get_fn_env(Value fn)

@@ -6,7 +6,7 @@ namespace cleo
 
 Force create_small_vector(const Value *elems, std::uint32_t size)
 {
-    return create_object(type::SmallVector, elems, size);
+    return create_object(*type::SmallVector, elems, size);
 }
 
 std::uint32_t get_small_vector_size(Value v)
@@ -24,7 +24,7 @@ Force small_vector_seq(Value v)
     if (get_small_vector_size(v) == 0)
         return nil;
     Root index{create_int64(0)};
-    return create_object2(type::SmallVectorSeq, v, *index);
+    return create_object2(*type::SmallVectorSeq, v, *index);
 }
 
 Value get_small_vector_seq_first(Value s)
@@ -39,7 +39,7 @@ Force get_small_vector_seq_next(Value s)
     if (get_small_vector_size(v) == i)
         return nil;
     Root index{create_int64(i)};
-    return create_object2(type::SmallVectorSeq, v, *index);
+    return create_object2(*type::SmallVectorSeq, v, *index);
 }
 
 Force small_vector_conj(Value v, Value e)

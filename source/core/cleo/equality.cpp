@@ -99,7 +99,9 @@ Value are_equal(Value left, Value right)
                 TRUE :
                 nil;
         case tag::OBJECT:
-            if (get_object_type(left) == type::SmallVector && get_object_type(right) == type::SmallVector)
+            if (get_object_type(left) == *type::MetaType || get_object_type(right) == *type::MetaType)
+                return nil;
+            if (get_object_type(left) == *type::SmallVector && get_object_type(right) == *type::SmallVector)
                 return are_small_vectors_equal(left, right);
             {
                 std::array<Value, 2> args{{left, right}};

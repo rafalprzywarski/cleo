@@ -71,7 +71,7 @@ TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(type::CallError, get_value_type(*e));
+        ASSERT_EQ(*type::CallError, get_value_type(*e));
     }
 }
 
@@ -154,7 +154,7 @@ TEST_F(fn_test, should_not_bind_the_ampersand)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ_VALS(type::SymbolNotFound, get_value_type(*e));
+        ASSERT_EQ_VALS(*type::SymbolNotFound, get_value_type(*e));
     }
 }
 

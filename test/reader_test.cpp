@@ -47,12 +47,12 @@ struct reader_test : Test
 
     static void assert_read_error(const std::string& msg, const std::string& source)
     {
-        assert_read_error(type::ReadError, msg, source);
+        assert_read_error(*type::ReadError, msg, source);
     }
 
     static void assert_unexpected_end_of_input(const std::string& source)
     {
-        assert_read_error(type::UnexpectedEndOfInput, "unexpected end of input", source);
+        assert_read_error(*type::UnexpectedEndOfInput, "unexpected end of input", source);
     }
 };
 
@@ -341,7 +341,7 @@ TEST_F(reader_test, should_parse_an_empty_set)
     ex = create_small_set();
     val = read_str("#{}");
     EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(type::SmallSet, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::SmallSet, get_value_type(*val));
     val = read_str("#{ }");
     EXPECT_EQ_VALS(*ex, *val);
 }

@@ -55,7 +55,7 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
     Root call{list(*m, SEQ, FIRST, *v)};
     Root val{macroexpand1(*call)};
     Root ex{svec(FIRST, *v, SEQ)};
-    EXPECT_EQ_VALS(type::SmallVector, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::SmallVector, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -75,7 +75,7 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     catch (Exception const& )
     {
         cleo::Root e{cleo::catch_exception()};
-        EXPECT_TRUE(type::CallError == get_value_type(*e));
+        EXPECT_TRUE(*type::CallError == get_value_type(*e));
     }
 }
 

@@ -134,7 +134,7 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(type::IllegalArgument, get_value_type(*e));
+        ASSERT_EQ(*type::IllegalArgument, get_value_type(*e));
     }
 }
 
@@ -185,7 +185,7 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(type::IllegalArgument, get_value_type(*e));
+        ASSERT_EQ(*type::IllegalArgument, get_value_type(*e));
     }
 }
 

@@ -6,7 +6,7 @@ namespace cleo
 
 Force create_atom(Value val)
 {
-    return create_object1(type::Atom, val);
+    return create_object1(*type::Atom, val);
 }
 
 Value atom_deref(Value atom)

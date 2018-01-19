@@ -36,7 +36,7 @@ Force catch_exception()
 
 Force new_read_error(Value msg)
 {
-    return create_object1(type::ReadError, msg);
+    return create_object1(*type::ReadError, msg);
 }
 
 Force read_error_message(Value e)
@@ -46,7 +46,7 @@ Force read_error_message(Value e)
 
 Force new_unexpected_end_of_input()
 {
-    return create_object0(type::UnexpectedEndOfInput);
+    return create_object0(*type::UnexpectedEndOfInput);
 }
 
 Force unexpected_end_of_input_message(Value)
@@ -56,7 +56,7 @@ Force unexpected_end_of_input_message(Value)
 
 Force new_call_error(Value msg)
 {
-    return create_object1(type::CallError, msg);
+    return create_object1(*type::CallError, msg);
 }
 
 Force call_error_message(Value e)
@@ -66,7 +66,7 @@ Force call_error_message(Value e)
 
 Force new_symbol_not_found(Value msg)
 {
-    return create_object1(type::SymbolNotFound, msg);
+    return create_object1(*type::SymbolNotFound, msg);
 }
 
 Force symbol_not_found_message(Value e)
@@ -76,7 +76,7 @@ Force symbol_not_found_message(Value e)
 
 Force new_illegal_argument(Value msg)
 {
-    return create_object1(type::IllegalArgument, msg);
+    return create_object1(*type::IllegalArgument, msg);
 }
 
 Force illegal_argument_message(Value e)
@@ -86,7 +86,7 @@ Force illegal_argument_message(Value e)
 
 Force new_illegal_state(Value msg)
 {
-    return create_object1(type::IllegalState, msg);
+    return create_object1(*type::IllegalState, msg);
 }
 
 Force illegal_state_message(Value e)
@@ -96,7 +96,7 @@ Force illegal_state_message(Value e)
 
 Force new_file_not_found(Value msg)
 {
-    return create_object1(type::FileNotFound, msg);
+    return create_object1(*type::FileNotFound, msg);
 }
 
 Force file_not_found_message(Value e)
@@ -106,7 +106,7 @@ Force file_not_found_message(Value e)
 
 Force new_arithmetic_exception(Value msg)
 {
-    return create_object1(type::ArithmeticException, msg);
+    return create_object1(*type::ArithmeticException, msg);
 }
 
 Force arithmetic_exceptio_message(Value e)

@@ -295,5 +295,15 @@ TEST_F(equality_test, should_compare_small_sets)
     EXPECT_TRUE(nil == are_equal(*s2, *s1));
 }
 
+TEST_F(equality_test, should_compare_types)
+{
+    EXPECT_TRUE(TRUE == are_equal(*type::Int64, *type::Int64));
+    EXPECT_TRUE(nil == are_equal(*type::Int64, *type::Seqable));
+    EXPECT_TRUE(nil == are_equal(*type::Seqable, *type::Int64));
+    EXPECT_TRUE(nil == are_equal(*type::Seqable, create_symbol("cleo.core", "Seqable")));
+    EXPECT_TRUE(nil == are_equal(create_symbol("cleo.core", "Seqable"), *type::Seqable));
+    EXPECT_TRUE(nil == are_equal(*type::Int64, *type::MetaType));
+}
+
 }
 }

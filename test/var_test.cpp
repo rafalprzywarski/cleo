@@ -48,7 +48,7 @@ TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(type::SymbolNotFound, get_value_type(*e));
+        ASSERT_EQ(*type::SymbolNotFound, get_value_type(*e));
     }
 }
 
@@ -94,7 +94,7 @@ TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ_VALS(type::IllegalState, get_value_type(*e));
+        ASSERT_EQ_VALS(*type::IllegalState, get_value_type(*e));
     }
 
     PushBindingsGuard bind1{*EMPTY_MAP};
@@ -107,7 +107,7 @@ TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ_VALS(type::IllegalState, get_value_type(*e));
+        ASSERT_EQ_VALS(*type::IllegalState, get_value_type(*e));
     }
 
     ASSERT_EQ_VALS(create_keyword("xxx"), lookup_var(s));

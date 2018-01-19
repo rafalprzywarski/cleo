@@ -43,7 +43,7 @@ Force syntax_quote_val(Root& generated, Value val, Value env);
 bool is_unquote_splicing(Value val)
 {
     return
-        get_value_type(val) == type::List &&
+        get_value_type(val) == *type::List &&
         get_int64_value(get_list_size(val)) == 2 &&
         get_list_first(val) == UNQUOTE_SPLICING;
 }
@@ -214,13 +214,13 @@ Force syntax_quote_val(Root& generated, Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return syntax_quote_symbol(generated, val, env);
-    if (get_value_type(val) == type::SmallVector)
+    if (get_value_type(val) == *type::SmallVector)
         return syntax_quote_vector(generated, val, env);
-    if (get_value_type(val) == type::List)
+    if (get_value_type(val) == *type::List)
         return syntax_quote_list(generated, val, env);
-    if (get_value_type(val) == type::SmallSet)
+    if (get_value_type(val) == *type::SmallSet)
         return syntax_quote_set(generated, val, env);
-    if (get_value_type(val) == type::SmallMap)
+    if (get_value_type(val) == *type::SmallMap)
         return syntax_quote_map(generated, val, env);
     return val;
 }
@@ -255,12 +255,12 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
     auto parse_fn = [&](Value list)
     {
         params.push_back(get_list_first(list));
-        check_type("fn parameter list", params.back(), type::SmallVector);
+        check_type("fn parameter list", params.back(), *type::SmallVector);
         auto n = get_small_vector_size(params.back());
         for (decltype(n) i = 0; i < n; ++i)
         {
             auto p = get_small_vector_elem(params.back(), i);
-            check_type("fn parameters", p, type::Symbol);
+            check_type("fn parameters", p, *type::Symbol);
             if (get_symbol_namespace(p) != nil)
                 throw_illegal_argument("Can't use qualified name as parameter: " + to_string(p));
         }
@@ -270,7 +270,7 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
             throw_illegal_argument("fn* can contain only one expression");
     };
 
-    if (get_value_type(get_list_first(*next)) == type::List)
+    if (get_value_type(get_list_first(*next)) == *type::List)
         for (; *next != nil; next = get_list_next(*next))
             parse_fn(get_list_first(*next));
     else
@@ -294,7 +294,7 @@ Force eval_def(Value list, Value env)
     if (*next == nil)
         throw_arity_error(DEF, 0);
     auto sym = get_list_first(*next);
-    check_type("Symbol name", sym, type::Symbol);
+    check_type("Symbol name", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
     auto current_ns = lookup_var(CURRENT_NS);
     if (current_ns == nil ||
@@ -318,7 +318,7 @@ Force eval_let(Value list, Value env)
     check_arity(LET, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
-    if (get_value_type(bindings) != type::SmallVector)
+    if (get_value_type(bindings) != *type::SmallVector)
         throw_illegal_argument(to_string(LET) + " requires a vector for its binding");
     auto size = get_small_vector_size(bindings);
     if (size % 2 == 1)
@@ -328,7 +328,7 @@ Force eval_let(Value list, Value env)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
         auto binding = get_small_vector_elem(bindings, i);
-        if (get_value_type(binding) != type::Symbol)
+        if (get_value_type(binding) != *type::Symbol)
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
         if (get_symbol_namespace(binding) != nil)
             throw_illegal_argument("Can't let qualified name: " + to_string(binding));
@@ -355,7 +355,7 @@ Force eval_loop(Value list, Value env)
     check_arity(LOOP, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
-    if (get_value_type(bindings) != type::SmallVector)
+    if (get_value_type(bindings) != *type::SmallVector)
         throw_illegal_argument(to_string(LOOP) + " requires a vector for its binding");
     auto size = get_small_vector_size(bindings);
     if (size % 2 == 1)
@@ -365,7 +365,7 @@ Force eval_loop(Value list, Value env)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
         auto binding = get_small_vector_elem(bindings, i);
-        if (get_value_type(binding) != type::Symbol)
+        if (get_value_type(binding) != *type::Symbol)
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
         if (get_symbol_namespace(binding) != nil)
             throw_illegal_argument("Can't let qualified name: " + to_string(binding));
@@ -373,7 +373,7 @@ Force eval_loop(Value list, Value env)
     }
     n = get_list_next(*n);
     Root val{eval(get_list_first(*n), *lenv)};
-    while (get_value_type(*val) == type::Recur)
+    while (get_value_type(*val) == *type::Recur)
     {
         check_arity(RECUR, get_small_vector_size(bindings) / 2, get_object_size(*val));
         auto size = get_small_vector_size(bindings) / 2;
@@ -436,7 +436,7 @@ Force eval_try(Value list, Value env)
         if (get_list_first(clause) == CATCH)
         {
             n = get_list_next(clause);
-            auto type = get_list_first(*n);
+            auto type = lookup(get_list_first(*n));
             if (!isa(get_value_type(*ex), type))
             {
                 throw_exception(*ex);
@@ -536,7 +536,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     }
     auto body = get_fn_body(fn, fni);
     Root val{eval(body, *fenv)};
-    while (get_value_type(*val) == type::Recur)
+    while (get_value_type(*val) == *type::Recur)
     {
         check_arity(RECUR, n_params, get_object_size(*val));
         for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
@@ -587,17 +587,17 @@ Force eval_list(Value list, Value env)
         return eval_try(list, env);
     Root val{first == RECUR ? *recur : eval(first, env)};
     auto type = get_value_type(*val);
-    if (type == type::Macro)
+    if (type == *type::Macro)
         return call_macro(*val, list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     auto elems = eval_args(arg_roots, *val, list, env);
-    if (type == type::NativeFunction)
+    if (type == *type::NativeFunction)
         return get_native_function_ptr(*val)(elems.data() + 1, elems.size() - 1);
-    if (type == type::Multimethod)
+    if (type == *type::Multimethod)
         return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
-    if (type == type::Fn)
+    if (type == *type::Fn)
         return call_fn(elems, elems.size());
-    if (isa(type, type::Callable))
+    if (isa(type, *type::Callable))
         return call_multimethod(lookup_var(OBJ_CALL), elems.data(), elems.size());
     Root msg{create_string("call error")};
     throw_exception(new_call_error(*msg));
@@ -648,11 +648,11 @@ Force eval_map(Value m, Value env)
 
 Force macroexpand1(Value val, Value form, Value env)
 {
-    if (get_value_type(val) != type::List || get_list_size(val) == 0)
+    if (get_value_type(val) != *type::List || get_list_size(val) == 0)
         return val;
 
     auto m = get_list_first(val);
-    if (get_value_type(m) != type::Macro)
+    if (get_value_type(m) != *type::Macro)
         return val;
 
     std::vector<Value> elems;
@@ -704,13 +704,13 @@ Force eval(Value val, Value env)
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);
     auto type = get_value_type(val);
-    if (type == type::List)
+    if (type == *type::List)
         return eval_list(val, env);
-    if (type == type::SmallVector)
+    if (type == *type::SmallVector)
         return eval_vector(val, env);
-    if (type == type::SmallSet)
+    if (type == *type::SmallSet)
         return eval_set(val, env);
-    if (type == type::SmallMap)
+    if (type == *type::SmallMap)
         return eval_map(val, env);
     return val;
 }

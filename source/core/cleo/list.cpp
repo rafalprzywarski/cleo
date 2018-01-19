@@ -10,14 +10,14 @@ Force create_list(const Value *elems, std::uint32_t size)
     if (size == 0)
     {
         Root size_{create_int64(0)};
-        return create_object3(type::List, *size_, nil, nil);
+        return create_object3(*type::List, *size_, nil, nil);
     }
 
     Root list, size_;
     for (auto i = size; i > 0; --i)
     {
         size_ = create_int64(size - i + 1);
-        list = create_object3(type::List, *size_, elems[i - 1], *list);
+        list = create_object3(*type::List, *size_, elems[i - 1], *list);
     }
 
     return force(*list);
@@ -44,7 +44,7 @@ Force list_conj(Value list, Value elem)
     if (size == 0)
         list = nil;
     Root new_size{create_int64(size + 1)};
-    return create_object3(type::List, *new_size, elem, list);
+    return create_object3(*type::List, *new_size, elem, list);
 }
 
 Value list_seq(Value list)
