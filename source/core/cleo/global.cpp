@@ -99,6 +99,9 @@ const std::unordered_set<Value> SPECIAL_SYMBOLS{
 
 namespace type
 {
+const Value Int64 = create_symbol("cleo.core", "Int64");
+const Value Float64 = create_symbol("cleo.core", "Float64");
+const Value String = create_symbol("cleo.core", "String");
 const Value NativeFunction = create_symbol("cleo.core", "NativeFunction");
 const Value Symbol = create_symbol("cleo.core", "Symbol");
 const Value Keyword = create_symbol("cleo.core", "Keyword");
@@ -132,9 +135,9 @@ const std::array<Value, 7> type_by_tag{{
     type::NativeFunction,
     type::Symbol,
     type::Keyword,
-    create_symbol("cleo.core", "Int64"),
-    create_symbol("cleo.core", "Float64"),
-    create_symbol("cleo.core", "String")
+    type::Int64,
+    type::Float64,
+    type::String
 }};
 
 const Root EMPTY_LIST{create_list(nullptr, 0)};
