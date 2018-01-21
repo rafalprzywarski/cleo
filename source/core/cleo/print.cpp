@@ -176,6 +176,80 @@ Force pr_str_seqable(Value v)
     return create_string(str);
 }
 
+Force print_str_small_vector(Value v)
+{
+    std::string str;
+    str += '[';
+    auto size = get_small_vector_size(v);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (i > 0)
+            str += ' ';
+        Root s{print_str(get_small_vector_elem(v, i))};
+        str.append(get_string_ptr(*s), get_string_len(*s));
+    }
+    str += ']';
+    return create_string(str);
+}
+
+Force print_str_small_set(Value s)
+{
+    std::string str;
+    str += "#{";
+    auto size = get_small_set_size(s);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (i > 0)
+            str += ' ';
+        Root ss{print_str(get_small_set_elem(s, i))};
+        str.append(get_string_ptr(*ss), get_string_len(*ss));
+    }
+    str += '}';
+    return create_string(str);
+}
+
+Force print_str_small_map(Value m)
+{
+    std::string str;
+    str += '{';
+    auto size = get_small_map_size(m);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        if (i > 0)
+            str += ", ";
+        Root s{print_str(get_small_map_key(m, i))};
+        str.append(get_string_ptr(*s), get_string_len(*s));
+        str += ' ';
+        s = print_str(get_small_map_val(m, i));
+        str.append(get_string_ptr(*s), get_string_len(*s));
+    }
+    str += '}';
+    return create_string(str);
+}
+
+Force print_str_seqable(Value v)
+{
+    auto seq = lookup_var(SEQ);
+    auto first = lookup_var(FIRST);
+    auto next = lookup_var(NEXT);
+    std::string str;
+    str += '(';
+    bool first_elem = true;
+    for (Root s{call_multimethod1(seq, v)}; *s != nil; s = call_multimethod1(next, *s))
+    {
+        if (first_elem)
+            first_elem = false;
+        else
+            str += ' ';
+
+        Root f{call_multimethod1(first, *s)};
+        Root ss{print_str(*f)};
+        str.append(get_string_ptr(*ss), get_string_len(*ss));
+    }
+    str += ')';
+    return create_string(str);
+}
+
 Force pr_str(Value val)
 {
     switch (get_value_tag(val))
@@ -189,6 +263,22 @@ Force pr_str(Value val)
         case tag::STRING: return pr_str_string(val);
         default: // tag::OBJECT
             return call_multimethod(lookup_var(PR_STR_OBJ), &val, 1);
+    }
+}
+
+Force print_str(Value val)
+{
+    switch (get_value_tag(val))
+    {
+        case tag::NIL: return create_string("nil");
+        case tag::NATIVE_FUNCTION: return pr_str_native_function(val);
+        case tag::SYMBOL: return pr_str_symbol(val);
+        case tag::KEYWORD: return pr_str_keyword(val);
+        case tag::INT64: return create_string(std::to_string(get_int64_value(val)));
+        case tag::FLOAT64: return pr_str_float(val);
+        case tag::STRING: return val;
+        default: // tag::OBJECT
+            return call_multimethod(lookup_var(PRINT_STR_OBJ), &val, 1);
     }
 }
 
