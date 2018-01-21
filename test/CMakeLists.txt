@@ -21,4 +21,4 @@ add_executable(cleo_test
   var_test.cpp
   main.cpp
 )
-target_link_libraries(cleo_test cleo_core ${Boost_LIBRARIES} gmock pthread)
+target_link_libraries(cleo_test cleo_core gmock pthread)
