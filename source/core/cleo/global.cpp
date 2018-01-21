@@ -295,6 +295,7 @@ Force pr_str_exception(Value e)
     auto get_message = lookup_var(GET_MESSAGE);
     cleo::Root msg{call_multimethod1(get_message, e)};
     cleo::Root type{cleo::pr_str(cleo::get_value_type(e))};
+    msg = print_str(*msg);
 
     return create_string(
         std::string(get_string_ptr(*type), get_string_len(*type)) + ": " +
