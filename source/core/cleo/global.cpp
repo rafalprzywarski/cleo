@@ -78,6 +78,7 @@ const Value APPLY = create_symbol("cleo.core", "apply*");
 const Value FORM = create_symbol("&form");
 const Value ENV = create_symbol("&env");
 const Value CLEO_CORE = create_symbol("cleo.core");
+const Value NEW = create_symbol("cleo.core", "new");
 
 const std::unordered_set<Value> SPECIAL_SYMBOLS{
     QUOTE,
@@ -198,14 +199,6 @@ const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 namespace
 {
 
-const Value ReadErrorCtor = create_symbol("cleo.core", "ReadError.");
-const Value CallErrorCtor = create_symbol("cleo.core", "CallError.");
-const Value SymbolNotFoundCtor = create_symbol("cleo.core", "SymbolNotFound.");
-const Value IllegalArgumentCtor = create_symbol("cleo.core", "IllegalArgument.");
-const Value IllegalStateCtor = create_symbol("cleo.core", "IllegalState.");
-const Value UnexpectedEndOfInputCtor = create_symbol("cleo.core", "UnexpectedEndOfInput.");
-const Value FileNotFoundCtor = create_symbol("cleo.core", "FileNotFound.");
-const Value ArithmeticExceptionCtor = create_symbol("cleo.core", "ArithmeticException.");
 const Value MACROEXPAND1 = create_symbol("cleo.core", "macroexpand-1");
 const Value MACROEXPAND = create_symbol("cleo.core", "macroexpand");
 const Value REFER = create_symbol("cleo.core", "refer");
@@ -219,6 +212,11 @@ const Value KEYWORD = get_type_name(*type::Keyword);
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
     return (num_args < 1) ? nil : get_value_type(args[0]);
+})};
+
+const Root first_arg{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
+{
+    return (num_args < 1) ? nil : args[0];
 })};
 
 const Root equal_dispatch{create_native_function([](const Value *args, std::uint8_t num_args)
@@ -418,6 +416,8 @@ struct Initialize
         define_type(*type::FileNotFound);
         define_type(*type::ArithmeticException);
 
+        define_multimethod(NEW, *first_arg, nil);
+
         Root f;
 
         define(CURRENT_NS, CLEO_CORE);
@@ -573,50 +573,50 @@ struct Initialize
         define_multimethod(GET_MESSAGE, *first_type, nil);
 
         derive(*type::ReadError, *type::Exception);
-        f = create_native_function1<new_read_error, &ReadErrorCtor>();
-        define(ReadErrorCtor, *f);
+        f = create_native_new1<new_read_error, &NEW>();
+        define_method(NEW, *type::ReadError, *f);
         f = create_native_function1<read_error_message>();
         define_method(GET_MESSAGE, *type::ReadError, *f);
 
         derive(*type::UnexpectedEndOfInput, *type::ReadError);
-        f = create_native_function0<new_unexpected_end_of_input, &UnexpectedEndOfInputCtor>();
-        define(UnexpectedEndOfInputCtor, *f);
+        f = create_native_new0<new_unexpected_end_of_input, &NEW>();
+        define_method(NEW, *type::UnexpectedEndOfInput, *f);
         f = create_native_function1<unexpected_end_of_input_message>();
         define_method(GET_MESSAGE, *type::UnexpectedEndOfInput, *f);
 
         derive(*type::CallError, *type::Exception);
-        f = create_native_function1<new_call_error, &CallErrorCtor>();
-        define(CallErrorCtor, *f);
+        f = create_native_new1<new_call_error, &NEW>();
+        define_method(NEW, *type::CallError, *f);
         f = create_native_function1<call_error_message>();
         define_method(GET_MESSAGE, *type::CallError, *f);
 
         derive(*type::SymbolNotFound, *type::Exception);
-        f = create_native_function1<new_symbol_not_found, &SymbolNotFoundCtor>();
-        define(SymbolNotFoundCtor, *f);
+        f = create_native_new1<new_symbol_not_found, &NEW>();
+        define_method(NEW, *type::SymbolNotFound, *f);
         f = create_native_function1<symbol_not_found_message>();
         define_method(GET_MESSAGE, *type::SymbolNotFound, *f);
 
         derive(*type::IllegalArgument, *type::Exception);
-        f = create_native_function1<new_illegal_argument, &IllegalArgumentCtor>();
-        define(IllegalArgumentCtor, *f);
+        f = create_native_new1<new_illegal_argument, &NEW>();
+        define_method(NEW, *type::IllegalArgument, *f);
         f = create_native_function1<illegal_argument_message>();
         define_method(GET_MESSAGE, *type::IllegalArgument, *f);
 
         derive(*type::IllegalState, *type::Exception);
-        f = create_native_function1<new_illegal_state, &IllegalStateCtor>();
-        define(IllegalStateCtor, *f);
+        f = create_native_new1<new_illegal_state, &NEW>();
+        define_method(NEW, *type::IllegalState, *f);
         f = create_native_function1<illegal_state_message>();
         define_method(GET_MESSAGE, *type::IllegalState, *f);
 
         derive(*type::FileNotFound, *type::Exception);
-        f = create_native_function1<new_file_not_found, &FileNotFoundCtor>();
-        define(FileNotFoundCtor, *f);
+        f = create_native_new1<new_file_not_found, &NEW>();
+        define_method(NEW, *type::FileNotFound, *f);
         f = create_native_function1<file_not_found_message>();
         define_method(GET_MESSAGE, *type::FileNotFound, *f);
 
         derive(*type::ArithmeticException, *type::Exception);
-        f = create_native_function1<new_arithmetic_exception, &ArithmeticExceptionCtor>();
-        define(ArithmeticExceptionCtor, *f);
+        f = create_native_new1<new_arithmetic_exception, &NEW>();
+        define_method(NEW, *type::ArithmeticException, *f);
         f = create_native_function1<arithmetic_exceptio_message>();
         define_method(GET_MESSAGE, *type::ArithmeticException, *f);
 

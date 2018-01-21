@@ -22,6 +22,17 @@ Force create_native_function0()
     });
 }
 
+template <Force f(), const Value *name>
+Force create_native_new0()
+{
+    return create_native_function([](const Value *, std::uint8_t num_args)
+    {
+        if (num_args != 1)
+            throw_arity_error(name != nullptr ? *name : nil, num_args);
+        return f();
+    });
+}
+
 template <Force f(Value), const Value *name = nullptr>
 Force create_native_function1()
 {
@@ -41,6 +52,17 @@ Force create_native_function1()
         if (num_args != 1)
             throw_arity_error(name != nullptr ? *name : nil, num_args);
         return force(f(args[0]));
+    });
+}
+
+template <Force f(Value), const Value *name = nullptr>
+Force create_native_new1()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args)
+    {
+        if (num_args != 2)
+            throw_arity_error(name != nullptr ? *name : nil, num_args);
+        return f(args[1]);
     });
 }
 
