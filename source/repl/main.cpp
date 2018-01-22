@@ -21,7 +21,19 @@ bool eval_source(const std::string& line)
     try
     {
         cleo::Root str{cleo::create_string(line)};
-        cleo::Root expr{cleo::read(*str)};
+        cleo::Root expr;
+        try
+        {
+            expr = cleo::read(*str);
+        }
+        catch (const cleo::Exception& )
+        {
+            cleo::Root e{cleo::catch_exception()};
+            auto type = cleo::get_value_type(*e);
+            if (type == *cleo::type::UnexpectedEndOfInput)
+                return false;
+            cleo::throw_exception(*e);
+        }
         cleo::Root result{cleo::eval(*expr)};
         cleo::Root text{cleo::pr_str(*result)};
         std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
@@ -29,9 +41,6 @@ bool eval_source(const std::string& line)
     catch (const cleo::Exception& )
     {
         cleo::Root e{cleo::catch_exception()};
-        auto type = cleo::get_value_type(*e);
-        if (type == *cleo::type::UnexpectedEndOfInput)
-            return false;
         cleo::Root text{cleo::pr_str(*e)};
         std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
     }
