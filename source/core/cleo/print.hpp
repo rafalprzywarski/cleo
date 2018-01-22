@@ -10,11 +10,6 @@ Force pr_str_small_set(Value s);
 Force pr_str_small_map(Value val);
 Force pr_str_seqable(Value v);
 
-Force print_str_small_vector(Value val);
-Force print_str_small_set(Value s);
-Force print_str_small_map(Value val);
-Force print_str_seqable(Value v);
-
 Force pr_str(Value val);
 
 Force print_str(Value val);

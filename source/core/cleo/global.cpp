@@ -41,8 +41,8 @@ const Value CONJ = create_symbol("cleo.core", "conj");
 const Value ASSOC = create_symbol("cleo.core", "assoc");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
+const Value PRINT_READABLY = create_symbol("cleo.core", "*print-readably*");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
-const Value PRINT_STR_OBJ = create_symbol("cleo.core", "print-str-obj");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
 const Value SYNTAX_QUOTE = create_symbol("cleo.core", "syntax-quote");
@@ -543,18 +543,7 @@ struct Initialize
         f = create_native_function2<are_small_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        define_multimethod(PRINT_STR_OBJ, *first_type, nil);
-
-        f = create_native_function1<print_str_small_vector>();
-        define_method(PRINT_STR_OBJ, *type::SmallVector, *f);
-        f = create_native_function1<print_str_small_set>();
-        define_method(PRINT_STR_OBJ, *type::SmallSet, *f);
-        f = create_native_function1<print_str_small_map>();
-        define_method(PRINT_STR_OBJ, *type::SmallMap, *f);
-        f = create_native_function1<print_str_seqable>();
-        define_method(PRINT_STR_OBJ, *type::Seqable, *f);
-        f = create_native_function1<pr_str>();
-        define_method(PRINT_STR_OBJ, nil, *f);
+        define(PRINT_READABLY, TRUE);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
         f = create_native_function1<pr_str_type>();
