@@ -208,6 +208,7 @@ const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
 const Value REQUIRE = create_symbol("cleo.core", "require");
 const Value TYPE = create_symbol("cleo.core", "type");
 const Value KEYWORD = get_type_name(*type::Keyword);
+const Root ZERO{create_int64(0)};
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -261,8 +262,11 @@ Force add2(Value l, Value r)
     return create_int64(Int64(ret));
 }
 
-Force sub2(Value l, Value r)
+Force sub(const Value *args, std::uint8_t n)
 {
+    if (n == 0 || n > 2)
+        throw_arity_error(MINUS, n);
+    Value l{n == 1 ? *ZERO : args[0]}, r{args[n - 1]};
     check_ints(l, r);
     std::uint64_t ul{std::uint64_t(get_int64_value(l))}, ur{std::uint64_t(get_int64_value(r))}, ret{ul - ur};
     auto overflow = Int64((ul ^ ret) & (~ur ^ ret)) < 0;
@@ -562,7 +566,7 @@ struct Initialize
 
         f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);
-        f = create_native_function2<sub2, &MINUS>();
+        f = create_native_function(sub);
         define(MINUS, *f);
         f = create_native_function2<mult2, &ASTERISK>();
         define(ASTERISK, *f);

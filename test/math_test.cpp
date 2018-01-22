@@ -100,6 +100,21 @@ TEST_F(math_test, integer_subtraction)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(math_test, integer_negation)
+{
+    Root val{read_str("(- 2457245677)")}, ex{create_int64(- 2457245677)};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    val = list(MINUS, Int64(std::uint64_t(1) << 63));
+    EXPECT_THROW(eval(*val), Exception);
+
+    val = list(MINUS, -Int64((std::uint64_t(1) << 63) - 1));
+    val = eval(*val);
+    ex = i64(Int64((std::uint64_t(1) << 63) - 1));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(math_test, integer_multiplication)
 {
     Root val{read_str("(* 2457245677 823458723)")}, ex{create_int64(2023440387279690471)};
