@@ -80,6 +80,7 @@ const Value FORM = create_symbol("&form");
 const Value ENV = create_symbol("&env");
 const Value CLEO_CORE = create_symbol("cleo.core");
 const Value NEW = create_symbol("cleo.core", "new");
+const Root ZERO{create_int64(0)};
 
 const std::unordered_set<Value> SPECIAL_SYMBOLS{
     QUOTE,
@@ -208,7 +209,6 @@ const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
 const Value REQUIRE = create_symbol("cleo.core", "require");
 const Value TYPE = create_symbol("cleo.core", "type");
 const Value KEYWORD = get_type_name(*type::Keyword);
-const Root ZERO{create_int64(0)};
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -581,13 +581,13 @@ struct Initialize
         define_multimethod(GET_MESSAGE, *first_type, nil);
 
         derive(*type::ReadError, *type::Exception);
-        f = create_native_new1<new_read_error, &NEW>();
+        f = create_native_new3<new_read_error, &NEW>();
         define_method(NEW, *type::ReadError, *f);
         f = create_native_function1<read_error_message>();
         define_method(GET_MESSAGE, *type::ReadError, *f);
 
         derive(*type::UnexpectedEndOfInput, *type::ReadError);
-        f = create_native_new0<new_unexpected_end_of_input, &NEW>();
+        f = create_native_new2<new_unexpected_end_of_input, &NEW>();
         define_method(NEW, *type::UnexpectedEndOfInput, *f);
         f = create_native_function1<unexpected_end_of_input_message>();
         define_method(GET_MESSAGE, *type::UnexpectedEndOfInput, *f);

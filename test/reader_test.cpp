@@ -20,7 +20,7 @@ struct reader_test : Test
         return read(*sr);
     }
 
-    static void assert_read_error(Value exType, const std::string& msg, const std::string& source)
+    static void assert_read_error(Value exType, const std::string& msg, std::uint32_t line, std::uint32_t col, const std::string& source)
     {
         try
         {
@@ -34,6 +34,18 @@ struct reader_test : Test
             auto get_message = lookup_var(GET_MESSAGE);
             cleo::Root exMsg{call_multimethod1(get_message, *e)};
             EXPECT_EQ(msg, std::string(get_string_ptr(*exMsg), get_string_len(*exMsg)));
+            if (get_value_type(*e) == *type::ReadError)
+            {
+                Root linev{i64(line)}, colv{i64(col)};
+                EXPECT_EQ_VALS(*linev, read_error_line(*e));
+                EXPECT_EQ_VALS(*colv, read_error_column(*e));
+            }
+            if (get_value_type(*e) == *type::UnexpectedEndOfInput)
+            {
+                Root linev{i64(line)}, colv{i64(col)};
+                EXPECT_EQ_VALS(*linev, unexpected_end_of_input_line(*e));
+                EXPECT_EQ_VALS(*colv, unexpected_end_of_input_column(*e));
+            }
         }
         catch (std::exception const& e)
         {
@@ -45,14 +57,14 @@ struct reader_test : Test
         }
     }
 
-    static void assert_read_error(const std::string& msg, const std::string& source)
+    static void assert_read_error(const std::string& msg, const std::string& source, std::uint32_t row, std::uint32_t col)
     {
-        assert_read_error(*type::ReadError, msg, source);
+        assert_read_error(*type::ReadError, msg, row, col, source);
     }
 
-    static void assert_unexpected_end_of_input(const std::string& source)
+    static void assert_unexpected_end_of_input(const std::string& source, std::uint32_t row, std::uint32_t col)
     {
-        assert_read_error(*type::UnexpectedEndOfInput, "unexpected end of input", source);
+        assert_read_error(*type::UnexpectedEndOfInput, "unexpected end of input", row, col, source);
     }
 };
 
@@ -260,12 +272,12 @@ TEST_F(reader_test, should_parse_a_vector_of_expressions)
 
 TEST_F(reader_test, should_fail_when_parsing_an_unmatched_closing_bracket)
 {
-    assert_read_error("unexpected ]", "]");
+    assert_read_error("unexpected ]", "]", 1, 1);
 }
 
 TEST_F(reader_test, should_fail_when_parsing_an_unmatched_closing_paren)
 {
-    assert_read_error("unexpected )", ")");
+    assert_read_error("unexpected )", ")", 1, 1);
 }
 
 TEST_F(reader_test, should_parse_nil)
@@ -281,23 +293,23 @@ TEST_F(reader_test, should_parse_nil)
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_paren)
 {
-    assert_unexpected_end_of_input("(");
-    assert_unexpected_end_of_input("( 5 ");
-    assert_unexpected_end_of_input("(()");
+    assert_unexpected_end_of_input("(", 1, 2);
+    assert_unexpected_end_of_input("( 5 ", 1, 5);
+    assert_unexpected_end_of_input("(()", 1, 4);
 }
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_bracket)
 {
-    assert_unexpected_end_of_input("[");
-    assert_unexpected_end_of_input("[ 5 ");
-    assert_unexpected_end_of_input("[[]");
-    assert_unexpected_end_of_input("{");
-    assert_unexpected_end_of_input("#{");
+    assert_unexpected_end_of_input("[", 1, 2);
+    assert_unexpected_end_of_input("[ 5 ", 1, 5);
+    assert_unexpected_end_of_input("[[]", 1, 4);
+    assert_unexpected_end_of_input("{", 1, 2);
+    assert_unexpected_end_of_input("#{", 1, 3);
 }
 
 TEST_F(reader_test, should_fail_when_missing_a_closing_quote)
 {
-    assert_unexpected_end_of_input("\"");
+    assert_unexpected_end_of_input("\"", 1, 2);
 }
 
 TEST_F(reader_test, should_fail_when_invoked_with_something_else_than_a_string)
@@ -331,8 +343,8 @@ TEST_F(reader_test, should_parse_a_map_of_expressions)
 
 TEST_F(reader_test, should_fail_when_a_value_in_a_map_is_missing)
 {
-    assert_read_error("map literal must contain an even number of forms", "{1}");
-    assert_read_error("map literal must contain an even number of forms", "{1 3 4}");
+    assert_read_error("map literal must contain an even number of forms", "{1}", 1, 1);
+    assert_read_error("map literal must contain an even number of forms", "{1 3 4}", 1, 1);
 }
 
 TEST_F(reader_test, should_parse_an_empty_set)
@@ -362,14 +374,14 @@ TEST_F(reader_test, should_parse_a_set_of_expressions)
 
 TEST_F(reader_test, should_fail_when_given_a_single_hash)
 {
-    assert_read_error("unexpected #", "# {1}");
-    assert_read_error("unexpected #", "# ");
-    assert_read_error("unexpected #", "#");
+    assert_read_error("unexpected #", "# {1}", 1, 1);
+    assert_read_error("unexpected #", "# ", 1, 1);
+    assert_read_error("unexpected #", "#", 1, 1);
 }
 
 TEST_F(reader_test, should_fail_when_a_key_in_a_set_is_duplicated)
 {
-    assert_read_error("duplicate key: 6", "#{5 6 6 7}");
+    assert_read_error("duplicate key: 6", "#{5 6 6 7}", 1, 7);
 }
 
 TEST_F(reader_test, should_parse_the_at_symbol_as_deref)
@@ -469,6 +481,18 @@ TEST_F(reader_test, read_forms_should_read_multiple_forms)
     forms = read_forms(*source);
     ex = svec(create_keyword("a"), create_keyword("b"), create_keyword("c"));
     EXPECT_EQ_VALS(*ex, *forms);
+}
+
+TEST_F(reader_test, should_follow_new_lines_when_reporting_position)
+{
+    assert_read_error("duplicate key: 3", "#{3 3}", 1, 5);
+    assert_read_error("duplicate key: 3", "#{3 \n3}", 2, 1);
+    assert_read_error("duplicate key: 3", "\n#{3 3}", 2, 5);
+    assert_read_error("duplicate key: 3", "  \n#{3 3}", 2, 5);
+    assert_read_error("duplicate key: 3", "  \n\n#{3   3}", 3, 7);
+    assert_read_error("unexpected ]", "\n]", 2, 1);
+    assert_read_error("unexpected ]", "\n   ]", 2, 4);
+    assert_read_error("unexpected ]", "  \n\n  \n   ]", 4, 4);
 }
 
 }

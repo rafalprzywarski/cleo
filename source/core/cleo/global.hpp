@@ -116,6 +116,7 @@ extern const Value FORM;
 extern const Value ENV;
 extern const Value CLEO_CORE;
 extern const Value NEW;
+extern const Root ZERO;
 
 extern const std::unordered_set<Value> SPECIAL_SYMBOLS;
 

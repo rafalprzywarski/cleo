@@ -16,11 +16,15 @@ private:
 [[noreturn]] void throw_exception(Force e);
 Force catch_exception();
 
-Force new_read_error(Value msg);
+Force new_read_error(Value msg, Value line, Value column);
 Force read_error_message(Value e);
+Value read_error_line(Value e);
+Value read_error_column(Value e);
 
-Force new_unexpected_end_of_input();
+Force new_unexpected_end_of_input(Value line, Value column);
 Force unexpected_end_of_input_message(Value e);
+Value unexpected_end_of_input_line(Value e);
+Value unexpected_end_of_input_column(Value e);
 
 Force new_call_error(Value msg);
 Force call_error_message(Value e);

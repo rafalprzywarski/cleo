@@ -34,9 +34,9 @@ Force catch_exception()
     return *e;
 }
 
-Force new_read_error(Value msg)
+Force new_read_error(Value msg, Value line, Value column)
 {
-    return create_object1(*type::ReadError, msg);
+    return create_object3(*type::ReadError, msg, line, column);
 }
 
 Force read_error_message(Value e)
@@ -44,14 +44,34 @@ Force read_error_message(Value e)
     return get_object_element(e, 0);
 }
 
-Force new_unexpected_end_of_input()
+Value read_error_line(Value e)
 {
-    return create_object0(*type::UnexpectedEndOfInput);
+    return get_object_element(e, 1);
+}
+
+Value read_error_column(Value e)
+{
+    return get_object_element(e, 2);
+}
+
+Force new_unexpected_end_of_input(Value line, Value column)
+{
+    return create_object2(*type::UnexpectedEndOfInput, line, column);
 }
 
 Force unexpected_end_of_input_message(Value)
 {
     return create_string("unexpected end of input");
+}
+
+Value unexpected_end_of_input_line(Value e)
+{
+    return get_object_element(e, 0);
+}
+
+Value unexpected_end_of_input_column(Value e)
+{
+    return get_object_element(e, 1);
 }
 
 Force new_call_error(Value msg)

@@ -18,6 +18,11 @@ namespace
 class Stream
 {
 public:
+    struct Position
+    {
+        std::uint32_t line{}, col{};
+    };
+
     Stream(Value text) : text(text) { }
 
     char peek(std::uint32_t n = 0) const { return eos(n) ? 0 : get_string_ptr(text)[index + n]; }
@@ -25,13 +30,26 @@ public:
     char next()
     {
         char c = peek();
+        if (c == '\n')
+        {
+            ++line;
+            col = 1;
+        }
+        else
+            ++col;
         if (!eos())
             index++;
         return c;
     }
 
+    Position pos() const
+    {
+        return {line, col};
+    }
+
 private:
     std::uint32_t index = 0;
+    std::uint32_t line = 1, col = 1;
     Value text{nil};
 };
 
@@ -88,6 +106,12 @@ void eat_ws(Stream& s)
         s.next();
 }
 
+[[noreturn]] void throw_unexpected_end_of_input(Stream::Position pos)
+{
+    Root linev{create_int64(pos.line)}, colv{create_int64(pos.col)};
+    throw_exception(new_unexpected_end_of_input(*linev, *colv));
+}
+
 Force read_list(Stream& s)
 {
     s.next(); // '('
@@ -101,7 +125,7 @@ Force read_list(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw_exception(new_unexpected_end_of_input());
+        throw_unexpected_end_of_input(s.pos());
     s.next(); // ')'
     l = list_seq(*l);
     Root lr{*EMPTY_LIST};
@@ -126,13 +150,21 @@ Force read_vector(Stream& s)
         eat_ws(s);
     }
     if (s.eos())
-        throw_exception(new_unexpected_end_of_input());
+        throw_unexpected_end_of_input(s.pos());
     s.next(); // ']'
     return *v;
 }
 
+[[noreturn]] void throw_read_error(const std::string& msg, Stream::Position pos)
+{
+    Root msgv{create_string(msg)};
+    Root linev{create_int64(pos.line)}, colv{create_int64(pos.col)};
+    throw_exception(new_read_error(*msgv, *linev, *colv));
+}
+
 Force read_map(Stream& s)
 {
+    auto brace_pos = s.pos();
     s.next(); // '{'
     eat_ws(s);
     Root m{*EMPTY_MAP};
@@ -143,11 +175,7 @@ Force read_map(Stream& s)
         eat_ws(s);
 
         if (s.peek() == '}')
-        {
-            Root e{create_string("map literal must contain an even number of forms")};
-            e = new_read_error(*e);
-            throw_exception(*e);
-        }
+            throw_read_error("map literal must contain an even number of forms", brace_pos);
 
         Root v{read(s)};
         eat_ws(s);
@@ -155,7 +183,7 @@ Force read_map(Stream& s)
         m = small_map_assoc(*m, *k, *v);
     }
     if (s.eos())
-        throw_exception(new_unexpected_end_of_input());
+        throw_unexpected_end_of_input(s.pos());
     s.next(); // '}'
     return *m;
 }
@@ -179,7 +207,7 @@ Force read_string(Stream& s)
             str += s.next();
     }
     if (s.eos())
-        throw_exception(new_unexpected_end_of_input());
+        throw_unexpected_end_of_input(s.pos());
     s.next();
     return create_string(str);
 }
@@ -234,26 +262,27 @@ Force read_set(Stream& s)
 
     while (!s.eos() && s.peek() != '}')
     {
+        auto key_pos = s.pos();
         Root e{read(s)};
         if (small_set_contains(*set, *e))
         {
             Root text{pr_str(*e)};
-            Root e{create_string("duplicate key: " + std::string(get_string_ptr(*text), get_string_len(*text)))};
-            throw_exception(new_read_error(*e));
+            throw_read_error("duplicate key: " + std::string(get_string_ptr(*text), get_string_len(*text)), key_pos);
         }
         set = small_set_conj(*set, *e);
         eat_ws(s);
     }
     if (s.eos())
-        throw_exception(new_unexpected_end_of_input());
+        throw_unexpected_end_of_input(s.pos());
     s.next(); // '}'
     return *set;
 }
 
-[[noreturn]] void throw_unexpected(char c)
+[[noreturn]] void throw_unexpected(char c, Stream::Position pos)
 {
     Root e{create_string(std::string("unexpected ") + c)};
-    throw_exception(new_read_error(*e));
+    Root linev{create_int64(pos.line)}, colv{create_int64(pos.col)};
+    throw_exception(new_read_error(*e, *linev, *colv));
 }
 
 Force read(Stream& s)
@@ -276,12 +305,12 @@ Force read(Stream& s)
         case '#':
             if (s.peek(1) == '{')
                 return read_set(s);
-            throw_unexpected(s.peek());
+            throw_unexpected(s.peek(), s.pos());
             break;
     }
     if (is_symbol_char(s.peek()))
         return read_symbol(s);
-    throw_unexpected(s.peek());
+    throw_unexpected(s.peek(), s.pos());
 }
 
 }
