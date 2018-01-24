@@ -494,5 +494,27 @@ TEST_F(reader_test, should_follow_new_lines_when_reporting_position)
     assert_read_error("unexpected ]", "  \n\n  \n   ]", 4, 4);
 }
 
+TEST_F(reader_test, should_parse_vars)
+{
+    Root ex, val;
+    in_ns(create_symbol("cleo.reader.vars.test"));
+    auto var = define(create_symbol("cleo.reader.vars.test", "abc"), nil);
+    val = read_str("#'abc");
+    EXPECT_EQ_VALS(var, *val);
+    val = read_str("#' abc");
+    EXPECT_EQ_VALS(var, *val);
+    val = read_str("#'cleo.reader.vars.test/abc");
+    EXPECT_EQ_VALS(var, *val);
+    val = read_str("#' cleo.reader.vars.test/abc");
+    EXPECT_EQ_VALS(var, *val);
+}
+
+TEST_F(reader_test, should_fail_when_var_name_is_missing)
+{
+    assert_unexpected_end_of_input("#'", 1, 3);
+    assert_read_error("unexpected }", "#' }", 1, 4);
+    assert_read_error("expected a symbol", "#' [9]", 1, 4);
+}
+
 }
 }

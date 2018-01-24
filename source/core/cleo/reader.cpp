@@ -6,6 +6,7 @@
 #include "global.hpp"
 #include "error.hpp"
 #include "print.hpp"
+#include "namespace.hpp"
 #include <cctype>
 #include <sstream>
 
@@ -278,6 +279,20 @@ Force read_set(Stream& s)
     return *set;
 }
 
+Force read_var(Stream& s)
+{
+    s.next(); // '#'
+    s.next(); // '\''
+    eat_ws(s);
+    if (s.eos())
+        throw_unexpected_end_of_input(s.pos());
+    auto sym_pos = s.pos();
+    Root sym{read(s)};
+    if (get_value_tag(*sym) != tag::SYMBOL)
+        throw_read_error("expected a symbol", sym_pos);
+    return lookup_var(resolve(*sym));
+}
+
 [[noreturn]] void throw_unexpected(char c, Stream::Position pos)
 {
     Root e{create_string(std::string("unexpected ") + c)};
@@ -303,8 +318,11 @@ Force read(Stream& s)
         case '~': return (s.peek(1) == '@') ? read_unquote_splicing(s) : read_unquote(s);
         case '`': return read_syntax_quote(s);
         case '#':
-            if (s.peek(1) == '{')
-                return read_set(s);
+            switch (s.peek(1))
+            {
+                case '{': return read_set(s);
+                case '\'': return read_var(s);
+            }
             throw_unexpected(s.peek(), s.pos());
             break;
     }
