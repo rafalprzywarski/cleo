@@ -4,11 +4,15 @@
 namespace cleo
 {
 
-void define_var(Value sym, Value val);
+Value define_var(Value sym, Value val);
+void undefine_var(Value sym);
 Value lookup_var(Value sym);
 void push_bindings(Value bindings);
 void pop_bindings();
 void set_var(Value sym, Value val);
+Value get_var_name(Value var);
+Value get_var_root_value(Value var);
+Value get_var_value(Value var);
 
 struct PushBindingsGuard
 {

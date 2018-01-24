@@ -63,7 +63,7 @@ Force pr_str_float(Value val)
 
 Force pr_str_string(Value val)
 {
-    if (lookup_var(PRINT_READABLY) == nil)
+    if (*rt::print_readably == nil)
         return val;
     std::string s;
     s.reserve(2 * get_string_len(val) + 2);
@@ -157,20 +157,17 @@ Force pr_str_small_map(Value m)
 
 Force pr_str_seqable(Value v)
 {
-    auto seq = lookup_var(SEQ);
-    auto first = lookup_var(FIRST);
-    auto next = lookup_var(NEXT);
     std::string str;
     str += '(';
     bool first_elem = true;
-    for (Root s{call_multimethod1(seq, v)}; *s != nil; s = call_multimethod1(next, *s))
+    for (Root s{call_multimethod1(*rt::seq, v)}; *s != nil; s = call_multimethod1(*rt::next, *s))
     {
         if (first_elem)
             first_elem = false;
         else
             str += ' ';
 
-        Root f{call_multimethod1(first, *s)};
+        Root f{call_multimethod1(*rt::first, *s)};
         Root ss{pr_str(*f)};
         str.append(get_string_ptr(*ss), get_string_len(*ss));
     }
@@ -190,7 +187,7 @@ Force pr_str(Value val)
         case tag::FLOAT64: return pr_str_float(val);
         case tag::STRING: return pr_str_string(val);
         default: // tag::OBJECT
-            return call_multimethod(lookup_var(PR_STR_OBJ), &val, 1);
+            return call_multimethod(*rt::pr_str_obj, &val, 1);
     }
 }
 

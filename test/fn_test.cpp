@@ -46,7 +46,7 @@ TEST_F(fn_test, should_use_values_from_the_env)
     auto s = create_symbol("s");
     auto x = create_symbol("x");
     Root v{svec(5, 6, 7)};
-    Root env{smap(s, lookup_var(SEQ), x, *v)};
+    Root env{smap(s, *rt::seq, x, *v)};
     Root seq{list(s, x)};
     Root body{list(FIRST, *seq)};
     Root params{svec()};

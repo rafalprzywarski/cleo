@@ -5,6 +5,8 @@
 #include "small_vector.hpp"
 #include "global.hpp"
 #include "error.hpp"
+#include "util.hpp"
+#include "var.hpp"
 
 namespace cleo
 {
@@ -99,6 +101,7 @@ Value get_method(Value multi, Value dispatchVal)
 
 Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
+    check_type("multimethod", multi, *type::Multimethod);
     auto name = get_object_element(multi, 0);
     auto& multimethod = multimethods.find(name)->second;
     Root dispatchVal{get_native_function_ptr(multimethod.dispatchFn)(args, numArgs)};

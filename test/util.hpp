@@ -148,7 +148,7 @@ struct Test : testing::Test
 
     Test(const std::string& ns)
     {
-        Root bindings{smap(CURRENT_NS, lookup(CURRENT_NS))};
+        Root bindings{smap(CURRENT_NS, *rt::current_ns)};
         bindings_guard.reset(new PushBindingsGuard(*bindings));
         in_ns(create_symbol(ns));
     }
@@ -156,7 +156,7 @@ struct Test : testing::Test
     void TearDown() override
     {
         current_exception = nil;
-        set_var(CURRENT_NS, nil);
+        rt::current_ns = nil;
     }
 };
 

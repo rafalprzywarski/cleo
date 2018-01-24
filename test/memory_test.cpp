@@ -181,8 +181,8 @@ TEST_F(memory_test, should_trace_vars)
     gc();
     ASSERT_EQ(num_allocations_after, allocations.size());
 
-    define_var(name1, nil);
-    define_var(name2, nil);
+    undefine_var(name1);
+    undefine_var(name2);
 
     gc();
     ASSERT_EQ(num_allocations_before, allocations.size());

@@ -11,7 +11,7 @@
 
 std::string get_current_ns()
 {
-    auto ns = cleo::lookup_var(cleo::CURRENT_NS);
+    auto ns = *cleo::rt::current_ns;
     cleo::Root text{cleo::pr_str(ns)};
     return std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
 }
@@ -59,7 +59,7 @@ int main()
 {
     char *line;
 
-    cleo::Root ns_bindings{cleo::small_map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, cleo::lookup(cleo::CURRENT_NS))};
+    cleo::Root ns_bindings{cleo::small_map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
     cleo::PushBindingsGuard bindings_guard{*ns_bindings};
     cleo::in_ns(cleo::create_symbol("user"));
     cleo::refer(cleo::CLEO_CORE);

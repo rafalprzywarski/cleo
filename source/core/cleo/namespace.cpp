@@ -16,7 +16,7 @@ Value in_ns(Value ns)
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    set_var(CURRENT_NS, ns);
+    rt::current_ns = ns;
     return nil;
 }
 
@@ -27,7 +27,7 @@ Value refer(Value ns)
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    auto current_ns_name = get_symbol_name(lookup_var(CURRENT_NS));
+    auto current_ns_name = get_symbol_name(*rt::current_ns);
     Root current_ns{small_map_get(*namespaces, current_ns_name)};
     if (*current_ns == nil)
         current_ns = *EMPTY_MAP;
@@ -47,8 +47,7 @@ Value define(Value sym, Value val)
         ns = *EMPTY_MAP;
     ns = small_map_assoc(*ns, get_symbol_name(sym), sym);
     namespaces = small_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
-    define_var(sym, val);
-    return nil;
+    return define_var(sym, val);
 }
 
 Value resolve(Value ns, Value sym)
@@ -69,18 +68,18 @@ Value resolve(Value ns, Value sym)
 
 Value resolve(Value sym)
 {
-    return resolve(lookup_var(CURRENT_NS), sym);
+    return resolve(*rt::current_ns, sym);
 }
 
 Value lookup(Value ns, Value sym)
 {
     sym = resolve(ns, sym);
-    return lookup_var(sym);
+    return get_var_value(lookup_var(sym));
 }
 
 Value lookup(Value sym)
 {
-    return lookup(lookup_var(CURRENT_NS), sym);
+    return lookup(*rt::current_ns, sym);
 }
 
 Value require(Value ns)
@@ -91,9 +90,8 @@ Value require(Value ns)
         throw_exception(new_illegal_argument(*msg));
     }
     auto ns_name = get_symbol_name(ns);
-    auto lib_path = lookup(LIB_PATH);
     std::string path =
-        std::string(get_string_ptr(lib_path), get_string_len(lib_path)) + "/" +
+        std::string(get_string_ptr(*rt::lib_path), get_string_len(*rt::lib_path)) + "/" +
         std::string(get_string_ptr(ns_name), get_string_len(ns_name)) + ".cleo";
     std::ifstream f(path);
     if (!f)

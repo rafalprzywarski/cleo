@@ -75,7 +75,7 @@ Force syntax_quote_symbol(Root& generated, Value sym, Value env)
         return sym;
     if (is_generating(sym))
         return generate_symbol(generated, sym);
-    auto ns = (env != nil && small_map_contains(env, ENV_NS)) ? small_map_get(env, ENV_NS) : lookup_var(CURRENT_NS);
+    auto ns = (env != nil && small_map_contains(env, ENV_NS)) ? small_map_get(env, ENV_NS) : *rt::current_ns;
     sym = resolve(ns, sym);
     if (get_symbol_namespace(sym) != nil)
         return sym;
@@ -86,9 +86,6 @@ Force syntax_quote_symbol(Root& generated, Value sym, Value env)
 
 Force syntax_quote_vector(Root& generated, Value v, Value env)
 {
-    auto seq = lookup(SEQ);
-    auto first = lookup(FIRST);
-    auto next = lookup(NEXT);
     Root ret{*EMPTY_VECTOR}, val;
     auto size = get_small_vector_size(v);
     for (decltype(size) i = 0; i < size; ++i)
@@ -97,9 +94,9 @@ Force syntax_quote_vector(Root& generated, Value v, Value env)
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
+            for (s = call_multimethod1(*rt::seq, *s); *s != nil; s = call_multimethod1(*rt::next, *s))
             {
-                val = call_multimethod1(first, *s);
+                val = call_multimethod1(*rt::first, *s);
                 ret = small_vector_conj(*ret, *val);
             }
         }
@@ -124,9 +121,6 @@ Force reverse_list(Value l)
 
 Force syntax_quote_list(Root& generated, Value l, Value env)
 {
-    auto seq = lookup(SEQ);
-    auto first = lookup(FIRST);
-    auto next = lookup(NEXT);
     auto size = get_int64_value(get_list_size(l));
     if (size == 0)
         return *EMPTY_LIST;
@@ -146,9 +140,9 @@ Force syntax_quote_list(Root& generated, Value l, Value env)
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
+            for (s = call_multimethod1(*rt::seq, *s); *s != nil; s = call_multimethod1(*rt::next, *s))
             {
-                val = call_multimethod1(first, *s);
+                val = call_multimethod1(*rt::first, *s);
                 ret = list_conj(*ret, *val);
             }
         }
@@ -164,9 +158,6 @@ Force syntax_quote_list(Root& generated, Value l, Value env)
 
 Force syntax_quote_set(Root& generated, Value s, Value env)
 {
-    auto seq = lookup(SEQ);
-    auto first = lookup(FIRST);
-    auto next = lookup(NEXT);
     Root ret{*EMPTY_SET}, val;
     auto size = get_small_set_size(s);
     for (decltype(size) i = 0; i < size; ++i)
@@ -175,9 +166,9 @@ Force syntax_quote_set(Root& generated, Value s, Value env)
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(seq, *s); *s != nil; s = call_multimethod1(next, *s))
+            for (s = call_multimethod1(*rt::seq, *s); *s != nil; s = call_multimethod1(*rt::next, *s))
             {
-                val = call_multimethod1(first, *s);
+                val = call_multimethod1(*rt::first, *s);
                 ret = small_set_conj(*ret, *val);
             }
         }
@@ -240,7 +231,7 @@ template <typename CreateFn>
 Force eval_fn(Value list, Value env, CreateFn create_fn)
 {
     Root lenv{(env == nil || small_map_contains(env, ENV_NS) == nil) ?
-        small_map_assoc(env != nil ? env : *EMPTY_MAP, ENV_NS, lookup_var(CURRENT_NS)) :
+        small_map_assoc(env != nil ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
         env};
     Root next{get_list_next(list)};
     auto name = nil;
@@ -296,21 +287,19 @@ Force eval_def(Value list, Value env)
     auto sym = get_list_first(*next);
     check_type("Symbol name", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
-    auto current_ns = lookup_var(CURRENT_NS);
-    if (current_ns == nil ||
-        (ns != nil && are_equal(ns, get_symbol_name(current_ns)) == nil))
+    if (*rt::current_ns == nil ||
+        (ns != nil && are_equal(ns, get_symbol_name(*rt::current_ns)) == nil))
         throw_illegal_argument("Can't refer to qualified var that doesn't exist: " + to_string(sym));
     next = get_list_next(*next);
     if (*next != nil && get_list_next(*next) != nil)
         throw_arity_error(DEF, get_int64_value(get_list_size(list)) - 1);
     Root val{eval(*next == nil ? nil : get_list_first(*next), env)};
-    auto current_ns_name = get_symbol_name(current_ns);
+    auto current_ns_name = get_symbol_name(*rt::current_ns);
     auto sym_name = get_symbol_name(sym);
     sym = create_symbol(
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
         {get_string_ptr(sym_name), get_string_len(sym_name)});
-    define(sym, *val);
-    return *val;
+    return define(sym, *val);
 }
 
 Force eval_let(Value list, Value env)
@@ -598,7 +587,7 @@ Force eval_list(Value list, Value env)
     if (type == *type::Fn)
         return call_fn(elems, elems.size());
     if (isa(type, *type::Callable))
-        return call_multimethod(lookup_var(OBJ_CALL), elems.data(), elems.size());
+        return call_multimethod(*rt::obj_call, elems.data(), elems.size());
     Root msg{create_string("call error")};
     throw_exception(new_call_error(*msg));
 }
@@ -676,21 +665,17 @@ Force macroexpand(Value val, Value form, Value env)
 
 Force apply(Value fn, Value args)
 {
-    auto seq = lookup_var(SEQ);
-    auto first = lookup_var(FIRST);
-    auto next = lookup_var(NEXT);
-
     std::uint32_t len = 0;
-    for (Root s{call_multimethod1(seq, args)}; *s != nil; s = call_multimethod1(next, *s))
+    for (Root s{call_multimethod1(*rt::seq, args)}; *s != nil; s = call_multimethod1(*rt::next, *s))
         ++len;
     Roots roots{len};
 
     std::uint32_t i = 0;
     std::vector<Value> form;
     form.push_back(fn);
-    for (Root s{call_multimethod1(seq, args)}; *s != nil; s = call_multimethod1(next, *s))
+    for (Root s{call_multimethod1(*rt::seq, args)}; *s != nil; s = call_multimethod1(*rt::next, *s))
     {
-        roots.set(i, call_multimethod1(first, *s));
+        roots.set(i, call_multimethod1(*rt::first, *s));
         form.push_back(roots[i]);
         ++i;
     }
@@ -717,7 +702,7 @@ Force eval(Value val, Value env)
 
 Force load(Value source)
 {
-    Root bindings{small_map_assoc(*EMPTY_MAP, CURRENT_NS, lookup(CURRENT_NS))};
+    Root bindings{small_map_assoc(*EMPTY_MAP, CURRENT_NS, *rt::current_ns)};
     PushBindingsGuard guard{*bindings};
     Root forms{read_forms(source)};
     forms = small_vector_seq(*forms);

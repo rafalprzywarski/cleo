@@ -20,11 +20,17 @@ TEST_F(var_test, should_define_vars)
     auto sym2 = create_symbol("cleo.var.test", "xyz");
     Root val1{Force(create_int64(10))};
     Root val2{Force(create_int64(20))};
-    define_var(sym1, *val1);
-    ASSERT_TRUE(*val1 == lookup_var(sym1));
-    define_var(sym2, *val2);
-    ASSERT_TRUE(*val1 == lookup_var(sym1));
-    ASSERT_TRUE(*val2 == lookup_var(sym2));
+    auto var1 = define_var(sym1, *val1);
+    ASSERT_TRUE(var1 == lookup_var(sym1));
+    ASSERT_TRUE(*val1 == get_var_root_value(var1));
+    ASSERT_TRUE(*val1 == get_var_value(var1));
+    auto var2 = define_var(sym2, *val2);
+    ASSERT_TRUE(var1 == lookup_var(sym1));
+    ASSERT_TRUE(*val1 == get_var_root_value(var1));
+    ASSERT_TRUE(*val1 == get_var_value(var1));
+    ASSERT_TRUE(var2 == lookup_var(sym2));
+    ASSERT_TRUE(*val2 == get_var_root_value(var2));
+    ASSERT_TRUE(*val2 == get_var_value(var2));
 }
 
 TEST_F(var_test, should_redefine_vars)
@@ -32,10 +38,12 @@ TEST_F(var_test, should_redefine_vars)
     auto sym = create_symbol("cleo.var.test", "bcd");
     Root val1{Force(create_int64(10))};
     Root val2{Force(create_int64(20))};
-    define_var(sym, *val1);
-    ASSERT_TRUE(*val1 == lookup_var(sym));
-    define_var(sym, *val2);
-    ASSERT_TRUE(*val2 == lookup_var(sym));
+    auto var = define_var(sym, *val1);
+    ASSERT_TRUE(*val1 == get_var_value(var));
+    ASSERT_TRUE(*val1 == get_var_root_value(var));
+    ASSERT_TRUE(var == define_var(sym, *val2));
+    ASSERT_TRUE(*val2 == get_var_value(var));
+    ASSERT_TRUE(*val2 == get_var_root_value(var));
 }
 
 TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
@@ -67,25 +75,33 @@ TEST_F(var_test, binding_should_override)
     {
         Root bindings1{smap(a, ka2)};
         PushBindingsGuard bind1{*bindings1};
-        EXPECT_EQ_VALS(ka2, lookup_var(a));
-        EXPECT_EQ_VALS(kb, lookup_var(b));
+        EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
+        EXPECT_EQ_VALS(ka2, get_var_value(lookup_var(a)));
+        EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
+        EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
         {
             Root bindings2{smap(a, ka3, b, kb2)};
             PushBindingsGuard bind1{*bindings2};
-            EXPECT_EQ_VALS(ka3, lookup_var(a));
-            EXPECT_EQ_VALS(kb2, lookup_var(b));
+            EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
+            EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
+            EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
+            EXPECT_EQ_VALS(kb2, get_var_value(lookup_var(b)));
         }
-        EXPECT_EQ_VALS(ka2, lookup_var(a));
-        EXPECT_EQ_VALS(kb, lookup_var(b));
+        EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
+        EXPECT_EQ_VALS(ka2, get_var_value(lookup_var(a)));
+        EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
+        EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
     }
-    EXPECT_EQ_VALS(ka, lookup_var(a));
-    EXPECT_EQ_VALS(kb, lookup_var(b));
+    EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
+    EXPECT_EQ_VALS(ka, get_var_value(lookup_var(a)));
+    EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
+    EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
 }
 
 TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
 {
     auto s = create_symbol("cleo.var.test/nob");
-    define_var(s, create_keyword("xxx"));
+    auto var = define_var(s, create_keyword("xxx"));
     try
     {
         set_var(s, create_keyword("yyy"));
@@ -110,7 +126,7 @@ TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
         ASSERT_EQ_VALS(*type::IllegalState, get_value_type(*e));
     }
 
-    ASSERT_EQ_VALS(create_keyword("xxx"), lookup_var(s));
+    ASSERT_EQ_VALS(create_keyword("xxx"), get_var_value(var));
 }
 
 TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
@@ -125,36 +141,38 @@ TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
     auto kax = create_keyword("ax");
     auto kbx = create_keyword("bx");
 
-    define_var(a, ka);
-    define_var(b, kb);
+    auto va = define_var(a, ka);
+    auto vb = define_var(b, kb);
     {
         Root bindings1{smap(a, ka2)};
         PushBindingsGuard bind1{*bindings1};
 
         set_var(a, kax);
-        EXPECT_EQ_VALS(kax, lookup_var(a));
+        EXPECT_EQ_VALS(ka, get_var_root_value(va));
+        EXPECT_EQ_VALS(kax, get_var_value(va));
 
         {
             Root bindings2{smap(a, ka3, b, kb2)};
             PushBindingsGuard bind1{*bindings2};
-            EXPECT_EQ_VALS(ka3, lookup_var(a));
-            EXPECT_EQ_VALS(kb2, lookup_var(b));
+            EXPECT_EQ_VALS(ka3, get_var_value(va));
+            EXPECT_EQ_VALS(kb, get_var_root_value(vb));
+            EXPECT_EQ_VALS(kb2, get_var_value(vb));
 
             set_var(a, kax);
-            EXPECT_EQ_VALS(kax, lookup_var(a));
+            EXPECT_EQ_VALS(kax, get_var_value(va));
             set_var(b, kbx);
-            EXPECT_EQ_VALS(kbx, lookup_var(b));
+            EXPECT_EQ_VALS(kbx, get_var_value(vb));
 
             set_var(a, ka3);
-            EXPECT_EQ_VALS(ka3, lookup_var(a));
+            EXPECT_EQ_VALS(ka3, get_var_value(va));
             set_var(b, kb2);
-            EXPECT_EQ_VALS(kb2, lookup_var(b));
+            EXPECT_EQ_VALS(kb2, get_var_value(vb));
         }
-        EXPECT_EQ_VALS(kax, lookup_var(a));
-        EXPECT_EQ_VALS(kb, lookup_var(b));
+        EXPECT_EQ_VALS(kax, get_var_value(va));
+        EXPECT_EQ_VALS(kb, get_var_value(vb));
     }
-    EXPECT_EQ_VALS(ka, lookup_var(a));
-    EXPECT_EQ_VALS(kb, lookup_var(b));
+    EXPECT_EQ_VALS(ka, get_var_value(va));
+    EXPECT_EQ_VALS(kb, get_var_value(vb));
 }
 
 }

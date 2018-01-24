@@ -371,7 +371,7 @@ TEST_F(eval_test, should_eval_vectors)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
-    Root ex{svec(lookup_var(SEQ), lookup_var(FIRST), *x)};
+    Root ex{svec(*rt::seq, *rt::first, *x)};
     Root val{svec(SEQ, FIRST, xs)};
     Root env{smap(xs, *x)};
     val = eval(*val, *env);
@@ -386,7 +386,7 @@ TEST_F(eval_test, should_eval_set)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
-    Root ex{sset(lookup_var(SEQ), lookup_var(FIRST), *x)};
+    Root ex{sset(*rt::seq, *rt::first, *x)};
     Root val{sset(SEQ, FIRST, xs)};
     Root env{smap(xs, *x)};
     val = eval(*val, *env);
@@ -405,8 +405,9 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
     in_ns(create_symbol("clue.eval.test"));
     Root val{read_str("(def var1 ((fn* [] x)))")};
     val = eval(*val, *env);
-    EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var1")));
+    auto name = create_symbol("clue.eval.test", "var1");
+    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(*ex, lookup(name));
 }
 
 TEST_F(eval_test, def_should_fail_when_ns_is_specified)
@@ -430,7 +431,7 @@ TEST_F(eval_test, def_should_fail_when_ns_is_specified)
 
 TEST_F(eval_test, def_should_fail_when_current_ns_is_nil)
 {
-    set_var(CURRENT_NS, nil);
+    rt::current_ns = nil;
     Root val{read_str("(def var4 10)")};
     ASSERT_THROW(eval(*val), Exception);
 }
@@ -458,8 +459,9 @@ TEST_F(eval_test, should_define_a_var_with_nil_value_when_not_given_a_value)
     in_ns(create_symbol("clue.eval.var.default.test"));
     Root val{read_str("(def var1)")};
     val = eval(*val);
-    EXPECT_EQ_VALS(nil, *val);
-    EXPECT_EQ_VALS(nil, lookup(create_symbol("clue.eval.var.default.test", "var1")));
+    auto name = create_symbol("clue.eval.var.default.test", "var1");
+    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(nil, lookup(name));
 }
 
 
@@ -471,7 +473,8 @@ TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_c
     in_ns(create_symbol("clue.eval.test"));
     Root val{read_str("(def clue.eval.test/var3 ((fn* [] x)))")};
     val = eval(*val, *env);
-    EXPECT_EQ_VALS(*ex, *val);
+    auto name = create_symbol("clue.eval.test", "var3");
+    EXPECT_EQ_VALS(lookup_var(name), *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var3")));
 }
 
@@ -481,7 +484,7 @@ TEST_F(eval_test, should_eval_maps)
     Root y{create_int64(77)};
     auto xs = create_symbol("x");
     auto ys = create_symbol("y");
-    Root ex{smap(lookup_var(SEQ), lookup_var(FIRST), *x, *y)};
+    Root ex{smap(*rt::seq, *rt::first, *x, *y)};
     Root val{smap(SEQ, FIRST, xs, ys)};
     Root env{smap(xs, *x, ys, *y)};
     val = eval(*val, *env);
@@ -765,7 +768,7 @@ TEST_F(eval_test, should_eval_do)
     val = read_str("(do (cleo.core/in-ns 'cleo.eval.do.test) a)");
     val = eval(*val, *env);
     EXPECT_EQ_VALS(create_keyword("z"), *val);
-    EXPECT_EQ_VALS(create_symbol("cleo.eval.do.test"), lookup_var(CURRENT_NS));
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.do.test"), *rt::current_ns);
 }
 
 namespace
@@ -870,9 +873,9 @@ TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
     Root val{load(*source)};
     auto ex = create_keyword("abc");
     EXPECT_EQ_VALS(ex, *val);
-    EXPECT_EQ_VALS(ex, lookup_var(create_symbol("cleo.eval.load2.test", "x")));
-    EXPECT_EQ_VALS(create_keyword("xyz"), lookup_var(create_symbol("cleo.eval.load.test", "y")));
-    EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), lookup_var(CURRENT_NS));
+    EXPECT_EQ_VALS(ex, get_var_value(lookup_var(create_symbol("cleo.eval.load2.test", "x"))));
+    EXPECT_EQ_VALS(create_keyword("xyz"), get_var_value(lookup_var(create_symbol("cleo.eval.load.test", "y"))));
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), *rt::current_ns);
 }
 
 TEST_F(eval_test, apply_should_call_functions)

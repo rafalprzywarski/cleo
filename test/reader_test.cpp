@@ -31,8 +31,7 @@ struct reader_test : Test
         {
             cleo::Root e{cleo::catch_exception()};
             EXPECT_TRUE(exType == get_value_type(*e));
-            auto get_message = lookup_var(GET_MESSAGE);
-            cleo::Root exMsg{call_multimethod1(get_message, *e)};
+            cleo::Root exMsg{call_multimethod1(*rt::get_message, *e)};
             EXPECT_EQ(msg, std::string(get_string_ptr(*exMsg), get_string_len(*exMsg)));
             if (get_value_type(*e) == *type::ReadError)
             {

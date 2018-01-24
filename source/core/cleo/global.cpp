@@ -143,6 +143,7 @@ const Root String{create_type("cleo.core", "String")};
 const Root NativeFunction{create_type("cleo.core", "NativeFunction")};
 const Root Symbol{create_type("cleo.core", "Symbol")};
 const Root Keyword{create_type("cleo.core", "Keyword")};
+const Root Var{create_type("cleo.core", "Var")};
 const Root List{create_type("cleo.core", "List")};
 const Root SmallVector{create_type("cleo.core", "SmallVector")};
 const Root SmallVectorSeq{create_type("cleo.core", "SmallVectorSeq")};
@@ -197,6 +198,22 @@ const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 {
     return create_object(*type::Recur, args, n);
 })};
+
+namespace rt
+{
+
+const DynamicVar current_ns = define_var(CURRENT_NS, nil);
+const DynamicVar lib_path = define_var(LIB_PATH, nil);
+const StaticVar obj_eq = define_var(OBJ_EQ, nil);
+const StaticVar obj_call = define_var(OBJ_CALL, nil);
+const DynamicVar print_readably = define_var(PRINT_READABLY, nil);
+const StaticVar pr_str_obj = define_var(PR_STR_OBJ, nil);
+const StaticVar first = define_var(FIRST, nil);
+const StaticVar next = define_var(NEXT, nil);
+const StaticVar seq = define_var(SEQ, nil);
+const StaticVar get_message = define_var(GET_MESSAGE, nil);
+
+}
 
 namespace
 {
@@ -296,8 +313,7 @@ Force lt2(Value l, Value r)
 
 Force pr_str_exception(Value e)
 {
-    auto get_message = lookup_var(GET_MESSAGE);
-    cleo::Root msg{call_multimethod1(get_message, e)};
+    cleo::Root msg{call_multimethod1(*rt::get_message, e)};
     cleo::Root type{cleo::pr_str(cleo::get_value_type(e))};
     msg = print_str(*msg);
 
@@ -328,7 +344,7 @@ Force keyword_get(Value k, Value coll)
     if (get_value_tag(coll) != tag::OBJECT)
         return nil;
     std::array<Value, 2> args{{coll, k}};
-    return call_multimethod(lookup(OBJ_CALL), args.data(), args.size());
+    return call_multimethod(*rt::obj_call, args.data(), args.size());
 }
 
 Value small_vector_get(Value v, Value index)
@@ -367,14 +383,14 @@ Force macroexpand1_noenv(Value val)
 
 Force get_seqable_first(Value val)
 {
-    Root s{call_multimethod1(lookup(SEQ), val)};
-    return call_multimethod1(lookup(FIRST), *s);
+    Root s{call_multimethod1(*rt::seq, val)};
+    return call_multimethod1(*rt::first, *s);
 }
 
 Force get_seqable_next(Value val)
 {
-    Root s{call_multimethod1(lookup(SEQ), val)};
-    return call_multimethod1(lookup(NEXT), *s);
+    Root s{call_multimethod1(*rt::seq, val)};
+    return call_multimethod1(*rt::next, *s);
 }
 
 Force pr_str_type(Value type)
@@ -387,6 +403,12 @@ void define_type(Value type)
     define(get_type_name(type), type);
 }
 
+Force pr_str_var(Value var)
+{
+    check_type("var", var, *type::Var);
+    return create_string("#'" + to_string(get_var_name(var)));
+}
+
 struct Initialize
 {
     Initialize()
@@ -397,6 +419,7 @@ struct Initialize
         define_type(*type::NativeFunction);
         define_type(*type::Keyword);
         define_type(*type::Symbol);
+        define_type(*type::Var);
         define_type(*type::Seqable);
         define_type(*type::List);
         define_type(*type::SmallVector);
@@ -563,6 +586,9 @@ struct Initialize
         define_method(PR_STR_OBJ, *type::Seqable, *f);
         f = create_native_function1<pr_str_object>();
         define_method(PR_STR_OBJ, nil, *f);
+
+        f = create_native_function1<pr_str_var>();
+        define_method(PR_STR_OBJ, *type::Var, *f);
 
         f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);

@@ -118,7 +118,7 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 {
     auto s = create_symbol("s");
-    Root env{smap(s, lookup_var(SEQ))};
+    Root env{smap(s, *rt::seq)};
     Root v{svec(5, 6, 7)};
     Root seq{list(s, *v)};
     Root body{list(FIRST, *seq)};

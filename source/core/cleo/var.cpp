@@ -8,19 +8,26 @@
 namespace cleo
 {
 
-void define_var(Value sym, Value val)
+Value define_var(Value sym, Value val)
 {
-    vars[sym] = val;
+    auto found = vars.find(sym);
+    if (found != end(vars))
+    {
+        set_object_element(found->second, 1, val);
+        return found->second;
+    }
+    Root var{create_object2(*type::Var, sym, val)};
+    vars.insert({sym, *var});
+    return *var;
+}
+
+void undefine_var(Value sym)
+{
+    vars[sym] = nil;
 }
 
 Value lookup_var(Value sym)
 {
-    if (*bindings != nil)
-    {
-        auto latest = get_list_first(*bindings);
-        if (small_map_contains(latest, sym) != nil)
-            return small_map_get(latest, sym);
-    }
     auto it = vars.find(sym);
     if (it == end(vars))
     {
@@ -66,5 +73,26 @@ void set_var(Value sym, Value val)
     bindings = list_conj(popped == nil ? *EMPTY_LIST : popped, *latest);
 }
 
+Value get_var_name(Value var)
+{
+    return get_object_element(var, 0);
+}
+
+Value get_var_root_value(Value var)
+{
+    return get_object_element(var, 1);
+}
+
+Value get_var_value(Value var)
+{
+    if (*bindings != nil)
+    {
+        auto sym = get_var_name(var);
+        auto latest = get_list_first(*bindings);
+        if (small_map_contains(latest, sym) != nil)
+            return small_map_get(latest, sym);
+    }
+    return get_var_root_value(var);
+}
 
 }

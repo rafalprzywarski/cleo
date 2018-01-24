@@ -2,6 +2,7 @@
 #include "value.hpp"
 #include "hash.hpp"
 #include "equality.hpp"
+#include "var.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -45,6 +46,25 @@ public:
     void set(size_type k, Force f) { extra_roots[index + k] = f.val; }
 private:
     size_type index, count;
+};
+
+class StaticVar
+{
+public:
+    StaticVar(Value var) : var(var) { }
+    Value operator*() const { return get_var_root_value(var); }
+private:
+    Value var;
+};
+
+class DynamicVar
+{
+public:
+    DynamicVar(Value var) : var(var) { }
+    Value operator*() const { return get_var_value(var); }
+    const DynamicVar& operator=(Value val) const { set_var(get_var_name(var), val); return *this; }
+private:
+    Value var;
 };
 
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
@@ -129,6 +149,7 @@ extern const Root String;
 extern const Root NativeFunction;
 extern const Root Symbol;
 extern const Root Keyword;
+extern const Root Var;
 extern const Root List;
 extern const Root SmallVector;
 extern const Root SmallVectorSeq;
@@ -169,4 +190,19 @@ extern Int64 next_id;
 
 Int64 gen_id();
 
+namespace rt
+{
+
+extern const DynamicVar current_ns;
+extern const DynamicVar lib_path;
+extern const StaticVar obj_eq;
+extern const StaticVar obj_call;
+extern const DynamicVar print_readably;
+extern const StaticVar pr_str_obj;
+extern const StaticVar first;
+extern const StaticVar next;
+extern const StaticVar seq;
+extern const StaticVar get_message;
+
+}
 }
