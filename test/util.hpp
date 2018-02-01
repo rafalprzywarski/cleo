@@ -8,6 +8,7 @@
 #include <cleo/print.hpp>
 #include <cleo/namespace.hpp>
 #include <cleo/var.hpp>
+#include <cleo/util.hpp>
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
@@ -127,12 +128,6 @@ Force smap(const K& k, const V& v, const Rest&... rest)
     Root key{to_value(k)};
     Root val{to_value(v)};
     return small_map_assoc(*m, *key, *val);
-}
-
-inline std::string to_string(Value val)
-{
-    Root s{pr_str(val)};
-    return {get_string_ptr(*s), get_string_len(*s)};
 }
 
 inline Force i64(Int64 value)

@@ -637,7 +637,7 @@ Force eval_map(Value m, Value env)
 
 Force macroexpand1(Value val, Value form, Value env)
 {
-    if (get_value_type(val) != *type::List || get_list_size(val) == 0)
+    if (get_value_type(val) != *type::List || get_int64_value(get_list_size(val)) == 0)
         return val;
 
     auto m = get_list_first(val);

@@ -1,12 +1,50 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <unordered_map>
+#include <ostream>
 
 namespace cleo
 {
 
-using Value = std::uintptr_t;
-using Tag = Value;
+struct Value
+{
+    std::uintptr_t bits{0};
+    Value() = default;
+    explicit constexpr Value(std::uintptr_t bits) : bits(bits) { }
+    explicit operator bool() const { return bits != Value{}.bits; }
+};
+
+static_assert(sizeof(Value) == sizeof(Value::bits), "Value should have no overhead");
+
+inline bool operator==(Value left, Value right) { return left.bits == right.bits; }
+inline bool operator!=(Value left, Value right) { return left.bits != right.bits; }
+inline std::ostream& operator<<(std::ostream& os, Value val)
+{
+    return os << val.bits;
+}
+
+}
+
+namespace std
+{
+template <>
+struct hash<cleo::Value>
+{
+    using argument_type = cleo::Value;
+    using result_type = std::size_t;
+
+    result_type operator()(argument_type val) const
+    {
+        return std::hash<decltype(val.bits)>()(val.bits);
+    }
+};
+}
+
+namespace cleo
+{
+
+using Tag = std::uintptr_t;
 
 class Force
 {
@@ -38,17 +76,17 @@ constexpr Tag OBJECT = 7;
 constexpr Tag MASK = 7;
 }
 
-constexpr Value nil = tag::NIL;
+constexpr Value nil{};
 
 
 inline Tag get_value_tag(Value val)
 {
-    return val & tag::MASK;
+    return val.bits & tag::MASK;
 }
 
-inline void *get_value_ptr(Value ptr)
+inline void *get_value_ptr(Value val)
 {
-    return reinterpret_cast<void *>(ptr & ~tag::MASK);
+    return reinterpret_cast<void *>(val.bits & ~tag::MASK);
 }
 
 Force create_native_function(NativeFunction f);

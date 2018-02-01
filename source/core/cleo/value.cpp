@@ -29,15 +29,15 @@ struct Object
     Value firstElem;
 };
 
-Value tag_ptr(void *ptr, Value tag)
+Value tag_ptr(void *ptr, Tag tag)
 {
-    return reinterpret_cast<Value>(ptr) | tag;
+    return Value{reinterpret_cast<decltype(Value::bits)>(ptr) | tag};
 }
 
 template <typename T>
-T *get_ptr(Value ptr)
+T *get_ptr(Value val)
 {
-    return reinterpret_cast<T *>(ptr & ~tag::MASK);
+    return reinterpret_cast<T *>(val.bits & ~tag::MASK);
 }
 
 Force create_native_function(NativeFunction f)
