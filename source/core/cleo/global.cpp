@@ -26,9 +26,9 @@ unsigned gc_counter = gc_frequency - 1;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
 
-std::unordered_map<Value, Value> vars;
+std::unordered_map<Value, Value, std::hash<Value>, StdIs> vars;
 
-std::unordered_map<Value, Multimethod> multimethods;
+std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimethods;
 Hierachy global_hierarchy;
 
 Root current_exception;
@@ -82,7 +82,7 @@ const Value CLEO_CORE = create_symbol("cleo.core");
 const Value NEW = create_symbol("cleo.core", "new");
 const Root ZERO{create_int64(0)};
 
-const std::unordered_set<Value> SPECIAL_SYMBOLS{
+const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,
     SYNTAX_QUOTE,
     FN,

@@ -102,8 +102,8 @@ TEST_F(small_set_test, seq_should_return_a_sequence_of_the_set_elements)
     Root s{create_small_set()};
     s = small_set_conj(*s, *elem);
     Root seq{small_set_seq(*s)};
-    ASSERT_TRUE(*elem == get_small_set_seq_first(*seq));
-    ASSERT_TRUE(nil == *Root(get_small_set_seq_next(*seq)));
+    ASSERT_EQ_REFS(*elem, get_small_set_seq_first(*seq));
+    ASSERT_EQ_REFS(nil, *Root(get_small_set_seq_next(*seq)));
 
     Root elem0, elem1, elem2;
     elem0 = create_int64(101);
@@ -114,14 +114,14 @@ TEST_F(small_set_test, seq_should_return_a_sequence_of_the_set_elements)
     s = small_set_conj(*s, *elem1);
     s = small_set_conj(*s, *elem2);
     seq = small_set_seq(*s);
-    ASSERT_TRUE(*elem0 == get_small_set_seq_first(*seq));
+    ASSERT_EQ_REFS(*elem0, get_small_set_seq_first(*seq));
 
     seq = get_small_set_seq_next(*seq);
-    ASSERT_TRUE(*elem1 == get_small_set_seq_first(*seq));
+    ASSERT_EQ_REFS(*elem1, get_small_set_seq_first(*seq));
 
     seq = get_small_set_seq_next(*seq);
-    ASSERT_TRUE(*elem2 == get_small_set_seq_first(*seq));
-    ASSERT_TRUE(nil == *Root(get_small_set_seq_next(*seq)));
+    ASSERT_EQ_REFS(*elem2, get_small_set_seq_first(*seq));
+    ASSERT_EQ_REFS(nil, *Root(get_small_set_seq_next(*seq)));
 }
 
 TEST_F(small_set_test, should_delegate_to_get_when_called)

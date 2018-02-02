@@ -46,9 +46,9 @@ TEST_F(multimethod_test, get_method_should_provide_the_method_for_a_dispatch_val
     define_method(name, *val1, *fn1);
     define_method(name, *val2, *fn2);
 
-    ASSERT_EQ(*fn1, get_method(multi, *val1));
-    ASSERT_EQ(*fn2, get_method(multi, *val2));
-    ASSERT_EQ(nil, get_method(multi, *val3));
+    ASSERT_TRUE(fn1->is(get_method(multi, *val1)));
+    ASSERT_TRUE(fn2->is(get_method(multi, *val2)));
+    ASSERT_TRUE(get_method(multi, *val3).is_nil());
 }
 
 TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_defined_and_no_methods_are_matched)
@@ -65,12 +65,12 @@ TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_def
     Value multi = define_multimethod(name, *dfn, default_);
     define_method(name, *val1, *fn1);
 
-    ASSERT_EQ(nil, get_method(multi, *val2));
+    ASSERT_TRUE(get_method(multi, *val2).is_nil());
 
     define_method(name, default_, *fn2);
 
-    ASSERT_EQ(*fn1, get_method(multi, *val1));
-    ASSERT_EQ(*fn2, get_method(multi, *val2));
+    ASSERT_TRUE(fn1->is(get_method(multi, *val1)));
+    ASSERT_TRUE(fn2->is(get_method(multi, *val2)));
 }
 
 TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
@@ -91,21 +91,21 @@ TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
     Value multi = define_multimethod(name, *dfn, nil);
     define_method(name, ha, *fn1);
 
-    EXPECT_EQ(*fn1, get_method(multi, ha));
-    EXPECT_EQ(*fn1, get_method(multi, hb));
-    EXPECT_EQ(*fn1, get_method(multi, hc));
+    EXPECT_TRUE(fn1->is(get_method(multi, ha)));
+    EXPECT_TRUE(fn1->is(get_method(multi, hb)));
+    EXPECT_TRUE(fn1->is(get_method(multi, hc)));
 
     define_method(name, hb, *fn2);
 
-    EXPECT_EQ(*fn1, get_method(multi, ha));
-    EXPECT_EQ(*fn2, get_method(multi, hb));
-    EXPECT_EQ(*fn2, get_method(multi, hc));
+    EXPECT_TRUE(fn1->is(get_method(multi, ha)));
+    EXPECT_TRUE(fn2->is(get_method(multi, hb)));
+    EXPECT_TRUE(fn2->is(get_method(multi, hc)));
 
     define_method(name, hc, *fn3);
 
-    EXPECT_EQ(*fn1, get_method(multi, ha));
-    EXPECT_EQ(*fn2, get_method(multi, hb));
-    EXPECT_EQ(*fn3, get_method(multi, hc));
+    EXPECT_TRUE(fn1->is(get_method(multi, ha)));
+    EXPECT_TRUE(fn2->is(get_method(multi, hb)));
+    EXPECT_TRUE(fn3->is(get_method(multi, hc)));
 }
 
 TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_dispatch_value)
@@ -134,7 +134,7 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(*type::IllegalArgument, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
     }
 }
 
@@ -160,9 +160,9 @@ TEST_F(multimethod_test, should_dispatch_to_the_right_method)
     val1 = create_int64(77);
     val2 = create_int64(88);
     l = list(name, child1, *val1, *val2);
-    ASSERT_TRUE(*val1 == *Root(eval(*l)));
+    ASSERT_TRUE(val1->is(*Root(eval(*l))));
     l = list(name, child2, *val1, *val2);
-    ASSERT_TRUE(*val2 == *Root(eval(*l)));
+    ASSERT_TRUE(val2->is(*Root(eval(*l))));
 }
 
 TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
@@ -185,7 +185,7 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(*type::IllegalArgument, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
     }
 }
 

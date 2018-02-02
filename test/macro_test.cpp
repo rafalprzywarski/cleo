@@ -75,7 +75,7 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     catch (Exception const& )
     {
         cleo::Root e{cleo::catch_exception()};
-        EXPECT_TRUE(*type::CallError == get_value_type(*e));
+        EXPECT_EQ_REFS(*type::CallError, get_value_type(*e));
     }
 }
 

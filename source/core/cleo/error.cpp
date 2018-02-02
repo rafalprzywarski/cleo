@@ -7,7 +7,7 @@ namespace cleo
 
 const char *Exception::what() const noexcept
 {
-    if (*current_exception == nil)
+    if (!*current_exception)
         return "nil";
     try
     {

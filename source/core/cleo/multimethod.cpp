@@ -63,8 +63,8 @@ bool is_ancestor(Value child, Value ancestor)
 Value isa(Value child, Value parent)
 {
     return (
-        are_equal(child, parent) != nil ||
-        (get_value_type(child) == *type::SmallVector && get_value_type(parent) == *type::SmallVector && isa_vectors(child, parent)) ||
+        are_equal(child, parent) ||
+        (get_value_type(child).is(*type::SmallVector) && get_value_type(parent).is(*type::SmallVector) && isa_vectors(child, parent)) ||
         is_ancestor(child, parent)) ? TRUE : nil;
 }
 
@@ -74,7 +74,7 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
     for (auto& fn : multimethod.fns)
         if (isa(dispatchVal, fn.first))
         {
-            if (best.first == nil || isa(fn.first, best.first))
+            if (!best.first || isa(fn.first, best.first))
                 best = fn;
             else if (!isa(best.first, fn.first))
             {
@@ -83,7 +83,7 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
             }
         }
 
-    if (best.first == nil)
+    if (!best.first)
     {
         auto default_ = multimethod.fns.find(multimethod.defaultDispatchVal);
         if (default_ != end(multimethod.fns))
@@ -106,7 +106,7 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
     auto& multimethod = multimethods.find(name)->second;
     Root dispatchVal{get_native_function_ptr(multimethod.dispatchFn)(args, numArgs)};
     auto fn = get_method(multimethod, *dispatchVal);
-    if (fn == nil)
+    if (!fn)
     {
         auto mns = get_symbol_namespace(name);
         auto mname = get_symbol_name(name);

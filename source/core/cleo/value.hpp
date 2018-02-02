@@ -12,12 +12,14 @@ struct Value
     std::uintptr_t bits{0};
     Value() = default;
     explicit constexpr Value(std::uintptr_t bits) : bits(bits) { }
-    explicit operator bool() const { return bits != Value{}.bits; }
+    explicit operator bool() const { return !is_nil(); }
+    bool is(Value other) const { return bits == other.bits; }
+    bool is_nil() const { return bits == Value{}.bits; }
 };
 
 static_assert(sizeof(Value) == sizeof(Value::bits), "Value should have no overhead");
 
-inline bool operator==(Value left, Value right) { return left.bits == right.bits; }
+inline bool operator==(Value left, Value right) { return left.is(right); }
 inline bool operator!=(Value left, Value right) { return left.bits != right.bits; }
 inline std::ostream& operator<<(std::ostream& os, Value val)
 {

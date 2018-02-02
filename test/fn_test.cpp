@@ -24,7 +24,7 @@ TEST_F(fn_test, should_eval_the_body)
     Root fn{create_fn(nil, nil, *params, *body)};
     Root call{list(*fn)};
     Root val{eval(*call)};
-    ASSERT_TRUE(get_small_vector_elem(*v, 0) == *val);
+    ASSERT_TRUE(get_small_vector_elem(*v, 0).is(*val));
 }
 
 TEST_F(fn_test, should_pass_the_arguments)
@@ -38,7 +38,7 @@ TEST_F(fn_test, should_pass_the_arguments)
     Root v{svec(5, 6, 7)};
     Root call{list(*fn, SEQ, *v)};
     Root val{eval(*call)};
-    ASSERT_TRUE(get_small_vector_elem(*v, 0) == *val);
+    ASSERT_TRUE(get_small_vector_elem(*v, 0).is(*val));
 }
 
 TEST_F(fn_test, should_use_values_from_the_env)
@@ -53,7 +53,7 @@ TEST_F(fn_test, should_use_values_from_the_env)
     Root fn{create_fn(*env, nil, *params, *body)};
     Root call{list(*fn)};
     Root val{eval(*call)};
-    ASSERT_TRUE(get_small_vector_elem(*v, 0) == *val);
+    ASSERT_TRUE(get_small_vector_elem(*v, 0).is(*val));
 }
 
 TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
@@ -71,7 +71,7 @@ TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(*type::CallError, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::CallError, get_value_type(*e));
     }
 }
 

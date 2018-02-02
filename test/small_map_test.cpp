@@ -17,7 +17,7 @@ TEST_F(small_map_test, should_create_an_empty_map)
 {
     Root m{create_small_map()};
     ASSERT_EQ(0u, get_small_map_size(*m));
-    ASSERT_TRUE(nil == small_map_get(*m, create_keyword("abc")));
+    ASSERT_TRUE(small_map_get(*m, create_keyword("abc")).is_nil());
 }
 
 TEST_F(small_map_test, assoc_should_create_a_new_map_with_an_added_or_replaced_element)

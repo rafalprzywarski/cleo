@@ -33,7 +33,7 @@ Value are_seqs_equal(Value left_, Value right_)
         if (!are_equal(*lf, *rf))
             return nil;
     }
-    return *left == *right ? TRUE : nil;
+    return left->is(*right) ? TRUE : nil;
 }
 
 Value are_seqables_equal(Value left, Value right)
@@ -50,7 +50,7 @@ Value are_small_sets_equal(Value left, Value right)
         return nil;
 
     for (decltype(size) i = 0; i != size; ++i)
-        if (small_set_contains(right, get_small_set_elem(left, i)) == nil)
+        if (!small_set_contains(right, get_small_set_elem(left, i)))
             return nil;
 
     return TRUE;
@@ -64,7 +64,7 @@ Value are_small_maps_equal(Value left, Value right)
 
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (are_equal(small_map_get(right, get_small_map_key(left, i)), get_small_map_val(left, i)) == nil)
+        if (!are_equal(small_map_get(right, get_small_map_key(left, i)), get_small_map_val(left, i)))
             return nil;
     }
 
@@ -73,7 +73,7 @@ Value are_small_maps_equal(Value left, Value right)
 
 Value are_equal(Value left, Value right)
 {
-    if (left == right)
+    if (left.is(right))
         return TRUE;
 
     auto left_tag = get_value_tag(left);
@@ -95,9 +95,9 @@ Value are_equal(Value left, Value right)
                 TRUE :
                 nil;
         case tag::OBJECT:
-            if (get_object_type(left) == *type::MetaType || get_object_type(right) == *type::MetaType)
+            if (get_object_type(left).is(*type::MetaType) || get_object_type(right).is(*type::MetaType))
                 return nil;
-            if (get_object_type(left) == *type::SmallVector && get_object_type(right) == *type::SmallVector)
+            if (get_object_type(left).is(*type::SmallVector) && get_object_type(right).is(*type::SmallVector))
                 return are_small_vectors_equal(left, right);
             {
                 std::array<Value, 2> args{{left, right}};

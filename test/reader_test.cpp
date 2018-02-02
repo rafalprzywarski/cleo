@@ -30,16 +30,16 @@ struct reader_test : Test
         catch (Exception const& )
         {
             cleo::Root e{cleo::catch_exception()};
-            EXPECT_TRUE(exType == get_value_type(*e));
+            EXPECT_TRUE(exType.is(get_value_type(*e)));
             cleo::Root exMsg{call_multimethod1(*rt::get_message, *e)};
             EXPECT_EQ(msg, std::string(get_string_ptr(*exMsg), get_string_len(*exMsg)));
-            if (get_value_type(*e) == *type::ReadError)
+            if (get_value_type(*e).is(*type::ReadError))
             {
                 Root linev{i64(line)}, colv{i64(col)};
                 EXPECT_EQ_VALS(*linev, read_error_line(*e));
                 EXPECT_EQ_VALS(*colv, read_error_column(*e));
             }
-            if (get_value_type(*e) == *type::UnexpectedEndOfInput)
+            if (get_value_type(*e).is(*type::UnexpectedEndOfInput))
             {
                 Root linev{i64(line)}, colv{i64(col)};
                 EXPECT_EQ_VALS(*linev, unexpected_end_of_input_line(*e));

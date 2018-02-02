@@ -23,77 +23,77 @@ TEST_F(equality_test, same_instances_should_be_equal)
     Root s{create_string("abcd")};
     Root o{create_object0(sym)};
 
-    ASSERT_TRUE(TRUE == are_equal(nil, nil));
-    ASSERT_TRUE(nil == are_equal(nil, *fn));
-    ASSERT_TRUE(nil == are_equal(nil, sym));
-    ASSERT_TRUE(nil == are_equal(nil, kw));
-    ASSERT_TRUE(nil == are_equal(nil, *i));
-    ASSERT_TRUE(nil == are_equal(nil, *flt));
-    ASSERT_TRUE(nil == are_equal(nil, *s));
-    ASSERT_TRUE(nil == are_equal(nil, *o));
+    ASSERT_TRUE(bool(are_equal(nil, nil)));
+    ASSERT_FALSE(bool(are_equal(nil, *fn)));
+    ASSERT_FALSE(bool(are_equal(nil, sym)));
+    ASSERT_FALSE(bool(are_equal(nil, kw)));
+    ASSERT_FALSE(bool(are_equal(nil, *i)));
+    ASSERT_FALSE(bool(are_equal(nil, *flt)));
+    ASSERT_FALSE(bool(are_equal(nil, *s)));
+    ASSERT_FALSE(bool(are_equal(nil, *o)));
 
-    ASSERT_TRUE(nil == are_equal(*fn, nil));
-    ASSERT_TRUE(TRUE == are_equal(*fn, *fn));
-    ASSERT_TRUE(nil == are_equal(*fn, sym));
-    ASSERT_TRUE(nil == are_equal(*fn, kw));
-    ASSERT_TRUE(nil == are_equal(*fn, *i));
-    ASSERT_TRUE(nil == are_equal(*fn, *flt));
-    ASSERT_TRUE(nil == are_equal(*fn, *s));
-    ASSERT_TRUE(nil == are_equal(*fn, *o));
+    ASSERT_FALSE(bool(are_equal(*fn, nil)));
+    ASSERT_TRUE(bool(are_equal(*fn, *fn)));
+    ASSERT_FALSE(bool(are_equal(*fn, sym)));
+    ASSERT_FALSE(bool(are_equal(*fn, kw)));
+    ASSERT_FALSE(bool(are_equal(*fn, *i)));
+    ASSERT_FALSE(bool(are_equal(*fn, *flt)));
+    ASSERT_FALSE(bool(are_equal(*fn, *s)));
+    ASSERT_FALSE(bool(are_equal(*fn, *o)));
 
-    ASSERT_TRUE(nil == are_equal(sym, nil));
-    ASSERT_TRUE(nil == are_equal(sym, *fn));
-    ASSERT_TRUE(TRUE == are_equal(sym, sym));
-    ASSERT_TRUE(nil == are_equal(sym, kw));
-    ASSERT_TRUE(nil == are_equal(sym, *i));
-    ASSERT_TRUE(nil == are_equal(sym, *flt));
-    ASSERT_TRUE(nil == are_equal(sym, *s));
-    ASSERT_TRUE(nil == are_equal(sym, *o));
+    ASSERT_FALSE(bool(are_equal(sym, nil)));
+    ASSERT_FALSE(bool(are_equal(sym, *fn)));
+    ASSERT_TRUE(bool(are_equal(sym, sym)));
+    ASSERT_FALSE(bool(are_equal(sym, kw)));
+    ASSERT_FALSE(bool(are_equal(sym, *i)));
+    ASSERT_FALSE(bool(are_equal(sym, *flt)));
+    ASSERT_FALSE(bool(are_equal(sym, *s)));
+    ASSERT_FALSE(bool(are_equal(sym, *o)));
 
-    ASSERT_TRUE(nil == are_equal(kw, nil));
-    ASSERT_TRUE(nil == are_equal(kw, *fn));
-    ASSERT_TRUE(nil == are_equal(kw, sym));
-    ASSERT_TRUE(TRUE == are_equal(kw, kw));
-    ASSERT_TRUE(nil == are_equal(kw, *i));
-    ASSERT_TRUE(nil == are_equal(kw, *flt));
-    ASSERT_TRUE(nil == are_equal(kw, *s));
-    ASSERT_TRUE(nil == are_equal(kw, *o));
+    ASSERT_FALSE(bool(are_equal(kw, nil)));
+    ASSERT_FALSE(bool(are_equal(kw, *fn)));
+    ASSERT_FALSE(bool(are_equal(kw, sym)));
+    ASSERT_TRUE(bool(are_equal(kw, kw)));
+    ASSERT_FALSE(bool(are_equal(kw, *i)));
+    ASSERT_FALSE(bool(are_equal(kw, *flt)));
+    ASSERT_FALSE(bool(are_equal(kw, *s)));
+    ASSERT_FALSE(bool(are_equal(kw, *o)));
 
-    ASSERT_TRUE(nil == are_equal(*i, nil));
-    ASSERT_TRUE(nil == are_equal(*i, *fn));
-    ASSERT_TRUE(nil == are_equal(*i, sym));
-    ASSERT_TRUE(nil == are_equal(*i, kw));
-    ASSERT_TRUE(TRUE == are_equal(*i, *i));
-    ASSERT_TRUE(nil == are_equal(*i, *flt));
-    ASSERT_TRUE(nil == are_equal(*i, *s));
-    ASSERT_TRUE(nil == are_equal(*i, *o));
+    ASSERT_FALSE(bool(are_equal(*i, nil)));
+    ASSERT_FALSE(bool(are_equal(*i, *fn)));
+    ASSERT_FALSE(bool(are_equal(*i, sym)));
+    ASSERT_FALSE(bool(are_equal(*i, kw)));
+    ASSERT_TRUE(bool(are_equal(*i, *i)));
+    ASSERT_FALSE(bool(are_equal(*i, *flt)));
+    ASSERT_FALSE(bool(are_equal(*i, *s)));
+    ASSERT_FALSE(bool(are_equal(*i, *o)));
 
-    ASSERT_TRUE(nil == are_equal(*flt, nil));
-    ASSERT_TRUE(nil == are_equal(*flt, *fn));
-    ASSERT_TRUE(nil == are_equal(*flt, sym));
-    ASSERT_TRUE(nil == are_equal(*flt, kw));
-    ASSERT_TRUE(nil == are_equal(*flt, *i));
-    ASSERT_TRUE(TRUE == are_equal(*flt, *flt));
-    ASSERT_TRUE(nil == are_equal(*flt, *s));
-    ASSERT_TRUE(nil == are_equal(*flt, *o));
+    ASSERT_FALSE(bool(are_equal(*flt, nil)));
+    ASSERT_FALSE(bool(are_equal(*flt, *fn)));
+    ASSERT_FALSE(bool(are_equal(*flt, sym)));
+    ASSERT_FALSE(bool(are_equal(*flt, kw)));
+    ASSERT_FALSE(bool(are_equal(*flt, *i)));
+    ASSERT_TRUE(bool(are_equal(*flt, *flt)));
+    ASSERT_FALSE(bool(are_equal(*flt, *s)));
+    ASSERT_FALSE(bool(are_equal(*flt, *o)));
 
-    ASSERT_TRUE(nil == are_equal(*s, nil));
-    ASSERT_TRUE(nil == are_equal(*s, *fn));
-    ASSERT_TRUE(nil == are_equal(*s, sym));
-    ASSERT_TRUE(nil == are_equal(*s, kw));
-    ASSERT_TRUE(nil == are_equal(*s, *i));
-    ASSERT_TRUE(nil == are_equal(*s, *flt));
-    ASSERT_TRUE(TRUE == are_equal(*s, *s));
-    ASSERT_TRUE(nil == are_equal(*s, *o));
+    ASSERT_FALSE(bool(are_equal(*s, nil)));
+    ASSERT_FALSE(bool(are_equal(*s, *fn)));
+    ASSERT_FALSE(bool(are_equal(*s, sym)));
+    ASSERT_FALSE(bool(are_equal(*s, kw)));
+    ASSERT_FALSE(bool(are_equal(*s, *i)));
+    ASSERT_FALSE(bool(are_equal(*s, *flt)));
+    ASSERT_TRUE(bool(are_equal(*s, *s)));
+    ASSERT_FALSE(bool(are_equal(*s, *o)));
 
-    ASSERT_TRUE(nil == are_equal(*o, nil));
-    ASSERT_TRUE(nil == are_equal(*o, *fn));
-    ASSERT_TRUE(nil == are_equal(*o, sym));
-    ASSERT_TRUE(nil == are_equal(*o, kw));
-    ASSERT_TRUE(nil == are_equal(*o, *i));
-    ASSERT_TRUE(nil == are_equal(*o, *flt));
-    ASSERT_TRUE(nil == are_equal(*o, *s));
-    ASSERT_TRUE(TRUE == are_equal(*o, *o));
+    ASSERT_FALSE(bool(are_equal(*o, nil)));
+    ASSERT_FALSE(bool(are_equal(*o, *fn)));
+    ASSERT_FALSE(bool(are_equal(*o, sym)));
+    ASSERT_FALSE(bool(are_equal(*o, kw)));
+    ASSERT_FALSE(bool(are_equal(*o, *i)));
+    ASSERT_FALSE(bool(are_equal(*o, *flt)));
+    ASSERT_FALSE(bool(are_equal(*o, *s)));
+    ASSERT_TRUE(bool(are_equal(*o, *o)));
 }
 
 TEST_F(equality_test, should_compare_integers)
@@ -101,9 +101,9 @@ TEST_F(equality_test, should_compare_integers)
     Root val1, val2;
     val1 = create_int64(10);
     val2 = create_int64(10);
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = create_int64(20);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
 TEST_F(equality_test, should_compare_floats)
@@ -111,9 +111,9 @@ TEST_F(equality_test, should_compare_floats)
     Root val1, val2;
     val1 = create_float64(10.25);
     val2 = create_float64(10.25);
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = create_float64(20.25);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
 TEST_F(equality_test, should_compare_strings)
@@ -121,17 +121,17 @@ TEST_F(equality_test, should_compare_strings)
     Root val1, val2;
     val1 = create_string("");
     val2 = create_string("");
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = create_string("abc");
     val2 = create_string("abc");
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = create_string("abcd");
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val2 = create_string("abce");
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val1 = create_string(std::string("ab\0cd", 5));
     val2 = create_string(std::string("ab\0ce", 5));
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
 TEST_F(equality_test, objects_should_not_be_equal)
@@ -140,7 +140,7 @@ TEST_F(equality_test, objects_should_not_be_equal)
     Root val1, val2;
     val1 = create_object0(type);
     val2 = create_object0(type);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
 TEST_F(equality_test, should_compare_small_vectors)
@@ -153,38 +153,38 @@ TEST_F(equality_test, should_compare_small_vectors)
     auto type = create_symbol("cleo.equality.test", "not-vector");
     val1 = svec();
     val2 = create_object0(type);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
-    EXPECT_TRUE(nil == are_equal(*val2, *val1));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
+    EXPECT_FALSE(bool(are_equal(*val2, *val1)));
 
     val1 = svec();
     val2 = svec();
-    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
+    EXPECT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n10);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
     val2 = svec(*n10);
-    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
+    EXPECT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = svec(*n9);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n10, *n11, *n12);
     val2 = svec(*n10, *n11, *n12);
-    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
+    EXPECT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n9, *n11, *n12);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n10, *n9, *n12);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n10, *n11, *n9);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
 
     val1 = svec(*n10, *n11);
     val1 = svec(*val1, *n12);
     val2 = svec(*n10, *n11);
     val2 = svec(*val2, *n12);
-    EXPECT_TRUE(TRUE == are_equal(*val1, *val2));
+    EXPECT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n10);
     val1 = svec(*val1, *n11, *n12);
     val2 = svec(*n10, *n11);
     val2 = svec(*val2, *n12);
-    EXPECT_TRUE(nil == are_equal(*val1, *val2));
+    EXPECT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
 TEST_F(equality_test, should_compare_sequences)
@@ -197,41 +197,41 @@ TEST_F(equality_test, should_compare_sequences)
 
     val1 = list();
     val2 = list();
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = list(*n10, *n20);
     val2 = list(*n1);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val2 = list(*n10, *n20);
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = list(*n10, *n21);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 
     val1 = svec();
     val2 = list();
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = list(*n1);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n20);
     val2 = list();
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val1 = svec(*n10, *n20);
     val2 = list(*n1);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val2 = list(*n10, *n20);
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = list(*n10, *n21);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 
     val1 = list();
     val2 = svec();
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = list(*n10, *n20);
     val2 = svec(*n1);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val2 = svec(*n10, *n20);
-    ASSERT_TRUE(TRUE == are_equal(*val1, *val2));
+    ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = svec(*n10, *n21);
-    ASSERT_TRUE(nil == are_equal(*val1, *val2));
+    ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
 TEST_F(equality_test, should_compare_small_maps)
@@ -239,32 +239,32 @@ TEST_F(equality_test, should_compare_small_maps)
     Root m1, m2;
     m1 = smap();
     m2 = smap();
-    EXPECT_TRUE(TRUE == are_equal(*m1, *m2));
+    EXPECT_TRUE(bool(are_equal(*m1, *m2)));
 
     m1 = smap(3, 4);
     m2 = smap();
-    EXPECT_TRUE(nil == are_equal(*m1, *m2));
-    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 
     m1 = smap(10, 20, 30, 40, 50, 60);
     m2 = smap(30, 40, 50, 60, 10, 20);
-    EXPECT_TRUE(TRUE == are_equal(*m1, *m2));
-    EXPECT_TRUE(TRUE == are_equal(*m2, *m1));
+    EXPECT_TRUE(bool(are_equal(*m1, *m2)));
+    EXPECT_TRUE(bool(are_equal(*m2, *m1)));
 
     m1 = smap(10, 99, 30, 40, 50, 60);
     m2 = smap(30, 40, 50, 60, 10, 20);
-    EXPECT_TRUE(nil == are_equal(*m1, *m2));
-    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 
     m1 = smap(10, 20, 30, 99, 50, 60);
     m2 = smap(30, 40, 50, 60, 10, 20);
-    EXPECT_TRUE(nil == are_equal(*m1, *m2));
-    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 
     m1 = smap(10, 20, 30, 40, 50, nil);
     m2 = smap(30, 40, 10, 20);
-    EXPECT_TRUE(nil == are_equal(*m1, *m2));
-    EXPECT_TRUE(nil == are_equal(*m2, *m1));
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 }
 
 TEST_F(equality_test, should_compare_small_sets)
@@ -272,37 +272,37 @@ TEST_F(equality_test, should_compare_small_sets)
     Root s1, s2;
     s1 = sset();
     s2 = sset();
-    EXPECT_TRUE(TRUE == are_equal(*s1, *s2));
+    EXPECT_TRUE(bool(are_equal(*s1, *s2)));
 
     s1 = sset(3, 4);
     s2 = sset();
-    EXPECT_TRUE(nil == are_equal(*s1, *s2));
-    EXPECT_TRUE(nil == are_equal(*s2, *s1));
+    EXPECT_FALSE(bool(are_equal(*s1, *s2)));
+    EXPECT_FALSE(bool(are_equal(*s2, *s1)));
 
     s1 = sset(10, 20, 30, 40, 50, 60);
     s2 = sset(30, 40, 50, 60, 10, 20);
-    EXPECT_TRUE(TRUE == are_equal(*s1, *s2));
-    EXPECT_TRUE(TRUE == are_equal(*s2, *s1));
+    EXPECT_TRUE(bool(are_equal(*s1, *s2)));
+    EXPECT_TRUE(bool(are_equal(*s2, *s1)));
 
     s1 = sset(10, 99, 30, 40, 50, 60);
     s2 = sset(30, 40, 50, 60, 10, 20);
-    EXPECT_TRUE(nil == are_equal(*s1, *s2));
-    EXPECT_TRUE(nil == are_equal(*s2, *s1));
+    EXPECT_FALSE(bool(are_equal(*s1, *s2)));
+    EXPECT_FALSE(bool(are_equal(*s2, *s1)));
 
     s1 = sset(10, 20, 30, 40, nil);
     s2 = sset(30, 40, 10, 20);
-    EXPECT_TRUE(nil == are_equal(*s1, *s2));
-    EXPECT_TRUE(nil == are_equal(*s2, *s1));
+    EXPECT_FALSE(bool(are_equal(*s1, *s2)));
+    EXPECT_FALSE(bool(are_equal(*s2, *s1)));
 }
 
 TEST_F(equality_test, should_compare_types)
 {
-    EXPECT_TRUE(TRUE == are_equal(*type::Int64, *type::Int64));
-    EXPECT_TRUE(nil == are_equal(*type::Int64, *type::Seqable));
-    EXPECT_TRUE(nil == are_equal(*type::Seqable, *type::Int64));
-    EXPECT_TRUE(nil == are_equal(*type::Seqable, create_symbol("cleo.core", "Seqable")));
-    EXPECT_TRUE(nil == are_equal(create_symbol("cleo.core", "Seqable"), *type::Seqable));
-    EXPECT_TRUE(nil == are_equal(*type::Int64, *type::MetaType));
+    EXPECT_TRUE(bool(are_equal(*type::Int64, *type::Int64)));
+    EXPECT_FALSE(bool(are_equal(*type::Int64, *type::Seqable)));
+    EXPECT_FALSE(bool(are_equal(*type::Seqable, *type::Int64)));
+    EXPECT_FALSE(bool(are_equal(*type::Seqable, create_symbol("cleo.core", "Seqable"))));
+    EXPECT_FALSE(bool(are_equal(create_symbol("cleo.core", "Seqable"), *type::Seqable)));
+    EXPECT_FALSE(bool(are_equal(*type::Int64, *type::MetaType)));
 }
 
 }

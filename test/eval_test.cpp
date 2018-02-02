@@ -38,19 +38,19 @@ TEST_F(eval_test, should_eval_simple_values_to_themselves)
     Root flt{create_float64(3.5)};
     Root s{create_string("abcd")};
 
-    ASSERT_TRUE(nil == *Root(eval(nil)));
-    ASSERT_TRUE(*fn == *Root(eval(*fn)));
-    ASSERT_TRUE(kw == *Root(eval(kw)));
-    ASSERT_TRUE(*i == *Root(eval(*i)));
-    ASSERT_TRUE(*flt == *Root(eval(*flt)));
-    ASSERT_TRUE(*s == *Root(eval(*s)));
+    ASSERT_TRUE(nil.is(*Root(eval(nil))));
+    ASSERT_TRUE(fn->is(*Root(eval(*fn))));
+    ASSERT_TRUE(kw.is(*Root(eval(kw))));
+    ASSERT_TRUE(i->is(*Root(eval(*i))));
+    ASSERT_TRUE(flt->is(*Root(eval(*flt))));
+    ASSERT_TRUE(s->is(*Root(eval(*s))));
 }
 
 TEST_F(eval_test, should_eval_objects_to_themselves)
 {
     auto sym = create_symbol("cleo.eval.test", "obj");
     Root o{create_object0(sym)};
-    ASSERT_TRUE(*o == *Root(eval(*o)));
+    ASSERT_TRUE(o->is(*Root(eval(*o))));
 }
 
 TEST_F(eval_test, should_eval_symbols_to_var_values)
@@ -59,7 +59,7 @@ TEST_F(eval_test, should_eval_symbols_to_var_values)
     Root val;
     val = create_int64(7);
     define(sym, *val);
-    ASSERT_TRUE(*val == *Root(eval(sym)));
+    ASSERT_TRUE(val->is(*Root(eval(sym))));
 }
 
 TEST_F(eval_test, should_eval_symbols_in_the_current_ns)
@@ -69,7 +69,7 @@ TEST_F(eval_test, should_eval_symbols_in_the_current_ns)
     val = create_int64(8);
     define(sym, *val);
     in_ns(create_symbol("cleo.eval.test"));
-    ASSERT_TRUE(*val == *Root(eval(create_symbol("eight"))));
+    ASSERT_TRUE(val->is(*Root(eval(create_symbol("eight")))));
 }
 
 TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
@@ -83,7 +83,7 @@ TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(*type::SymbolNotFound, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::SymbolNotFound, get_value_type(*e));
     }
 }
 
@@ -92,7 +92,7 @@ TEST_F(eval_test, should_eval_lists_as_function_calls)
     Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return num_args ? create_list(args, num_args) : force(nil); })};
 
     Root l{list(*fn)};
-    ASSERT_TRUE(nil == *Root(eval(*l)));
+    ASSERT_TRUE(Root(eval(*l))->is_nil());
 
     Root e0, e1, val;
     e0 = create_int64(101);
@@ -102,7 +102,7 @@ TEST_F(eval_test, should_eval_lists_as_function_calls)
     e1 = nil;
     val = eval(*val);
 
-    ASSERT_TRUE(*type::List == get_value_type(*val));
+    ASSERT_TRUE(type::List->is(get_value_type(*val)));
     ASSERT_EQ(2, get_int64_value(get_list_size(*val)));
     ASSERT_EQ(101, get_int64_value(get_list_first(*val)));
     Root next;
@@ -123,7 +123,7 @@ TEST_F(eval_test, should_fail_when_trying_to_call_a_non_function)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(*type::CallError, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::CallError, get_value_type(*e));
     }
 }
 
@@ -143,7 +143,7 @@ TEST_F(eval_test, should_eval_function_arguments)
     val = list(fn_name, x1, x2);
     val = eval(*val);
 
-    ASSERT_TRUE(*type::List == get_value_type(*val));
+    ASSERT_TRUE(type::List->is(get_value_type(*val)));
     ASSERT_EQ(2, get_int64_value(get_list_size(*val)));
     ASSERT_EQ(101, get_int64_value(get_list_first(*val)));
     Root next;
@@ -157,7 +157,7 @@ TEST_F(eval_test, quote_should_return_its_second_argument_unevaluated)
     ex = create_symbol("cleo.eval.test", "some-symbol");
     val = list(QUOTE, *ex);
     val = eval(*val);
-    ASSERT_EQ(*ex, *val);
+    ASSERT_EQ_REFS(*ex, *val);
 }
 
 TEST_F(eval_test, quote_should_fail_when_not_given_one_argument)
@@ -177,11 +177,11 @@ TEST_F(eval_test, fn_should_return_a_new_function)
     Root params{svec(s, x)};
     Root call{list(FN, *params, *body)};
     Root val{eval(*call)};
-    ASSERT_TRUE(*type::Fn == get_value_type(*val));
-    ASSERT_TRUE(nil == get_fn_name(*val));
+    ASSERT_TRUE(type::Fn->is(get_value_type(*val)));
+    ASSERT_TRUE(!get_fn_name(*val));
     ASSERT_EQ(1u, get_fn_size(*val));
-    ASSERT_TRUE(*params == get_fn_params(*val, 0));
-    ASSERT_TRUE(*body == get_fn_body(*val, 0));
+    ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
+    ASSERT_TRUE(body->is(get_fn_body(*val, 0)));
 }
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
@@ -193,11 +193,11 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     Root params{svec(s, x)};
     Root call{list(FN, name, *params, *body)};
     Root val{eval(*call)};
-    ASSERT_TRUE(*type::Fn == get_value_type(*val));
-    ASSERT_TRUE(name == get_fn_name(*val));
+    ASSERT_TRUE(type::Fn->is(get_value_type(*val)));
+    ASSERT_TRUE(name.is(get_fn_name(*val)));
     ASSERT_EQ(1u, get_fn_size(*val));
-    ASSERT_TRUE(*params == get_fn_params(*val, 0));
-    ASSERT_TRUE(*body == get_fn_body(*val, 0));
+    ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
+    ASSERT_TRUE(body->is(get_fn_body(*val, 0)));
 }
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
@@ -364,7 +364,7 @@ TEST_F(eval_test, should_eval_an_empty_list_as_an_empty_list)
 {
     Root ex{list()};
     Root val{eval(*ex)};
-    ASSERT_TRUE(*ex == *val);
+    ASSERT_TRUE(ex->is(*val));
 }
 
 TEST_F(eval_test, should_eval_vectors)

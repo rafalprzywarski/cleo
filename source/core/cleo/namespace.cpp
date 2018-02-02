@@ -29,10 +29,10 @@ Value refer(Value ns)
     }
     auto current_ns_name = get_symbol_name(*rt::current_ns);
     Root current_ns{small_map_get(*namespaces, current_ns_name)};
-    if (*current_ns == nil)
+    if (!*current_ns)
         current_ns = *EMPTY_MAP;
     ns = small_map_get(*namespaces, get_symbol_name(ns));
-    if (ns == nil)
+    if (!ns)
         return nil;
     current_ns = small_map_merge(*current_ns, ns);
     namespaces = small_map_assoc(*namespaces, current_ns_name, *current_ns);
@@ -43,7 +43,7 @@ Value define(Value sym, Value val)
 {
     assert(get_value_tag(sym) == tag::SYMBOL);
     Root ns{small_map_get(*namespaces, get_symbol_namespace(sym))};
-    if (*ns == nil)
+    if (!*ns)
         ns = *EMPTY_MAP;
     ns = small_map_assoc(*ns, get_symbol_name(sym), sym);
     namespaces = small_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
@@ -53,13 +53,12 @@ Value define(Value sym, Value val)
 Value resolve(Value ns, Value sym)
 {
     auto sym_ns = get_symbol_namespace(sym);
-    if (sym_ns == nil)
+    if (!sym_ns)
     {
         ns = small_map_get(*namespaces, get_symbol_name(ns));
-        if (ns != nil)
+        if (ns)
         {
-            auto found = small_map_get(ns, get_symbol_name(sym));
-            if (found != nil)
+            if (auto found = small_map_get(ns, get_symbol_name(sym)))
                 sym = found;
         }
     }

@@ -29,6 +29,7 @@ public:
     Root& operator=(const Force& f) { return *this = f.val; }
     Root& operator=(Value val) { extra_roots[index] = val; return *this; }
     Value operator*() const { return extra_roots[index]; }
+    Value *operator->() const { return &extra_roots[index]; }
 private:
     decltype(extra_roots)::size_type index;
 };
@@ -70,7 +71,7 @@ private:
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
 
-extern std::unordered_map<Value, Value> vars;
+extern std::unordered_map<Value, Value, std::hash<Value>, StdIs> vars;
 
 struct Hierachy
 {
@@ -84,7 +85,7 @@ struct Multimethod
     std::unordered_map<Value, Value, StdHash, StdEqualTo> fns;
 };
 
-extern std::unordered_map<Value, Multimethod> multimethods;
+extern std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimethods;
 extern Hierachy global_hierarchy;
 
 extern Root current_exception;
@@ -138,7 +139,7 @@ extern const Value CLEO_CORE;
 extern const Value NEW;
 extern const Root ZERO;
 
-extern const std::unordered_set<Value> SPECIAL_SYMBOLS;
+extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 
 namespace type
 {

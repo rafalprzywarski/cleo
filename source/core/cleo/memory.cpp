@@ -23,7 +23,7 @@ bool is_marked(void *ptr)
 
 void mark_value(Value val)
 {
-    if (val == nil || is_marked(get_value_ptr(val)))
+    if (val.is_nil() || is_marked(get_value_ptr(val)))
         return;
     tag_ref(get_value_ptr(val)) = 1;
 

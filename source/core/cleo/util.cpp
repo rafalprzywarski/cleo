@@ -26,7 +26,7 @@ void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args
 
 void check_type(const std::string& name, Value val, Value type)
 {
-    if (get_value_type(val) == type)
+    if (get_value_type(val).is(type))
         return;
     Root msg{create_string(name + " expected to be of type " + to_string(type))};
     throw_exception(new_illegal_argument(*msg));

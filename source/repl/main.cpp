@@ -30,7 +30,7 @@ bool eval_source(const std::string& line)
         {
             cleo::Root e{cleo::catch_exception()};
             auto type = cleo::get_value_type(*e);
-            if (type == *cleo::type::UnexpectedEndOfInput)
+            if (type.is(*cleo::type::UnexpectedEndOfInput))
                 return false;
             cleo::throw_exception(*e);
         }

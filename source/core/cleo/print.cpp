@@ -25,7 +25,7 @@ Force pr_str_symbol(Value sym)
     auto ns = get_keyword_namespace(sym);
     auto name = get_keyword_name(sym);
     std::string s;
-    s.reserve(1 + (ns == nil ? 0 : get_string_len(ns)) + get_string_len(name));
+    s.reserve(1 + (!ns ? 0 : get_string_len(ns)) + get_string_len(name));
     if (ns != nil)
     {
         s.append(get_string_ptr(ns), get_string_len(ns));
@@ -40,7 +40,7 @@ Force pr_str_keyword(Value kw)
     auto ns = get_keyword_namespace(kw);
     auto name = get_keyword_name(kw);
     std::string s;
-    s.reserve(1 + (ns == nil ? 0 : get_string_len(ns)) + get_string_len(name));
+    s.reserve(1 + (!ns ? 0 : get_string_len(ns)) + get_string_len(name));
     s += ':';
     if (ns != nil)
     {
@@ -63,7 +63,7 @@ Force pr_str_float(Value val)
 
 Force pr_str_string(Value val)
 {
-    if (*rt::print_readably == nil)
+    if (!*rt::print_readably)
         return val;
     std::string s;
     s.reserve(2 * get_string_len(val) + 2);

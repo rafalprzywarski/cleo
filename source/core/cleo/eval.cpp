@@ -21,7 +21,7 @@ namespace
 
 Value eval_symbol(Value sym, Value env)
 {
-    if (env != nil)
+    if (env)
     {
         if (small_map_contains(env, sym))
             return small_map_get(env, sym);
@@ -43,16 +43,16 @@ Force syntax_quote_val(Root& generated, Value val, Value env);
 bool is_unquote_splicing(Value val)
 {
     return
-        get_value_type(val) == *type::List &&
+        get_value_type(val).is(*type::List) &&
         get_int64_value(get_list_size(val)) == 2 &&
-        get_list_first(val) == UNQUOTE_SPLICING;
+        get_list_first(val).is(UNQUOTE_SPLICING);
 }
 
 bool is_generating(Value sym)
 {
     auto name = get_symbol_name(sym);
     return
-        get_symbol_namespace(sym) == nil &&
+        !get_symbol_namespace(sym) &&
         get_string_len(name) > 0 &&
         get_string_ptr(name)[get_string_len(name) - 1] == '#';
 }
@@ -60,7 +60,7 @@ bool is_generating(Value sym)
 Force generate_symbol(Root& generated, Value sym)
 {
     auto found = small_map_get(*generated, sym);
-    if (found != nil)
+    if (found)
         return found;
     auto name = get_symbol_name(sym);
     auto id = gen_id();
@@ -75,9 +75,9 @@ Force syntax_quote_symbol(Root& generated, Value sym, Value env)
         return sym;
     if (is_generating(sym))
         return generate_symbol(generated, sym);
-    auto ns = (env != nil && small_map_contains(env, ENV_NS)) ? small_map_get(env, ENV_NS) : *rt::current_ns;
+    auto ns = (env && small_map_contains(env, ENV_NS)) ? small_map_get(env, ENV_NS) : *rt::current_ns;
     sym = resolve(ns, sym);
-    if (get_symbol_namespace(sym) != nil)
+    if (get_symbol_namespace(sym))
         return sym;
     auto sym_ns = get_symbol_name(ns);
     auto sym_name = get_symbol_name(sym);
@@ -94,7 +94,7 @@ Force syntax_quote_vector(Root& generated, Value v, Value env)
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(*rt::seq, *s); *s != nil; s = call_multimethod1(*rt::next, *s))
+            for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
             {
                 val = call_multimethod1(*rt::first, *s);
                 ret = small_vector_conj(*ret, *val);
@@ -114,7 +114,7 @@ Force reverse_list(Value l)
     if (get_int64_value(get_list_size(l)) == 0)
         return l;
     Root ret{*EMPTY_LIST};
-    for (Root f{l}; *f != nil; f = get_list_next(*f))
+    for (Root f{l}; *f; f = get_list_next(*f))
         ret = list_conj(*ret, get_list_first(*f));
     return *ret;
 }
@@ -124,7 +124,7 @@ Force syntax_quote_list(Root& generated, Value l, Value env)
     auto size = get_int64_value(get_list_size(l));
     if (size == 0)
         return *EMPTY_LIST;
-    if (get_list_first(l) == UNQUOTE)
+    if (get_list_first(l).is(UNQUOTE))
     {
         if (get_int64_value(get_list_size(l)) != 2)
         {
@@ -134,13 +134,13 @@ Force syntax_quote_list(Root& generated, Value l, Value env)
         return eval(get_list_first(get_list_next(l)), env);
     }
     Root ret{*EMPTY_LIST}, val;
-    for (; l != nil; l = get_list_next(l))
+    for (; l; l = get_list_next(l))
     {
         auto elem = get_list_first(l);
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(*rt::seq, *s); *s != nil; s = call_multimethod1(*rt::next, *s))
+            for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
             {
                 val = call_multimethod1(*rt::first, *s);
                 ret = list_conj(*ret, *val);
@@ -166,7 +166,7 @@ Force syntax_quote_set(Root& generated, Value s, Value env)
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(*rt::seq, *s); *s != nil; s = call_multimethod1(*rt::next, *s))
+            for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
             {
                 val = call_multimethod1(*rt::first, *s);
                 ret = small_set_conj(*ret, *val);
@@ -205,13 +205,13 @@ Force syntax_quote_val(Root& generated, Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return syntax_quote_symbol(generated, val, env);
-    if (get_value_type(val) == *type::SmallVector)
+    if (get_value_type(val).is(*type::SmallVector))
         return syntax_quote_vector(generated, val, env);
-    if (get_value_type(val) == *type::List)
+    if (get_value_type(val).is(*type::List))
         return syntax_quote_list(generated, val, env);
-    if (get_value_type(val) == *type::SmallSet)
+    if (get_value_type(val).is(*type::SmallSet))
         return syntax_quote_set(generated, val, env);
-    if (get_value_type(val) == *type::SmallMap)
+    if (get_value_type(val).is(*type::SmallMap))
         return syntax_quote_map(generated, val, env);
     return val;
 }
@@ -219,7 +219,7 @@ Force syntax_quote_val(Root& generated, Value val, Value env)
 Force eval_syntax_quote(Value list, Value env)
 {
     Root generated{*EMPTY_MAP};
-    if (get_list_next(list) == nil || get_list_next(get_list_next(list)) != nil)
+    if (!get_list_next(list) || get_list_next(get_list_next(list)))
     {
         Root msg{create_string("syntax-quote requires exactly 1 argument")};
         throw_exception(new_illegal_argument(*msg));
@@ -230,17 +230,17 @@ Force eval_syntax_quote(Value list, Value env)
 template <typename CreateFn>
 Force eval_fn(Value list, Value env, CreateFn create_fn)
 {
-    Root lenv{(env == nil || small_map_contains(env, ENV_NS) == nil) ?
-        small_map_assoc(env != nil ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
+    Root lenv{(!env || !small_map_contains(env, ENV_NS)) ?
+        small_map_assoc(env ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
         env};
     Root next{get_list_next(list)};
     auto name = nil;
-    if (*next != nil && get_value_tag(get_list_first(*next)) == tag::SYMBOL)
+    if (*next && get_value_tag(get_list_first(*next)) == tag::SYMBOL)
     {
         name = get_list_first(*next);
         next = get_list_next(*next);
     }
-    if (*next == nil)
+    if (!*next)
         return create_fn(*lenv, name, nullptr, nullptr, 0);
     std::vector<Value> params, bodies;
     auto parse_fn = [&](Value list)
@@ -252,17 +252,17 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
         {
             auto p = get_small_vector_elem(params.back(), i);
             check_type("fn parameters", p, *type::Symbol);
-            if (get_symbol_namespace(p) != nil)
+            if (get_symbol_namespace(p))
                 throw_illegal_argument("Can't use qualified name as parameter: " + to_string(p));
         }
         auto body = get_list_next(list);
-        bodies.push_back(body != nil ? get_list_first(body) : nil);
-        if (body != nil && get_list_next(body) != nil)
+        bodies.push_back(body ? get_list_first(body) : nil);
+        if (body && get_list_next(body))
             throw_illegal_argument("fn* can contain only one expression");
     };
 
-    if (get_value_type(get_list_first(*next)) == *type::List)
-        for (; *next != nil; next = get_list_next(*next))
+    if (get_value_type(get_list_first(*next)).is(*type::List))
+        for (; *next; next = get_list_next(*next))
             parse_fn(get_list_first(*next));
     else
         parse_fn(*next);
@@ -282,18 +282,18 @@ Force eval_macro(Value list, Value env)
 Force eval_def(Value list, Value env)
 {
     Root next{get_list_next(list)};
-    if (*next == nil)
+    if (!*next)
         throw_arity_error(DEF, 0);
     auto sym = get_list_first(*next);
     check_type("Symbol name", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
-    if (*rt::current_ns == nil ||
-        (ns != nil && are_equal(ns, get_symbol_name(*rt::current_ns)) == nil))
+    if (!*rt::current_ns ||
+        (ns && !are_equal(ns, get_symbol_name(*rt::current_ns))))
         throw_illegal_argument("Can't refer to qualified var that doesn't exist: " + to_string(sym));
     next = get_list_next(*next);
-    if (*next != nil && get_list_next(*next) != nil)
+    if (*next && get_list_next(*next))
         throw_arity_error(DEF, get_int64_value(get_list_size(list)) - 1);
-    Root val{eval(*next == nil ? nil : get_list_first(*next), env)};
+    Root val{eval(!*next ? nil : get_list_first(*next), env)};
     auto current_ns_name = get_symbol_name(*rt::current_ns);
     auto sym_name = get_symbol_name(sym);
     sym = create_symbol(
@@ -312,7 +312,7 @@ Force eval_let(Value list, Value env)
     auto size = get_small_vector_size(bindings);
     if (size % 2 == 1)
         throw_illegal_argument(to_string(LET) + " requires an even number of forms in binding vector");
-    Root lenv{env == nil && size > 0 ? *EMPTY_MAP : env};
+    Root lenv{!env && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
@@ -349,7 +349,7 @@ Force eval_loop(Value list, Value env)
     auto size = get_small_vector_size(bindings);
     if (size % 2 == 1)
         throw_illegal_argument(to_string(LOOP) + " requires an even number of forms in binding vector");
-    Root lenv{env == nil && size > 0 ? *EMPTY_MAP : env};
+    Root lenv{!env && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
@@ -362,7 +362,7 @@ Force eval_loop(Value list, Value env)
     }
     n = get_list_next(*n);
     Root val{eval(get_list_first(*n), *lenv)};
-    while (get_value_type(*val) == *type::Recur)
+    while (get_value_type(*val).is(*type::Recur))
     {
         check_arity(RECUR, get_small_vector_size(bindings) / 2, get_object_size(*val));
         auto size = get_small_vector_size(bindings) / 2;
@@ -382,10 +382,10 @@ Force eval_if(Value list, Value env)
     Root n{get_list_next(list)};
     Root cond{eval(get_list_first(*n), env)};
     n = get_list_next(*n);
-    if (*cond != nil)
+    if (*cond)
         return eval(get_list_first(*n), env);
     n = get_list_next(*n);
-    return *n == nil ? nil : eval(get_list_first(*n), env);
+    return !*n ? nil : eval(get_list_first(*n), env);
 }
 
 Force eval_throw(Value list, Value env)
@@ -403,9 +403,9 @@ Force eval_try(Value list, Value env)
     auto expr = get_list_first(*n);
     n = get_list_next(*n);
     auto clause = get_list_first(*n);
-    if (get_list_first(clause) == FINALLY)
+    if (get_list_first(clause).is(FINALLY))
         check_arity(FINALLY, 1, get_int64_value(get_list_size(clause)) - 1);
-    else if (get_list_first(clause) == CATCH)
+    else if (get_list_first(clause).is(CATCH))
     {
         check_arity(CATCH, 3, get_int64_value(get_list_size(clause)) - 1);
         auto name = get_list_first(get_list_next(get_list_next(clause)));
@@ -422,7 +422,7 @@ Force eval_try(Value list, Value env)
     catch (const Exception& )
     {
         Root ex{catch_exception()};
-        if (get_list_first(clause) == CATCH)
+        if (get_list_first(clause).is(CATCH))
         {
             n = get_list_next(clause);
             auto type = lookup(get_list_first(*n));
@@ -443,7 +443,7 @@ Force eval_try(Value list, Value env)
             throw_exception(*ex);
         }
     }
-    if (get_list_first(clause) == FINALLY)
+    if (get_list_first(clause).is(FINALLY))
     {
         n = get_list_next(clause);
         eval(get_list_first(*n), env);
@@ -457,7 +457,7 @@ bool is_va(Value fn, std::uint8_t i)
     auto size = get_small_vector_size(params);
     return
         size >= 2 &&
-        get_small_vector_elem(params, size - 2) == VA;
+        get_small_vector_elem(params, size - 2).is(VA);
 }
 
 Value get_var_arg(Value params)
@@ -512,7 +512,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     auto n_params = va ? get_small_vector_size(params) - 1 : get_small_vector_size(params);
     auto n_fixed_params = va ? n_params - 1 : n_params;
     Root fenv{get_fn_env(fn)};
-    if (*fenv == nil && (n_params > 0 || va))
+    if (!*fenv && (n_params > 0 || va))
         fenv = *EMPTY_MAP;
     for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
         fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
@@ -525,7 +525,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     }
     auto body = get_fn_body(fn, fni);
     Root val{eval(body, *fenv)};
-    while (get_value_type(*val) == *type::Recur)
+    while (get_value_type(*val).is(*type::Recur))
     {
         check_arity(RECUR, n_params, get_object_size(*val));
         for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
@@ -540,7 +540,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
 Force call_macro(Value fn, Value list, Value env)
 {
     Root args{get_list_next(list)};
-    if (*args == nil)
+    if (!*args)
         args = *EMPTY_LIST;
     Root form{list_conj(*args, fn)};
     Root exp{macroexpand(*form, list, env)};
@@ -552,39 +552,39 @@ Force eval_list(Value list, Value env)
     if (get_int64_value(get_list_size(list)) == 0)
         return list;
     Value first = get_list_first(list);
-    if (first == QUOTE)
+    if (first.is(QUOTE))
         return eval_quote(list);
-    if (first == SYNTAX_QUOTE)
+    if (first.is(SYNTAX_QUOTE))
         return eval_syntax_quote(list, env);
-    if (first == FN)
+    if (first.is(FN))
         return eval_fn(list, env);
-    if (first == MACRO)
+    if (first.is(MACRO))
         return eval_macro(list, env);
-    if (first == DEF)
+    if (first.is(DEF))
         return eval_def(list, env);
-    if (first == LET)
+    if (first.is(LET))
         return eval_let(list, env);
-    if (first == DO)
+    if (first.is(DO))
         return eval_do(list, env);
-    if (first == IF)
+    if (first.is(IF))
         return eval_if(list, env);
-    if (first == LOOP)
+    if (first.is(LOOP))
         return eval_loop(list, env);
-    if (first == THROW)
+    if (first.is(THROW))
         return eval_throw(list, env);
-    if (first == TRY)
+    if (first.is(TRY))
         return eval_try(list, env);
-    Root val{first == RECUR ? *recur : eval(first, env)};
+    Root val{first.is(RECUR) ? *recur : eval(first, env)};
     auto type = get_value_type(*val);
-    if (type == *type::Macro)
+    if (type.is(*type::Macro))
         return call_macro(*val, list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     auto elems = eval_args(arg_roots, *val, list, env);
-    if (type == *type::NativeFunction)
+    if (type.is(*type::NativeFunction))
         return get_native_function_ptr(*val)(elems.data() + 1, elems.size() - 1);
-    if (type == *type::Multimethod)
+    if (type.is(*type::Multimethod))
         return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
-    if (type == *type::Fn)
+    if (type.is(*type::Fn))
         return call_fn(elems, elems.size());
     if (isa(type, *type::Callable))
         return call_multimethod(*rt::obj_call, elems.data(), elems.size());
@@ -689,13 +689,13 @@ Force eval(Value val, Value env)
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);
     auto type = get_value_type(val);
-    if (type == *type::List)
+    if (type.is(*type::List))
         return eval_list(val, env);
-    if (type == *type::SmallVector)
+    if (type.is(*type::SmallVector))
         return eval_vector(val, env);
-    if (type == *type::SmallSet)
+    if (type.is(*type::SmallSet))
         return eval_set(val, env);
-    if (type == *type::SmallMap)
+    if (type.is(*type::SmallMap))
         return eval_map(val, env);
     return val;
 }
