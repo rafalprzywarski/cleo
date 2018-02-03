@@ -113,7 +113,7 @@ TEST_F(reader_test, should_parse_symbols_with_namespaces)
 TEST_F(reader_test, should_not_treat_newline_as_part_of_symbol)
 {
     Root val{read_str("abc123\n")};
-    EXPECT_EQ(create_symbol("abc123"), *val) << to_string(*val);
+    EXPECT_EQ_VALS(create_symbol("abc123"), *val);
 }
 
 TEST_F(reader_test, should_parse_a_sequence_of_digits_as_an_integer)
@@ -281,8 +281,8 @@ TEST_F(reader_test, should_fail_when_parsing_an_unmatched_closing_paren)
 
 TEST_F(reader_test, should_parse_nil)
 {
-    EXPECT_EQ(nil, *Root(read_str("nil")));
-    EXPECT_EQ(nil, *Root(read_str("nil ")));
+    EXPECT_EQ_REFS(nil, *Root(read_str("nil")));
+    EXPECT_EQ_REFS(nil, *Root(read_str("nil ")));
     Root ex, val;
     ex = list(nil); val = read_str("(nil)");
     EXPECT_EQ_VALS(*ex, *val);

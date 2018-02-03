@@ -21,16 +21,16 @@ TEST_F(var_test, should_define_vars)
     Root val1{Force(create_int64(10))};
     Root val2{Force(create_int64(20))};
     auto var1 = define_var(sym1, *val1);
-    ASSERT_TRUE(var1 == lookup_var(sym1));
-    ASSERT_TRUE(*val1 == get_var_root_value(var1));
-    ASSERT_TRUE(*val1 == get_var_value(var1));
+    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
+    ASSERT_EQ_REFS(*val1, get_var_value(var1));
     auto var2 = define_var(sym2, *val2);
-    ASSERT_TRUE(var1 == lookup_var(sym1));
-    ASSERT_TRUE(*val1 == get_var_root_value(var1));
-    ASSERT_TRUE(*val1 == get_var_value(var1));
-    ASSERT_TRUE(var2 == lookup_var(sym2));
-    ASSERT_TRUE(*val2 == get_var_root_value(var2));
-    ASSERT_TRUE(*val2 == get_var_value(var2));
+    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
+    ASSERT_EQ_REFS(*val1, get_var_value(var1));
+    ASSERT_EQ_REFS(var2, lookup_var(sym2));
+    ASSERT_EQ_REFS(*val2, get_var_root_value(var2));
+    ASSERT_EQ_REFS(*val2, get_var_value(var2));
 }
 
 TEST_F(var_test, should_redefine_vars)
@@ -39,11 +39,11 @@ TEST_F(var_test, should_redefine_vars)
     Root val1{Force(create_int64(10))};
     Root val2{Force(create_int64(20))};
     auto var = define_var(sym, *val1);
-    ASSERT_TRUE(*val1 == get_var_value(var));
-    ASSERT_TRUE(*val1 == get_var_root_value(var));
-    ASSERT_TRUE(var == define_var(sym, *val2));
-    ASSERT_TRUE(*val2 == get_var_value(var));
-    ASSERT_TRUE(*val2 == get_var_root_value(var));
+    ASSERT_EQ_REFS(*val1, get_var_value(var));
+    ASSERT_EQ_REFS(*val1, get_var_root_value(var));
+    ASSERT_EQ_REFS(var, define_var(sym, *val2));
+    ASSERT_EQ_REFS(*val2, get_var_value(var));
+    ASSERT_EQ_REFS(*val2, get_var_root_value(var));
 }
 
 TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
@@ -56,7 +56,7 @@ TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ(*type::SymbolNotFound, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::SymbolNotFound, get_value_type(*e));
     }
 }
 

@@ -54,7 +54,7 @@ TEST_F(value_test, should_store_symbols_without_namespaces)
 {
     Value sym = create_symbol("thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
-    ASSERT_TRUE(nil == get_symbol_namespace(sym));
+    ASSERT_TRUE(get_symbol_namespace(sym).is_nil());
     auto name = get_symbol_name(sym);
     ASSERT_EQ(tag::STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
@@ -62,12 +62,12 @@ TEST_F(value_test, should_store_symbols_without_namespaces)
 
 TEST_F(value_test, should_return_same_instances_for_symbols_with_same_namespace_and_names)
 {
-    EXPECT_TRUE(create_symbol("abc") != create_symbol("xyz"));
-    EXPECT_TRUE(create_symbol("abc") == create_symbol("abc"));
-    EXPECT_TRUE(create_symbol("org.xxx", "abc") != create_symbol("abc"));
-    EXPECT_TRUE(create_symbol("org.xxx", "abc") != create_symbol("org.xxx", "xyz"));
-    EXPECT_TRUE(create_symbol("org.xxx", "abc") == create_symbol("org.xxx", "abc"));
-    EXPECT_TRUE(create_symbol("com.z", "abc") != create_symbol("org.xxx", "abc"));
+    EXPECT_FALSE(create_symbol("abc").is(create_symbol("xyz")));
+    EXPECT_TRUE(create_symbol("abc").is(create_symbol("abc")));
+    EXPECT_FALSE(create_symbol("org.xxx", "abc").is(create_symbol("abc")));
+    EXPECT_FALSE(create_symbol("org.xxx", "abc").is(create_symbol("org.xxx", "xyz")));
+    EXPECT_TRUE(create_symbol("org.xxx", "abc").is(create_symbol("org.xxx", "abc")));
+    EXPECT_FALSE(create_symbol("com.z", "abc").is(create_symbol("org.xxx", "abc")));
 }
 
 TEST_F(value_test, should_store_keywords_with_namespaces)
@@ -86,7 +86,7 @@ TEST_F(value_test, should_store_keywords_without_namespaces)
 {
     Value kw = create_keyword("thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
-    ASSERT_TRUE(nil == get_keyword_namespace(kw));
+    ASSERT_TRUE(get_keyword_namespace(kw).is_nil());
     auto name = get_keyword_name(kw);
     ASSERT_EQ(tag::STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
@@ -94,12 +94,12 @@ TEST_F(value_test, should_store_keywords_without_namespaces)
 
 TEST_F(value_test, should_return_same_instances_for_keywords_with_same_namespace_and_names)
 {
-    EXPECT_TRUE(create_keyword("abc") != create_keyword("xyz"));
-    EXPECT_TRUE(create_keyword("abc") == create_keyword("abc"));
-    EXPECT_TRUE(create_keyword("org.xxx", "abc") != create_keyword("abc"));
-    EXPECT_TRUE(create_keyword("org.xxx", "abc") != create_keyword("org.xxx", "xyz"));
-    EXPECT_TRUE(create_keyword("org.xxx", "abc") == create_keyword("org.xxx", "abc"));
-    EXPECT_TRUE(create_keyword("com.z", "abc") != create_keyword("org.xxx", "abc"));
+    EXPECT_FALSE(create_keyword("abc").is(create_keyword("xyz")));
+    EXPECT_TRUE(create_keyword("abc").is(create_keyword("abc")));
+    EXPECT_FALSE(create_keyword("org.xxx", "abc").is(create_keyword("abc")));
+    EXPECT_FALSE(create_keyword("org.xxx", "abc").is(create_keyword("org.xxx", "xyz")));
+    EXPECT_TRUE(create_keyword("org.xxx", "abc").is(create_keyword("org.xxx", "abc")));
+    EXPECT_FALSE(create_keyword("com.z", "abc").is(create_keyword("org.xxx", "abc")));
 }
 
 TEST_F(value_test, should_store_int_values)
@@ -166,9 +166,9 @@ TEST_F(value_test, should_store_object_values)
     Root obj{create_object(type, elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
     ASSERT_EQ(elems.size(), get_object_size(*obj));
-    ASSERT_TRUE(elems[0] == get_object_element(*obj, 0));
-    ASSERT_TRUE(elems[1] == get_object_element(*obj, 1));
-    ASSERT_TRUE(elems[2] == get_object_element(*obj, 2));
+    ASSERT_TRUE(elems[0].is(get_object_element(*obj, 0)));
+    ASSERT_TRUE(elems[1].is(get_object_element(*obj, 1)));
+    ASSERT_TRUE(elems[2].is(get_object_element(*obj, 2)));
 
     obj = create_object(type, nullptr, 0);
     ASSERT_EQ(0u, get_object_size(*obj));
@@ -186,13 +186,13 @@ TEST_F(value_test, should_modify_objects)
 
     set_object_element(*obj, 0, *elem2);
 
-    ASSERT_TRUE(*elem2 == get_object_element(*obj, 0));
-    ASSERT_TRUE(*elem1 == get_object_element(*obj, 1));
+    ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
+    ASSERT_TRUE(elem1->is(get_object_element(*obj, 1)));
 
     set_object_element(*obj, 1, *elem0);
 
-    ASSERT_TRUE(*elem2 == get_object_element(*obj, 0));
-    ASSERT_TRUE(*elem0 == get_object_element(*obj, 1));
+    ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
+    ASSERT_TRUE(elem0->is(get_object_element(*obj, 1)));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_object)
@@ -208,21 +208,21 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     auto f = [](const Value *, std::uint8_t) { return force(nil); };
     auto type = create_symbol("org.xxx");
     Root val;
-    ASSERT_TRUE(nil == get_value_type(nil));
+    ASSERT_TRUE(get_value_type(nil).is_nil());
     val = create_native_function(f);
-    ASSERT_TRUE(*type::NativeFunction == get_value_type(*val));
+    ASSERT_TRUE(type::NativeFunction->is(get_value_type(*val)));
     val = create_symbol("abc");
-    ASSERT_TRUE(*type::Symbol == get_value_type(*val));
+    ASSERT_TRUE(type::Symbol->is(get_value_type(*val)));
     val = create_keyword("abc");
-    ASSERT_TRUE(*type::Keyword == get_value_type(*val));
+    ASSERT_TRUE(type::Keyword->is(get_value_type(*val)));
     val = create_int64(11);
-    ASSERT_TRUE(*type::Int64 == get_value_type(*val));
+    ASSERT_TRUE(type::Int64->is(get_value_type(*val)));
     val = create_float64(3.5);
-    ASSERT_TRUE(*type::Float64 == get_value_type(*val));
+    ASSERT_TRUE(type::Float64->is(get_value_type(*val)));
     val = create_string("abc");
-    ASSERT_TRUE(*type::String == get_value_type(*val));
+    ASSERT_TRUE(type::String->is(get_value_type(*val)));
     val = create_object(type, nullptr, 0);
-    ASSERT_TRUE(type == get_value_type(*val));
+    ASSERT_TRUE(type.is(get_value_type(*val)));
 }
 
 }

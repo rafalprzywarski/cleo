@@ -225,62 +225,62 @@ TEST_F(hierarchy_test, isa_should_be_true_for_all_ancestors)
     derive(*val1, *val2);
     val1 = create_int64(34567243);
     val2 = create_int64(873456346);
-    EXPECT_NE(nil, isa(*val1, *val2));
+    EXPECT_TRUE(bool(isa(*val1, *val2)));
 
     derive(b, d);
 
-    EXPECT_NE(nil, isa(b, d));
+    EXPECT_TRUE(bool(isa(b, d)));
 
-    EXPECT_EQ(nil, isa(d, b));
+    EXPECT_FALSE(bool(isa(d, b)));
 
     derive(b, c);
 
-    EXPECT_NE(nil, isa(b, d));
-    EXPECT_NE(nil, isa(b, c));
+    EXPECT_TRUE(bool(isa(b, d)));
+    EXPECT_TRUE(bool(isa(b, c)));
 
-    EXPECT_EQ(nil, isa(d, b));
-    EXPECT_EQ(nil, isa(c, b));
-    EXPECT_EQ(nil, isa(c, d));
-    EXPECT_EQ(nil, isa(d, c));
+    EXPECT_FALSE(bool(isa(d, b)));
+    EXPECT_FALSE(bool(isa(c, b)));
+    EXPECT_FALSE(bool(isa(c, d)));
+    EXPECT_FALSE(bool(isa(d, c)));
 
     derive(a, b);
 
-    EXPECT_NE(nil, isa(b, d));
-    EXPECT_NE(nil, isa(b, c));
-    EXPECT_NE(nil, isa(a, d));
-    EXPECT_NE(nil, isa(a, c));
-    EXPECT_NE(nil, isa(a, b));
+    EXPECT_TRUE(bool(isa(b, d)));
+    EXPECT_TRUE(bool(isa(b, c)));
+    EXPECT_TRUE(bool(isa(a, d)));
+    EXPECT_TRUE(bool(isa(a, c)));
+    EXPECT_TRUE(bool(isa(a, b)));
 
-    EXPECT_EQ(nil, isa(d, b));
-    EXPECT_EQ(nil, isa(c, b));
-    EXPECT_EQ(nil, isa(c, d));
-    EXPECT_EQ(nil, isa(d, c));
-    EXPECT_EQ(nil, isa(c, a));
-    EXPECT_EQ(nil, isa(d, a));
-    EXPECT_EQ(nil, isa(b, a));
+    EXPECT_FALSE(bool(isa(d, b)));
+    EXPECT_FALSE(bool(isa(c, b)));
+    EXPECT_FALSE(bool(isa(c, d)));
+    EXPECT_FALSE(bool(isa(d, c)));
+    EXPECT_FALSE(bool(isa(c, a)));
+    EXPECT_FALSE(bool(isa(d, a)));
+    EXPECT_FALSE(bool(isa(b, a)));
 
     derive(e, f);
     derive(e, g);
     derive(c, e);
 
-    EXPECT_NE(nil, isa(a, c));
-    EXPECT_NE(nil, isa(a, e));
-    EXPECT_NE(nil, isa(a, f));
-    EXPECT_NE(nil, isa(a, g));
-    EXPECT_NE(nil, isa(b, c));
-    EXPECT_NE(nil, isa(b, e));
-    EXPECT_NE(nil, isa(b, f));
-    EXPECT_NE(nil, isa(b, g));
+    EXPECT_TRUE(bool(isa(a, c)));
+    EXPECT_TRUE(bool(isa(a, e)));
+    EXPECT_TRUE(bool(isa(a, f)));
+    EXPECT_TRUE(bool(isa(a, g)));
+    EXPECT_TRUE(bool(isa(b, c)));
+    EXPECT_TRUE(bool(isa(b, e)));
+    EXPECT_TRUE(bool(isa(b, f)));
+    EXPECT_TRUE(bool(isa(b, g)));
 
-    EXPECT_EQ(nil, isa(d, e));
-    EXPECT_EQ(nil, isa(d, f));
-    EXPECT_EQ(nil, isa(d, g));
-    EXPECT_EQ(nil, isa(c, b));
-    EXPECT_EQ(nil, isa(c, d));
-    EXPECT_EQ(nil, isa(d, c));
-    EXPECT_EQ(nil, isa(c, a));
-    EXPECT_EQ(nil, isa(d, a));
-    EXPECT_EQ(nil, isa(b, a));
+    EXPECT_FALSE(bool(isa(d, e)));
+    EXPECT_FALSE(bool(isa(d, f)));
+    EXPECT_FALSE(bool(isa(d, g)));
+    EXPECT_FALSE(bool(isa(c, b)));
+    EXPECT_FALSE(bool(isa(c, d)));
+    EXPECT_FALSE(bool(isa(d, c)));
+    EXPECT_FALSE(bool(isa(c, a)));
+    EXPECT_FALSE(bool(isa(d, a)));
+    EXPECT_FALSE(bool(isa(b, a)));
 }
 
 TEST_F(hierarchy_test, isa_should_treat_small_vectors_as_tuples)
@@ -293,31 +293,31 @@ TEST_F(hierarchy_test, isa_should_treat_small_vectors_as_tuples)
     Root val1, val2;
     val1 = svec();
     val2 = svec();
-    EXPECT_NE(nil, isa(*val1, *val2));
+    EXPECT_TRUE(bool(isa(*val1, *val2)));
     val1 = b;
-    EXPECT_EQ(nil, isa(*val1, *val2));
-    EXPECT_EQ(nil, isa(*val2, *val1));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
+    EXPECT_FALSE(bool(isa(*val2, *val1)));
 
     val1 = svec(c1, p2);
     val2 = svec(c1, p2);
-    EXPECT_NE(nil, isa(*val1, *val2));
+    EXPECT_TRUE(bool(isa(*val1, *val2)));
     val1 = svec(c1);
-    EXPECT_EQ(nil, isa(*val1, *val2));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
     val1 = svec(c1, c2);
     val2 = svec(c3, c2);
-    EXPECT_EQ(nil, isa(*val1, *val2));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
     val2 = svec(c1, c3);
-    EXPECT_EQ(nil, isa(*val1, *val2));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
     val2 = svec(c2, c1);
-    EXPECT_EQ(nil, isa(*val1, *val2));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
 
     val1 = svec(c1, c2);
     val2 = svec(gp1, p2);
-    EXPECT_NE(nil, isa(*val1, *val2));
+    EXPECT_TRUE(bool(isa(*val1, *val2)));
     val2 = svec(p3, p2);
-    EXPECT_EQ(nil, isa(*val1, *val2));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
     val2 = svec(gp1, p3);
-    EXPECT_EQ(nil, isa(*val1, *val2));
+    EXPECT_FALSE(bool(isa(*val1, *val2)));
 }
 
 }
