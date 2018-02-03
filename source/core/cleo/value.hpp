@@ -7,22 +7,20 @@
 namespace cleo
 {
 
-struct Value
+class Value
 {
-    std::uintptr_t bits{0};
+public:
     Value() = default;
-    explicit constexpr Value(std::uintptr_t bits) : bits(bits) { }
+    explicit constexpr Value(std::uintptr_t bits) : bits_(bits) { }
     explicit operator bool() const { return !is_nil(); }
-    bool is(Value other) const { return bits == other.bits; }
-    bool is_nil() const { return bits == Value{}.bits; }
+    constexpr bool is(Value other) const { return bits_ == other.bits_; }
+    constexpr bool is_nil() const { return bits_ == Value{}.bits_; }
+    constexpr std::uintptr_t bits() const { return bits_; }
+private:
+    std::uintptr_t bits_{0};
 };
 
-static_assert(sizeof(Value) == sizeof(Value::bits), "Value should have no overhead");
-
-inline std::ostream& operator<<(std::ostream& os, Value val)
-{
-    return os << val.bits;
-}
+static_assert(sizeof(Value) == sizeof(Value().bits()), "Value should have no overhead");
 
 }
 
@@ -36,7 +34,7 @@ struct hash<cleo::Value>
 
     result_type operator()(argument_type val) const
     {
-        return std::hash<decltype(val.bits)>()(val.bits);
+        return std::hash<decltype(val.bits())>()(val.bits());
     }
 };
 }
@@ -81,12 +79,12 @@ constexpr Value nil{};
 
 inline Tag get_value_tag(Value val)
 {
-    return val.bits & tag::MASK;
+    return val.bits() & tag::MASK;
 }
 
 inline void *get_value_ptr(Value val)
 {
-    return reinterpret_cast<void *>(val.bits & ~tag::MASK);
+    return reinterpret_cast<void *>(val.bits() & ~tag::MASK);
 }
 
 Force create_native_function(NativeFunction f);

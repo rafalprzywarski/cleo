@@ -16,7 +16,7 @@ namespace
 Force pr_str_native_function(Value fn)
 {
     std::ostringstream os;
-    os << "#cleo.core/NativeFunction[0x" << std::hex << fn << "]";
+    os << "#cleo.core/NativeFunction[0x" << std::hex << fn.bits() << "]";
     return create_string(os.str());
 }
 
@@ -100,7 +100,7 @@ Force pr_str_object(Value val)
     }
     Root type{pr_str(get_object_type(val))};
     std::ostringstream os;
-    os << '#' << std::string(get_string_ptr(*type), get_string_len(*type)) << "[0x" << std::hex << val << "]";
+    os << '#' << std::string(get_string_ptr(*type), get_string_len(*type)) << "[0x" << std::hex << val.bits() << "]";
     return create_string(os.str());
 }
 

@@ -31,13 +31,13 @@ struct Object
 
 Value tag_ptr(void *ptr, Tag tag)
 {
-    return Value{reinterpret_cast<decltype(Value::bits)>(ptr) | tag};
+    return Value{reinterpret_cast<decltype(Value().bits())>(ptr) | tag};
 }
 
 template <typename T>
 T *get_ptr(Value val)
 {
-    return reinterpret_cast<T *>(val.bits & ~tag::MASK);
+    return reinterpret_cast<T *>(val.bits() & ~tag::MASK);
 }
 
 Force create_native_function(NativeFunction f)
