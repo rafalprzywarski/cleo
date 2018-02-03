@@ -55,7 +55,7 @@ NativeFunction get_native_function_ptr(Value val)
 Value create_symbol(const std::string& ns, const std::string& name)
 {
     auto& entry = symbols[ns][name];
-    if (entry != Value())
+    if (entry)
         return entry;
     Root ns_root, name_root;
     if (!ns.empty())
@@ -85,7 +85,7 @@ Value get_symbol_name(Value s)
 Value create_keyword(const std::string& ns, const std::string& name)
 {
     auto& entry = keywords[ns][name];
-    if (entry != Value())
+    if (entry)
         return entry;
     Root ns_root, name_root;
     if (!ns.empty())

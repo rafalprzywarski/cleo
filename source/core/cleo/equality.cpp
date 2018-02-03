@@ -26,7 +26,7 @@ Value are_seqs_equal(Value left_, Value right_)
     Root left(force(left_));
     Root right(force(right_));
     Root lf, rf;
-    for (; *left != nil && *right != nil; left = call_multimethod1(*rt::next, *left), right = call_multimethod1(*rt::next, *right))
+    for (; *left && *right; left = call_multimethod1(*rt::next, *left), right = call_multimethod1(*rt::next, *right))
     {
         lf = call_multimethod1(*rt::first, *left);
         rf = call_multimethod1(*rt::first, *right);

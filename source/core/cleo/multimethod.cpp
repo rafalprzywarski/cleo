@@ -111,7 +111,7 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
         auto mns = get_symbol_namespace(name);
         auto mname = get_symbol_name(name);
         std::string sname;
-        if (mns != nil)
+        if (mns)
         {
             sname.assign(get_string_ptr(mns), get_string_len(mns));
             sname += '/';

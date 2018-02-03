@@ -19,7 +19,6 @@ struct Value
 
 static_assert(sizeof(Value) == sizeof(Value::bits), "Value should have no overhead");
 
-inline bool operator!=(Value left, Value right) { return left.bits != right.bits; }
 inline std::ostream& operator<<(std::ostream& os, Value val)
 {
     return os << val.bits;

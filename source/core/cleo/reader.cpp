@@ -130,7 +130,7 @@ Force read_list(Stream& s)
     s.next(); // ')'
     l = list_seq(*l);
     Root lr{*EMPTY_LIST};
-    while (*l != nil)
+    while (*l)
     {
         lr = list_conj(*lr, get_list_first(*l));
         l = get_list_next(*l);

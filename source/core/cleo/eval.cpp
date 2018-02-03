@@ -307,7 +307,7 @@ Force eval_let(Value list, Value env)
     check_arity(LET, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
-    if (get_value_type(bindings) != *type::SmallVector)
+    if (!get_value_type(bindings).is(*type::SmallVector))
         throw_illegal_argument(to_string(LET) + " requires a vector for its binding");
     auto size = get_small_vector_size(bindings);
     if (size % 2 == 1)
@@ -317,9 +317,9 @@ Force eval_let(Value list, Value env)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
         auto binding = get_small_vector_elem(bindings, i);
-        if (get_value_type(binding) != *type::Symbol)
+        if (!get_value_type(binding).is(*type::Symbol))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
-        if (get_symbol_namespace(binding) != nil)
+        if (get_symbol_namespace(binding))
             throw_illegal_argument("Can't let qualified name: " + to_string(binding));
         lenv = small_map_assoc(*lenv, binding, *val);
     }
@@ -331,7 +331,7 @@ Force eval_do(Value list, Value env)
 {
     list = get_list_next(list);
     Root ret;
-    while (list != nil)
+    while (list)
     {
         ret = eval(get_list_first(list), env);
         list = get_list_next(list);
@@ -344,7 +344,7 @@ Force eval_loop(Value list, Value env)
     check_arity(LOOP, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
-    if (get_value_type(bindings) != *type::SmallVector)
+    if (!get_value_type(bindings).is(*type::SmallVector))
         throw_illegal_argument(to_string(LOOP) + " requires a vector for its binding");
     auto size = get_small_vector_size(bindings);
     if (size % 2 == 1)
@@ -354,9 +354,9 @@ Force eval_loop(Value list, Value env)
     {
         Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
         auto binding = get_small_vector_elem(bindings, i);
-        if (get_value_type(binding) != *type::Symbol)
+        if (!get_value_type(binding).is(*type::Symbol))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
-        if (get_symbol_namespace(binding) != nil)
+        if (get_symbol_namespace(binding))
             throw_illegal_argument("Can't let qualified name: " + to_string(binding));
         lenv = small_map_assoc(*lenv, binding, *val);
     }
@@ -433,7 +433,7 @@ Force eval_try(Value list, Value env)
             n = get_list_next(*n);
             auto name = get_list_first(*n);
             n = get_list_next(*n);
-            Root lenv{env != nil ? env : *EMPTY_MAP};
+            Root lenv{env ? env : *EMPTY_MAP};
             lenv = small_map_assoc(*lenv, name, *ex);
             return eval(get_list_first(*n), *lenv);
         }
@@ -494,7 +494,7 @@ std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value list, Value
     elems.reserve(get_int64_value(get_list_size(list)));
     elems.push_back(firstVal);
     Roots::size_type i = 0;
-    for (Root arg_list{get_list_next(list)}; *arg_list != nil; arg_list = get_list_next(*arg_list), ++i)
+    for (Root arg_list{get_list_next(list)}; *arg_list; arg_list = get_list_next(*arg_list), ++i)
     {
         arg_roots.set(i, eval(get_list_first(*arg_list), env));
         elems.push_back(arg_roots[i]);
@@ -637,11 +637,11 @@ Force eval_map(Value m, Value env)
 
 Force macroexpand1(Value val, Value form, Value env)
 {
-    if (get_value_type(val) != *type::List || get_int64_value(get_list_size(val)) == 0)
+    if (!get_value_type(val).is(*type::List) || get_int64_value(get_list_size(val)) == 0)
         return val;
 
     auto m = get_list_first(val);
-    if (get_value_type(m) != *type::Macro)
+    if (!get_value_type(m).is(*type::Macro))
         return val;
 
     std::vector<Value> elems;
@@ -649,7 +649,7 @@ Force macroexpand1(Value val, Value form, Value env)
     elems.push_back(m);
     elems.push_back(form);
     elems.push_back(env);
-    for (Root arg_list{get_list_next(val)}; *arg_list != nil; arg_list = get_list_next(*arg_list))
+    for (Root arg_list{get_list_next(val)}; *arg_list; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
     return call_fn(elems, elems.size() - 3);
@@ -658,7 +658,7 @@ Force macroexpand1(Value val, Value form, Value env)
 Force macroexpand(Value val, Value form, Value env)
 {
     Root exp{macroexpand1(val, form, env)};
-    if (*exp != val)
+    if (!exp->is(val))
         return macroexpand(*exp, *exp, env);
     return *exp;
 }
@@ -666,14 +666,14 @@ Force macroexpand(Value val, Value form, Value env)
 Force apply(Value fn, Value args)
 {
     std::uint32_t len = 0;
-    for (Root s{call_multimethod1(*rt::seq, args)}; *s != nil; s = call_multimethod1(*rt::next, *s))
+    for (Root s{call_multimethod1(*rt::seq, args)}; *s; s = call_multimethod1(*rt::next, *s))
         ++len;
     Roots roots{len};
 
     std::uint32_t i = 0;
     std::vector<Value> form;
     form.push_back(fn);
-    for (Root s{call_multimethod1(*rt::seq, args)}; *s != nil; s = call_multimethod1(*rt::next, *s))
+    for (Root s{call_multimethod1(*rt::seq, args)}; *s; s = call_multimethod1(*rt::next, *s))
     {
         roots.set(i, call_multimethod1(*rt::first, *s));
         form.push_back(roots[i]);

@@ -21,12 +21,12 @@ Value get_small_set_elem(Value s, std::uint32_t index)
 
 Value small_set_get(Value s, Value k)
 {
-    return small_set_contains(s, k) != nil ? k : nil;
+    return small_set_contains(s, k) ? k : nil;
 }
 
 Force small_set_conj(Value s, Value k)
 {
-    if (small_set_contains(s, k) != nil)
+    if (small_set_contains(s, k))
         return s;
     auto size = get_small_set_size(s);
     std::vector<Value> new_elems;

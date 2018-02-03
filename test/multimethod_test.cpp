@@ -210,11 +210,11 @@ struct hierarchy_test : multimethod_test
 
 TEST_F(hierarchy_test, isa_should_be_true_for_equal_values)
 {
-    ASSERT_NE(nil, isa(a, a));
+    ASSERT_TRUE(bool(isa(a, a)));
     Root val1, val2;
     val1 = create_int64(10);
     val2 = create_int64(10);
-    ASSERT_NE(nil, isa(*val1, *val2));
+    ASSERT_TRUE(bool(isa(*val1, *val2)));
 }
 
 TEST_F(hierarchy_test, isa_should_be_true_for_all_ancestors)

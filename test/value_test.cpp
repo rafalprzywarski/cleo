@@ -35,7 +35,7 @@ TEST_F(value_test, should_create_a_new_instance_for_each_function)
     Root val, val2;
     val = create_native_function(f);
     val2 = create_native_function(f);
-    ASSERT_TRUE(*val != *val2);
+    ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_store_symbols_with_namespaces)
@@ -117,7 +117,7 @@ TEST_F(value_test, should_create_a_new_instance_for_each_int)
 {
     Root val{create_int64(7)};
     Root val2{create_int64(7)};
-    ASSERT_TRUE(*val != *val2);
+    ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_store_float_values)
@@ -135,7 +135,7 @@ TEST_F(value_test, should_create_a_new_instance_for_each_float)
 {
     Root val{create_float64(7)};
     Root val2{create_float64(7)};
-    ASSERT_TRUE(*val != *val2);
+    ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_store_string_values)
@@ -152,7 +152,7 @@ TEST_F(value_test, should_create_a_new_instance_for_each_string)
 {
     Root val{create_string("abc")};
     Root val2{create_string("abc")};
-    ASSERT_TRUE(*val != *val2);
+    ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_store_object_values)
@@ -200,7 +200,7 @@ TEST_F(value_test, should_create_a_new_instance_for_each_object)
     auto type = create_symbol("org.xxx");
     Root val{create_object(type, nullptr, 0)};
     Root val2{create_object(type, nullptr, 0)};
-    ASSERT_TRUE(*val != *val2);
+    ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_return_the_type_of_a_value)

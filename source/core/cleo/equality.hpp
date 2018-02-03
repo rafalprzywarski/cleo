@@ -29,7 +29,7 @@ struct StdEqualTo
 
     result_type operator()(first_argument_type left, second_argument_type right) const
     {
-        return are_equal(left, right) != nil;
+        return bool(are_equal(left, right));
     }
 };
 

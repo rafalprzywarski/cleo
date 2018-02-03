@@ -26,7 +26,7 @@ Force pr_str_symbol(Value sym)
     auto name = get_keyword_name(sym);
     std::string s;
     s.reserve(1 + (!ns ? 0 : get_string_len(ns)) + get_string_len(name));
-    if (ns != nil)
+    if (ns)
     {
         s.append(get_string_ptr(ns), get_string_len(ns));
         s += '/';
@@ -42,7 +42,7 @@ Force pr_str_keyword(Value kw)
     std::string s;
     s.reserve(1 + (!ns ? 0 : get_string_len(ns)) + get_string_len(name));
     s += ':';
-    if (ns != nil)
+    if (ns)
     {
         s.append(get_string_ptr(ns), get_string_len(ns));
         s += '/';
@@ -160,7 +160,7 @@ Force pr_str_seqable(Value v)
     std::string str;
     str += '(';
     bool first_elem = true;
-    for (Root s{call_multimethod1(*rt::seq, v)}; *s != nil; s = call_multimethod1(*rt::next, *s))
+    for (Root s{call_multimethod1(*rt::seq, v)}; *s; s = call_multimethod1(*rt::next, *s))
     {
         if (first_elem)
             first_elem = false;
