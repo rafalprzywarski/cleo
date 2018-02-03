@@ -75,14 +75,14 @@ extern std::unordered_map<Value, Value, std::hash<Value>, StdIs> vars;
 
 struct Hierachy
 {
-    std::unordered_map<Value, std::unordered_set<Value, StdHash, StdEqualTo>, StdHash, StdEqualTo> ancestors;
+    std::unordered_map<Value, std::unordered_set<Value, StdHash>, StdHash> ancestors;
 };
 
 struct Multimethod
 {
     Value dispatchFn;
     Value defaultDispatchVal;
-    std::unordered_map<Value, Value, StdHash, StdEqualTo> fns;
+    std::unordered_map<Value, Value, StdHash> fns;
 };
 
 extern std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimethods;

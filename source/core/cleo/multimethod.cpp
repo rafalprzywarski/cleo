@@ -63,7 +63,7 @@ bool is_ancestor(Value child, Value ancestor)
 Value isa(Value child, Value parent)
 {
     return (
-        are_equal(child, parent) ||
+        child == parent ||
         (get_value_type(child).is(*type::SmallVector) && get_value_type(parent).is(*type::SmallVector) && isa_vectors(child, parent)) ||
         is_ancestor(child, parent)) ? TRUE : nil;
 }

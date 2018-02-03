@@ -288,7 +288,7 @@ Force eval_def(Value list, Value env)
     check_type("Symbol name", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
     if (!*rt::current_ns ||
-        (ns && !are_equal(ns, get_symbol_name(*rt::current_ns))))
+        (ns && ns != get_symbol_name(*rt::current_ns)))
         throw_illegal_argument("Can't refer to qualified var that doesn't exist: " + to_string(sym));
     next = get_list_next(*next);
     if (*next && get_list_next(*next))

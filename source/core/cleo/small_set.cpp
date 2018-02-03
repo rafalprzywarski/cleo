@@ -42,7 +42,7 @@ Value small_set_contains(Value s, Value k)
     auto size = get_small_set_size(s);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (are_equal(k, get_object_element(s, i)))
+        if (k == get_object_element(s, i))
             return TRUE;
     }
     return nil;
