@@ -174,6 +174,17 @@ TEST_F(value_test, should_store_object_values)
     ASSERT_EQ(0u, get_object_size(*obj));
 }
 
+TEST_F(value_test, should_initialize_object_values_to_nil)
+{
+    auto type = create_symbol("org.xxx");
+    Root obj{create_object(type, nullptr, 3)};
+    ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
+    ASSERT_EQ(3u, get_object_size(*obj));
+    ASSERT_TRUE(get_object_element(*obj, 0).is_nil());
+    ASSERT_TRUE(get_object_element(*obj, 1).is_nil());
+    ASSERT_TRUE(get_object_element(*obj, 2).is_nil());
+}
+
 TEST_F(value_test, should_modify_objects)
 {
     auto type = create_symbol("org.xxx");

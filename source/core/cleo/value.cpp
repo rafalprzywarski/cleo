@@ -159,7 +159,10 @@ Force create_object(Value type, const Value *elems, std::uint32_t size)
     auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstElem) + size * sizeof(Object::firstElem)));
     val->type = type;
     val->size = size;
-    std::copy_n(elems, size, &val->firstElem);
+    if (elems)
+        std::copy_n(elems, size, &val->firstElem);
+    else
+        std::fill_n(&val->firstElem, size, nil);
     return tag_ptr(val, tag::OBJECT);
 }
 
@@ -185,6 +188,12 @@ Force create_object3(Value type, Value elem0, Value elem1, Value elem2)
     return create_object(type, elems.data(), elems.size());
 }
 
+Force create_object4(Value type, Value elem0, Value elem1, Value elem2, Value elem3)
+{
+    std::array<Value, 4> elems{{elem0, elem1, elem2, elem3}};
+    return create_object(type, elems.data(), elems.size());
+}
+
 
 Value get_object_type(Value obj)
 {
@@ -198,6 +207,7 @@ std::uint32_t get_object_size(Value obj)
 
 Value get_object_element(Value obj, std::uint32_t index)
 {
+    assert(index < get_object_size(obj));
     return (&get_ptr<Object>(obj)->firstElem)[index];
 }
 
@@ -208,6 +218,7 @@ void set_object_type(Value obj, Value type)
 
 void set_object_element(Value obj, std::uint32_t index, Value val)
 {
+    assert(index < get_object_size(obj));
     (&get_ptr<Object>(obj)->firstElem)[index] = val;
 }
 

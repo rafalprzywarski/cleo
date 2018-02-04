@@ -140,6 +140,8 @@ extern const Value NEW;
 extern const Value HASH_OBJ;
 extern const Root ZERO;
 extern const Root ONE;
+extern const Root TWO;
+extern const Root SENTINEL;
 
 extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 
@@ -170,6 +172,7 @@ extern const Root Macro;
 extern const Root Recur;
 extern const Root Atom;
 extern const Root PersistentHashMap;
+extern const Root PersistentHashMapCollisionNode;
 extern const Root Exception;
 extern const Root ReadError;
 extern const Root CallError;

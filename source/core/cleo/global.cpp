@@ -83,6 +83,8 @@ const Value NEW = create_symbol("cleo.core", "new");
 const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
+const Root TWO{create_int64(2)};
+const Root SENTINEL{create_object0(nil)};
 
 const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,
@@ -156,6 +158,7 @@ const Root Macro{create_type("cleo.core", "Macro")};
 const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
 const Root PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
+const Root PersistentHashMapCollisionNode(create_type("cleo.core", "PersistentHashMapCollisionNode"));
 const Root Exception{create_type("cleo.core", "Exception")};
 const Root ReadError{create_type("cleo.core", "ReadError")};
 const Root CallError{create_type("cleo.core", "CallError")};
@@ -440,6 +443,7 @@ struct Initialize
         define_type(*type::Recur);
         define_type(*type::Atom);
         define_type(*type::PersistentHashMap);
+        define_type(*type::PersistentHashMapCollisionNode);
         define_type(*type::Exception);
         define_type(*type::ReadError);
         define_type(*type::CallError);
