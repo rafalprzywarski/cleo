@@ -12,6 +12,7 @@ add_library(cleo_core
   cleo/memory.cpp
   cleo/multimethod.cpp
   cleo/namespace.cpp
+  cleo/persistent_hash_map.cpp
   cleo/print.cpp
   cleo/reader.cpp
   cleo/small_map.cpp

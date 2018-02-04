@@ -137,9 +137,13 @@ extern const Value FORM;
 extern const Value ENV;
 extern const Value CLEO_CORE;
 extern const Value NEW;
+extern const Value HASH_OBJ;
 extern const Root ZERO;
+extern const Root ONE;
 
 extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
+
+Force create_type(const std::string& ns, const std::string& name);
 
 namespace type
 {
@@ -165,6 +169,7 @@ extern const Root Fn;
 extern const Root Macro;
 extern const Root Recur;
 extern const Root Atom;
+extern const Root PersistentHashMap;
 extern const Root Exception;
 extern const Root ReadError;
 extern const Root CallError;
@@ -204,6 +209,7 @@ extern const StaticVar first;
 extern const StaticVar next;
 extern const StaticVar seq;
 extern const StaticVar get_message;
+extern const StaticVar hash_obj;
 
 }
 }

@@ -12,16 +12,16 @@
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
-    ASSERT_TRUE(ex == val) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+    ASSERT_TRUE(ex == val) << "Actual: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
 
 #define EXPECT_EQ_VALS(ex, val) \
-    EXPECT_TRUE(ex == val) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+    EXPECT_TRUE(ex == val) << "Actual: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
 
 #define ASSERT_EQ_REFS(ex, val) \
-    ASSERT_TRUE((ex).is(val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+    ASSERT_TRUE((val).is(ex)) << "Actual: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
 
 #define EXPECT_EQ_REFS(ex, val) \
-    EXPECT_TRUE((ex).is(val)) << "expected: " << to_string(ex) << ", actual: " << to_string(val);
+    EXPECT_TRUE((val).is(ex)) << "Actual: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
 
 namespace cleo
 {

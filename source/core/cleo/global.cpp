@@ -80,7 +80,9 @@ const Value FORM = create_symbol("&form");
 const Value ENV = create_symbol("&env");
 const Value CLEO_CORE = create_symbol("cleo.core");
 const Value NEW = create_symbol("cleo.core", "new");
+const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Root ZERO{create_int64(0)};
+const Root ONE{create_int64(1)};
 
 const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,
@@ -124,15 +126,10 @@ namespace type
 const Root MetaType{create_meta_type()};
 }
 
-namespace
-{
-
 Force create_type(const std::string& ns, const std::string& name)
 {
     Root obj{create_object1(*type::MetaType, create_symbol(ns, name))};
     return *obj;
-}
-
 }
 
 namespace type
@@ -158,6 +155,7 @@ const Root Fn{create_type("cleo.core", "Fn")};
 const Root Macro{create_type("cleo.core", "Macro")};
 const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
+const Root PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
 const Root Exception{create_type("cleo.core", "Exception")};
 const Root ReadError{create_type("cleo.core", "ReadError")};
 const Root CallError{create_type("cleo.core", "CallError")};
@@ -212,6 +210,7 @@ const StaticVar first = define_var(FIRST, nil);
 const StaticVar next = define_var(NEXT, nil);
 const StaticVar seq = define_var(SEQ, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
+const StaticVar hash_obj = define_var(HASH_OBJ, nil);
 
 }
 
@@ -248,6 +247,11 @@ const Root equal_dispatch{create_native_function([](const Value *args, std::uint
 const Root ret_nil{create_native_function([](const Value *, std::uint8_t)
 {
     return force(nil);
+})};
+
+const Root ret_zero{create_native_function([](const Value *, std::uint8_t)
+{
+    return force(*ZERO);
 })};
 
 Value identity(Value val)
@@ -435,6 +439,7 @@ struct Initialize
         define_type(*type::Macro);
         define_type(*type::Recur);
         define_type(*type::Atom);
+        define_type(*type::PersistentHashMap);
         define_type(*type::Exception);
         define_type(*type::ReadError);
         define_type(*type::CallError);
@@ -444,6 +449,9 @@ struct Initialize
         define_type(*type::UnexpectedEndOfInput);
         define_type(*type::FileNotFound);
         define_type(*type::ArithmeticException);
+
+        define_multimethod(HASH_OBJ, *first_type, nil);
+        define_method(HASH_OBJ, nil, *ret_zero);
 
         define_multimethod(NEW, *first_arg, nil);
 

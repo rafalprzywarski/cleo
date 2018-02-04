@@ -1,5 +1,6 @@
 #include "hash.hpp"
-#include <functional>
+#include "global.hpp"
+#include "multimethod.hpp"
 
 namespace cleo
 {
@@ -18,6 +19,13 @@ Int64 hash_value(Value val)
             return std::hash<Float64>{}(get_float64_value(val));
         case tag::STRING:
             return std::hash<std::string>{}({get_string_ptr(val), get_string_len(val)});
+        case tag::OBJECT:
+        {
+           if (val == *type::MetaType)
+               return 0;
+            Root h{call_multimethod1(*rt::hash_obj, val)};
+            return get_int64_value(*h);
+        }
     }
     return 0;
 }

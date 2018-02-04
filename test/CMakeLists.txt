@@ -12,6 +12,7 @@ add_executable(cleo_test
   memory_test.cpp
   multimethod_test.cpp
   namespace_test.cpp
+  persistent_hash_map_test.cpp
   print_test.cpp
   reader_test.cpp
   small_map_test.cpp
