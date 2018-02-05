@@ -24,6 +24,7 @@ Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 void define_method(Value name, Value dispatchVal, Value fn)
 {
     multimethods[name].fns[dispatchVal] = fn;
+    multimethods[name].memoized_fns = {};
 }
 
 void derive(Value tag, Value parent)
@@ -70,6 +71,9 @@ Value isa(Value child, Value parent)
 
 Value get_method(const Multimethod& multimethod, Value dispatchVal)
 {
+    auto memoized = multimethod.memoized_fns.find(dispatchVal);
+    if (memoized != end(multimethod.memoized_fns))
+        return memoized->second;
     std::pair<Value, Value> best{nil, nil};
     for (auto& fn : multimethod.fns)
         if (isa(dispatchVal, fn.first))
@@ -87,8 +91,9 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
     {
         auto default_ = multimethod.fns.find(multimethod.defaultDispatchVal);
         if (default_ != end(multimethod.fns))
-            return default_->second;
+            best.second = default_->second;
     }
+    multimethod.memoized_fns[dispatchVal] = best.second;
     return best.second;
 }
 

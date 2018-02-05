@@ -204,8 +204,9 @@ TEST_F(memory_test, should_trace_multimethods)
     auto after_ns = allocations.size();
     gc();
 
-    define_multimethod(*name, *fn, *def_val);
+    auto mm = define_multimethod(*name, *fn, *def_val);
     define_method(*name, *val1, *fn1);
+    get_method(mm, *val1);
     name = nil;
     fn = nil;
     fn1 = nil;

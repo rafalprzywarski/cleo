@@ -86,6 +86,9 @@ void mark_multimethods()
             mark_value(fn.first);
             mark_value(fn.second);
         }
+
+        for (auto& fn : mm.second.memoized_fns)
+            mark_value(fn.first);
     }
 }
 
