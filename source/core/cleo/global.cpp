@@ -159,6 +159,7 @@ const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
 const Root PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
 const Root PersistentHashMapCollisionNode(create_type("cleo.core", "PersistentHashMapCollisionNode"));
+const Root PersistentHashMapArrayNode(create_type("cleo.core", "PersistentHashMapArrayNode"));
 const Root Exception{create_type("cleo.core", "Exception")};
 const Root ReadError{create_type("cleo.core", "ReadError")};
 const Root CallError{create_type("cleo.core", "CallError")};
@@ -444,6 +445,7 @@ struct Initialize
         define_type(*type::Atom);
         define_type(*type::PersistentHashMap);
         define_type(*type::PersistentHashMapCollisionNode);
+        define_type(*type::PersistentHashMapArrayNode);
         define_type(*type::Exception);
         define_type(*type::ReadError);
         define_type(*type::CallError);

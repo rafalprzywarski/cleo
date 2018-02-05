@@ -43,17 +43,17 @@ struct persistent_hash_map_test : Test
     {
         Root ek{create_key(key)};
         Root ev{create_int64(value)};
-        EXPECT_EQ_REFS(TRUE, persistent_hash_map_contains(m, *ek))
+        ASSERT_EQ_VALS(*ev, persistent_hash_map_get(m, *ek))
             << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
-        EXPECT_EQ_VALS(*ev, persistent_hash_map_get(m, *ek))
+        ASSERT_EQ_REFS(TRUE, persistent_hash_map_contains(m, *ek))
             << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
     }
 
     void expect_not_in(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::string& key, Value k)
     {
-        EXPECT_EQ_REFS(nil, persistent_hash_map_contains(m, k))
+        ASSERT_EQ_REFS(nil, persistent_hash_map_get(m, k))
             << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
-        EXPECT_EQ_REFS(nil, persistent_hash_map_get(m, k))
+        ASSERT_EQ_REFS(nil, persistent_hash_map_contains(m, k))
             << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
     }
 
@@ -70,7 +70,7 @@ struct persistent_hash_map_test : Test
 
     void check_pm(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::unordered_map<std::string, int>& expected)
     {
-        EXPECT_EQ(get_persistent_hash_map_size(m), Int64(expected.size()))
+        ASSERT_EQ(get_persistent_hash_map_size(m), Int64(expected.size()))
             << name << " [" << step_kv.first << " " << step_kv.second << "]";
         for (const auto& ekv : expected)
             expect_in(name, step_kv, m, ekv.first, ekv.second);
@@ -82,24 +82,24 @@ struct persistent_hash_map_test : Test
         std::unordered_map<std::string, int> expected;
 
         for (auto const& kv : kvs)
-        {
-            std::string bad_key = kv.first + "*";
-            Root k{create_key(kv.first)};
-            Root v{create_int64(kv.second)};
-            Root new_pm{persistent_hash_map_assoc(*pm, *k, *v)};
+            ASSERT_NO_FATAL_FAILURE({
+                std::string bad_key = kv.first + "*";
+                Root k{create_key(kv.first)};
+                Root v{create_int64(kv.second)};
+                Root new_pm{persistent_hash_map_assoc(*pm, *k, *v)};
 
-            check_pm("original", kv, *pm, expected);
-            if (expected.count(kv.first) == 0)
-                expect_not_in("original", kv, *pm, kv.first);
+                check_pm("original", kv, *pm, expected);
+                if (expected.count(kv.first) == 0)
+                    expect_not_in("original", kv, *pm, kv.first);
 
-            pm = *new_pm;
-            expected[kv.first] = kv.second;
+                pm = *new_pm;
+                expected[kv.first] = kv.second;
 
-            check_pm("new", kv, *pm, expected);
+                check_pm("new", kv, *pm, expected);
 
-            expect_not_in("new", kv, *pm, bad_key);
-            expect_nil_not_in("new", kv, *pm);
-        }
+                expect_not_in("new", kv, *pm, bad_key);
+                expect_nil_not_in("new", kv, *pm);
+            });
     }
 };
 
@@ -152,6 +152,54 @@ TEST_F(persistent_hash_map_test, assoc_root_collisions)
         {"v-b", 60},
         {"v-c", 70},
         {"v-c", 70},
+    });
+}
+
+TEST_F(persistent_hash_map_test, assoc_root_array_no_collisions)
+{
+    test_assoc({
+        {"0-a", 10},
+        {"1-a", 20},
+        {"2-a", 30},
+        {"2-a", 31},
+        {"2-a", 32},
+        {"3-a", 40},
+        {"4-a", 50},
+        {"5-a", 60},
+        {"6-a", 70},
+        {"7-a", 80},
+        {"8-a", 90},
+        {"9-a", 100},
+        {"a-a", 110},
+        {"b-a", 120},
+        {"c-a", 130},
+        {"d-a", 140},
+        {"e-a", 150},
+        {"f-a", 160},
+        {"g-a", 170},
+        {"h-a", 180},
+        {"i-a", 190},
+        {"j-a", 200},
+        {"k-a", 210},
+        {"l-a", 220},
+        {"m-a", 230},
+        {"n-a", 240},
+        {"o-a", 250},
+        {"p-a", 260},
+        {"q-a", 270},
+        {"r-a", 280},
+        {"s-a", 290},
+        {"t-a", 300},
+        {"u-a", 310},
+        {"v-a", 320},
+
+        {"0-a", 11},
+        {"1-a", 21},
+        {"2-a", 31},
+        {"h-a", 181},
+        {"t-a", 301},
+        {"u-a", 311},
+        {"v-a", 321},
     });
 }
 

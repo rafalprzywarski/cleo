@@ -174,6 +174,7 @@ extern const Root Recur;
 extern const Root Atom;
 extern const Root PersistentHashMap;
 extern const Root PersistentHashMapCollisionNode;
+extern const Root PersistentHashMapArrayNode;
 extern const Root Exception;
 extern const Root ReadError;
 extern const Root CallError;
