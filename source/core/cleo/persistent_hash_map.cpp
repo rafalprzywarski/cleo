@@ -5,7 +5,7 @@ namespace cleo
 {
 
 // HashMap:
-//   size 0: [0 nil]
+//   size 0: [0 SENTINEL]
 //   size 1: [1 value key]
 //   size>1: [size collision-node hash]
 //   size>1: [size array-node]
@@ -177,7 +177,7 @@ Value array_node_assoc(Value node, Value key, std::uint32_t key_hash, Value val,
 
 Force create_persistent_hash_map()
 {
-    return create_map(*ZERO, nil);
+    return create_map(*ZERO, *SENTINEL);
 }
 
 Int64 get_persistent_hash_map_size(Value m)
@@ -205,6 +205,9 @@ Value persistent_hash_map_get(Value map, Value key, Value def_val)
 Force persistent_hash_map_assoc(Value map, Value key, Value val)
 {
     auto node_or_val = get_object_element(map, 1);
+    if (node_or_val.is(*SENTINEL))
+        return create_single_value_map(key, val);
+
     auto node_or_val_type = get_value_type(node_or_val);
     if (node_or_val_type.is(*type::PersistentHashMapCollisionNode))
     {
@@ -222,10 +225,6 @@ Force persistent_hash_map_assoc(Value map, Value key, Value val)
         return create_map(replaced ? size : (size + 1), *new_node);
     }
 
-    auto map_size = get_persistent_hash_map_size(map);
-    if (map_size == 0)
-        return create_single_value_map(key, val);
-    assert(map_size == 1);
     Value key0 = get_object_element(map, 2);
     if (key0 == key)
         return create_single_value_map(key, val);
