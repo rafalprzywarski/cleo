@@ -70,10 +70,10 @@ struct persistent_hash_map_test : Test
 
     void check_pm(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::unordered_map<std::string, int>& expected)
     {
-        ASSERT_EQ(get_persistent_hash_map_size(m), Int64(expected.size()))
-            << name << " [" << step_kv.first << " " << step_kv.second << "]";
         for (const auto& ekv : expected)
             expect_in(name, step_kv, m, ekv.first, ekv.second);
+        ASSERT_EQ(get_persistent_hash_map_size(m), Int64(expected.size()))
+            << name << " [" << step_kv.first << " " << step_kv.second << "]";
     }
 
     void test_assoc(std::vector<std::pair<std::string, int>> kvs)
@@ -200,6 +200,62 @@ TEST_F(persistent_hash_map_test, assoc_root_array_no_collisions)
         {"t-a", 301},
         {"u-a", 311},
         {"v-a", 321},
+    });
+}
+
+TEST_F(persistent_hash_map_test, assoc_root_array_level_1_collisions)
+{
+    test_assoc({
+        {"0-a", 10},
+        {"1-a", 20},
+        {"1-b", 21},
+        {"1-c", 22},
+        {"0-b", 11},
+        {"0-c", 12},
+        {"0-d", 13},
+        {"2-a", 30},
+        {"3-a", 40},
+        {"4-a", 50},
+        {"5-a", 60},
+        {"6-a", 70},
+        {"7-a", 80},
+        {"8-a", 90},
+        {"9-a", 100},
+        {"a-a", 110},
+        {"b-a", 120},
+        {"c-a", 130},
+        {"d-a", 140},
+        {"e-a", 150},
+        {"f-a", 160},
+        {"g-a", 170},
+        {"h-a", 180},
+        {"i-a", 190},
+        {"j-a", 200},
+        {"k-a", 210},
+        {"l-a", 220},
+        {"m-a", 230},
+        {"n-a", 240},
+        {"o-a", 250},
+        {"p-a", 260},
+        {"q-a", 270},
+        {"r-a", 280},
+        {"s-a", 290},
+        {"t-a", 300},
+        {"u-a", 310},
+        {"v-a", 320},
+        {"v-b", 321},
+        {"v-c", 322},
+
+        {"0-a", 14},
+        {"1-a", 23},
+        {"1-b", 24},
+        {"1-c", 25},
+        {"0-b", 15},
+        {"0-c", 16},
+        {"0-d", 17},
+        {"v-a", 323},
+        {"v-b", 324},
+        {"v-c", 325},
     });
 }
 
