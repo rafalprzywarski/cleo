@@ -151,7 +151,10 @@ Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash,
     {
         std::uint32_t value_map = key0_bit | key1_bit;
         Root map_val{create_int64(combine_maps(value_map, 0))};
-        return create_object5(*type::PersistentHashMapArrayNode, *map_val, key0, val0, key1, val1);
+        if (key0_bit < key1_bit)
+            return create_object5(*type::PersistentHashMapArrayNode, *map_val, key0, val0, key1, val1);
+        else
+            return create_object5(*type::PersistentHashMapArrayNode, *map_val, key1, val1, key0, val0);
     }
 }
 

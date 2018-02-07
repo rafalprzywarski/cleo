@@ -101,6 +101,15 @@ struct persistent_hash_map_test : Test
                 expect_nil_not_in("new", kv, *pm);
             });
     }
+
+    void test_assoc_permutations(std::vector<std::pair<std::string, int>> kvs)
+    {
+        do
+        {
+            ASSERT_NO_FATAL_FAILURE(test_assoc(kvs)) << testing::PrintToString(kvs);
+        }
+        while (std::next_permutation(begin(kvs), end(kvs)));
+    }
 };
 
 TEST_F(persistent_hash_map_test, should_be_created_empty)
@@ -330,6 +339,98 @@ TEST_F(persistent_hash_map_test, assoc_root_array_level_1_array)
         {"01-a", 140},
         {"11-a", 150},
         {"21-a", 160},
+    });
+}
+
+TEST_F(persistent_hash_map_test, assoc_root_array_level_2_array)
+{
+    test_assoc({
+        {"000-a", 10},
+        {"100-a", 20},
+        {"200-a", 30},
+        {"300-a", 40},
+        {"400-a", 50},
+        {"500-a", 60},
+        {"600-a", 70},
+        {"700-a", 80},
+        {"800-a", 90},
+        {"900-a", 100},
+        {"a00-a", 110},
+        {"b00-a", 120},
+        {"c00-a", 130},
+        {"d00-a", 140},
+        {"e00-a", 150},
+        {"f00-a", 160},
+        {"g00-a", 170},
+        {"h00-a", 180},
+        {"i00-a", 190},
+        {"j00-a", 200},
+        {"k00-a", 210},
+        {"l00-a", 220},
+        {"m00-a", 230},
+        {"n00-a", 240},
+        {"o00-a", 250},
+        {"p00-a", 260},
+        {"q00-a", 270},
+        {"r00-a", 280},
+        {"s00-a", 290},
+        {"t00-a", 300},
+        {"u00-a", 310},
+        {"v00-a", 320},
+
+        {"000-a", 11},
+        {"100-a", 21},
+        {"200-a", 31},
+        {"u00-a", 311},
+        {"v00-a", 321},
+    });
+
+    test_assoc({
+        {"000-a", 10},
+        {"000-b", 11},
+        {"000-c", 12},
+        {"100-a", 20},
+        {"200-a", 30},
+
+        {"00-a", 110},
+        {"00-b", 111},
+        {"00-c", 112},
+        {"10-a", 120},
+        {"20-a", 130},
+    });
+
+    test_assoc({
+        {"000-a", 10},
+        {"100-a", 20},
+        {"200-a", 30},
+        {"001-a", 40},
+        {"101-a", 50},
+        {"201-a", 60},
+
+        {"000-a", 110},
+        {"100-a", 120},
+        {"200-a", 130},
+        {"001-a", 140},
+        {"101-a", 150},
+        {"201-a", 160},
+    });
+}
+
+TEST_F(persistent_hash_map_test, assoc_order)
+{
+    test_assoc_permutations({
+        {"0310-a", 10},
+        {"3210-a", 20},
+        {"3210-b", 30},
+        {"4210-a", 40},
+        {"4210-b", 50},
+    });
+    test_assoc_permutations({
+        {"1-a", 10},
+        {"100-a", 30},
+        {"10000-a", 50},
+        {"1000000-a", 60},
+        {"1000000-b", 70},
     });
 }
 
