@@ -116,6 +116,7 @@ Force collision_node_assoc(Value node, std::uint8_t shift, Value key, std::uint3
 
 std::pair<Force, Value> collision_node_dissoc(Value node, Value key, std::uint32_t key_hash)
 {
+    assert(get_value_type(node).is(*type::PersistentHashMapCollisionNode));
     auto node_hash = get_int64_value(get_object_element(node, 0));
     if (node_hash != key_hash)
         return {node, *SENTINEL};
@@ -126,7 +127,7 @@ std::pair<Force, Value> collision_node_dissoc(Value node, Value key, std::uint32
     if (index >= node_size)
         return {node, *SENTINEL};
     if (node_size == 5) // two KVs
-        return {get_object_element(node, 4 - index), get_object_element(node, 5 - index)};
+        return {get_object_element(node, 5 - index), get_object_element(node, 4 - index)};
     Root new_node{create_object(*type::PersistentHashMapCollisionNode, nullptr, node_size - 2)};
     copy_object_elements(*new_node, 0, node, 0, index);
     copy_object_elements(*new_node, index, node, index + 2, node_size);
@@ -307,6 +308,7 @@ std::pair<Force, Value> array_node_dissoc(Value node, Value key, std::uint32_t k
 {
     std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
+    std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
     std::uint32_t key_bit = map_bit(0, key_hash);
     if (value_map & key_bit)
     {
@@ -315,13 +317,47 @@ std::pair<Force, Value> array_node_dissoc(Value node, Value key, std::uint32_t k
         if (key0 != key)
             return {node, *SENTINEL};
         auto node_size = get_object_size(node);
-        if (node_size == 5) // two KVs, wrong when nodes are present
+        auto value_count = popcount(value_map);
+        if (value_count == 2 && node_map == 0)
             return {get_object_element(node, 4 - key_index), get_object_element(node, 5 - key_index)};
+        if (value_count == 1 && popcount(node_map) == 1)
+        {
+            auto other_child_node = get_object_element(node, node_size - 1);
+            if (get_value_type(other_child_node).is(*type::PersistentHashMapCollisionNode))
+                return {other_child_node, *SENTINEL};
+        }
         Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size - 2)};
-        Root new_value_node_map{create_int64(combine_maps(value_map ^ key_bit, 0))};
+        Root new_value_node_map{create_int64(combine_maps(value_map ^ key_bit, node_map))};
         set_object_element(*new_node, 0, *new_value_node_map);
         copy_object_elements(*new_node, 1, node, 1, key_index);
         copy_object_elements(*new_node, key_index, node, key_index + 2, node_size);
+        return {*new_node, *SENTINEL};
+    }
+    else if (node_map & key_bit)
+    {
+        auto node_size = get_object_size(node);
+        auto node_index = map_node_index(node_map, node_size, key_bit);
+        auto child_node = get_object_element(node, node_index);
+        std::pair<Root, Value> new_child{collision_node_dissoc(child_node, key, key_hash)};
+        if (*new_child.first == child_node)
+            return {node, *SENTINEL};
+        if (!new_child.second.is(*SENTINEL))
+        {
+            Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size + 1)};
+            Root new_value_node_map{create_int64(combine_maps(value_map ^ key_bit, node_map ^ key_bit))};
+            auto key_index = map_key_index(value_map, key_bit);
+            set_object_element(*new_node, 0, *new_value_node_map);
+            copy_object_elements(*new_node, 1, node, 1, key_index);
+            set_object_element(*new_node, key_index, new_child.second);
+            set_object_element(*new_node, key_index + 1, *new_child.first);
+            copy_object_elements(*new_node, key_index + 2, node, key_index, node_index);
+            copy_object_elements(*new_node, node_index + 2, node, node_index + 1, node_size);
+            return {*new_node, *SENTINEL};
+        }
+        Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size)};
+        copy_object_elements(*new_node, 0, node, 0, node_index);
+        set_object_element(*new_node, node_index, *new_child.first);
+        copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
         return {*new_node, *SENTINEL};
     }
     else
@@ -412,7 +448,7 @@ Force persistent_hash_map_dissoc(Value map, Value key)
         if (new_node.first->is(node_or_val))
             return map;
         if (!new_node.second.is(*SENTINEL))
-            return create_single_value_map(*new_node.first, new_node.second);
+            return create_single_value_map(new_node.second, *new_node.first);
         auto size = get_persistent_hash_map_size(map);
         return create_map(size - 1, *new_node.first);
     }
