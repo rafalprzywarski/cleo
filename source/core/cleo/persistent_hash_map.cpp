@@ -114,6 +114,25 @@ Force collision_node_assoc(Value node, std::uint8_t shift, Value key, std::uint3
     }
 }
 
+std::pair<Force, Value> collision_node_dissoc(Value node, Value key, std::uint32_t key_hash)
+{
+    auto node_hash = get_int64_value(get_object_element(node, 0));
+    if (node_hash != key_hash)
+        return {node, *SENTINEL};
+    auto node_size = get_object_size(node);
+    decltype(node_size) index = 1;
+    while (index < node_size && get_object_element(node, index) != key)
+        index += 2;
+    if (index >= node_size)
+        return {node, *SENTINEL};
+    if (node_size == 5) // two KVs
+        return {get_object_element(node, 4 - index), get_object_element(node, 5 - index)};
+    Root new_node{create_object(*type::PersistentHashMapCollisionNode, nullptr, node_size - 2)};
+    copy_object_elements(*new_node, 0, node, 0, index);
+    copy_object_elements(*new_node, index, node, index + 2, node_size);
+    return {*new_node, *SENTINEL};
+}
+
 std::uint32_t map_bit(std::uint8_t shift, std::uint32_t hash)
 {
     return 1 << ((hash >> shift) & 0x1f);
@@ -284,6 +303,31 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
     }
 }
 
+std::pair<Force, Value> array_node_dissoc(Value node, Value key, std::uint32_t key_hash)
+{
+    std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+    std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
+    std::uint32_t key_bit = map_bit(0, key_hash);
+    if (value_map & key_bit)
+    {
+        auto key_index = map_key_index(value_map, key_bit);
+        auto key0 = get_object_element(node, key_index);
+        if (key0 != key)
+            return {node, *SENTINEL};
+        auto node_size = get_object_size(node);
+        if (node_size == 5) // two KVs, wrong when nodes are present
+            return {get_object_element(node, 4 - key_index), get_object_element(node, 5 - key_index)};
+        Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size - 2)};
+        Root new_value_node_map{create_int64(combine_maps(value_map ^ key_bit, 0))};
+        set_object_element(*new_node, 0, *new_value_node_map);
+        copy_object_elements(*new_node, 1, node, 1, key_index);
+        copy_object_elements(*new_node, key_index, node, key_index + 2, node_size);
+        return {*new_node, *SENTINEL};
+    }
+    else
+        return {node, *SENTINEL};
+}
+
 }
 
 Force create_persistent_hash_map()
@@ -353,6 +397,40 @@ Force persistent_hash_map_assoc(Value map, Value key, Value val)
     if (key_hash == key0_hash)
         return create_collision_map(key_hash, key0, val0, key, val);
     return create_array_map(key0, key0_hash, val0, key, key_hash, val);
+}
+
+Force persistent_hash_map_dissoc(Value map, Value key)
+{
+    auto node_or_val = get_object_element(map, 1);
+    if (node_or_val.is(*SENTINEL))
+        return map;
+    auto node_or_val_type = get_value_type(node_or_val);
+    if (node_or_val_type.is(*type::PersistentHashMapCollisionNode))
+    {
+        std::uint32_t key_hash = hash_value(key);
+        std::pair<Root, Value> new_node{collision_node_dissoc(node_or_val, key, key_hash)};
+        if (new_node.first->is(node_or_val))
+            return map;
+        if (!new_node.second.is(*SENTINEL))
+            return create_single_value_map(*new_node.first, new_node.second);
+        auto size = get_persistent_hash_map_size(map);
+        return create_map(size - 1, *new_node.first);
+    }
+    if (node_or_val_type.is(*type::PersistentHashMapArrayNode))
+    {
+        std::uint32_t key_hash = hash_value(key);
+        std::pair<Root, Value> new_node{array_node_dissoc(node_or_val, key, key_hash)};
+        if (new_node.first->is(node_or_val))
+            return map;
+        if (!new_node.second.is(*SENTINEL))
+            return create_single_value_map(*new_node.first, new_node.second);
+        auto size = get_persistent_hash_map_size(map);
+        return create_map(size - 1, *new_node.first);
+    }
+    Value key0 = get_object_element(map, 2);
+    if (key0 == key)
+        return create_persistent_hash_map();
+    return map;
 }
 
 Value persistent_hash_map_contains(Value m, Value k)

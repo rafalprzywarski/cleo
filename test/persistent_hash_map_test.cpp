@@ -39,41 +39,46 @@ struct persistent_hash_map_test : Test
         return create_object1(*HashString, *k);
     }
 
-    void expect_in(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::string& key, int value)
+    template <typename Step>
+    void expect_in(const std::string& name, const Step& step, Value m, const std::string& key, int value)
     {
         Root ek{create_key(key)};
         Root ev{create_int64(value)};
         ASSERT_EQ_VALS(*ev, persistent_hash_map_get(m, *ek))
-            << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
+            << name << " " << testing::PrintToString(step) << " key: " << key;
         ASSERT_EQ_REFS(TRUE, persistent_hash_map_contains(m, *ek))
-            << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
+            << name << " " << testing::PrintToString(step) << " key: " << key;
     }
 
-    void expect_not_in(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::string& key, Value k)
+    template <typename Step>
+    void expect_not_in(const std::string& name, const Step& step, Value m, const std::string& key, Value k)
     {
         ASSERT_EQ_REFS(nil, persistent_hash_map_get(m, k))
-            << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
+            << name << " " << testing::PrintToString(step) << " key: " << key;
         ASSERT_EQ_REFS(nil, persistent_hash_map_contains(m, k))
-            << name << " [" << step_kv.first << " " << step_kv.second << "] key: " << key;
+            << name << " " << testing::PrintToString(step) << " key: " << key;
     }
 
-    void expect_not_in(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::string& key)
+    template <typename Step>
+    void expect_not_in(const std::string& name, const Step& step, Value m, const std::string& key)
     {
         Root k{create_key(key)};
-        expect_not_in(name, step_kv, m, key, *k);
+        expect_not_in(name, step, m, key, *k);
     }
 
-    void expect_nil_not_in(const std::string& name, const std::pair<std::string, int>& step_kv, Value m)
+    template <typename Step>
+    void expect_nil_not_in(const std::string& name, const Step& step, Value m)
     {
-        expect_not_in(name, step_kv, m, "nil", nil);
+        expect_not_in(name, step, m, "nil", nil);
     }
 
-    void check_pm(const std::string& name, const std::pair<std::string, int>& step_kv, Value m, const std::unordered_map<std::string, int>& expected)
+    template <typename Step>
+    void check_pm(const std::string& name, const Step& step, Value m, const std::unordered_map<std::string, int>& expected)
     {
         for (const auto& ekv : expected)
-            expect_in(name, step_kv, m, ekv.first, ekv.second);
-        ASSERT_EQ(get_persistent_hash_map_size(m), Int64(expected.size()))
-            << name << " [" << step_kv.first << " " << step_kv.second << "]";
+            expect_in(name, step, m, ekv.first, ekv.second);
+        ASSERT_EQ(Int64(expected.size()), get_persistent_hash_map_size(m))
+            << name << " " << testing::PrintToString(step);
     }
 
     void test_assoc(std::vector<std::pair<std::string, int>> kvs)
@@ -109,6 +114,39 @@ struct persistent_hash_map_test : Test
             ASSERT_NO_FATAL_FAILURE(test_assoc(kvs)) << testing::PrintToString(kvs);
         }
         while (std::next_permutation(begin(kvs), end(kvs)));
+    }
+
+    void test_dissoc(std::vector<std::pair<std::string, int>> initial, std::vector<std::string> ks)
+    {
+        Root pm{create_persistent_hash_map()};
+        std::unordered_map<std::string, int> expected;
+        for (auto const& kv : initial)
+        {
+            Root k{create_key(kv.first)};
+            Root v{create_int64(kv.second)};
+            pm = persistent_hash_map_assoc(*pm, *k, *v);
+            expected[kv.first] = kv.second;
+        }
+
+        for (auto const& k : ks)
+            ASSERT_NO_FATAL_FAILURE({
+                std::string bad_key = k + "*";
+                Root kval{create_key(k)};
+                Root new_pm{persistent_hash_map_dissoc(*pm, *kval)};
+
+                check_pm("original", k, *pm, expected);
+                if (expected.count(k) != 0)
+                    expect_in("original", k, *pm, k, expected.at(k));
+
+                pm = *new_pm;
+                expected.erase(k);
+
+                expect_not_in("new", k, *pm, k);
+                check_pm("new", k, *pm, expected);
+
+                expect_not_in("new", k, *pm, bad_key);
+                expect_nil_not_in("new", k, *pm);
+            });
     }
 };
 
@@ -431,6 +469,131 @@ TEST_F(persistent_hash_map_test, assoc_order)
         {"10000-a", 50},
         {"1000000-a", 60},
         {"1000000-b", 70},
+    });
+}
+
+TEST_F(persistent_hash_map_test, dissoc_empty)
+{
+    test_dissoc({}, {"0-x"});
+}
+
+TEST_F(persistent_hash_map_test, dissoc_single_value)
+{
+    test_dissoc({
+        {"0-a", 10},
+    }, {
+        "0-b",
+        "0-a",
+    });
+}
+
+TEST_F(persistent_hash_map_test, dissoc_root_collisions)
+{
+    test_dissoc({
+        {"0-a", 10},
+        {"0-b", 20},
+        {"0-c", 30},
+        {"0-d", 40},
+        {"0-e", 50},
+    }, {
+        "1-e",
+        "0-e",
+        "0-a",
+        "0-c",
+        "0-b",
+        "0-d",
+    });
+}
+
+TEST_F(persistent_hash_map_test, dissoc_root_array_no_collisions)
+{
+    test_dissoc({
+        {"0-a", 10},
+        {"1-a", 20},
+        {"2-a", 30},
+        {"3-a", 40},
+        {"4-a", 50},
+        {"5-a", 60},
+        {"6-a", 70},
+        {"7-a", 80},
+        {"8-a", 90},
+        {"9-a", 100},
+        {"a-a", 110},
+        {"b-a", 120},
+        {"c-a", 130},
+        {"d-a", 140},
+        {"e-a", 150},
+        {"f-a", 160},
+        {"g-a", 170},
+        {"h-a", 180},
+        {"i-a", 190},
+        {"j-a", 200},
+        {"k-a", 210},
+        {"l-a", 220},
+        {"m-a", 230},
+        {"n-a", 240},
+        {"o-a", 250},
+        {"p-a", 260},
+        {"q-a", 270},
+        {"r-a", 280},
+        {"s-a", 290},
+        {"t-a", 300},
+        {"u-a", 310},
+        {"v-a", 320},
+    }, {
+        "v-b",
+        "0-b",
+
+        "v-a",
+        "0-a",
+
+        "u-a",
+
+        "1-a",
+        "2-a",
+        "3-a",
+        "4-a",
+        "5-a",
+        "6-a",
+        "7-a",
+        "8-a",
+        "9-a",
+        "a-a",
+        "b-a",
+        "c-a",
+        "d-a",
+        "e-a",
+        "f-a",
+        "g-a",
+        "h-a",
+        "i-a",
+        "j-a",
+        "k-a",
+        "l-a",
+        "m-a",
+        "n-a",
+        "o-a",
+        "p-a",
+        "q-a",
+        "r-a",
+        "s-a",
+        "t-a",
+    });
+
+    test_dissoc({
+        {"0-a", 10},
+        {"1-a", 20}
+    }, {
+        "0-a",
+        "1-a"
+    });
+
+    test_dissoc({
+        {"0-a", 10},
+        {"1-a", 20}
+    }, {
+        "1-a",
+        "0-a"
     });
 }
 
