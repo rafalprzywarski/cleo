@@ -97,6 +97,8 @@ struct persistent_hash_map_test : Test
                 if (expected.count(kv.first) == 0)
                     expect_not_in("original", kv, *pm, kv.first);
 
+                check_optimal_structure(*new_pm);
+
                 pm = *new_pm;
                 expected[kv.first] = kv.second;
 
@@ -147,6 +149,8 @@ struct persistent_hash_map_test : Test
                 if (expected.count(k) != 0)
                     expect_in("original", k, *pm, k, expected.at(k));
 
+                check_optimal_structure(*new_pm);
+
                 pm = *new_pm;
                 expected.erase(k);
 
@@ -156,6 +160,60 @@ struct persistent_hash_map_test : Test
                 expect_not_in("new", k, *pm, bad_key);
                 expect_nil_not_in("new", k, *pm);
             });
+    }
+
+    Int64 node_arity(Value node)
+    {
+        if (!get_value_type(node).is(*type::PersistentHashMapArrayNode))
+            return 0;
+        return __builtin_popcount(std::uint32_t(std::uint64_t(get_int64_value(get_object_element(node, 0))) >> 32));
+    }
+
+    Int64 payload_arity(Value node)
+    {
+        if (!get_value_type(node).is(*type::PersistentHashMapArrayNode))
+            return 0;
+        return __builtin_popcount(std::uint32_t(get_int64_value(get_object_element(node, 0))));
+    }
+
+    Int64 branch_size(Value node)
+    {
+        if (get_value_type(node).is(*type::PersistentHashMapCollisionNode))
+        {
+            return (get_object_size(node) - 1) / 2;
+        }
+        if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
+        {
+            std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+            std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
+            std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
+            auto node_size = get_object_size(node);
+            Int64 size = __builtin_popcount(value_map);
+            for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)
+                size += branch_size(get_object_element(node, node_size - i - 1));
+            return size;
+        }
+        return 1;
+    }
+
+    void check_node_invariant(Value node)
+    {
+        ASSERT_GE(branch_size(node), 2 * node_arity(node) + payload_arity(node));
+
+        if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
+        {
+            std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+            std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
+            auto node_size = get_object_size(node);
+            for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)
+                check_node_invariant(get_object_element(node, node_size - i - 1));
+        }
+    }
+
+    void check_optimal_structure(Value map)
+    {
+        ASSERT_EQ_REFS(*type::PersistentHashMap, get_value_type(map));
+        check_node_invariant(get_object_element(map, 1));
     }
 };
 
@@ -947,7 +1005,6 @@ TEST_F(persistent_hash_map_test, dissoc_order)
         "1000000-b",
     });
 }
-
 
 }
 }
