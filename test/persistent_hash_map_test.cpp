@@ -116,6 +116,15 @@ struct persistent_hash_map_test : Test
         while (std::next_permutation(begin(kvs), end(kvs)));
     }
 
+    void test_dissoc_permutations(std::vector<std::pair<std::string, int>> kvs, std::vector<std::string> ks)
+    {
+        do
+        {
+            ASSERT_NO_FATAL_FAILURE(test_dissoc(kvs, ks)) << testing::PrintToString(kvs) << " " << testing::PrintToString(ks);
+        }
+        while (std::next_permutation(begin(ks), end(ks)));
+    }
+
     void test_dissoc(std::vector<std::pair<std::string, int>> initial, std::vector<std::string> ks)
     {
         Root pm{create_persistent_hash_map()};
@@ -812,6 +821,133 @@ TEST_F(persistent_hash_map_test, dissoc_root_array_level_1_array)
         "21-a",
     });
 }
+
+TEST_F(persistent_hash_map_test, dissoc_root_array_level_2_array)
+{
+    test_dissoc({
+        {"000-a", 10},
+        {"100-a", 20},
+        {"200-a", 30},
+        {"300-a", 40},
+        {"400-a", 50},
+        {"500-a", 60},
+        {"600-a", 70},
+        {"700-a", 80},
+        {"800-a", 90},
+        {"900-a", 100},
+        {"a00-a", 110},
+        {"b00-a", 120},
+        {"c00-a", 130},
+        {"d00-a", 140},
+        {"e00-a", 150},
+        {"f00-a", 160},
+        {"g00-a", 170},
+        {"h00-a", 180},
+        {"i00-a", 190},
+        {"j00-a", 200},
+        {"k00-a", 210},
+        {"l00-a", 220},
+        {"m00-a", 230},
+        {"n00-a", 240},
+        {"o00-a", 250},
+        {"p00-a", 260},
+        {"q00-a", 270},
+        {"r00-a", 280},
+        {"s00-a", 290},
+        {"t00-a", 300},
+        {"u00-a", 310},
+        {"v00-a", 320},
+    }, {
+        "000-a",
+        "v00-a",
+        "100-a",
+        "200-a",
+        "300-a",
+        "400-a",
+        "500-a",
+        "600-a",
+        "700-a",
+        "800-a",
+        "900-a",
+        "a00-a",
+        "b00-a",
+        "c00-a",
+        "d00-a",
+        "e00-a",
+        "f00-a",
+        "g00-a",
+        "h00-a",
+        "i00-a",
+        "j00-a",
+        "k00-a",
+        "l00-a",
+        "m00-a",
+        "n00-a",
+        "o00-a",
+        "p00-a",
+        "q00-a",
+        "r00-a",
+        "s00-a",
+        "u00-a",
+        "t00-a",
+    });
+
+    test_dissoc({
+        {"000-a", 10},
+        {"000-b", 11},
+        {"000-c", 12},
+        {"100-a", 20},
+        {"200-a", 30},
+
+        {"00-a", 110},
+        {"00-b", 111},
+        {"00-c", 112},
+        {"10-a", 120},
+        {"20-a", 130},
+    }, {
+        "000-a",
+        "100-a",
+        "200-a",
+        "000-b",
+        "000-c",
+        "00-a",
+        "00-b",
+        "00-c",
+        "10-a",
+        "20-a",
+    });
+}
+
+TEST_F(persistent_hash_map_test, dissoc_order)
+{
+    test_dissoc_permutations({
+        {"0310-a", 10},
+        {"3210-a", 20},
+        {"3210-b", 30},
+        {"4210-a", 40},
+        {"4210-b", 50},
+    }, {
+        "0310-a",
+        "3210-a",
+        "3210-b",
+        "4210-a",
+        "4210-b",
+    });
+    test_dissoc_permutations({
+        {"1-a", 10},
+        {"100-a", 30},
+        {"10000-a", 50},
+        {"1000000-a", 60},
+        {"1000000-b", 70},
+    }, {
+        "1-a",
+        "100-a",
+        "10000-a",
+        "1000000-a",
+        "1000000-b",
+    });
+}
+
 
 }
 }
