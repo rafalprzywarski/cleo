@@ -9,6 +9,7 @@
 #include "eval.hpp"
 #include "small_set.hpp"
 #include "small_map.hpp"
+#include "persistent_hash_map.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "atom.hpp"
@@ -185,6 +186,7 @@ const Root EMPTY_LIST{create_list(nullptr, 0)};
 const Root EMPTY_VECTOR{create_small_vector(nullptr, 0)};
 const Root EMPTY_SET{create_small_set()};
 const Root EMPTY_MAP{create_small_map()};
+const Root EMPTY_PERSISTENT_MAP{create_persistent_hash_map()};
 
 Root namespaces{*EMPTY_MAP};
 Root bindings;

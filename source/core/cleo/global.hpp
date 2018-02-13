@@ -192,6 +192,7 @@ extern const Root EMPTY_LIST;
 extern const Root EMPTY_VECTOR;
 extern const Root EMPTY_SET;
 extern const Root EMPTY_MAP;
+extern const Root EMPTY_PERSISTENT_MAP;
 extern const Root recur;
 
 extern Root namespaces;

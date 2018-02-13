@@ -470,7 +470,7 @@ Force persistent_hash_map_dissoc(Value map, Value key)
     }
     Value key0 = get_object_element(map, 2);
     if (key0 == key)
-        return create_persistent_hash_map();
+        return *EMPTY_PERSISTENT_MAP;
     return map;
 }
 
