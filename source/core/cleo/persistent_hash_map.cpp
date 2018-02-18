@@ -57,14 +57,18 @@ Force create_collision_map(std::uint32_t hash, Value k0, Value v0, Value k1, Val
     return create_map(*TWO, *node);
 }
 
-Value collision_node_get(Value node, Value key, Value def_val)
+Value collision_node_get(Value node, std::uint32_t size, Value key, Value def_val)
 {
     assert(get_value_type(node).is(*type::PersistentHashMapCollisionNode));
-    auto size = get_object_size(node);
     for (decltype(size) i = 1; i < size; i += 2)
         if (get_object_element(node, i) == key)
             return get_object_element(node, i + 1);
     return def_val;
+}
+
+Value collision_node_get(Value node, Value key, Value def_val)
+{
+    return collision_node_get(node, get_object_size(node), key, def_val);
 }
 
 Value collision_node_get(Value node, Value key, std::uint32_t key_hash, Value def_val)
@@ -132,6 +136,21 @@ std::pair<Force, Value> collision_node_dissoc(Value node, Value key, std::uint32
     copy_object_elements(*new_node, 0, node, 0, index);
     copy_object_elements(*new_node, index, node, index + 2, node_size);
     return {*new_node, *SENTINEL};
+}
+
+Value collision_node_equal(Value left, Value right)
+{
+    assert(get_value_type(left).is(*type::PersistentHashMapCollisionNode));
+    assert(get_value_type(right).is(*type::PersistentHashMapCollisionNode));
+    auto size = get_object_size(left);
+    if (size != get_object_size(right))
+        return nil;
+    if (get_int64_value(get_object_element(left, 0)) != get_int64_value(get_object_element(right, 0)))
+        return nil;
+    for (decltype(size) i = 1; i < size; i += 2)
+        if (collision_node_get(right, size, get_object_element(left, i), *SENTINEL) != get_object_element(left, i + 1))
+            return nil;
+    return TRUE;
 }
 
 std::uint32_t map_bit(std::uint8_t shift, std::uint32_t hash)
@@ -369,6 +388,35 @@ std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value 
         return {node, *SENTINEL};
 }
 
+Value array_node_equal(Value left, Value right)
+{
+    assert(get_value_type(left).is(*type::PersistentHashMapArrayNode));
+    assert(get_value_type(right).is(*type::PersistentHashMapArrayNode));
+
+    std::uint64_t value_node_map = get_int64_value(get_object_element(left, 0));
+    if (get_int64_value(get_object_element(right, 0)) != value_node_map)
+        return nil;
+    std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
+    auto value_count = popcount(value_map);
+    for (std::uint32_t i = 1; i < (value_count * 2 + 1); ++i)
+        if (get_object_element(left, i) != get_object_element(right, i))
+            return nil;
+    auto node_size = get_object_size(left);
+    for (std::uint32_t i = value_count * 2 + 1; i < node_size; ++i)
+    {
+        auto left_child = get_object_element(left, i);
+        auto right_child = get_object_element(right, i);
+        auto left_child_type = get_object_type(left_child);
+        if (!left_child_type.is(get_object_type(right_child)))
+            return nil;
+        if (left_child_type.is(*type::PersistentHashMapCollisionNode) && !collision_node_equal(get_object_element(left, i), get_object_element(right, i)))
+            return nil;
+        if (left_child_type.is(*type::PersistentHashMapArrayNode) && !array_node_equal(get_object_element(left, i), get_object_element(right, i)))
+            return nil;
+    }
+    return TRUE;
+}
+
 }
 
 Force create_persistent_hash_map()
@@ -478,6 +526,33 @@ Value persistent_hash_map_contains(Value m, Value k)
 {
     auto val = persistent_hash_map_get(m, k, *SENTINEL);
     return val.is(*SENTINEL) ? nil : TRUE;
+}
+
+Value are_persistent_hash_maps_equal(Value left, Value right)
+{
+    if (get_object_element(left, 0) != get_object_element(right, 0))
+        return nil;
+    auto left_node_or_val = get_object_element(left, 1);
+    auto right_node_or_val = get_object_element(right, 1);
+    if (left_node_or_val.is(*SENTINEL) || right_node_or_val.is(*SENTINEL))
+        return left_node_or_val.is(right_node_or_val) ? TRUE : nil;
+    auto left_type = get_value_type(left_node_or_val);
+    auto right_type = get_value_type(right_node_or_val);
+    if (left_type.is(*type::PersistentHashMapCollisionNode) || right_type.is(*type::PersistentHashMapCollisionNode))
+    {
+        if (!left_type.is(right_type))
+            return nil;
+        return collision_node_equal(left_node_or_val, right_node_or_val);
+    }
+    if (left_type.is(*type::PersistentHashMapArrayNode) || right_type.is(*type::PersistentHashMapArrayNode))
+    {
+        if (!left_type.is(right_type))
+            return nil;
+        return array_node_equal(left_node_or_val, right_node_or_val);
+    }
+    auto left_key = get_object_element(left, 2);
+    auto right_key = get_object_element(right, 2);
+    return (left_node_or_val == right_node_or_val && left_key == right_key) ? TRUE : nil;
 }
 
 }

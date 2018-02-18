@@ -11,5 +11,6 @@ Value persistent_hash_map_get(Value m, Value k, Value def_v);
 Force persistent_hash_map_assoc(Value map, Value key, Value val);
 Force persistent_hash_map_dissoc(Value map, Value key);
 Value persistent_hash_map_contains(Value m, Value k);
+Value are_persistent_hash_maps_equal(Value left, Value right);
 
 }
