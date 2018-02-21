@@ -6,6 +6,7 @@
 #include "var.hpp"
 #include "multimethod.hpp"
 #include <array>
+#include <cstring>
 
 namespace cleo
 {

@@ -1,6 +1,7 @@
 #include <cleo/persistent_hash_map.hpp>
 #include <cleo/multimethod.hpp>
 #include "util.hpp"
+#include <algorithm>
 
 namespace cleo
 {

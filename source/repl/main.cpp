@@ -8,6 +8,7 @@
 #include <cleo/small_map.hpp>
 #include <iostream>
 #include <readline/readline.h>
+#include <readline/history.h>
 
 std::string get_current_ns()
 {

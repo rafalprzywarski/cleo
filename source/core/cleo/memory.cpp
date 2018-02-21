@@ -2,6 +2,10 @@
 #include "value.hpp"
 #include "global.hpp"
 #include <cstdlib>
+#include <algorithm>
+#ifndef __APPLE__
+#include <malloc.h>
+#endif
 
 namespace cleo
 {
@@ -9,7 +13,7 @@ namespace cleo
 namespace
 {
 
-constexpr auto OFFSET = sizeof(void *);
+constexpr auto OFFSET = tag::MASK + 1;
 
 char& tag_ref(void *ptr)
 {
@@ -114,7 +118,11 @@ void *mem_alloc(std::size_t size)
         gc();
     }
     --gc_counter;
+#ifdef __APPLE__
     auto ptr = reinterpret_cast<char *>(std::malloc(OFFSET + size)) + OFFSET;
+#else
+    auto ptr = reinterpret_cast<char *>(memalign(tag::MASK + 1, OFFSET + size)) + OFFSET;
+#endif
     unmark(ptr);
     allocations.push_back(ptr);
     if ((reinterpret_cast<std::uintptr_t>(ptr) & tag::MASK) != 0)
