@@ -11,13 +11,19 @@ void check_type(const std::string& name, Value val, Value type);
 [[noreturn]] void throw_illegal_argument(const std::string& msg);
 [[noreturn]] void throw_integer_overflow();
 
+template <const Value *name>
+inline Value deref_name() { return *name; }
+
+template <>
+inline Value deref_name<nullptr>() { return nil; }
+
 template <Force f(), const Value *name>
 Force create_native_function0()
 {
     return create_native_function([](const Value *, std::uint8_t num_args)
     {
         if (num_args != 0)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f();
     });
 }
@@ -28,7 +34,7 @@ Force create_native_new0()
     return create_native_function([](const Value *, std::uint8_t num_args)
     {
         if (num_args != 1)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f();
     });
 }
@@ -39,7 +45,7 @@ Force create_native_function1()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 1)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f(args[0]);
     });
 }
@@ -50,7 +56,7 @@ Force create_native_function1()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 1)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return force(f(args[0]));
     });
 }
@@ -61,7 +67,7 @@ Force create_native_new1()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 2)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f(args[1]);
     });
 }
@@ -72,7 +78,7 @@ Force create_native_function2()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 2)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f(args[0], args[1]);
     });
 }
@@ -83,7 +89,7 @@ Force create_native_function2()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 2)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return force(f(args[0], args[1]));
     });
 }
@@ -94,7 +100,7 @@ Force create_native_new2()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 3)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f(args[1], args[2]);
     });
 }
@@ -105,7 +111,7 @@ Force create_native_function3()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 3)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f(args[0], args[1], args[2]);
     });
 }
@@ -116,7 +122,7 @@ Force create_native_new3()
     return create_native_function([](const Value *args, std::uint8_t num_args)
     {
         if (num_args != 4)
-            throw_arity_error(name != nullptr ? *name : nil, num_args);
+            throw_arity_error(deref_name<name>(), num_args);
         return f(args[1], args[2], args[3]);
     });
 }

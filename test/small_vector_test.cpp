@@ -26,7 +26,7 @@ TEST_F(small_vector_test, should_create_a_vector_from_elements)
     Root elem{create_int64(11)};
     auto elemVal = *elem;
     Root vector{create_small_vector(&elemVal, 1)};
-    ASSERT_EQ(1, get_small_vector_size(*vector));
+    ASSERT_EQ(1u, get_small_vector_size(*vector));
     ASSERT_TRUE(elem->is(get_small_vector_elem(*vector, 0)));
     ASSERT_TRUE(get_small_vector_elem(*vector, 1).is_nil());
 
