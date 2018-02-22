@@ -280,6 +280,11 @@ struct persistent_hash_map_test : Test
     }
 };
 
+struct persistent_hash_map_permutation_test : persistent_hash_map_test
+{
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 64};
+};
+
 TEST_F(persistent_hash_map_test, should_be_created_empty)
 {
     Root m{create_persistent_hash_map()};
@@ -584,7 +589,7 @@ TEST_F(persistent_hash_map_test, assoc_root_array_level_2_array)
     });
 }
 
-TEST_F(persistent_hash_map_test, assoc_order)
+TEST_F(persistent_hash_map_permutation_test, assoc_order)
 {
     test_assoc_permutations({
         {"0310-a", 10},
@@ -1039,7 +1044,7 @@ TEST_F(persistent_hash_map_test, dissoc_root_array_level_2_array)
     });
 }
 
-TEST_F(persistent_hash_map_test, dissoc_order)
+TEST_F(persistent_hash_map_permutation_test, dissoc_order)
 {
     test_dissoc_permutations({
         {"0310-a", 10},
