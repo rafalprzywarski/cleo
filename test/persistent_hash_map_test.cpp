@@ -23,6 +23,11 @@ struct persistent_hash_map_test : Test
         return are_equal(get_object_element(left, 0), get_object_element(right, 0));
     }
 
+    static Force pr_str_hash_string(Value val)
+    {
+        return pr_str(get_object_element(val, 0));
+    }
+
     persistent_hash_map_test() : Test("cleo.persistent_hash_map.test")
     {
         Root f{create_native_function1<string_value>()};
@@ -31,6 +36,9 @@ struct persistent_hash_map_test : Test
         f = create_native_function2<are_hash_strings_equal>();
         Root args{svec(*HashString, *HashString)};
         define_method(OBJ_EQ, *args, *f);
+
+        f = create_native_function1<pr_str_hash_string>();
+        define_method(PR_STR_OBJ, *HashString, *f);
     }
 
     Force create_key(const std::string& s)
@@ -246,6 +254,28 @@ struct persistent_hash_map_test : Test
 
                 EXPECT_EQ_REFS(expected, are_persistent_hash_maps_equal(maps[i], maps[j])) << "left: " << testing::PrintToString(kvss[i]) << " right: " << testing::PrintToString(kvss[j]);
             }
+    }
+
+    void check_sequence(std::vector<std::pair<std::string, int>> kvs)
+    {
+        Root m{create_map(kvs)};
+        Root s{persistent_hash_map_seq(*m)};
+        m = nil;
+        auto size = kvs.size();
+        for (decltype(size) i = 0; i < size; ++i)
+        {
+            ASSERT_FALSE(s->is_nil()) << testing::PrintToString(kvs[i]) << " " << testing::PrintToString(kvs);
+            Root k{create_key(kvs[i].first)};
+            Root v{create_int64(kvs[i].second)};
+            Root expected{svec(*k, *v)};
+            auto entry{get_persistent_hash_map_seq_first(*s)};
+
+            ASSERT_EQ_REFS(*type::SmallVector, get_value_type(entry)) << testing::PrintToString(kvs);
+            ASSERT_EQ_VALS(*expected, entry) << testing::PrintToString(kvs);
+
+            s = get_persistent_hash_map_seq_next(*s);
+        }
+        ASSERT_EQ_REFS(nil, *s) << testing::PrintToString(kvs);
     }
 };
 
@@ -1513,6 +1543,137 @@ TEST_F(persistent_hash_map_test, equality)
             {"10-a", 120},
             {"20-a", 130},
         }
+    });
+}
+
+TEST_F(persistent_hash_map_test, sequence)
+{
+    check_sequence({});
+    check_sequence({{"7-a", 3}});
+    check_sequence({
+        {"7-a", 3},
+        {"7-b", 4},
+    });
+    check_sequence({
+        {"7-a", 3},
+        {"7-b", 4},
+        {"7-c", 5},
+        {"7-d", 6},
+    });
+    check_sequence({
+        {"0-a", 10},
+        {"1-a", 20},
+        {"2-a", 30},
+        {"3-a", 40},
+        {"4-a", 50},
+        {"c-a", 130},
+        {"d-a", 140},
+        {"e-a", 150},
+        {"f-a", 160},
+        {"g-a", 170},
+        {"n-a", 240},
+        {"o-a", 250},
+        {"p-a", 260},
+        {"q-a", 270},
+        {"r-a", 280},
+        {"s-a", 290},
+        {"t-a", 300},
+        {"u-a", 310},
+        {"v-a", 320},
+    });
+    check_sequence({
+        {"2-a", 30},
+        {"3-a", 40},
+        {"4-a", 50},
+        {"1-a", 20},
+        {"1-b", 21},
+        {"1-c", 22},
+        {"0-a", 10},
+        {"0-b", 11},
+        {"0-c", 12},
+        {"0-d", 13},
+    });
+    check_sequence({
+        {"2-a", 30},
+        {"2-b", 31},
+        {"2-c", 32},
+        {"1-a", 20},
+        {"1-b", 21},
+        {"1-c", 22},
+    });
+    check_sequence({
+        {"000-a", 10},
+        {"100-a", 20},
+        {"200-a", 30},
+        {"300-a", 40},
+        {"400-a", 50},
+        {"500-a", 60},
+        {"600-a", 70},
+        {"700-a", 80},
+    });
+    check_sequence({
+        {"000-a", 10},
+        {"100-a", 20},
+        {"200-a", 30},
+        {"300-a", 40},
+        {"400-a", 50},
+        {"500-a", 60},
+        {"600-a", 70},
+        {"700-a", 80},
+    });
+    check_sequence({
+        {"2-a", 90},
+        {"010-a", 100},
+        {"110-a", 110},
+        {"210-a", 120},
+        {"000-a", 10},
+        {"100-a", 20},
+        {"200-a", 30},
+        {"300-a", 40},
+        {"400-a", 50},
+        {"500-a", 60},
+        {"600-a", 70},
+        {"700-a", 80},
+    });
+    check_sequence({
+        {"021-a", 10},
+        {"121-a", 20},
+        {"221-a", 30},
+        {"011-a", 40},
+        {"111-a", 50},
+        {"211-a", 60},
+        {"001-a", 70},
+        {"101-a", 80},
+        {"201-a", 90},
+        {"020-a", 100},
+        {"120-a", 110},
+        {"220-a", 120},
+        {"010-a", 130},
+        {"110-a", 140},
+        {"210-a", 150},
+        {"000-a", 160},
+        {"100-a", 170},
+        {"200-a", 180},
+    });
+    check_sequence({
+        {"21-a", 10},
+        {"21-b", 20},
+        {"21-c", 30},
+        {"11-a", 40},
+        {"11-b", 50},
+        {"11-c", 60},
+        {"01-a", 70},
+        {"01-b", 80},
+        {"01-c", 90},
+        {"20-a", 100},
+        {"20-b", 110},
+        {"20-c", 120},
+        {"10-a", 130},
+        {"10-b", 140},
+        {"10-c", 150},
+        {"00-a", 160},
+        {"00-b", 170},
+        {"00-c", 180},
     });
 }
 

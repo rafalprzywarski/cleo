@@ -1,5 +1,6 @@
 #include "persistent_hash_map.hpp"
 #include "global.hpp"
+#include "small_vector.hpp"
 
 namespace cleo
 {
@@ -13,6 +14,10 @@ namespace cleo
 //   [hash key0 value0 key1 value1 key2? value2? ...]
 // ArrayNode:
 //   [(value-map node-map) key0? value0? key1? value1? ... node2? node1? node0?]
+// HashMapSeq:
+//   size 1: [[first-key first-value]]
+//   size>1: [[first-key first-value] collision-node index #SeqParent[array-node index parent-or-nil]-or-nil]
+//   size>1: [[first-key first-value] array-node index #SeqParent[array-node index parent-or-nil]-or-nil]
 
 namespace
 {
@@ -417,6 +422,56 @@ Value array_node_equal(Value left, Value right)
     return TRUE;
 }
 
+Force collision_node_seq(Value node, Value parent)
+{
+    std::array<Value, 2> kv{{get_object_element(node, 1), get_object_element(node, 2)}};
+    Root entry{create_small_vector(kv.data(), kv.size())};
+    return create_object4(*type::PersistentHashMapSeq, *entry, node, *THREE, parent);
+}
+
+Force array_node_seq(Value node, Value parent)
+{
+    std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+    std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
+    if (value_map != 0)
+    {
+        std::array<Value, 2> kv{{get_object_element(node, 1), get_object_element(node, 2)}};
+        Root entry{create_small_vector(kv.data(), kv.size())};
+        return create_object4(*type::PersistentHashMapSeq, *entry, node, *THREE, parent);
+    }
+    Root child_parent{create_object3(*type::PersistentHashMapSeqParent, node, *TWO, parent)};
+    auto child = get_object_element(node, 1);
+    if (get_value_type(child).is(*type::PersistentHashMapCollisionNode))
+        return collision_node_seq(child, *child_parent);
+    return array_node_seq(child, *child_parent);
+}
+
+Force collision_node_next(Value node, Value child, Value parent, Int64 index)
+{
+    std::array<Value, 2> kv{{get_object_element(child, 1), get_object_element(child, 2)}};
+    Root entry{create_small_vector(kv.data(), kv.size())};
+    Root new_index{create_int64(index + 1)};
+    Root child_parent{create_object3(*type::PersistentHashMapSeqParent, node, *new_index, parent)};
+    return create_object4(*type::PersistentHashMapSeq, *entry, child, *THREE, *child_parent);
+}
+
+Force array_node_next(Value node, Value child, Value parent, Int64 index)
+{
+    Root new_index{create_int64(index + 1)};
+    Root child_parent{create_object3(*type::PersistentHashMapSeqParent, node, *new_index, parent)};
+
+    std::uint64_t value_node_map = get_int64_value(get_object_element(child, 0));
+    std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
+    if (value_map != 0)
+    {
+        std::array<Value, 2> kv{{get_object_element(child, 1), get_object_element(child, 2)}};
+        Root entry{create_small_vector(kv.data(), kv.size())};
+        return create_object4(*type::PersistentHashMapSeq, *entry, child, *THREE, *child_parent);
+    }
+
+    return array_node_seq(child, *child_parent);
+}
+
 }
 
 Force create_persistent_hash_map()
@@ -553,6 +608,52 @@ Value are_persistent_hash_maps_equal(Value left, Value right)
     auto left_key = get_object_element(left, 2);
     auto right_key = get_object_element(right, 2);
     return (left_node_or_val == right_node_or_val && left_key == right_key) ? TRUE : nil;
+}
+
+Force persistent_hash_map_seq(Value m)
+{
+    auto node_or_val = get_object_element(m, 1);
+    if (node_or_val.is(*SENTINEL))
+        return nil;
+    auto node_type = get_value_type(node_or_val);
+    if (node_type.is(*type::PersistentHashMapCollisionNode))
+        return collision_node_seq(node_or_val, nil);
+    if (node_type.is(*type::PersistentHashMapArrayNode))
+        return array_node_seq(node_or_val, nil);
+    std::array<Value, 2> kv{{get_object_element(m, 2), node_or_val}};
+    Root entry{create_small_vector(kv.data(), kv.size())};
+    return create_object1(*type::PersistentHashMapSeq, *entry);
+}
+
+Value get_persistent_hash_map_seq_first(Value s)
+{
+    return get_object_element(s, 0);
+}
+
+Force get_persistent_hash_map_seq_next(Value s)
+{
+    if (get_object_size(s) == 1)
+        return nil;
+    auto node = get_object_element(s, 1);
+    auto index = get_int64_value(get_object_element(s, 2));
+    auto parent = get_object_element(s, 3);
+    while (index == get_object_size(node))
+    {
+        if (!parent)
+            return nil;
+        node = get_object_element(parent, 0);
+        index = get_int64_value(get_object_element(parent, 1));
+        parent = get_object_element(parent, 2);
+    }
+    auto child = get_object_element(node, index);
+    if (get_value_type(child).is(*type::PersistentHashMapCollisionNode))
+        return collision_node_next(node, child, parent, index);
+    if (get_value_type(child).is(*type::PersistentHashMapArrayNode))
+        return array_node_next(node, child, parent, index);
+    std::array<Value, 2> kv{{child, get_object_element(node, index + 1)}};
+    Root entry{create_small_vector(kv.data(), kv.size())};
+    Root new_index{create_int64(index + 2)};
+    return create_object4(*type::PersistentHashMapSeq, *entry, node, *new_index, parent);
 }
 
 }
