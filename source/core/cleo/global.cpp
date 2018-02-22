@@ -15,6 +15,7 @@
 #include "atom.hpp"
 #include "util.hpp"
 #include <iostream>
+#include <limits>
 
 namespace cleo
 {
