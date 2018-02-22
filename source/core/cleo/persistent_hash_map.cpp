@@ -399,11 +399,11 @@ Value array_node_equal(Value left, Value right)
     assert(get_value_type(right).is(*type::PersistentHashMapArrayNode));
 
     std::uint64_t value_node_map = get_int64_value(get_object_element(left, 0));
-    if (get_int64_value(get_object_element(right, 0)) != value_node_map)
+    if (std::uint64_t(get_int64_value(get_object_element(right, 0))) != value_node_map)
         return nil;
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     auto value_count = popcount(value_map);
-    for (std::uint32_t i = 1; i < (value_count * 2 + 1); ++i)
+    for (std::uint32_t i = 1; i < std::uint32_t(value_count * 2 + 1); ++i)
         if (get_object_element(left, i) != get_object_element(right, i))
             return nil;
     auto node_size = get_object_size(left);
