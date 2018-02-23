@@ -127,4 +127,9 @@ Force create_native_new3()
     });
 }
 
+bool map_contains(Value m, Value k);
+Force map_assoc(Value m, Value k, Value v);
+Value map_get(Value m, Value k);
+Force map_merge(Value m1, Value m2);
+
 }

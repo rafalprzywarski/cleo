@@ -6,6 +6,7 @@
 #include <cleo/var.hpp>
 #include <cleo/namespace.hpp>
 #include <cleo/small_map.hpp>
+#include <cleo/util.hpp>
 #include <iostream>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -60,7 +61,7 @@ int main()
 {
     char *line;
 
-    cleo::Root ns_bindings{cleo::small_map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
+    cleo::Root ns_bindings{cleo::map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
     cleo::PushBindingsGuard bindings_guard{*ns_bindings};
     cleo::in_ns(cleo::create_symbol("user"));
     cleo::refer(cleo::CLEO_CORE);

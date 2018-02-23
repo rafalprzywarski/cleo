@@ -2,8 +2,9 @@
 #include "global.hpp"
 #include "var.hpp"
 #include "error.hpp"
-#include "small_map.hpp"
 #include "eval.hpp"
+#include "util.hpp"
+#include "persistent_hash_map.hpp"
 #include <fstream>
 
 namespace cleo
@@ -28,25 +29,25 @@ Value refer(Value ns)
         throw_exception(new_illegal_argument(*msg));
     }
     auto current_ns_name = get_symbol_name(*rt::current_ns);
-    Root current_ns{small_map_get(*namespaces, current_ns_name)};
+    Root current_ns{map_get(*namespaces, current_ns_name)};
     if (!*current_ns)
         current_ns = *EMPTY_MAP;
-    ns = small_map_get(*namespaces, get_symbol_name(ns));
+    ns =map_get(*namespaces, get_symbol_name(ns));
     if (!ns)
         return nil;
-    current_ns = small_map_merge(*current_ns, ns);
-    namespaces = small_map_assoc(*namespaces, current_ns_name, *current_ns);
+    current_ns = map_merge(*current_ns, ns);
+    namespaces = map_assoc(*namespaces, current_ns_name, *current_ns);
     return nil;
 }
 
 Value define(Value sym, Value val)
 {
     assert(get_value_tag(sym) == tag::SYMBOL);
-    Root ns{small_map_get(*namespaces, get_symbol_namespace(sym))};
+    Root ns{persistent_hash_map_get(*namespaces, get_symbol_namespace(sym))};
     if (!*ns)
         ns = *EMPTY_MAP;
-    ns = small_map_assoc(*ns, get_symbol_name(sym), sym);
-    namespaces = small_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
+    ns = persistent_hash_map_assoc(*ns, get_symbol_name(sym), sym);
+    namespaces = persistent_hash_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
     return define_var(sym, val);
 }
 
@@ -55,10 +56,10 @@ Value resolve(Value ns, Value sym)
     auto sym_ns = get_symbol_namespace(sym);
     if (!sym_ns)
     {
-        ns = small_map_get(*namespaces, get_symbol_name(ns));
+        ns = map_get(*namespaces, get_symbol_name(ns));
         if (ns)
         {
-            if (auto found = small_map_get(ns, get_symbol_name(sym)))
+            if (auto found = map_get(ns, get_symbol_name(sym)))
                 sym = found;
         }
     }

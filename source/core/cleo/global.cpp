@@ -41,8 +41,10 @@ const Value FIRST = create_symbol("cleo.core", "first");
 const Value NEXT = create_symbol("cleo.core", "next");
 const Value COUNT = create_symbol("cleo.core", "count");
 const Value GET = create_symbol("cleo.core", "get");
+const Value CONTAINS = create_symbol("cleo.core", "contains");
 const Value CONJ = create_symbol("cleo.core", "conj");
 const Value ASSOC = create_symbol("cleo.core", "assoc");
+const Value MERGE = create_symbol("cleo.core", "merge");
 const Value SMALL_MAP = create_symbol("cleo.core", "small-map");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
@@ -194,8 +196,7 @@ const std::array<Value, 7> type_by_tag{{
 const Root EMPTY_LIST{create_list(nullptr, 0)};
 const Root EMPTY_VECTOR{create_small_vector(nullptr, 0)};
 const Root EMPTY_SET{create_small_set()};
-const Root EMPTY_MAP{create_small_map()};
-const Root EMPTY_PERSISTENT_MAP{create_persistent_hash_map()};
+const Root EMPTY_MAP{create_persistent_hash_map()};
 
 Root namespaces{*EMPTY_MAP};
 Root bindings;
@@ -226,6 +227,9 @@ const StaticVar next = define_var(NEXT, nil);
 const StaticVar seq = define_var(SEQ, nil);
 const StaticVar count = define_var(COUNT, nil);
 const StaticVar get = define_var(GET, nil);
+const StaticVar contains = define_var(CONTAINS, nil);
+const StaticVar assoc = define_var(ASSOC, nil);
+const StaticVar merge = define_var(MERGE, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
 
@@ -430,6 +434,17 @@ Force pr_str_var(Value var)
     return create_string("#'" + to_string(get_var_name(var)));
 }
 
+Force merge_maps(Value m1, Value m2)
+{
+    Root m{m1}, kv;
+    for (Root seq{call_multimethod1(*rt::seq, m2)}; *seq; seq = call_multimethod1(*rt::next, *seq))
+    {
+        kv = call_multimethod1(*rt::first, *seq);
+        m = map_assoc(*m, get_small_vector_elem(*kv, 0), get_small_vector_elem(*kv, 1));
+    }
+    return *m;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -500,8 +515,6 @@ struct Initialize
         define(CURRENT_NS, CLEO_CORE);
         f = create_native_function1<in_ns, &IN_NS>();
         define(IN_NS, *f);
-        f = create_ns_macro();
-        define(NS, *f);
 
         f = create_string(".");
         define(LIB_PATH, *f);
@@ -585,6 +598,14 @@ struct Initialize
         f = create_native_function2<persistent_hash_map_get, &GET>();
         define_method(GET, *type::PersistentHashMap, *f);
 
+        define_multimethod(CONTAINS, *first_type, undefined);
+
+        f = create_native_function2<small_map_contains, &CONTAINS>();
+        define_method(CONTAINS, *type::SmallMap, *f);
+
+        f = create_native_function2<persistent_hash_map_contains, &CONTAINS>();
+        define_method(CONTAINS, *type::PersistentHashMap, *f);
+
         define_multimethod(CONJ, *first_type, undefined);
 
         f = create_native_function2<small_vector_conj>();
@@ -609,6 +630,13 @@ struct Initialize
         f = create_native_function0<create_small_map, &SMALL_MAP>();
         define(SMALL_MAP, *f);
 
+        define_multimethod(MERGE, *equal_dispatch, nil);
+        f = create_native_function2<merge_maps, &MERGE>();
+
+        std::array<Value, 2> two_maps{{*type::PersistentMap, *type::PersistentMap}};
+        Root v{create_small_vector(two_maps.data(), two_maps.size())};
+        define_method(MERGE, *v, *f);
+
         define_multimethod(OBJ_CALL, *first_type, nil);
 
         derive(*type::SmallSet, *type::Callable);
@@ -618,6 +646,10 @@ struct Initialize
         derive(*type::SmallMap, *type::Callable);
         f = create_native_function2<small_map_get>();
         define_method(OBJ_CALL, *type::SmallMap, *f);
+
+        derive(*type::PersistentHashMap, *type::Callable);
+        f = create_native_function2<persistent_hash_map_get>();
+        define_method(OBJ_CALL, *type::PersistentHashMap, *f);
 
         derive(*type::Keyword, *type::Callable);
         f = create_native_function2<keyword_get, &KEYWORD>();
@@ -649,7 +681,7 @@ struct Initialize
         define_seq_eq(*type::List, *type::Sequence);
 
         std::array<Value, 2> two_sets{{*type::SmallSet, *type::SmallSet}};
-        Root v{create_small_vector(two_sets.data(), two_sets.size())};
+        v = create_small_vector(two_sets.data(), two_sets.size());
         f = create_native_function2<are_small_sets_equal>();
         define_method(OBJ_EQ, *v, *f);
 
@@ -663,7 +695,6 @@ struct Initialize
         f = create_native_function2<are_persistent_hash_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        std::array<Value, 2> two_maps{{*type::PersistentMap, *type::PersistentMap}};
         v = create_small_vector(two_maps.data(), two_maps.size());
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
@@ -794,6 +825,9 @@ struct Initialize
 
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);
+
+        f = create_ns_macro();
+        define(NS, *f);
     }
 } initialize;
 

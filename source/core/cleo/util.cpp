@@ -2,6 +2,7 @@
 #include "global.hpp"
 #include "print.hpp"
 #include "error.hpp"
+#include "multimethod.hpp"
 
 namespace cleo
 {
@@ -43,6 +44,26 @@ void throw_integer_overflow()
 {
     Root s{create_string("Integer overflow")};
     throw_exception(new_arithmetic_exception(*s));
+}
+
+bool map_contains(Value m, Value k)
+{
+    return !Root(call_multimethod2(*rt::contains, m, k))->is_nil();
+}
+
+Force map_assoc(Value m, Value k, Value v)
+{
+    return call_multimethod3(*rt::assoc, m, k, v);
+}
+
+Value map_get(Value m, Value k)
+{
+    return *Root(call_multimethod2(*rt::get, m, k));
+}
+
+Force map_merge(Value m1, Value m2)
+{
+    return call_multimethod2(*rt::merge, m1, m2);
 }
 
 }

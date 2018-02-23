@@ -117,7 +117,9 @@ TEST_F(small_map_test, should_delegate_to_get_when_called)
     Root v1{create_int64(101)};
     Root m{create_small_map()};
     m = small_map_assoc(*m, *k1, *v1);
-    Root call{list(*m, *k1)};
+    auto v = create_symbol("cleo.small-map.call.test", "m");
+    define(v, *m);
+    Root call{list(v, *k1)};
     Root val{eval(*call)};
     EXPECT_EQ_VALS(*v1, *val);
 

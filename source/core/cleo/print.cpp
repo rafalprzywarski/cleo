@@ -7,6 +7,7 @@
 #include "small_map.hpp"
 #include "persistent_hash_map.hpp"
 #include "error.hpp"
+#include "util.hpp"
 #include <sstream>
 
 namespace cleo
@@ -213,8 +214,8 @@ Force pr_str(Value val)
 
 Force print_str(Value val)
 {
-    Root bindings{create_small_map()};
-    bindings = small_map_assoc(*bindings, PRINT_READABLY, nil);
+    Root bindings{*EMPTY_MAP};
+    bindings = map_assoc(*bindings, PRINT_READABLY, nil);
     PushBindingsGuard guard{*bindings};
     return pr_str(val);
 }

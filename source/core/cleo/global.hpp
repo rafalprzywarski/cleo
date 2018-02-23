@@ -97,8 +97,10 @@ extern const Value FIRST;
 extern const Value NEXT;
 extern const Value COUNT;
 extern const Value GET;
+extern const Value CONTAINS;
 extern const Value CONJ;
 extern const Value ASSOC;
+extern const Value MERGE;
 extern const Value SMALL_MAP;
 extern const Value OBJ_EQ;
 extern const Value OBJ_CALL;
@@ -200,7 +202,6 @@ extern const Root EMPTY_LIST;
 extern const Root EMPTY_VECTOR;
 extern const Root EMPTY_SET;
 extern const Root EMPTY_MAP;
-extern const Root EMPTY_PERSISTENT_MAP;
 extern const Root recur;
 
 extern Root namespaces;
@@ -224,6 +225,9 @@ extern const StaticVar next;
 extern const StaticVar seq;
 extern const StaticVar count;
 extern const StaticVar get;
+extern const StaticVar contains;
+extern const StaticVar assoc;
+extern const StaticVar merge;
 extern const StaticVar get_message;
 extern const StaticVar hash_obj;
 

@@ -7,7 +7,6 @@
 #include "error.hpp"
 #include "small_vector.hpp"
 #include "small_set.hpp"
-#include "small_map.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "util.hpp"
@@ -19,14 +18,17 @@ namespace cleo
 namespace
 {
 
-Value eval_symbol(Value sym, Value env)
+Force eval_symbol(Value sym, Value env)
 {
     if (env)
     {
-        if (small_map_contains(env, sym))
-            return small_map_get(env, sym);
-        if (small_map_contains(env, ENV_NS))
-            return lookup(small_map_get(env, ENV_NS), sym);
+        if (map_contains(env, sym))
+            return call_multimethod2(*rt::get, env, sym);
+        if (map_contains(env, ENV_NS))
+        {
+            Root v{call_multimethod2(*rt::get, env, ENV_NS)};
+            return lookup(*v, sym);
+        }
     }
     return lookup(sym);
 }
@@ -59,13 +61,13 @@ bool is_generating(Value sym)
 
 Force generate_symbol(Root& generated, Value sym)
 {
-    auto found = small_map_get(*generated, sym);
-    if (found)
-        return found;
+    Root found{call_multimethod2(*rt::get, *generated, sym)};
+    if (*found)
+        return *found;
     auto name = get_symbol_name(sym);
     auto id = gen_id();
     Root g{create_symbol(std::string(get_string_ptr(name), get_string_len(name) - 1) + "__" + std::to_string(id) + "__auto__")};
-    generated = small_map_assoc(*generated, sym, *g);
+    generated = map_assoc(*generated, sym, *g);
     return *g;
 }
 
@@ -75,11 +77,11 @@ Force syntax_quote_symbol(Root& generated, Value sym, Value env)
         return sym;
     if (is_generating(sym))
         return generate_symbol(generated, sym);
-    auto ns = (env && small_map_contains(env, ENV_NS)) ? small_map_get(env, ENV_NS) : *rt::current_ns;
-    sym = resolve(ns, sym);
+    Root ns{(env && map_contains(env, ENV_NS)) ? map_get(env, ENV_NS) : *rt::current_ns};
+    sym = resolve(*ns, sym);
     if (get_symbol_namespace(sym))
         return sym;
-    auto sym_ns = get_symbol_name(ns);
+    auto sym_ns = get_symbol_name(*ns);
     auto sym_name = get_symbol_name(sym);
     return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
 }
@@ -183,12 +185,12 @@ Force syntax_quote_set(Root& generated, Value s, Value env)
 
 Force syntax_quote_map(Root& generated, Value m, Value env)
 {
-    Root ret{*EMPTY_MAP}, key, val;
-    auto size = get_small_map_size(m);
-    for (decltype(size) i = 0; i < size; ++i)
+    Root ret{*EMPTY_MAP}, kv, key, val;
+    for (Root seq{call_multimethod1(*rt::seq, m)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
-        key = get_small_map_key(m, i);
-        val = get_small_map_val(m, i);
+        kv = call_multimethod1(*rt::first, *seq);
+        key = get_small_vector_elem(*kv, 0);
+        val = get_small_vector_elem(*kv, 1);
         if (is_unquote_splicing(*key) || is_unquote_splicing(*val))
         {
             Root msg{create_string("unquote-splicing only supports lists, vectors, and sets")};
@@ -196,7 +198,7 @@ Force syntax_quote_map(Root& generated, Value m, Value env)
         }
         key = syntax_quote_val(generated, *key, env);
         val = syntax_quote_val(generated, *val, env);
-        ret = small_map_assoc(*ret, *key, *val);
+        ret = map_assoc(*ret, *key, *val);
     }
     return *ret;
 }
@@ -211,7 +213,7 @@ Force syntax_quote_val(Root& generated, Value val, Value env)
         return syntax_quote_list(generated, val, env);
     if (get_value_type(val).is(*type::SmallSet))
         return syntax_quote_set(generated, val, env);
-    if (get_value_type(val).is(*type::SmallMap))
+    if (isa(get_value_type(val), *type::PersistentMap))
         return syntax_quote_map(generated, val, env);
     return val;
 }
@@ -230,8 +232,8 @@ Force eval_syntax_quote(Value list, Value env)
 template <typename CreateFn>
 Force eval_fn(Value list, Value env, CreateFn create_fn)
 {
-    Root lenv{(!env || !small_map_contains(env, ENV_NS)) ?
-        small_map_assoc(env ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
+    Root lenv{(!env || !map_contains(env, ENV_NS)) ?
+        map_assoc(env ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
         env};
     Root next{get_list_next(list)};
     auto name = nil;
@@ -321,7 +323,7 @@ Force eval_let(Value list, Value env)
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
         if (get_symbol_namespace(binding))
             throw_illegal_argument("Can't let qualified name: " + to_string(binding));
-        lenv = small_map_assoc(*lenv, binding, *val);
+        lenv = map_assoc(*lenv, binding, *val);
     }
     n = get_list_next(*n);
     return eval(get_list_first(*n), *lenv);
@@ -358,7 +360,7 @@ Force eval_loop(Value list, Value env)
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
         if (get_symbol_namespace(binding))
             throw_illegal_argument("Can't let qualified name: " + to_string(binding));
-        lenv = small_map_assoc(*lenv, binding, *val);
+        lenv = map_assoc(*lenv, binding, *val);
     }
     n = get_list_next(*n);
     Root val{eval(get_list_first(*n), *lenv)};
@@ -367,7 +369,7 @@ Force eval_loop(Value list, Value env)
         check_arity(RECUR, get_small_vector_size(bindings) / 2, get_object_size(*val));
         auto size = get_small_vector_size(bindings) / 2;
         for (decltype(size) i = 0; i != size; ++i)
-            lenv = small_map_assoc(*lenv, get_small_vector_elem(bindings, i * 2), get_object_element(*val, i));
+            lenv = map_assoc(*lenv, get_small_vector_elem(bindings, i * 2), get_object_element(*val, i));
 
         val = eval(get_list_first(*n), *lenv);
     }
@@ -434,7 +436,7 @@ Force eval_try(Value list, Value env)
             auto name = get_list_first(*n);
             n = get_list_next(*n);
             Root lenv{env ? env : *EMPTY_MAP};
-            lenv = small_map_assoc(*lenv, name, *ex);
+            lenv = map_assoc(*lenv, name, *ex);
             return eval(get_list_first(*n), *lenv);
         }
         else { // finally
@@ -515,13 +517,13 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     if (!*fenv && (n_params > 0 || va))
         fenv = *EMPTY_MAP;
     for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
-        fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
+        fenv = map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
     if (va)
     {
         Root vargs;
         if (elems.size() - 1 > n_fixed_params)
             vargs = create_list(elems.data() + n_fixed_params + 1, elems.size() - n_fixed_params - 1);
-        fenv = small_map_assoc(*fenv, get_var_arg(params), *vargs);
+        fenv = map_assoc(*fenv, get_var_arg(params), *vargs);
     }
     auto body = get_fn_body(fn, fni);
     Root val{eval(body, *fenv)};
@@ -529,9 +531,9 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     {
         check_arity(RECUR, n_params, get_object_size(*val));
         for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
-            fenv = small_map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
+            fenv = map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
         if (va)
-            fenv = small_map_assoc(*fenv, get_var_arg(params), get_object_element(*val, n_params - 1));
+            fenv = map_assoc(*fenv, get_var_arg(params), get_object_element(*val, n_params - 1));
         val = eval(body, *fenv);
     }
     return *val;
@@ -588,7 +590,7 @@ Force eval_list(Value list, Value env)
         return call_fn(elems, elems.size());
     if (isa(type, *type::Callable))
         return call_multimethod(*rt::obj_call, elems.data(), elems.size());
-    Root msg{create_string("call error")};
+    Root msg{create_string("call error " + to_string(type))};
     throw_exception(new_call_error(*msg));
 }
 
@@ -621,13 +623,13 @@ Force eval_set(Value s, Value env)
 
 Force eval_map(Value m, Value env)
 {
-    auto size = get_small_map_size(m);
-    Root e{*EMPTY_MAP};
-    for (decltype(size) i = 0; i != size; ++i)
+    Root e{*EMPTY_MAP}, kv, k, v;
+    for (Root seq{call_multimethod1(*rt::seq, m)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
-        Root k{eval(get_small_map_key(m, i), env)};
-        Root v{eval(get_small_map_val(m, i), env)};
-        e = small_map_assoc(*e, *k, *v);
+        kv = call_multimethod1(*rt::first, *seq);
+        k = eval(get_small_vector_elem(*kv, 0), env);
+        v = eval(get_small_vector_elem(*kv, 1), env);
+        e = map_assoc(*e, *k, *v);
     }
 
     return *e;
@@ -695,14 +697,14 @@ Force eval(Value val, Value env)
         return eval_vector(val, env);
     if (type.is(*type::SmallSet))
         return eval_set(val, env);
-    if (type.is(*type::SmallMap))
+    if (isa(type, *type::PersistentMap))
         return eval_map(val, env);
     return val;
 }
 
 Force load(Value source)
 {
-    Root bindings{small_map_assoc(*EMPTY_MAP, CURRENT_NS, *rt::current_ns)};
+    Root bindings{map_assoc(*EMPTY_MAP, CURRENT_NS, *rt::current_ns)};
     PushBindingsGuard guard{*bindings};
     Root forms{read_forms(source)};
     forms = small_vector_seq(*forms);
