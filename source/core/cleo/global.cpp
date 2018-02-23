@@ -602,6 +602,8 @@ struct Initialize
         define_method(PR_STR_OBJ, *type::SmallSet, *f);
         f = create_native_function1<pr_str_small_map>();
         define_method(PR_STR_OBJ, *type::SmallMap, *f);
+        f = create_native_function1<pr_str_persistent_hash_map>();
+        define_method(PR_STR_OBJ, *type::PersistentHashMap, *f);
         f = create_native_function1<pr_str_seqable>();
         define_method(PR_STR_OBJ, *type::Seqable, *f);
         f = create_native_function1<pr_str_object>();

@@ -1,12 +1,14 @@
 #include <cleo/print.hpp>
 #include <cleo/global.hpp>
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include "util.hpp"
 
 namespace cleo
 {
 namespace test
 {
+
+using namespace testing;
 
 struct pr_str_test : Test
 {
@@ -113,7 +115,7 @@ TEST_F(pr_str_test, should_print_vectors)
     EXPECT_EQ("[1 [2 [3]]]", str(pr_str(*val)));
 }
 
-TEST_F(pr_str_test, should_print_maps)
+TEST_F(pr_str_test, should_print_small_maps)
 {
     Root val{smap()};
     EXPECT_EQ("{}", str(pr_str(*val)));
@@ -124,6 +126,25 @@ TEST_F(pr_str_test, should_print_maps)
     auto c = create_keyword("c");
     val = smap(a, b, c, 20, 30, 40);
     EXPECT_EQ("{30 40, :c 20, :a :b}", str(pr_str(*val)));
+}
+
+TEST_F(pr_str_test, should_print_persistent_hash_maps)
+{
+    Root val{phmap()};
+    EXPECT_EQ("{}", str(pr_str(*val)));
+    val = phmap(nil, nil);
+    EXPECT_EQ("{nil nil}", str(pr_str(*val)));
+    auto a = create_keyword("a");
+    auto b = create_keyword("b");
+    auto c = create_keyword("c");
+    val = phmap(a, b, c, 20, 30, 40);
+    EXPECT_THAT(str(pr_str(*val)), AnyOf(
+        "{30 40, :c 20, :a :b}",
+        "{30 40, :a :b, :c 20}",
+        "{:c 20, :a :b, 30 40}",
+        "{:c 20, 30 40, :a :b}",
+        "{:a :b, 30 40, :c 20}",
+        "{:a :b, :c 20, 30 40}"));
 }
 
 TEST_F(pr_str_test, should_print_sets)

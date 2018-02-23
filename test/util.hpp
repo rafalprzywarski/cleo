@@ -3,6 +3,7 @@
 #include <cleo/list.hpp>
 #include <cleo/small_vector.hpp>
 #include <cleo/small_map.hpp>
+#include <cleo/persistent_hash_map.hpp>
 #include <cleo/small_set.hpp>
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
@@ -131,6 +132,20 @@ Force smap(const K& k, const V& v, const Rest&... rest)
     Root key{to_value(k)};
     Root val{to_value(v)};
     return small_map_assoc(*m, *key, *val);
+}
+
+inline Force phmap()
+{
+    return create_persistent_hash_map();
+}
+
+template <typename K, typename V, typename... Rest>
+Force phmap(const K& k, const V& v, const Rest&... rest)
+{
+    Root m{phmap(rest...)};
+    Root key{to_value(k)};
+    Root val{to_value(v)};
+    return persistent_hash_map_assoc(*m, *key, *val);
 }
 
 inline Force i64(Int64 value)

@@ -5,6 +5,7 @@
 #include "small_vector.hpp"
 #include "small_set.hpp"
 #include "small_map.hpp"
+#include "persistent_hash_map.hpp"
 #include "error.hpp"
 #include <sstream>
 
@@ -149,6 +150,25 @@ Force pr_str_small_map(Value m)
         str.append(get_string_ptr(*s), get_string_len(*s));
         str += ' ';
         s = pr_str(get_small_map_val(m, i));
+        str.append(get_string_ptr(*s), get_string_len(*s));
+    }
+    str += '}';
+    return create_string(str);
+}
+
+Force pr_str_persistent_hash_map(Value val)
+{
+    std::string str;
+    str += '{';
+    for (Root seq{persistent_hash_map_seq(val)}; *seq; seq = get_persistent_hash_map_seq_next(*seq))
+    {
+        auto kv = get_persistent_hash_map_seq_first(*seq);
+        if (str.back() != '{')
+            str += ", ";
+        Root s{pr_str(get_small_vector_elem(kv, 0))};
+        str.append(get_string_ptr(*s), get_string_len(*s));
+        str += ' ';
+        s = pr_str(get_small_vector_elem(kv, 1));
         str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += '}';
