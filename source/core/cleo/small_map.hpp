@@ -12,5 +12,8 @@ Value small_map_get(Value m, Value k);
 Force small_map_assoc(Value m, Value k, Value v);
 Force small_map_merge(Value l, Value r);
 Value small_map_contains(Value m, Value k);
+Force small_map_seq(Value m);
+Value get_small_map_seq_first(Value s);
+Force get_small_map_seq_next(Value s);
 
 }

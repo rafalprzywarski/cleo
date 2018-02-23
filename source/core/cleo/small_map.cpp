@@ -1,6 +1,7 @@
 #include "small_map.hpp"
 #include "global.hpp"
 #include "equality.hpp"
+#include "small_vector.hpp"
 
 namespace cleo
 {
@@ -80,6 +81,32 @@ Value small_map_contains(Value m, Value k)
             return TRUE;
     }
     return nil;
+}
+
+Force small_map_seq(Value m)
+{
+    if (get_small_map_size(m) == 0)
+        return nil;
+    std::array<Value, 2> kv{{get_small_map_key(m, 0), get_small_map_val(m, 0)}};
+    Root kvv{create_small_vector(kv.data(), kv.size())};
+    return create_object3(*type::SmallMapSeq, *kvv, m, *ONE);
+}
+
+Value get_small_map_seq_first(Value s)
+{
+    return get_object_element(s, 0);
+}
+
+Force get_small_map_seq_next(Value s)
+{
+    auto index = get_int64_value(get_object_element(s, 2));
+    auto m = get_object_element(s, 1);
+    if (index == get_small_map_size(m))
+        return nil;
+    std::array<Value, 2> kv{{get_small_map_key(m, index), get_small_map_val(m, index)}};
+    Root kvv{create_small_vector(kv.data(), kv.size())};
+    Root new_index{create_int64(index + 1)};
+    return create_object3(*type::SmallMapSeq, *kvv, m, *new_index);
 }
 
 }

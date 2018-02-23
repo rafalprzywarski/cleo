@@ -133,4 +133,10 @@ Force call_multimethod1(Value multi, Value arg)
     return call_multimethod(multi, &arg, 1);
 }
 
+Force call_multimethod2(Value multi, Value arg0, Value arg1)
+{
+    std::array<Value, 2> args{{arg0, arg1}};
+    return call_multimethod(multi, args.data(), args.size());
+}
+
 }

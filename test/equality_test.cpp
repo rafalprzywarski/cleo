@@ -267,6 +267,39 @@ TEST_F(equality_test, should_compare_small_maps)
     EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 }
 
+TEST_F(equality_test, should_compare_maps)
+{
+    Root m1, m2;
+    m1 = smap();
+    m2 = phmap();
+    EXPECT_TRUE(bool(are_equal(*m1, *m2)));
+
+    m1 = smap(3, 4);
+    m2 = phmap();
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
+
+    m1 = smap(10, 20, 30, 40, 50, 60);
+    m2 = phmap(30, 40, 50, 60, 10, 20);
+    EXPECT_TRUE(bool(are_equal(*m1, *m2)));
+    EXPECT_TRUE(bool(are_equal(*m2, *m1)));
+
+    m1 = smap(10, 99, 30, 40, 50, 60);
+    m2 = phmap(30, 40, 50, 60, 10, 20);
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
+
+    m1 = smap(10, 20, 30, 99, 50, 60);
+    m2 = phmap(30, 40, 50, 60, 10, 20);
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
+
+    m1 = smap(10, 20, 30, 40, 50, nil);
+    m2 = phmap(30, 40, 10, 20);
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
+}
+
 TEST_F(equality_test, should_compare_small_sets)
 {
     Root s1, s2;

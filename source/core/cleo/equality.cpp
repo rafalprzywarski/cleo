@@ -72,6 +72,22 @@ Value are_small_maps_equal(Value left, Value right)
     return TRUE;
 }
 
+Value are_maps_equal(Value left, Value right)
+{
+    Root left_count{call_multimethod1(*rt::count, left)};
+    Root right_count{call_multimethod1(*rt::count, right)};
+    if (*left_count != *right_count)
+        return nil;
+    for (Root seq{call_multimethod1(*rt::seq, left)}; *seq; seq = call_multimethod1(*rt::next, *seq))
+    {
+        Root kv{call_multimethod1(*rt::first, *seq)};
+        Root other_v{call_multimethod2(*rt::get, right, get_small_vector_elem(*kv, 0))};
+        if (*other_v != get_small_vector_elem(*kv, 1))
+            return nil;
+    }
+    return TRUE;
+}
+
 Value are_equal(Value left, Value right)
 {
     if (left.is(right))

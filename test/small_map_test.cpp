@@ -126,5 +126,42 @@ TEST_F(small_map_test, should_delegate_to_get_when_called)
     EXPECT_EQ_VALS(nil, *val);
 }
 
+TEST_F(small_map_test, seq_should_return_nil_for_an_empty_map)
+{
+    Root m{smap()};
+    EXPECT_TRUE(Root(small_vector_seq(*m))->is_nil());
+}
+
+TEST_F(small_map_test, seq_should_return_a_sequence_of_the_map_kv_vectors)
+{
+    Root k{create_int64(11)};
+    Root v{create_int64(12)};
+    Root kv{svec(*k, *v)};
+    Root m{smap(*k, *v)};
+    Root seq{small_map_seq(*m)};
+    EXPECT_EQ_VALS(*kv, get_small_map_seq_first(*seq));
+    ASSERT_TRUE(Root(get_small_map_seq_next(*seq))->is_nil());
+
+    Root k0, v0, kv0, k1, v1, kv1, k2, v2, kv2;
+    k0 = create_int64(101);
+    v0 = create_int64(102);
+    kv0 = svec(*k0, *v0);
+    k1 = create_int64(103);
+    v1 = create_int64(104);
+    kv1 = svec(*k1, *v1);
+    k2 = create_int64(105);
+    v2 = create_int64(106);
+    kv2 = svec(*k2, *v2);
+    m = smap(*k2, *v2, *k1, *v1, *k0, *v0);
+    seq = small_map_seq(*m);
+    EXPECT_EQ_VALS(*kv0, get_small_map_seq_first(*seq));
+
+    seq = get_small_map_seq_next(*seq);
+    EXPECT_EQ_VALS(*kv1, get_small_map_seq_first(*seq));
+
+    seq = get_small_map_seq_next(*seq);
+    EXPECT_EQ_VALS(*kv2, get_small_map_seq_first(*seq));
+    ASSERT_TRUE(Root(get_small_map_seq_next(*seq))->is_nil());
+}
 }
 }

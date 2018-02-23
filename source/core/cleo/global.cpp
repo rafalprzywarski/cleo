@@ -39,8 +39,11 @@ const Value TRUE = create_keyword("true");
 const Value SEQ = create_symbol("cleo.core", "seq");
 const Value FIRST = create_symbol("cleo.core", "first");
 const Value NEXT = create_symbol("cleo.core", "next");
+const Value COUNT = create_symbol("cleo.core", "count");
+const Value GET = create_symbol("cleo.core", "get");
 const Value CONJ = create_symbol("cleo.core", "conj");
 const Value ASSOC = create_symbol("cleo.core", "assoc");
+const Value SMALL_MAP = create_symbol("cleo.core", "small-map");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PRINT_READABLY = create_symbol("cleo.core", "*print-readably*");
@@ -150,6 +153,7 @@ const Root List{create_type("cleo.core", "List")};
 const Root SmallVector{create_type("cleo.core", "SmallVector")};
 const Root SmallVectorSeq{create_type("cleo.core", "SmallVectorSeq")};
 const Root SmallMap{create_type("cleo.core", "SmallMap")};
+const Root SmallMapSeq{create_type("cleo.core", "SmallMapSeq")};
 const Root SmallSet{create_type("cleo.core", "SmallSet")};
 const Root SmallSetSeq{create_type("cleo.core", "SmallSetSeq")};
 const Root Multimethod{create_type("cleo.core", "Multimethod")};
@@ -160,6 +164,7 @@ const Root Fn{create_type("cleo.core", "Fn")};
 const Root Macro{create_type("cleo.core", "Macro")};
 const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
+const Root PersistentMap{create_type("cleo.core", "PersistentMap")};
 const Root PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
 const Root PersistentHashMapSeq{create_type("cleo.core", "PersistentHashMapSeq")};
 const Root PersistentHashMapSeqParent{create_type("cleo.core", "PersistentHashMapSeqParent")};
@@ -219,6 +224,8 @@ const StaticVar pr_str_obj = define_var(PR_STR_OBJ, nil);
 const StaticVar first = define_var(FIRST, nil);
 const StaticVar next = define_var(NEXT, nil);
 const StaticVar seq = define_var(SEQ, nil);
+const StaticVar count = define_var(COUNT, nil);
+const StaticVar get = define_var(GET, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
 
@@ -423,6 +430,24 @@ Force pr_str_var(Value var)
     return create_string("#'" + to_string(get_var_name(var)));
 }
 
+template <std::uint32_t f(Value)>
+struct WrapUInt32Fn
+{
+    static Force fn(Value arg0)
+    {
+        return create_int64(f(arg0));
+    }
+};
+
+template <Int64 f(Value)>
+struct WrapInt64Fn
+{
+    static Force fn(Value arg0)
+    {
+        return create_int64(f(arg0));
+    }
+};
+
 struct Initialize
 {
     Initialize()
@@ -439,6 +464,7 @@ struct Initialize
         define_type(*type::SmallVector);
         define_type(*type::SmallVectorSeq);
         define_type(*type::SmallMap);
+        define_type(*type::SmallMapSeq);
         define_type(*type::SmallSet);
         define_type(*type::SmallSetSeq);
         define_type(*type::Multimethod);
@@ -449,9 +475,11 @@ struct Initialize
         define_type(*type::Macro);
         define_type(*type::Recur);
         define_type(*type::Atom);
+        define_type(*type::PersistentMap);
         define_type(*type::PersistentHashMap);
         define_type(*type::PersistentHashMapCollisionNode);
         define_type(*type::PersistentHashMapArrayNode);
+        define_type(*type::PersistentHashMapSeqParent);
         define_type(*type::Exception);
         define_type(*type::ReadError);
         define_type(*type::CallError);
@@ -477,6 +505,7 @@ struct Initialize
 
         f = create_string(".");
         define(LIB_PATH, *f);
+
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
@@ -514,8 +543,25 @@ struct Initialize
         f = create_native_function1<get_small_set_seq_next>();
         define_method(NEXT, *type::SmallSetSeq, *f);
 
+        derive(*type::SmallMap, *type::Seqable);
+        f = create_native_function1<small_map_seq>();
+        define_method(SEQ, *type::SmallMap, *f);
+        f = create_native_function1<get_small_map_seq_first>();
+        define_method(FIRST, *type::SmallMapSeq, *f);
+        f = create_native_function1<get_small_map_seq_next>();
+        define_method(NEXT, *type::SmallMapSeq, *f);
+
+        derive(*type::PersistentHashMap, *type::Seqable);
+        f = create_native_function1<persistent_hash_map_seq>();
+        define_method(SEQ, *type::PersistentHashMap, *f);
+        f = create_native_function1<get_persistent_hash_map_seq_first>();
+        define_method(FIRST, *type::PersistentHashMapSeq, *f);
+        f = create_native_function1<get_persistent_hash_map_seq_next>();
+        define_method(NEXT, *type::PersistentHashMapSeq, *f);
+
         derive(*type::SmallVectorSeq, *type::Sequence);
         derive(*type::SmallSetSeq, *type::Sequence);
+        derive(*type::SmallMapSeq, *type::Sequence);
         derive(*type::Sequence, *type::Seqable);
         f = create_native_function1<identity>();
         define_method(SEQ, *type::Sequence, *f);
@@ -524,6 +570,20 @@ struct Initialize
         define_method(FIRST, *type::Seqable, *f);
         f = create_native_function1<get_seqable_next>();
         define_method(NEXT, *type::Seqable, *f);
+
+        define_multimethod(COUNT, *first_type, undefined);
+        f = create_native_function1<WrapUInt32Fn<get_small_map_size>::fn>();
+        define_method(COUNT, *type::SmallMap, *f);
+        f = create_native_function1<WrapInt64Fn<get_persistent_hash_map_size>::fn>();
+        define_method(COUNT, *type::PersistentHashMap, *f);
+
+        define_multimethod(GET, *first_type, undefined);
+
+        f = create_native_function2<small_map_get, &GET>();
+        define_method(GET, *type::SmallMap, *f);
+
+        f = create_native_function2<persistent_hash_map_get, &GET>();
+        define_method(GET, *type::PersistentHashMap, *f);
 
         define_multimethod(CONJ, *first_type, undefined);
 
@@ -538,8 +598,16 @@ struct Initialize
 
         define_multimethod(ASSOC, *first_type, undefined);
 
+        derive(*type::SmallMap, *type::PersistentMap);
         f = create_native_function3<small_map_assoc>();
         define_method(ASSOC, *type::SmallMap, *f);
+
+        derive(*type::PersistentHashMap, *type::PersistentMap);
+        f = create_native_function3<persistent_hash_map_assoc>();
+        define_method(ASSOC, *type::PersistentHashMap, *f);
+
+        f = create_native_function0<create_small_map, &SMALL_MAP>();
+        define(SMALL_MAP, *f);
 
         define_multimethod(OBJ_CALL, *first_type, nil);
 
@@ -585,9 +653,19 @@ struct Initialize
         f = create_native_function2<are_small_sets_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        std::array<Value, 2> two_maps{{*type::SmallMap, *type::SmallMap}};
-        v = create_small_vector(two_maps.data(), two_maps.size());
+        std::array<Value, 2> two_small_maps{{*type::SmallMap, *type::SmallMap}};
+        v = create_small_vector(two_small_maps.data(), two_small_maps.size());
         f = create_native_function2<are_small_maps_equal>();
+        define_method(OBJ_EQ, *v, *f);
+
+        std::array<Value, 2> two_hash_maps{{*type::PersistentHashMap, *type::PersistentHashMap}};
+        v = create_small_vector(two_hash_maps.data(), two_hash_maps.size());
+        f = create_native_function2<are_persistent_hash_maps_equal>();
+        define_method(OBJ_EQ, *v, *f);
+
+        std::array<Value, 2> two_maps{{*type::PersistentMap, *type::PersistentMap}};
+        v = create_small_vector(two_maps.data(), two_maps.size());
+        f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
         define(PRINT_READABLY, TRUE);
