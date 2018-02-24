@@ -144,6 +144,28 @@ TEST_F(reader_test, should_parse_negative_integers)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(reader_test, should_parse_hexadecimal_integers)
+{
+    Root ex, val;
+    ex = create_int64(0x12345); val = read_str("0x12345");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_int64(0x7fffffffffff); val = read_str("0x7fffffffffff");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_int64(-0x8000000000000000); val = read_str("-0x8000000000000000");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_parse_octal_integers)
+{
+    Root ex, val;
+    ex = create_int64(012345); val = read_str("012345");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(reader_test, should_parse_decimal_fractions_as_floating_point_values)
 {
     Root ex, val;
@@ -202,6 +224,8 @@ TEST_F(reader_test, should_fail_when_an_integer_is_of_range)
 {
     assert_read_error("integer out of range: 9223372036854775808", "9223372036854775808", 1, 1);
     assert_read_error("integer out of range: -9223372036854775809", "-9223372036854775809", 1, 1);
+    assert_read_error("integer out of range: 0x8000000000000000", "0x8000000000000000", 1, 1);
+    assert_read_error("integer out of range: -0x8000000000000001", "-0x8000000000000001", 1, 1);
 }
 
 TEST_F(reader_test, should_fail_when_a_float_value_is_of_range)

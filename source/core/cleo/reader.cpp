@@ -80,7 +80,7 @@ Force read_integer(const std::string& n, Stream::Position pos)
 {
     char *end = nullptr;
     errno = 0;
-    auto val = std::strtoll(n.c_str(), &end, 10);
+    auto val = std::strtoll(n.c_str(), &end, 0);
     if (errno)
         throw_read_error("integer out of range: " + n, pos);
     if (end != n.c_str() + n.length())
