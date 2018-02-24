@@ -56,6 +56,13 @@ private:
 
 Force read(Stream& s);
 
+[[noreturn]] void throw_read_error(const std::string& msg, Stream::Position pos)
+{
+    Root msgv{create_string(msg)};
+    Root linev{create_int64(pos.line)}, colv{create_int64(pos.col)};
+    throw_exception(new_read_error(*msgv, *linev, *colv));
+}
+
 bool is_symbol_char(char c)
 {
     return
@@ -64,16 +71,45 @@ bool is_symbol_char(char c)
         c == '!' || c == '?' || c == '#' || c == '_';
 }
 
+bool is_ws(char c)
+{
+    return c <= ' ' || c == ',';
+}
+
+Force read_integer(const std::string& n, Stream::Position pos)
+{
+    char *end = nullptr;
+    errno = 0;
+    auto val = std::strtoll(n.c_str(), &end, 10);
+    if (errno)
+        throw_read_error("integer out of range: " + n, pos);
+    if (end != n.c_str() + n.length())
+        throw_read_error("malformed number: " + n, pos);
+    return create_int64(val);
+}
+
+Force read_float(const std::string& n, Stream::Position pos)
+{
+    char *end = nullptr;
+    errno = 0;
+    auto val = std::strtod(n.c_str(), &end);
+    if (errno)
+        throw_read_error("floating-point value out of range: " + n, pos);
+    if (end != n.c_str() + n.length())
+        throw_read_error("malformed number: " + n, pos);
+    return create_float64(val);
+}
+
 Force read_number(Stream& s)
 {
-    std::stringstream ss;
-    if (s.peek() == '-')
-        ss << s.next();
-    while (std::isdigit(s.peek()))
-        ss << s.next();
-    Int64 n;
-    ss >> n;
-    return create_int64(n);
+    auto pos = s.pos();
+    std::string n;
+    while (is_symbol_char(s.peek()))
+        n += s.next();
+    return
+        n.find('.') != std::string::npos || n.find('e') != std::string::npos || n.find('E') != std::string::npos ?
+        read_float(n, pos) :
+        read_integer(n, pos);
 }
 
 Force read_symbol(Stream& s)
@@ -103,7 +139,7 @@ Force read_keyword(Stream& s)
 
 void eat_ws(Stream& s)
 {
-    while ((!s.eos() && s.peek() <= ' ') || s.peek() == ',')
+    while (!s.eos() && is_ws(s.peek()))
         s.next();
 }
 
@@ -154,13 +190,6 @@ Force read_vector(Stream& s)
         throw_unexpected_end_of_input(s.pos());
     s.next(); // ']'
     return *v;
-}
-
-[[noreturn]] void throw_read_error(const std::string& msg, Stream::Position pos)
-{
-    Root msgv{create_string(msg)};
-    Root linev{create_int64(pos.line)}, colv{create_int64(pos.col)};
-    throw_exception(new_read_error(*msgv, *linev, *colv));
 }
 
 Force read_map(Stream& s)

@@ -120,10 +120,16 @@ TEST_F(reader_test, should_parse_a_sequence_of_digits_as_an_integer)
 {
     Root ex, val;
     ex = create_int64(1); val = read_str("1");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(23); val = read_str("23");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(32134); val = read_str("32134");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_int64(9223372036854775807ull); val = read_str("9223372036854775807");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -131,7 +137,77 @@ TEST_F(reader_test, should_parse_negative_integers)
 {
     Root ex, val;
     ex = create_int64(-58); val = read_str("-58");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
+    ex = create_int64(9223372036854775808ull); val = read_str("-9223372036854775808");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_parse_decimal_fractions_as_floating_point_values)
+{
+    Root ex, val;
+    ex = create_float64(1); val = read_str("1.0");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(3); val = read_str("3.");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(2.725); val = read_str("2.725");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(-32.125); val = read_str("-32.125");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_parse_numbers_in_e_notation)
+{
+    Root ex, val;
+    ex = create_float64(1e3); val = read_str("1e3");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(3e-3); val = read_str("3e-3");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(2.725E4); val = read_str("2.725E4");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(-32.125e-2); val = read_str("-32.125E-2");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(2.725E4); val = read_str("2.725e+4");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(-32.125e2); val = read_str("-32.125E+2");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(1.79769e+308); val = read_str("1.79769e+308");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(2.22508e-308); val = read_str("2.22508e-308");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, should_fail_when_given_malformed_numbers)
+{
+    assert_read_error("malformed number: 1abc", "1abc x", 1, 1);
+    assert_read_error("malformed number: 1e3e5", "1e3e5\n", 1, 1);
+    assert_read_error("malformed number: 1-3", "1-3,", 1, 1);
+    assert_read_error("malformed number: 1e3e5", "1e3e5[", 1, 1);
+}
+
+TEST_F(reader_test, should_fail_when_an_integer_is_of_range)
+{
+    assert_read_error("integer out of range: 9223372036854775808", "9223372036854775808", 1, 1);
+    assert_read_error("integer out of range: -9223372036854775809", "-9223372036854775809", 1, 1);
+}
+
+TEST_F(reader_test, should_fail_when_a_float_value_is_of_range)
+{
+    assert_read_error("floating-point value out of range: 1.79769e+309", "1.79769e+309", 1, 1);
+    assert_read_error("floating-point value out of range: 2.22507e-309", "2.22507e-309", 1, 1);
 }
 
 TEST_F(reader_test, should_parse_an_empty_list)
