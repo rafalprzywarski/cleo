@@ -14,6 +14,7 @@
 #include "reader.hpp"
 #include "atom.hpp"
 #include "util.hpp"
+#include "clib.hpp"
 #include <iostream>
 #include <limits>
 
@@ -88,6 +89,8 @@ const Value ENV = create_symbol("&env");
 const Value CLEO_CORE = create_symbol("cleo.core");
 const Value NEW = create_symbol("cleo.core", "new");
 const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
+const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
+
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
 const Root TWO{create_int64(2)};
@@ -148,6 +151,7 @@ const Root Int64{create_type("cleo.core", "Int64")};
 const Root Float64{create_type("cleo.core", "Float64")};
 const Root String{create_type("cleo.core", "String")};
 const Root NativeFunction{create_type("cleo.core", "NativeFunction")};
+const Root CFunction{create_type("cleo.core", "CFunction")};
 const Root Symbol{create_type("cleo.core", "Symbol")};
 const Root Keyword{create_type("cleo.core", "Keyword")};
 const Root Var{create_type("cleo.core", "Var")};
@@ -181,6 +185,11 @@ const Root IllegalState{create_type("cleo.core", "IllegalState")};
 const Root UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")};
 const Root FileNotFound{create_type("cleo.core", "FileNotFound")};
 const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
+}
+
+namespace clib
+{
+const Value int64 = create_keyword("int64");
 }
 
 const std::array<Value, 7> type_by_tag{{
@@ -471,6 +480,7 @@ struct Initialize
         define_type(*type::Float64);
         define_type(*type::String);
         define_type(*type::NativeFunction);
+        define_type(*type::CFunction);
         define_type(*type::Keyword);
         define_type(*type::Symbol);
         define_type(*type::Var);
@@ -659,6 +669,10 @@ struct Initialize
         f = create_native_function2<small_vector_get>();
         define_method(OBJ_CALL, *type::SmallVector, *f);
 
+        derive(*type::CFunction, *type::Callable);
+        f = create_native_function(call_c_function);
+        define_method(OBJ_CALL, *type::CFunction, *f);
+
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
 
@@ -828,6 +842,9 @@ struct Initialize
 
         f = create_ns_macro();
         define(NS, *f);
+
+        f = create_native_function5<import_c_fn>();
+        define(IMPORT_C_FN, *f);
     }
 } initialize;
 

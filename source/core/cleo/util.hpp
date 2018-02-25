@@ -5,6 +5,7 @@ namespace cleo
 {
 
 std::string to_string(Value val);
+Force CLEO_CDECL create_arity_error(Value name, std::uint8_t n);
 [[noreturn]] void throw_arity_error(Value name, std::uint8_t n);
 void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args);
 void check_type(const std::string& name, Value val, Value type);
@@ -124,6 +125,17 @@ Force create_native_new3()
         if (num_args != 4)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[1], args[2], args[3]);
+    });
+}
+
+template <Force f(Value, Value, Value, Value, Value), const Value *name = nullptr>
+Force create_native_function5()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args)
+    {
+        if (num_args != 5)
+            throw_arity_error(deref_name<name>(), num_args);
+        return f(args[0], args[1], args[2], args[3], args[4]);
     });
 }
 

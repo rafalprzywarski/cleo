@@ -22,11 +22,11 @@ class Root
 {
 public:
     Root() : index(extra_roots.size()) { extra_roots.push_back(nil); }
-    Root(Force f) : Root() { *this = f.val; }
+    Root(Force f) : Root() { *this = f.value(); }
     Root(const Root& ) = delete;
     ~Root() { assert(extra_roots.size() == index + 1); extra_roots.pop_back(); }
     Root& operator=(const Root& ) = delete;
-    Root& operator=(const Force& f) { return *this = f.val; }
+    Root& operator=(const Force& f) { return *this = f.value(); }
     Root& operator=(Value val) { extra_roots[index] = val; return *this; }
     Value operator*() const { return extra_roots[index]; }
     Value *operator->() const { return &extra_roots[index]; }
@@ -44,7 +44,7 @@ public:
     ~Roots() { assert(extra_roots.size() == index + count); extra_roots.resize(index); }
     Roots& operator=(const Roots& ) = delete;
     Value operator[](size_type k) const { return extra_roots[index + k]; }
-    void set(size_type k, Force f) { extra_roots[index + k] = f.val; }
+    void set(size_type k, Force f) { extra_roots[index + k] = f.value(); }
 private:
     size_type index, count;
 };
@@ -144,6 +144,7 @@ extern const Value ENV;
 extern const Value CLEO_CORE;
 extern const Value NEW;
 extern const Value HASH_OBJ;
+extern const Value IMPORT_C_FN;
 extern const Root ZERO;
 extern const Root ONE;
 extern const Root TWO;
@@ -161,6 +162,7 @@ extern const Root Int64;
 extern const Root Float64;
 extern const Root String;
 extern const Root NativeFunction;
+extern const Root CFunction;
 extern const Root Symbol;
 extern const Root Keyword;
 extern const Root Var;
@@ -194,6 +196,11 @@ extern const Root IllegalState;
 extern const Root UnexpectedEndOfInput;
 extern const Root FileNotFound;
 extern const Root ArithmeticException;
+}
+
+namespace clib
+{
+extern const Value int64;
 }
 
 extern const std::array<Value, 7> type_by_tag;

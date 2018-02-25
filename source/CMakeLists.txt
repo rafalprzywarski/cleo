@@ -3,5 +3,7 @@ if(APPLE)
 endif(APPLE)
 include_directories(".")
 
+add_subdirectory("bindump")
 add_subdirectory("core")
+add_subdirectory("extlib")
 add_subdirectory("repl")

@@ -113,14 +113,14 @@ Value get_keyword_name(Value s)
     return get_ptr<Keyword>(s)->name;
 }
 
-Force create_int64(Int64 intVal)
+Force CLEO_CDECL create_int64(Int64 intVal)
 {
     auto val = alloc<Int64>();
     *val = intVal;
     return tag_ptr(val, tag::INT64);
 }
 
-Int64 get_int64_value(Value val)
+Int64 CLEO_CDECL get_int64_value(Value val)
 {
     return *get_ptr<Int64>(val);
 }

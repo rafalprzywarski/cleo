@@ -4,20 +4,22 @@
 #include <unordered_map>
 #include <ostream>
 
+#define CLEO_CDECL __attribute__((cdecl))
+
 namespace cleo
 {
 
-class Value
+using ValueBits = std::uintptr_t;
+
+struct Value
 {
-public:
+    ValueBits bits_{0};
     Value() = default;
     explicit constexpr Value(std::uintptr_t bits) : bits_(bits) { }
     explicit operator bool() const { return !is_nil(); }
     constexpr bool is(Value other) const { return bits_ == other.bits_; }
     constexpr bool is_nil() const { return bits_ == Value{}.bits_; }
     constexpr std::uintptr_t bits() const { return bits_; }
-private:
-    std::uintptr_t bits_{0};
 };
 
 static_assert(sizeof(Value) == sizeof(Value().bits()), "Value should have no overhead");
@@ -42,17 +44,16 @@ struct hash<cleo::Value>
 namespace cleo
 {
 
-using Tag = std::uintptr_t;
+using Tag = ValueBits;
 
-class Force
+struct Force
 {
-public:
-    Force(Value val) : val(val) { }
-private:
     Value val;
-    friend class Root;
-    friend class Roots;
+    Force(Value val) : val(val) { }
+    Value value() const { return val; }
 };
+
+static_assert(sizeof(Force) == sizeof(Value), "Force should have no overhead");
 
 inline Force force(Value val) { return val; }
 
@@ -101,8 +102,8 @@ Value create_keyword(const std::string& name);
 Value get_keyword_namespace(Value s);
 Value get_keyword_name(Value s);
 
-Force create_int64(Int64 val);
-Int64 get_int64_value(Value val);
+Force CLEO_CDECL create_int64(Int64 val);
+Int64 CLEO_CDECL get_int64_value(Value val);
 
 Force create_float64(Float64 val);
 Float64 get_float64_value(Value val);
