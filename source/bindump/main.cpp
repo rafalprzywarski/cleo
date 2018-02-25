@@ -4,7 +4,7 @@
 #include <iomanip>
 
 constexpr auto SIZE = 196;
-const auto NAME = cleo::create_symbol("my-fn");
+cleo::Value NAME;
 
 std::int64_t CLEO_CDECL other();
 std::int64_t CLEO_CDECL other(std::int64_t x);
@@ -41,6 +41,7 @@ cleo::Value CLEO_CDECL example(const cleo::Value *args, std::uint8_t num_args, c
 
 int main()
 {
+    NAME = cleo::create_symbol("my-fn");
     auto source = reinterpret_cast<const unsigned char *>(example);
     std::cout << "bindump:\n";
     std::cout << std::hex << std::setfill('0');
