@@ -3,16 +3,17 @@
 #include <iostream>
 #include <iomanip>
 
-constexpr auto SIZE = 96;
+constexpr auto SIZE = 196;
 const auto NAME = cleo::create_symbol("my-fn");
 
 std::int64_t CLEO_CDECL other();
 std::int64_t CLEO_CDECL other(std::int64_t x);
 std::int64_t CLEO_CDECL other(std::int64_t x, std::int64_t y);
+std::int64_t CLEO_CDECL other(std::int64_t x, std::int64_t y, std::int64_t z);
 
 cleo::Value CLEO_CDECL example(const cleo::Value *args, std::uint8_t num_args, cleo::Value& err)
 {
-    if (num_args != 1)
+    if (num_args != 2)
     {
         err = cleo::create_arity_error(NAME, num_args).value();
         return cleo::nil;
@@ -23,7 +24,19 @@ cleo::Value CLEO_CDECL example(const cleo::Value *args, std::uint8_t num_args, c
         err = cleo::create_arg_type_error(arg0, 0).value();
         return cleo::nil;
     }
-    return cleo::create_int64(other(get_int64_value(arg0))).value();
+    auto arg1 = args[1];
+    if (get_value_tag(arg1) != cleo::tag::INT64)
+    {
+        err = cleo::create_arg_type_error(arg1, 1).value();
+        return cleo::nil;
+    }
+    auto arg2 = args[2];
+    if (get_value_tag(arg2) != cleo::tag::INT64)
+    {
+        err = cleo::create_arg_type_error(arg2, 2).value();
+        return cleo::nil;
+    }
+    return cleo::create_int64(other(get_int64_value(arg0), get_int64_value(arg1), get_int64_value(arg2))).value();
 }
 
 int main()

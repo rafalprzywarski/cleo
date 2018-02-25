@@ -88,6 +88,12 @@ inline void *get_value_ptr(Value val)
     return reinterpret_cast<void *>(val.bits() & ~tag::MASK);
 }
 
+template <typename T>
+T *get_ptr(Value val)
+{
+    return reinterpret_cast<T *>(val.bits() & ~tag::MASK);
+}
+
 Force create_native_function(NativeFunction f);
 
 NativeFunction get_native_function_ptr(Value val);
@@ -103,7 +109,10 @@ Value get_keyword_namespace(Value s);
 Value get_keyword_name(Value s);
 
 Force CLEO_CDECL create_int64(Int64 val);
-Int64 CLEO_CDECL get_int64_value(Value val);
+inline Int64 get_int64_value(Value val)
+{
+    return *get_ptr<Int64>(val);
+}
 
 Force create_float64(Float64 val);
 Float64 get_float64_value(Value val);

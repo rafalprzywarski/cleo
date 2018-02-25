@@ -35,12 +35,6 @@ Value tag_ptr(void *ptr, Tag tag)
     return Value{reinterpret_cast<decltype(Value().bits())>(ptr) | tag};
 }
 
-template <typename T>
-T *get_ptr(Value val)
-{
-    return reinterpret_cast<T *>(val.bits() & ~tag::MASK);
-}
-
 Force create_native_function(NativeFunction f)
 {
     auto val = alloc<NativeFunction>();
@@ -118,11 +112,6 @@ Force CLEO_CDECL create_int64(Int64 intVal)
     auto val = alloc<Int64>();
     *val = intVal;
     return tag_ptr(val, tag::INT64);
-}
-
-Int64 CLEO_CDECL get_int64_value(Value val)
-{
-    return *get_ptr<Int64>(val);
 }
 
 Force create_float64(Float64 floatVal)

@@ -74,7 +74,8 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
     const std::size_t max_size = 256;
     auto code = code_alloc(max_size);
     auto p = code;
-    if (get_small_vector_size(param_types) == 0)
+    auto param_count = get_small_vector_size(param_types);
+    if (param_count == 0)
     {
         put(p,
             0x55,                                       // push   rbp
@@ -101,7 +102,7 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0xc3                                        // ret
         );
     }
-    else
+    if (param_count == 1)
     {
         put(p,
             0x55,                                       // push   rbp
@@ -109,15 +110,15 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0x53,                                       // push   rbx
             0x50,                                       // push   rax
             0x48, 0x89, 0xd3,                           // mov    rbx,rdx
-            0x40, 0x80, 0xfe, 0x01,                     // cmp    sil,0x1
-            0x75, 0x29,                                 // jne    arity-error
+            0x40, 0x80, 0xfe, param_count,              // cmp    sil,0x1
+            0x75, 0x28,                                 // jne    arity-error
             0x48, 0x8b, 0x3f,                           // mov    rdi,QWORD PTR [rdi]
             0x89, 0xf8,                                 // mov    eax,edi
-            0x83, 0xe0, 0x07,                           // and    eax,0x7
-            0x48, 0x83, 0xf8, cleo::tag::INT64,         // cmp    rax,0x4
-            0x75, 0x30,                                 // jne    arg0-type-error
-            0xe8, rel_addr(get_int64_value),            // call   get_int64_value
-            0x48, 0x89, 0xc7,                           // mov    rdi,rax
+            0x83, 0xe0, tag::MASK,                      // and    eax,tag::MASK
+            0x48, 0x83, 0xf8, tag::INT64,               // cmp    rax,tag::INT64
+            0x75, 0x2f,                                 // jne    arg0-type-error
+            0x48, 0x83, 0xe7, ~tag::MASK,               // and    rdi,~tag::MASK
+            0x48, 0x8b, 0x3f,                           // mov    rdi,QWORD PTR [rdi]
             0xe8, rel_addr(cfn),                        // call   cfn
             0x48, 0x89, 0xc7,                           // mov    rdi,rax
             0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
@@ -130,6 +131,54 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0xeb, 0x07,                                 // jmp    return-error
             0x31, 0xf6,                                 // xor    esi,esi ; arg0-type-error
             0xe8, rel_addr(create_arg_type_error),      // call   0x84d60
+            0x48, 0x89, 0x03,                           // mov    QWORD PTR [rbx],rax ; return-error
+            0x31, 0xc0,                                 // xor    eax,eax
+            0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
+            0x5b,                                       // pop    rbx
+            0x5d,                                       // pop    rbp
+            0xc3                                        // ret
+        );
+    }
+    else
+    {
+        put(p,
+            0x55,                                       // push   rbp
+            0x48, 0x89, 0xe5,                           // mov    rbp,rsp
+            0x53,                                       // push   rbx
+            0x50,                                       // push   rax
+            0x48, 0x89, 0xd3,                           // mov    rbx,rdx
+            0x48, 0x89, 0xf8,                           // mov    rax,rdi
+            0x40, 0x80, 0xfe, param_count,              // cmp    sil,0x2
+            0x75, 0x3e,                                 // jne    arity-error
+            0x48, 0x8b, 0x38,                           // mov    rdi,QWORD PTR [rax]
+            0x89, 0xf9,                                 // mov    ecx,edi
+            0x83, 0xe1, tag::MASK,                      // and    ecx,tag::MASK
+            0x48, 0x83, 0xf9, tag::INT64,               // cmp    rcx,tag::INT64
+            0x75, 0x45,                                 // jne    arg0-type-error
+            0x48, 0x8b, 0x40, 0x08,                     // mov    rax,QWORD PTR [rax+0x8]
+            0x89, 0xc1,                                 // mov    ecx,eax
+            0x83, 0xe1, tag::MASK,                      // and    ecx,tag::MASK
+            0x48, 0x83, 0xf9, tag::INT64,               // cmp    rcx,tag::INT64
+            0x75, 0x3a,                                 // jne    arg1-type-error
+            0x48, 0x83, 0xe7, ~tag::MASK,               // and    rdi,~tag::MASK
+            0x48, 0x8b, 0x3f,                           // mov    rdi,QWORD PTR [rdi]
+            0x48, 0x83, 0xe0, ~tag::MASK,               // and    rax,~tag::MASK
+            0x48, 0x8b, 0x30,                           // mov    rsi,QWORD PTR [rax]
+            0xe8, rel_addr(cfn),                        // call   cfn
+            0x48, 0x89, 0xc7,                           // mov    rdi,rax
+            0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
+            0x5b,                                       // pop    rbx
+            0x5d,                                       // pop    rbp
+            0xe9, rel_addr(create_int64),               // jmp    create_int64
+            0x48, 0xbf, abs_addr(name.bits()),          // movabs rdi,name ; arity-error
+            0x40, 0x0f, 0xb6, 0xf6,                     // movzx  esi,sil
+            0xe8, rel_addr(create_arity_error),         // call   create_arity_error
+            0xeb, 0x11,                                 // jmp    return-error
+            0x31, 0xf6,                                 // xor    esi,esi ; arg0-type-error
+            0xeb, 0x08,                                 // jmp    arg-type-error
+            0xbe, 0x01, 0x00, 0x00, 0x00,               // mov    esi,0x1
+            0x48, 0x89, 0xc7,                           // mov    rdi,rax
+            0xe8, rel_addr(create_arg_type_error),      // call   0x84d60 ; arg-type-error
             0x48, 0x89, 0x03,                           // mov    QWORD PTR [rbx],rax ; return-error
             0x31, 0xc0,                                 // xor    eax,eax
             0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
