@@ -83,8 +83,14 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0x50,                                       // push   rax
             0x48, 0x89, 0xd3,                           // mov    rbx,rdx
             0x40, 0x84, 0xf6,                           // test   sil,sil
-            0x74, 0x1f,                                 // je     +31
-            0x48, 0xbf, abs_addr(name.bits()),          // movabs rdi,name
+            0x75, 0x13,                                 // jne    arity-error
+            0xe8, rel_addr(cfn),                        // call   cfn
+            0x48, 0x89, 0xc7,                           // mov    rdi,rax
+            0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
+            0x5b,                                       // pop    rbx
+            0x5d,                                       // pop    rbp
+            0xe9, rel_addr(create_int64),               // jmp    create_int64
+            0x48, 0xbf, abs_addr(name.bits()),          // movabs rdi,name ; arity-error
             0x40, 0x0f, 0xb6, 0xf6,                     // movzx  esi,sil
             0xe8, rel_addr(create_arity_error),         // call   create_arity_error
             0x48, 0x89, 0x03,                           // mov    QWORD PTR [rbx],rax
@@ -92,13 +98,7 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
             0x5b,                                       // pop    rbx
             0x5d,                                       // pop    rbp
-            0xc3,                                       // ret
-            0xe8, rel_addr(cfn),                        // call   cfn
-            0x48, 0x89, 0xc7,                           // mov    rdi,rax
-            0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
-            0x5b,                                       // pop    rbx
-            0x5d,                                       // pop    rbp
-            0xe9, rel_addr(create_int64)                // jmp    create_int64
+            0xc3                                        // ret
         );
     }
     else
@@ -110,17 +110,12 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0x50,                                       // push   rax
             0x48, 0x89, 0xd3,                           // mov    rbx,rdx
             0x40, 0x80, 0xfe, 0x01,                     // cmp    sil,0x1
-            0x74, 0x1f,                                 // je     +31
-            0x48, 0xbf, abs_addr(name.bits()),          // movabs rdi,name
-            0x40, 0x0f, 0xb6, 0xf6,                     // movzx  esi,sil
-            0xe8, rel_addr(create_arity_error),         // call   create_arity_error
-            0x48, 0x89, 0x03,                           // mov    QWORD PTR [rbx],rax
-            0x31, 0xc0,                                 // xor    eax,eax
-            0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
-            0x5b,                                       // pop    rbx
-            0x5d,                                       // pop    rbp
-            0xc3,                                       // ret
+            0x75, 0x29,                                 // jne    arity-error
             0x48, 0x8b, 0x3f,                           // mov    rdi,QWORD PTR [rdi]
+            0x89, 0xf8,                                 // mov    eax,edi
+            0x83, 0xe0, 0x07,                           // and    eax,0x7
+            0x48, 0x83, 0xf8, cleo::tag::INT64,         // cmp    rax,0x4
+            0x75, 0x30,                                 // jne    arg0-type-error
             0xe8, rel_addr(get_int64_value),            // call   get_int64_value
             0x48, 0x89, 0xc7,                           // mov    rdi,rax
             0xe8, rel_addr(cfn),                        // call   cfn
@@ -128,7 +123,19 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
             0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
             0x5b,                                       // pop    rbx
             0x5d,                                       // pop    rbp
-            0xe9, rel_addr(create_int64)                // jmp    create_int64
+            0xe9, rel_addr(create_int64),               // jmp    create_int64
+            0x48, 0xbf, abs_addr(name.bits()),          // movabs rdi,name ; arity-error
+            0x40, 0x0f, 0xb6, 0xf6,                     // movzx  esi,sil
+            0xe8, rel_addr(create_arity_error),         // call   create_arity_error
+            0xeb, 0x07,                                 // jmp    return-error
+            0x31, 0xf6,                                 // xor    esi,esi ; arg0-type-error
+            0xe8, rel_addr(create_arg_type_error),      // call   0x84d60
+            0x48, 0x89, 0x03,                           // mov    QWORD PTR [rbx],rax ; return-error
+            0x31, 0xc0,                                 // xor    eax,eax
+            0x48, 0x83, 0xc4, 0x08,                     // add    rsp,0x8
+            0x5b,                                       // pop    rbx
+            0x5d,                                       // pop    rbp
+            0xc3                                        // ret
         );
     }
 

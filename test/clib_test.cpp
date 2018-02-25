@@ -27,8 +27,8 @@ struct clib_test : Test
     {
         try
         {
-            eval(call);
-            FAIL() << "expected an exception";
+            Root val{eval(call)};
+            FAIL() << "expected an exception, got " << to_string(*val);
         }
         catch (const Exception& )
         {
@@ -79,6 +79,16 @@ TEST_F(clib_test, one_param_function_should_check_arity)
     Root fn{create_c_fn((void *)inc7, name, clib::int64, *params)};
     Root call{list(*fn, 3, 7)};
     expect_arity_error(*call, "Wrong number of args (2) passed to: gfn1");
+}
+
+TEST_F(clib_test, one_param_function_should_fail_on_invalid_type)
+{
+    auto name = create_symbol("gfn1");
+    Root params{svec(clib::int64)};
+    Root fn{create_c_fn((void *)inc7, name, clib::int64, *params)};
+    Root bad{create_string("bad")};
+    Root call{list(*fn, *bad)};
+    expect_arity_error(*call, "Wrong arg 0 type: cleo.core/String");
 }
 
 }

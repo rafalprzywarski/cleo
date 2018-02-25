@@ -17,7 +17,13 @@ cleo::Value CLEO_CDECL example(const cleo::Value *args, std::uint8_t num_args, c
         err = cleo::create_arity_error(NAME, num_args).value();
         return cleo::nil;
     }
-    return cleo::create_int64(other(get_int64_value(args[0]))).value();
+    auto arg0 = args[0];
+    if (get_value_tag(arg0) != cleo::tag::INT64)
+    {
+        err = cleo::create_arg_type_error(arg0, 0).value();
+        return cleo::nil;
+    }
+    return cleo::create_int64(other(get_int64_value(arg0))).value();
 }
 
 int main()

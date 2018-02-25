@@ -19,6 +19,13 @@ Force CLEO_CDECL create_arity_error(Value name, std::uint8_t n)
     return new_call_error(*msg);
 }
 
+Force CLEO_CDECL create_arg_type_error(Value val, std::uint8_t n)
+{
+    Root msg{create_string("Wrong arg " + std::to_string(n) + " type: " + to_string(get_value_type(val)))};
+    return new_call_error(*msg);
+}
+
+
 void throw_arity_error(Value name, std::uint8_t n)
 {
     throw_exception(create_arity_error(name, n));
