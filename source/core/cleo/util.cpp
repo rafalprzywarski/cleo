@@ -25,10 +25,14 @@ Force CLEO_CDECL create_arg_type_error(Value val, std::uint8_t n)
     return new_call_error(*msg);
 }
 
-
 void throw_arity_error(Value name, std::uint8_t n)
 {
     throw_exception(create_arity_error(name, n));
+}
+
+void throw_arg_type_error(Value val, std::uint8_t n)
+{
+    throw_exception(create_arg_type_error(val, n));
 }
 
 void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args)

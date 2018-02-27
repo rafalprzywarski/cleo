@@ -8,6 +8,7 @@ std::string to_string(Value val);
 Force CLEO_CDECL create_arity_error(Value name, std::uint8_t n);
 Force CLEO_CDECL create_arg_type_error(Value val, std::uint8_t n);
 [[noreturn]] void throw_arity_error(Value name, std::uint8_t n);
+[[noreturn]] void throw_arg_type_error(Value val, std::uint8_t n);
 void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args);
 void check_type(const std::string& name, Value val, Value type);
 [[noreturn]] void throw_illegal_argument(const std::string& msg);
