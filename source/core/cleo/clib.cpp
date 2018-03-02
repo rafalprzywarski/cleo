@@ -3,6 +3,7 @@
 #include "util.hpp"
 #include "error.hpp"
 #include "small_vector.hpp"
+#include <cstring>
 #include <sys/mman.h>
 #include <dlfcn.h>
 
@@ -22,18 +23,13 @@ void enable_execution(char *code, std::size_t size)
     mprotect(code, size, PROT_READ | PROT_EXEC);
 }
 
+#ifndef __ARM_ARCH
+
 struct rel_addr
 {
     void *abs_addr;
     template <typename T>
     rel_addr(T *p) : abs_addr(reinterpret_cast<void *>(p)) {}
-};
-
-struct abs_addr
-{
-    std::uintptr_t addr;
-    template <typename T>
-    abs_addr(T p) : addr(reinterpret_cast<std::uintptr_t>(p)) {}
 };
 
 void put1(char *& code, rel_addr val)
@@ -44,10 +40,19 @@ void put1(char *& code, rel_addr val)
     code += 4;
 }
 
+#endif // !__ARM_ARCH
+
+struct abs_addr
+{
+    std::uintptr_t addr;
+    template <typename T>
+    abs_addr(T p) : addr(reinterpret_cast<std::uintptr_t>(p)) {}
+};
+
 void put1(char *& code, abs_addr val)
 {
-    std::memcpy(code, &val.addr, 8);
-    code += 8;
+    std::memcpy(code, &val.addr, sizeof(val.addr));
+    code += sizeof(val.addr);
 }
 
 void put1(char *& code, unsigned char val)
@@ -69,16 +74,48 @@ void put(char *& code, T0 val0, Ts... vals)
     (void)expand;
 }
 
-Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
+#ifdef __ARM_ARCH
+void generate_code(char *p, void *cfn, std::uint8_t param_count)
 {
-    check_type("fn name", name, *type::Symbol);
-    check_type("parameter types", param_types, *type::SmallVector);
-    const std::size_t max_size = 128;
-    auto code = code_alloc(max_size);
-    auto p = code;
-    auto param_count = get_small_vector_size(param_types);
-    if (param_count > MAX_ARGS)
-        throw_illegal_argument("C functions can take up to " + std::to_string(MAX_ARGS) + ", got " + std::to_string(param_count));
+    auto code = p;
+    put(p, 0x20, 0x48, 0x2d, 0xe9);                         // push	{r5, fp, lr}
+    put(p, 0x0d, 0xb0, 0xa0, 0xe1);                         // mov	fp, sp
+
+    if (param_count > 2)
+        put(p, (param_count - 2) * 8, 0xd0, 0x4d, 0xe2);    // sub	sp, sp, (param_count - 2) * 8
+
+    for (decltype(param_count) i = 2; i < param_count; ++i)
+        put(p,
+            0xd0 + ((i & 1) << 3), 0x20 + (i >> 1), 0xc0, 0xe1, // ldrd	r2, [r0,pi]
+            (i - 2) * 8, 0x20, 0x8d, 0xe5,                  // str  r2, [sp, pi]
+            (i - 2) * 8 + 4, 0x30, 0x8d, 0xe5               // str  r3, [sp, pi + #4]
+        );
+
+    if (param_count > 1)
+        put(p, 0xd8, 0x20, 0xc0, 0xe1);                     // ldrd	r2, [r0,#8]
+
+    put(p,
+        0xd0, 0x00, 0xc0, 0xe1,                             // ldrd	r0, [r0]
+        param_count > 2 ? 0x10 : 0x0c, 0x50, 0x9f, 0xe5,   // ldr	r5, [pc, #16]	; cfn
+        0x35, 0xff, 0x2f, 0xe1                              // blx	r5
+    );
+
+    if (param_count > 2)
+        put(p, 0x0b, 0xd0, 0xa0, 0xe1);                     // mov	sp, fp
+
+    put(p,
+        0x20, 0x48, 0xbd, 0xe8,                         // pop	{r5, fp, lr}
+        0x04, 0x20, 0x9f, 0xe5,                         // ldr	r2, [pc, #4]	; create_int64
+        0x12, 0xff, 0x2f, 0xe1,                         // bx	r2
+        abs_addr(cfn),                                  // .word
+        abs_addr(create_int64)                          // .word
+    );
+
+    __clear_cache(code, p);
+}
+#else
+void generate_code(char *p, void *cfn, std::uint8_t param_count)
+{
     put(p,
         0x55,                                           // push   rbp
         0x48, 0x89, 0xe5                                // mov    rbp,rsp
@@ -122,6 +159,20 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
         0x5d,                                           // pop    rbp
         0xe9, rel_addr(create_int64)                    // jmp    create_int64
     );
+}
+#endif
+
+Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
+{
+    check_type("fn name", name, *type::Symbol);
+    check_type("parameter types", param_types, *type::SmallVector);
+    auto param_count = get_small_vector_size(param_types);
+    if (param_count > MAX_ARGS)
+        throw_illegal_argument("C functions can take up to " + std::to_string(MAX_ARGS) + ", got " + std::to_string(param_count));
+
+    const std::size_t max_size = 512;
+    auto code = code_alloc(max_size);
+    generate_code(code, cfn, param_count);
 
     enable_execution(code, max_size);
     Root caddr{create_int64(reinterpret_cast<Int64>(code))};

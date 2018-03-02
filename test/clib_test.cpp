@@ -23,47 +23,47 @@ std::int64_t CLEO_CDECL inc7(std::int64_t x)
 
 std::int64_t CLEO_CDECL add2(std::int64_t x, std::int64_t y)
 {
-    return x + y;
+    return x - y;
 }
 
 std::int64_t CLEO_CDECL add3(
     std::int64_t a0, std::int64_t a1, std::int64_t a2)
 {
-    return a0 + a1 + a2;
+    return a0 - a1 + a2;
 }
 
 std::int64_t CLEO_CDECL add4(
     std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3)
 {
-    return a0 + a1 + a2 + a3;
+    return a0 - a1 + a2 - a3;
 }
 
 std::int64_t CLEO_CDECL add5(
     std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
     std::int64_t a4)
 {
-    return a0 + a1 + a2 + a3 + a4;
+    return a0 - a1 + a2 - a3 + a4;
 }
 
 std::int64_t CLEO_CDECL add6(
     std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
     std::int64_t a4, std::int64_t a5)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5;
+    return a0 - a1 + a2 - a3 + a4 - a5;
 }
 
 std::int64_t CLEO_CDECL add7(
     std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
     std::int64_t a4, std::int64_t a5, std::int64_t a6)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6;
 }
 
 std::int64_t CLEO_CDECL add8(
     std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
     std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7;
 }
 
 std::int64_t CLEO_CDECL add9(
@@ -71,7 +71,7 @@ std::int64_t CLEO_CDECL add9(
     std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
     std::int64_t a8)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8;
 }
 
 std::int64_t CLEO_CDECL add10(
@@ -79,7 +79,7 @@ std::int64_t CLEO_CDECL add10(
     std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
     std::int64_t a8, std::int64_t a9)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9;
 }
 
 std::int64_t CLEO_CDECL add11(
@@ -87,7 +87,7 @@ std::int64_t CLEO_CDECL add11(
     std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
     std::int64_t a8, std::int64_t a9, std::int64_t a10)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10;
 }
 
 std::int64_t CLEO_CDECL add12(
@@ -95,7 +95,7 @@ std::int64_t CLEO_CDECL add12(
     std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
     std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11;
 }
 
 std::int64_t CLEO_CDECL add13(
@@ -104,7 +104,7 @@ std::int64_t CLEO_CDECL add13(
     std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
     std::int64_t a12)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12;
 }
 
 std::int64_t CLEO_CDECL add14(
@@ -113,7 +113,7 @@ std::int64_t CLEO_CDECL add14(
     std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
     std::int64_t a12, std::int64_t a13)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + a13;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12 - a13;
 }
 
 std::int64_t CLEO_CDECL add15(
@@ -122,7 +122,7 @@ std::int64_t CLEO_CDECL add15(
     std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
     std::int64_t a12, std::int64_t a13, std::int64_t a14)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + a13 + a14;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12 - a13 + a14;
 }
 
 std::int64_t CLEO_CDECL add16(
@@ -131,7 +131,7 @@ std::int64_t CLEO_CDECL add16(
     std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
     std::int64_t a12, std::int64_t a13, std::int64_t a14, std::int64_t a15)
 {
-    return a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + a13 + a14 + a15;
+    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12 - a13 + a14 - a15;
 }
 
 }
@@ -187,7 +187,7 @@ TEST_F(clib_test, should_create_c_function_with_two_params)
     Root fn{create_c_fn((void *)add2, name, clib::int64, *params)};
     Root call{list(*fn, 132, 71)};
     Root val{eval(*call)};
-    Root ex{i64(203)};
+    Root ex{i64(61)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -199,7 +199,7 @@ TEST_F(clib_test, should_create_c_function_with_3_params)
     Root fn{create_c_fn((void *)add3, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7)};
     Root val{eval(*call)};
-    Root ex{i64(15)};
+    Root ex{i64(5)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -211,7 +211,7 @@ TEST_F(clib_test, should_create_c_function_with_4_params)
     Root fn{create_c_fn((void *)add4, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11)};
     Root val{eval(*call)};
-    Root ex{i64(26)};
+    Root ex{i64(-6)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -224,7 +224,7 @@ TEST_F(clib_test, should_create_c_function_with_5_params)
     Root fn{create_c_fn((void *)add5, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13)};
     Root val{eval(*call)};
-    Root ex{i64(39)};
+    Root ex{i64(7)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -237,7 +237,7 @@ TEST_F(clib_test, should_create_c_function_with_6_params)
     Root fn{create_c_fn((void *)add6, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17)};
     Root val{eval(*call)};
-    Root ex{i64(56)};
+    Root ex{i64(-10)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -250,7 +250,7 @@ TEST_F(clib_test, should_create_c_function_with_7_params)
     Root fn{create_c_fn((void *)add7, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19)};
     Root val{eval(*call)};
-    Root ex{i64(75)};
+    Root ex{i64(9)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -263,7 +263,7 @@ TEST_F(clib_test, should_create_c_function_with_8_params)
     Root fn{create_c_fn((void *)add8, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23)};
     Root val{eval(*call)};
-    Root ex{i64(98)};
+    Root ex{i64(-14)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -277,7 +277,7 @@ TEST_F(clib_test, should_create_c_function_with_9_params)
     Root fn{create_c_fn((void *)add9, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29)};
     Root val{eval(*call)};
-    Root ex{i64(127)};
+    Root ex{i64(15)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -291,7 +291,7 @@ TEST_F(clib_test, should_create_c_function_with_10_params)
     Root fn{create_c_fn((void *)add10, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31)};
     Root val{eval(*call)};
-    Root ex{i64(158)};
+    Root ex{i64(-16)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -305,7 +305,7 @@ TEST_F(clib_test, should_create_c_function_with_11_params)
     Root fn{create_c_fn((void *)add11, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37)};
     Root val{eval(*call)};
-    Root ex{i64(195)};
+    Root ex{i64(21)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -319,7 +319,7 @@ TEST_F(clib_test, should_create_c_function_with_12_params)
     Root fn{create_c_fn((void *)add12, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41)};
     Root val{eval(*call)};
-    Root ex{i64(236)};
+    Root ex{i64(-20)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -334,7 +334,7 @@ TEST_F(clib_test, should_create_c_function_with_13_params)
     Root fn{create_c_fn((void *)add13, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43)};
     Root val{eval(*call)};
-    Root ex{i64(279)};
+    Root ex{i64(23)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -349,7 +349,7 @@ TEST_F(clib_test, should_create_c_function_with_14_params)
     Root fn{create_c_fn((void *)add14, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47)};
     Root val{eval(*call)};
-    Root ex{i64(326)};
+    Root ex{i64(-24)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -364,7 +364,7 @@ TEST_F(clib_test, should_create_c_function_with_15_params)
     Root fn{create_c_fn((void *)add15, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53)};
     Root val{eval(*call)};
-    Root ex{i64(379)};
+    Root ex{i64(29)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -379,7 +379,7 @@ TEST_F(clib_test, should_create_c_function_with_16_params)
     Root fn{create_c_fn((void *)add16, name, clib::int64, *params)};
     Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59)};
     Root val{eval(*call)};
-    Root ex{i64(438)};
+    Root ex{i64(-30)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 

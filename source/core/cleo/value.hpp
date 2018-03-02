@@ -4,7 +4,11 @@
 #include <unordered_map>
 #include <ostream>
 
+#ifdef __ARM_ARCH
+#define CLEO_CDECL
+#else
 #define CLEO_CDECL __attribute__((cdecl))
+#endif
 
 namespace cleo
 {
