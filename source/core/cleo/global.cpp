@@ -90,6 +90,7 @@ const Value CLEO_CORE = create_symbol("cleo.core");
 const Value NEW = create_symbol("cleo.core", "new");
 const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
+const Value COMMAND_LINE_ARGS = create_symbol("cleo.core", "*command-line-args*");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -405,6 +406,34 @@ Force pr(const Value *args, std::uint8_t n)
     return force(nil);
 }
 
+Force prn(const Value *args, std::uint8_t n)
+{
+    pr(args, n);
+    std::cout << std::endl;
+    return nil;
+}
+
+Force print(const Value *args, std::uint8_t n)
+{
+    Root s;
+    for (decltype(n) i = 0; i < n; ++i)
+    {
+        s = print_str(args[i]);
+        if (i > 0)
+            std::cout << ' ';
+        std::cout << std::string(get_string_ptr(*s), get_string_len(*s));
+    }
+    std::cout << std::flush;
+    return nil;
+}
+
+Force println(const Value *args, std::uint8_t n)
+{
+    print(args, n);
+    std::cout << std::endl;
+    return nil;
+}
+
 Force macroexpand_noenv(Value val)
 {
     return macroexpand(val, nil);
@@ -529,6 +558,7 @@ struct Initialize
         f = create_string(".");
         define(LIB_PATH, *f);
 
+        define(COMMAND_LINE_ARGS, nil);
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
@@ -836,6 +866,15 @@ struct Initialize
 
         f = create_native_function(pr);
         define(create_symbol("cleo.core", "pr"), *f);
+
+        f = create_native_function(prn);
+        define(create_symbol("cleo.core", "prn"), *f);
+
+        f = create_native_function(print);
+        define(create_symbol("cleo.core", "print"), *f);
+
+        f = create_native_function(println);
+        define(create_symbol("cleo.core", "println"), *f);
 
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);

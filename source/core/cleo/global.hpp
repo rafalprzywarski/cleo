@@ -39,14 +39,22 @@ class Roots
 public:
     using size_type = decltype(extra_roots)::size_type;
 
-    explicit Roots(size_type count) : index(extra_roots.size()), count(count) { extra_roots.resize(index + count, nil); }
+    explicit Roots(size_type count)
+        : index(extra_roots.size())
+#ifndef NDEBUG
+        , count(count)
+#endif
+    { extra_roots.resize(index + count, nil); }
     Roots(const Roots& ) = delete;
     ~Roots() { assert(extra_roots.size() == index + count); extra_roots.resize(index); }
     Roots& operator=(const Roots& ) = delete;
     Value operator[](size_type k) const { return extra_roots[index + k]; }
     void set(size_type k, Force f) { extra_roots[index + k] = f.value(); }
 private:
-    size_type index, count;
+    size_type index;
+#ifndef NDEBUG
+    size_type count;
+#endif
 };
 
 class StaticVar
@@ -145,6 +153,7 @@ extern const Value CLEO_CORE;
 extern const Value NEW;
 extern const Value HASH_OBJ;
 extern const Value IMPORT_C_FN;
+extern const Value COMMAND_LINE_ARGS;
 extern const Root ZERO;
 extern const Root ONE;
 extern const Root TWO;
