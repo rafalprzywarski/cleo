@@ -128,9 +128,11 @@ Float64 get_float64_value(Value val)
 
 Force create_string(const std::string& str)
 {
-    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + str.length()));
-    val->len = str.length();
+    auto len = str.length();
+    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len + 1));
+    val->len = len;
     std::memcpy(&val->firstChar, str.data(), str.length());
+    (&val->firstChar)[len] = 0;
     return tag_ptr(val, tag::STRING);
 }
 

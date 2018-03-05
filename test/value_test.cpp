@@ -2,6 +2,7 @@
 #include <cleo/global.hpp>
 #include <limits>
 #include <string>
+#include <cstring>
 #include <array>
 #include <gtest/gtest.h>
 #include "util.hpp"
@@ -146,6 +147,15 @@ TEST_F(value_test, should_store_string_values)
     exampleCopy.clear();
     ASSERT_EQ(tag::STRING, get_value_tag(*val));
     ASSERT_EQ(example, std::string(get_string_ptr(*val), get_string_len(*val)));
+    ASSERT_STREQ(example.c_str(), get_string_ptr(*val));
+}
+
+TEST_F(value_test, should_null_terminate_strings)
+{
+    std::string example("abcxyz");
+    Root val{create_string(example)};
+    ASSERT_EQ(6u, std::strlen(get_string_ptr(*val)));
+    ASSERT_STREQ(example.c_str(), get_string_ptr(*val));
 }
 
 TEST_F(value_test, should_create_a_new_instance_for_each_string)
