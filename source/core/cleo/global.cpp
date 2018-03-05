@@ -882,7 +882,7 @@ struct Initialize
         f = create_ns_macro();
         define(NS, *f);
 
-        f = create_native_function5<import_c_fn, &IMPORT_C_FN>();
+        f = create_native_function4<import_c_fn, &IMPORT_C_FN>();
         define(IMPORT_C_FN, *f);
     }
 } initialize;

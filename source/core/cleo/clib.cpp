@@ -197,7 +197,7 @@ Force call_c_function(const Value *args, std::uint8_t num_args)
     return reinterpret_cast<CFunction>(get_int64_value(addr))(raw_args, num_args - 1);
 }
 
-Force import_c_fn(Value libname, Value fnname, Value calling_conv, Value ret_type, Value param_types)
+Force import_c_fn(Value libname, Value fnname, Value ret_type, Value param_types)
 {
     check_type("lib-name", libname, *type::String);
     check_type("fn-name", fnname, *type::String);
