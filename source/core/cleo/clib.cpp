@@ -6,6 +6,7 @@
 #include <cstring>
 #include <sys/mman.h>
 #include <dlfcn.h>
+#include <algorithm>
 
 namespace cleo
 {
@@ -75,32 +76,89 @@ void put(char *& code, T0 val0, Ts... vals)
 }
 
 #ifdef __ARM_ARCH
-void generate_code(char *p, void *cfn, std::uint8_t param_count)
+
+std::vector<std::uint8_t> param_offsets(Value param_types)
 {
+    auto param_count = get_small_vector_size(param_types);
+    std::vector<std::uint8_t> offsets;
+    offsets.reserve(param_count);
+    std::uint8_t offset = 0;
+    for (decltype(param_count) i = 0; i < param_count; ++i)
+    {
+        if (get_small_vector_elem(param_types, i).is(clib::int64))
+        {
+            if (offset & 1)
+                ++offset;
+            offsets.push_back(offset);
+            offset += 2;
+        }
+        else // string
+        {
+            offsets.push_back(offset);
+            ++offset;
+        }
+    }
+    return offsets;
+}
+
+std::vector<std::uint8_t> param_sizes(Value param_types)
+{
+    auto param_count = get_small_vector_size(param_types);
+    std::vector<std::uint8_t> sizes;
+    sizes.reserve(param_count);
+    for (decltype(param_count) i = 0; i < param_count; ++i)
+        sizes.push_back(get_small_vector_elem(param_types, i).is(clib::int64) ? 2 : 1);
+    return sizes;
+}
+
+void generate_code(char *p, void *cfn, Value param_types)
+{
+    auto param_count = get_small_vector_size(param_types);
     auto code = p;
     put(p, 0x20, 0x48, 0x2d, 0xe9);                         // push	{r5, fp, lr}
     put(p, 0x0d, 0xb0, 0xa0, 0xe1);                         // mov	fp, sp
 
-    if (param_count > 2)
-        put(p, (param_count - 2) * 8, 0xd0, 0x4d, 0xe2);    // sub	sp, sp, (param_count - 2) * 8
+    auto offsets = param_offsets(param_types);
+    auto sizes = param_sizes(param_types);
+    auto first_on_stack = std::find(begin(offsets), end(offsets), 4) - begin(offsets);
+    if (first_on_stack < param_count)
+    {
+        auto total = ((offsets.back() - 4) + sizes.back()) * 4;
+        put(p, total, 0xd0, 0x4d, 0xe2);                    // sub	sp, sp, total
+    }
 
-    for (decltype(param_count) i = 2; i < param_count; ++i)
-        put(p,
-            0xd0 + ((i & 1) << 3), 0x20 + (i >> 1), 0xc0, 0xe1, // ldrd	r2, [r0,pi]
-            (i - 2) * 8, 0x20, 0x8d, 0xe5,                  // str  r2, [sp, pi]
-            (i - 2) * 8 + 4, 0x30, 0x8d, 0xe5               // str  r3, [sp, pi + #4]
-        );
+    for (decltype(param_count) i = first_on_stack; i < param_count; ++i)
+    {
+        auto stack_offset = (offsets[i] - 4) * 4;
+        if (sizes[i] == 2)
+        {
+            put(p,
+                0xd0 + ((i & 1) << 3), 0x20 + (i >> 1), 0xc0, 0xe1,                     // ldrd	r2, [r0,pi]
+                0xf0 + (stack_offset & 0xf), 0x20 + (stack_offset >> 4), 0xcd, 0xe1     // strd r2, [sp, pi]
+            );
+        }
+        else
+        {
+            assert(sizes[i] == 1);
+            put(p,
+                i * 8, 0x20, 0x90, 0xe5,                                                // ldr	r2, [r0,pi]
+                stack_offset, 0x20, 0x8d, 0xe5                                          // str  r2, [sp, pi]
+            );
+        }
+    }
 
-    if (param_count > 1)
-        put(p, 0xd8, 0x20, 0xc0, 0xe1);                     // ldrd	r2, [r0,#8]
+    for (decltype(param_count) k = first_on_stack, i = k - 1; k > 0; --k, --i)
+        if (sizes[i] == 1)
+            put(p, i * 8, offsets[i] << 4, 0x90, 0xe5);                                 // ldr	rx, [r0,pi]
+        else
+            put(p, 0xd0 + ((i & 1) << 3), (offsets[i] << 4) + (i >> 1), 0xc0, 0xe1);    // ldrd	rx, [r0,pi]
 
     put(p,
-        0xd0, 0x00, 0xc0, 0xe1,                             // ldrd	r0, [r0]
-        param_count > 2 ? 0x10 : 0x0c, 0x50, 0x9f, 0xe5,   // ldr	r5, [pc, #16]	; cfn
-        0x35, 0xff, 0x2f, 0xe1                              // blx	r5
+        first_on_stack < param_count ? 0x10 : 0x0c, 0x50, 0x9f, 0xe5,   // ldr	r5, [pc, #16 or #12]	; cfn
+        0x35, 0xff, 0x2f, 0xe1                                          // blx	r5
     );
 
-    if (param_count > 2)
+    if (first_on_stack < param_count)
         put(p, 0x0b, 0xd0, 0xa0, 0xe1);                     // mov	sp, fp
 
     put(p,
@@ -114,8 +172,9 @@ void generate_code(char *p, void *cfn, std::uint8_t param_count)
     __clear_cache(code, p);
 }
 #else
-void generate_code(char *p, void *cfn, std::uint8_t param_count)
+void generate_code(char *p, void *cfn, Value param_types)
 {
+    auto param_count = get_small_vector_size(param_types);
     put(p,
         0x55,                                           // push   rbp
         0x48, 0x89, 0xe5                                // mov    rbp,rsp
@@ -169,14 +228,38 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
     auto param_count = get_small_vector_size(param_types);
     if (param_count > MAX_ARGS)
         throw_illegal_argument("C functions can take up to " + std::to_string(MAX_ARGS) + ", got " + std::to_string(param_count));
+    for (decltype(param_count) i = 0; i < param_count; ++i)
+    {
+        auto type = get_small_vector_elem(param_types, i);
+        if (!type.is(clib::int64) && !type.is(clib::string))
+            throw_illegal_argument("Invalid parameter types: " + to_string(param_types));
+    }
 
-    const std::size_t max_size = 512;
+    const std::size_t max_size = 256;
     auto code = code_alloc(max_size);
-    generate_code(code, cfn, param_count);
+    generate_code(code, cfn, param_types);
 
     enable_execution(code, max_size);
     Root caddr{create_int64(reinterpret_cast<Int64>(code))};
     return create_object3(*type::CFunction, *caddr, name, param_types);
+}
+
+std::uint64_t get_arg_bit_value(Value param_types, std::uint8_t i, Value arg)
+{
+    auto arg_tag = get_value_tag(arg);
+    auto expected_type = get_small_vector_elem(param_types, i);
+    if (expected_type.is(clib::int64))
+    {
+        if (arg_tag != tag::INT64)
+            throw_arg_type_error(arg, i);
+        return static_cast<std::uint64_t>(get_int64_value(arg));
+    }
+    else
+    {
+        if (arg_tag != tag::STRING)
+            throw_arg_type_error(arg, i);
+        return reinterpret_cast<std::uint64_t>(get_string_ptr(arg));
+    }
 }
 
 Force call_c_function(const Value *args, std::uint8_t num_args)
@@ -189,11 +272,7 @@ Force call_c_function(const Value *args, std::uint8_t num_args)
         throw_arity_error(name, num_args - 1);
     std::uint64_t raw_args[MAX_ARGS];
     for (decltype(num_args) i = 1; i < num_args; ++i)
-    {
-        if (get_value_tag(args[i]) != tag::INT64)
-            throw_arg_type_error(args[i], i - 1);
-        raw_args[i - 1] = static_cast<std::uint64_t>(get_int64_value(args[i]));
-    }
+        raw_args[i - 1] = get_arg_bit_value(param_types, i - 1, args[i]);
     return reinterpret_cast<CFunction>(get_int64_value(addr))(raw_args, num_args - 1);
 }
 

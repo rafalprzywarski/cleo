@@ -191,6 +191,7 @@ const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
 namespace clib
 {
 const Value int64 = create_keyword("int64");
+const Value string = create_keyword("string");
 }
 
 const std::array<Value, 7> type_by_tag{{

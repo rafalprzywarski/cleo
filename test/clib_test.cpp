@@ -11,127 +11,129 @@ namespace test
 
 namespace
 {
+
+template <typename T>
+std::int64_t deref(T val)
+{
+    return val;
+}
+
+template <>
+std::int64_t deref(const char *val)
+{
+    return *val;
+}
+
+template <typename T>
+T neutral()
+{
+    return T();
+}
+
+template <>
+const char *neutral()
+{
+    return "";
+}
+
+template <typename T>
+T example();
+
+template <>
+Int64 example()
+{
+    return 0xf819283493ab6ef2ll;
+}
+
+template <>
+const char *example()
+{
+    return "a";
+}
+
+template <typename T>
+Value id();
+
+template <>
+Value id<Int64>()
+{
+    return clib::int64;
+}
+
+template <>
+Value id<const char *>()
+{
+    return clib::string;
+}
+
+template <typename First>
+std::int64_t add(First first)
+{
+    return deref(first);
+}
+
+template <typename First, typename Second, typename... Rest>
+std::int64_t add(First first, Second second, Rest... rest)
+{
+    return deref(first) + add(second, rest...);
+}
+
+template <typename T>
+Force example_list(int i)
+{
+    Root val{to_value(i == 0 ? example<T>() : neutral<T>())};
+    return list_conj(*EMPTY_LIST, *val);
+}
+
+template <typename First, typename Second, typename... Rest>
+Force example_list(int i)
+{
+    Root l{example_list<Second, Rest...>(i - 1)};
+    Root val{to_value(i == 0 ? example<First>() : neutral<First>())};
+    return list_conj(*l, *val);
+}
+
+template <typename T>
+Force expected_value(int i)
+{
+    return to_value(deref(example<T>()));
+}
+
+template <typename First, typename Second, typename... Rest>
+Force expected_value(int i)
+{
+    return i == 0 ? to_value(deref(example<First>())) : expected_value<Second, Rest...>(i - 1);
+}
+
+template <typename... Types>
+void test_fn()
+{
+    auto name = create_symbol("gfn");
+    Root params{svec(id<Types>()...)};
+    Root fn{create_c_fn((void *)add<Types...>, name, clib::int64, *params)};
+    for (int i = 0; i < sizeof...(Types); ++i)
+    {
+        Root examples{example_list<Types...>(i)};
+        Root call{list_conj(*examples, *fn)};
+        Root val{eval(*call)};
+        Root ex{expected_value<Types...>(i)};
+        EXPECT_EQ_VALS(*ex, *val) << " param: " << i << " params: " << to_string(*params);
+    }
+}
+
 std::int64_t CLEO_CDECL ret13()
 {
     return 13;
 }
 
-std::int64_t CLEO_CDECL inc7(std::int64_t x)
+std::int64_t CLEO_CDECL big17(
+    std::int64_t, std::int64_t, std::int64_t, std::int64_t,
+    std::int64_t, std::int64_t, std::int64_t, std::int64_t,
+    std::int64_t, std::int64_t, std::int64_t, std::int64_t,
+    std::int64_t, std::int64_t, std::int64_t, std::int64_t,
+    std::int64_t)
 {
-    return x + 7;
-}
-
-std::int64_t CLEO_CDECL add2(std::int64_t x, std::int64_t y)
-{
-    return x - y;
-}
-
-std::int64_t CLEO_CDECL add3(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2)
-{
-    return a0 - a1 + a2;
-}
-
-std::int64_t CLEO_CDECL add4(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3)
-{
-    return a0 - a1 + a2 - a3;
-}
-
-std::int64_t CLEO_CDECL add5(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4)
-{
-    return a0 - a1 + a2 - a3 + a4;
-}
-
-std::int64_t CLEO_CDECL add6(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5;
-}
-
-std::int64_t CLEO_CDECL add7(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6;
-}
-
-std::int64_t CLEO_CDECL add8(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7;
-}
-
-std::int64_t CLEO_CDECL add9(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8;
-}
-
-std::int64_t CLEO_CDECL add10(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9;
-}
-
-std::int64_t CLEO_CDECL add11(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9, std::int64_t a10)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10;
-}
-
-std::int64_t CLEO_CDECL add12(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11;
-}
-
-std::int64_t CLEO_CDECL add13(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
-    std::int64_t a12)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12;
-}
-
-std::int64_t CLEO_CDECL add14(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
-    std::int64_t a12, std::int64_t a13)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12 - a13;
-}
-
-std::int64_t CLEO_CDECL add15(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
-    std::int64_t a12, std::int64_t a13, std::int64_t a14)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12 - a13 + a14;
-}
-
-std::int64_t CLEO_CDECL add16(
-    std::int64_t a0, std::int64_t a1, std::int64_t a2, std::int64_t a3,
-    std::int64_t a4, std::int64_t a5, std::int64_t a6, std::int64_t a7,
-    std::int64_t a8, std::int64_t a9, std::int64_t a10, std::int64_t a11,
-    std::int64_t a12, std::int64_t a13, std::int64_t a14, std::int64_t a15)
-{
-    return a0 - a1 + a2 - a3 + a4 - a5 + a6 - a7 + a8 - a9 + a10 - a11 + a12 - a13 + a14 - a15;
+    return 0;
 }
 
 }
@@ -171,216 +173,147 @@ TEST_F(clib_test, should_create_c_function_with_no_params)
 
 TEST_F(clib_test, should_create_c_function_with_one_param)
 {
-    auto name = create_symbol("gfn1");
-    Root params{svec(clib::int64)};
-    Root fn{create_c_fn((void *)inc7, name, clib::int64, *params)};
-    Root call{list(*fn, 132)};
-    Root val{eval(*call)};
-    Root ex{i64(139)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64>();
+    test_fn<const char *>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_two_params)
 {
-    auto name = create_symbol("gfn2");
-    Root params{svec(clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add2, name, clib::int64, *params)};
-    Root call{list(*fn, 132, 71)};
-    Root val{eval(*call)};
-    Root ex{i64(61)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64>();
+    test_fn<Int64, const char *>();
+    test_fn<const char *, Int64>();
+    test_fn<const char *, const char *>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_3_params)
 {
-    auto name = create_symbol("gfn3");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add3, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7)};
-    Root val{eval(*call)};
-    Root ex{i64(5)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64>();
+    test_fn<Int64, Int64, const char *>();
+    test_fn<Int64, const char *, Int64>();
+    test_fn<Int64, const char *, const char *>();
+    test_fn<const char *, Int64, Int64>();
+    test_fn<const char *, Int64, const char *>();
+    test_fn<const char *, const char *, Int64>();
+    test_fn<const char *, const char *, const char *>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_4_params)
 {
-    auto name = create_symbol("gfn4");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add4, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11)};
-    Root val{eval(*call)};
-    Root ex{i64(-6)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64>();
+    test_fn<Int64, Int64, Int64, const char *>();
+    test_fn<Int64, Int64, const char *, Int64>();
+    test_fn<Int64, Int64, const char *, const char *>();
+    test_fn<Int64, const char *, Int64, Int64>();
+    test_fn<Int64, const char *, Int64, const char *>();
+    test_fn<Int64, const char *, const char *, Int64>();
+    test_fn<Int64, const char *, const char *, const char *>();
+    test_fn<const char *, Int64, Int64, Int64>();
+    test_fn<const char *, Int64, Int64, const char *>();
+    test_fn<const char *, Int64, const char *, Int64>();
+    test_fn<const char *, Int64, const char *, const char *>();
+    test_fn<const char *, const char *, Int64, Int64>();
+    test_fn<const char *, const char *, Int64, const char *>();
+    test_fn<const char *, const char *, const char *, Int64>();
+    test_fn<const char *, const char *, const char *, const char *>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_5_params)
 {
-    auto name = create_symbol("gfn5");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64)};
-    Root fn{create_c_fn((void *)add5, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13)};
-    Root val{eval(*call)};
-    Root ex{i64(7)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64>();
+    test_fn<const char *, Int64, Int64, Int64, Int64>();
+    test_fn<Int64, const char *, Int64, Int64, Int64>();
+    test_fn<Int64, Int64, const char *, Int64, Int64>();
+    test_fn<Int64, Int64, Int64, const char *, Int64>();
+    test_fn<Int64, Int64, Int64, Int64, const char *>();
+    test_fn<const char *, const char *, Int64, Int64, Int64>();
+    test_fn<const char *, Int64, const char *, Int64, Int64>();
+    test_fn<const char *, Int64, Int64, const char *, Int64>();
+    test_fn<const char *, Int64, Int64, Int64, const char *>();
+    test_fn<Int64, const char *, const char *, Int64, Int64>();
+    test_fn<Int64, const char *, Int64, const char *, Int64>();
+    test_fn<Int64, const char *, Int64, Int64, const char *>();
+    test_fn<Int64, Int64, const char *, const char *, Int64>();
+    test_fn<Int64, Int64, const char *, Int64, const char *>();
+    test_fn<Int64, Int64, Int64, const char *, const char *>();
+
+    test_fn<const char *, const char *, const char *, const char *, const char *>();
+    test_fn<Int64, const char *, const char *, const char *, const char *>();
+    test_fn<const char *, Int64, const char *, const char *, const char *>();
+    test_fn<const char *, const char *, Int64, const char *, const char *>();
+    test_fn<const char *, const char *, const char *, Int64, const char *>();
+    test_fn<const char *, const char *, const char *, const char *, Int64>();
+    test_fn<Int64, Int64, const char *, const char *, const char *>();
+    test_fn<Int64, const char *, Int64, const char *, const char *>();
+    test_fn<Int64, const char *, const char *, Int64, const char *>();
+    test_fn<Int64, const char *, const char *, const char *, Int64>();
+    test_fn<const char *, Int64, Int64, const char *, const char *>();
+    test_fn<const char *, Int64, const char *, Int64, const char *>();
+    test_fn<const char *, Int64, const char *, const char *, Int64>();
+    test_fn<const char *, const char *, Int64, Int64, const char *>();
+    test_fn<const char *, const char *, Int64, const char *, Int64>();
+    test_fn<const char *, const char *, const char *, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_6_params)
 {
-    auto name = create_symbol("gfn6");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add6, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17)};
-    Root val{eval(*call)};
-    Root ex{i64(-10)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_7_params)
 {
-    auto name = create_symbol("gfn7");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add7, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19)};
-    Root val{eval(*call)};
-    Root ex{i64(9)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_8_params)
 {
-    auto name = create_symbol("gfn8");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add8, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23)};
-    Root val{eval(*call)};
-    Root ex{i64(-14)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_9_params)
 {
-    auto name = create_symbol("gfn9");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64)};
-    Root fn{create_c_fn((void *)add9, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29)};
-    Root val{eval(*call)};
-    Root ex{i64(15)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_10_params)
 {
-    auto name = create_symbol("gfn10");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add10, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31)};
-    Root val{eval(*call)};
-    Root ex{i64(-16)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_11_params)
 {
-    auto name = create_symbol("gfn11");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add11, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37)};
-    Root val{eval(*call)};
-    Root ex{i64(21)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_12_params)
 {
-    auto name = create_symbol("gfn12");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add12, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41)};
-    Root val{eval(*call)};
-    Root ex{i64(-20)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_13_params)
 {
-    auto name = create_symbol("gfn13");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64)};
-    Root fn{create_c_fn((void *)add13, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43)};
-    Root val{eval(*call)};
-    Root ex{i64(23)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_14_params)
 {
-    auto name = create_symbol("gfn14");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add14, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47)};
-    Root val{eval(*call)};
-    Root ex{i64(-24)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_15_params)
 {
-    auto name = create_symbol("gfn15");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add15, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53)};
-    Root val{eval(*call)};
-    Root ex{i64(29)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_create_c_function_with_16_params)
 {
-    auto name = create_symbol("gfn16");
-    Root params{svec(
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64,
-        clib::int64, clib::int64, clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add16, name, clib::int64, *params)};
-    Root call{list(*fn, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59)};
-    Root val{eval(*call)};
-    Root ex{i64(-30)};
-    EXPECT_EQ_VALS(*ex, *val);
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
+    test_fn<const char *, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64>();
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, const char *>();
+    test_fn<Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, Int64, const char *, const char *>();
+    test_fn<const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *>();
+    test_fn<Int64, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *>();
+    test_fn<const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, Int64>();
+    test_fn<const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, const char *, Int64, Int64>();
 }
 
 TEST_F(clib_test, should_fail_to_create_c_functions_with_more_than_16_params)
@@ -394,7 +327,7 @@ TEST_F(clib_test, should_fail_to_create_c_functions_with_more_than_16_params)
         clib::int64)};
     try
     {
-        create_c_fn((void *)add16, name, clib::int64, *params);
+        create_c_fn((void *)big17, name, clib::int64, *params);
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -416,7 +349,7 @@ TEST_F(clib_test, one_param_function_should_check_arity)
 {
     auto name = create_symbol("gfn1");
     Root params{svec(clib::int64)};
-    Root fn{create_c_fn((void *)inc7, name, clib::int64, *params)};
+    Root fn{create_c_fn((void *)add<Int64>, name, clib::int64, *params)};
     Root call{list(*fn, 3, 7)};
     expect_call_error(*call, "Wrong number of args (2) passed to: gfn1");
 }
@@ -425,26 +358,55 @@ TEST_F(clib_test, two_param_function_should_check_arity)
 {
     auto name = create_symbol("gfn2");
     Root params{svec(clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add2, name, clib::int64, *params)};
+    Root fn{create_c_fn((void *)add<Int64, Int64>, name, clib::int64, *params)};
     Root call{list(*fn, 3)};
     expect_call_error(*call, "Wrong number of args (1) passed to: gfn2");
 }
 
-TEST_F(clib_test, one_param_function_should_fail_on_invalid_type)
+TEST_F(clib_test, should_fail_on_invalid_declared_type)
+{
+    auto name = create_symbol("gfn1");
+    Root params{svec(create_keyword("bad"))};
+    try
+    {
+        create_c_fn((void *)add<Int64>, name, clib::int64, *params);
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
+        Root emsg{illegal_argument_message(*e)};
+        Root expected{create_string("Invalid parameter types: [:bad]")};
+        ASSERT_EQ_VALS(*expected, *emsg);
+    }
+}
+
+TEST_F(clib_test, one_int64_param_function_should_fail_on_invalid_type)
 {
     auto name = create_symbol("gfn1");
     Root params{svec(clib::int64)};
-    Root fn{create_c_fn((void *)inc7, name, clib::int64, *params)};
+    Root fn{create_c_fn((void *)add<Int64>, name, clib::int64, *params)};
     Root bad{create_string("bad")};
     Root call{list(*fn, *bad)};
     expect_call_error(*call, "Wrong arg 0 type: cleo.core/String");
+}
+
+TEST_F(clib_test, one_string_param_function_should_fail_on_invalid_type)
+{
+    auto name = create_symbol("gfn1");
+    Root params{svec(clib::string)};
+    Root fn{create_c_fn((void *)add<const char *>, name, clib::string, *params)};
+    Root bad{create_keyword("bad")};
+    Root call{list(*fn, *bad)};
+    expect_call_error(*call, "Wrong arg 0 type: cleo.core/Keyword");
 }
 
 TEST_F(clib_test, two_param_function_should_fail_on_invalid_type)
 {
     auto name = create_symbol("gfn2");
     Root params{svec(clib::int64, clib::int64)};
-    Root fn{create_c_fn((void *)add2, name, clib::int64, *params)};
+    Root fn{create_c_fn((void *)add<Int64, Int64>, name, clib::int64, *params)};
     Root bad{create_string("bad")};
     Root call{list(*fn, *bad, 7)};
     expect_call_error(*call, "Wrong arg 0 type: cleo.core/String");

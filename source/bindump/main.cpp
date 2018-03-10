@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iomanip>
 
-constexpr auto SIZE = 128;
+constexpr auto SIZE = 256;
 cleo::Value NAME;
 
 std::int64_t CLEO_CDECL other();
@@ -22,28 +22,61 @@ std::int64_t CLEO_CDECL other(
     std::int64_t a12, std::int64_t a13, std::int64_t a14, std::int64_t a15);
 
 #define CLEO_ARG(n, type) \
-    auto arg##n = static_cast<type>(args[n]); \
+    auto arg##n = *reinterpret_cast<type const*>(&args[n]); \
 
 cleo::Value CLEO_CDECL example(const std::uint64_t *args, std::uint8_t num_args)
 {
-    CLEO_ARG(0, std::int64_t)
-    CLEO_ARG(1, std::int64_t)
+    CLEO_ARG(0, const char *)
+    CLEO_ARG(1, const char *)
     CLEO_ARG(2, std::int64_t)
-    CLEO_ARG(3, std::int64_t)
-    CLEO_ARG(4, std::int64_t)
-    CLEO_ARG(5, std::int64_t)
-    CLEO_ARG(6, std::int64_t)
-    CLEO_ARG(7, std::int64_t)
-    CLEO_ARG(8, std::int64_t)
-    CLEO_ARG(9, std::int64_t)
-    CLEO_ARG(10, std::int64_t)
-    CLEO_ARG(11, std::int64_t)
-    CLEO_ARG(12, std::int64_t)
-    return cleo::create_int64(other(
-        arg0, arg1, arg2, arg3,
-        arg4, arg5, arg6, arg7,
-        arg8, arg9, arg10, arg11,
-        arg12)).value();
+    // CLEO_ARG(2, std::int64_t)
+    // CLEO_ARG(0, double)
+    // CLEO_ARG(1, double)
+    // CLEO_ARG(2, double)
+    // CLEO_ARG(3, double)
+    // CLEO_ARG(4, double)
+    // CLEO_ARG(5, double)
+    // CLEO_ARG(6, double)
+    // CLEO_ARG(7, double)
+    // CLEO_ARG(8, double)
+    // CLEO_ARG(9, double)
+    // CLEO_ARG(10, double)
+    // CLEO_ARG(11, double)
+    // CLEO_ARG(12, double)
+    // CLEO_ARG(13, double)
+    // CLEO_ARG(14, double)
+    // CLEO_ARG(15, double)
+    // CLEO_ARG(3, std::int64_t)
+    // CLEO_ARG(4, std::int64_t)
+    // CLEO_ARG(5, std::int64_t)
+    // CLEO_ARG(6, std::int64_t)
+    // CLEO_ARG(7, std::int64_t)
+    // CLEO_ARG(8, std::int64_t)
+    // CLEO_ARG(9, std::int64_t)
+    // CLEO_ARG(10, std::int64_t)
+    // CLEO_ARG(11, std::int64_t)
+    // CLEO_ARG(12, std::int64_t)
+    // CLEO_ARG(13, std::int64_t)
+    // CLEO_ARG(14, std::int64_t)
+    // CLEO_ARG(15, std::int64_t)
+    // return cleo::create_int64(other(
+    //     arg0, arg1, arg2, arg3,
+    //     arg4, arg5, arg6, arg7,
+    //     arg8, arg9, arg10, arg11,
+    //     arg12, arg13, arg14, arg15)).value();
+    auto addr = (cleo::Value(*)(std::int64_t))0x12345678;
+    // auto addr2 = (std::int64_t(*)(
+    //     double, double, double, double,
+    //     double, double, double, double,
+    //     double, double, double, double,
+    //     double, double, double, double))0xabcdef08;
+    // return addr(addr2(arg0, arg1, arg2, arg3,
+    //                 arg4, arg5, arg6, arg7,
+    //             arg8, arg9, arg10, arg11,
+    //         arg12, arg13, arg14, arg15));
+    auto addr2 = (std::int64_t(*)(
+        const char *, const char *, std::int64_t))0xabcdef08;
+    return addr(addr2(arg0, arg1, arg2));
 }
 
 int main()

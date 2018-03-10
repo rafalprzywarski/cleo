@@ -210,6 +210,7 @@ extern const Root ArithmeticException;
 namespace clib
 {
 extern const Value int64;
+extern const Value string;
 }
 
 extern const std::array<Value, 7> type_by_tag;
