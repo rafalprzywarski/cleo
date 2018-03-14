@@ -4,11 +4,31 @@
 #include "error.hpp"
 #include "eval.hpp"
 #include "util.hpp"
+#include "multimethod.hpp"
 #include "persistent_hash_map.hpp"
 #include <fstream>
 
 namespace cleo
 {
+
+namespace
+{
+
+std::string locate_source(const std::string& ns_name)
+{
+    for (Root s{call_multimethod1(*rt::seq, *rt::lib_paths)}; *s; s = call_multimethod1(*rt::next, *s))
+    {
+        Root dir{call_multimethod1(*rt::first, *s)};
+        check_type("library path", *dir, *type::String);
+        auto path = std::string(get_string_ptr(*dir), get_string_len(*dir)) + "/" + ns_name + ".cleo";
+        if (std::ifstream(path))
+            return path;
+    }
+
+    return ns_name + ".cleo";
+}
+
+}
 
 Value in_ns(Value ns)
 {
@@ -90,9 +110,7 @@ Value require(Value ns)
         throw_exception(new_illegal_argument(*msg));
     }
     auto ns_name = get_symbol_name(ns);
-    std::string path =
-        std::string(get_string_ptr(*rt::lib_path), get_string_len(*rt::lib_path)) + "/" +
-        std::string(get_string_ptr(ns_name), get_string_len(ns_name)) + ".cleo";
+    std::string path = locate_source({get_string_ptr(ns_name), get_string_len(ns_name)});
     std::ifstream f(path);
     if (!f)
     {

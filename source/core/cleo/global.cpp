@@ -78,7 +78,7 @@ const Value CURRENT_NS = create_symbol("cleo.core", "*ns*");
 const Value ENV_NS = create_symbol("cleo.core", "*env-ns*");
 const Value IN_NS = create_symbol("cleo.core", "in-ns");
 const Value NS = create_symbol("cleo.core", "ns");
-const Value LIB_PATH = create_symbol("cleo.core", "*lib-path*");
+const Value LIB_PATHS = create_symbol("cleo.core", "*lib-paths*");
 const Value ATOM = create_symbol("cleo.core", "atom");
 const Value DEREF = create_symbol("cleo.core", "deref");
 const Value RESET = create_symbol("cleo.core", "reset!");
@@ -228,7 +228,7 @@ namespace rt
 {
 
 const DynamicVar current_ns = define_var(CURRENT_NS, nil);
-const DynamicVar lib_path = define_var(LIB_PATH, nil);
+const DynamicVar lib_paths = define_var(LIB_PATHS, nil);
 const StaticVar obj_eq = define_var(OBJ_EQ, nil);
 const StaticVar obj_call = define_var(OBJ_CALL, nil);
 const DynamicVar print_readably = define_var(PRINT_READABLY, nil);
@@ -556,8 +556,7 @@ struct Initialize
         f = create_native_function1<in_ns, &IN_NS>();
         define(IN_NS, *f);
 
-        f = create_string(".");
-        define(LIB_PATH, *f);
+        define(LIB_PATHS, nil);
 
         define(COMMAND_LINE_ARGS, nil);
 

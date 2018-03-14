@@ -141,7 +141,7 @@ extern const Value CURRENT_NS;
 extern const Value ENV_NS;
 extern const Value IN_NS;
 extern const Value NS;
-extern const Value LIB_PATH;
+extern const Value LIB_PATHS;
 extern const Value ATOM;
 extern const Value DEREF;
 extern const Value RESET;
@@ -232,7 +232,7 @@ namespace rt
 {
 
 extern const DynamicVar current_ns;
-extern const DynamicVar lib_path;
+extern const DynamicVar lib_paths;
 extern const StaticVar obj_eq;
 extern const StaticVar obj_call;
 extern const DynamicVar print_readably;
