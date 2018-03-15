@@ -48,7 +48,7 @@ void push_bindings(Value bindings)
     }
 
     Root merged{map_merge(get_list_first(current_bindings), bindings)};
-    cleo::bindings = list_conj(current_bindings, bindings);
+    cleo::bindings = list_conj(current_bindings, *merged);
 }
 
 void pop_bindings()

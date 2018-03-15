@@ -86,6 +86,14 @@ TEST_F(var_test, binding_should_override)
             EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
             EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
             EXPECT_EQ_VALS(kb2, get_var_value(lookup_var(b)));
+            {
+                Root bindings3{smap()};
+                PushBindingsGuard bind1{*bindings3};
+                EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
+                EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
+                EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
+                EXPECT_EQ_VALS(kb2, get_var_value(lookup_var(b)));
+            }
         }
         EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
         EXPECT_EQ_VALS(ka2, get_var_value(lookup_var(a)));
