@@ -1,0 +1,6 @@
+#!/bin/bash
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SHARE_BIN_DIR="${BIN_DIR}/../share/cleo/bin"
+SHARE_LIB_DIR="${BIN_DIR}/../share/cleo/lib"
+
+"${SHARE_BIN_DIR}/cleo" "${SHARE_LIB_DIR}" "$@"

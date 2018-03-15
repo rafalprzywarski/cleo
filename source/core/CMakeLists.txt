@@ -25,3 +25,5 @@ add_library(cleo_core
 )
 
 target_link_libraries(cleo_core dl)
+
+install(FILES cleo/cleo.core.cleo DESTINATION share/cleo/lib)

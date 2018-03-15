@@ -1,0 +1,3 @@
+(ns cleo.core)
+
+(def fn (macro* [& args] `(fn* ~@args)))

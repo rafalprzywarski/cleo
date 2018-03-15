@@ -10,9 +10,9 @@
 
 cleo::Force create_command_line_args(int argc, const char *const* argv)
 {
-    cleo::Root command_line_args{argc > 2 ? *cleo::EMPTY_VECTOR : cleo::nil};
+    cleo::Root command_line_args{argc > 4 ? *cleo::EMPTY_VECTOR : cleo::nil};
     cleo::Root arg;
-    for (int i = 2; i < argc; ++i)
+    for (int i = 4; i < argc; ++i)
     {
         arg = cleo::create_string(argv[i]);
         command_line_args = cleo::small_vector_conj(*command_line_args, *arg);
@@ -25,23 +25,30 @@ cleo::Force create_ns_bindings(int argc, const char *const* argv)
     cleo::Root ns_bindings{cleo::map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
     cleo::Root command_line_args{create_command_line_args(argc, argv)};
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::COMMAND_LINE_ARGS, *command_line_args);
+
+    cleo::Root root_lib_path{cleo::create_string(argv[1])};
+    cleo::Root project_lib_path{cleo::create_string(argv[2])};
+    std::array<cleo::Value, 2> paths{{*root_lib_path, *project_lib_path}};
+    cleo::Root lib_paths{cleo::create_small_vector(paths.data(), paths.size())};
+    ns_bindings = cleo::map_assoc(*ns_bindings, cleo::LIB_PATHS, *lib_paths);
     return *ns_bindings;
 }
 
 int main(int argc, const char *const* argv)
 {
-    if (argc < 2)
+    if (argc < 4)
     {
-        std::cout << "usage: cleo <namespace>" << std::endl;
+        std::cout << "usage: cleo <project_lib_path> <project_namespace>" << std::endl;
         return 1;
     }
 
     try
     {
-        std::string ns_name = argv[1];
+        std::string ns_name = argv[3];
         auto ns = cleo::create_symbol(ns_name);
         cleo::Root ns_bindings{create_ns_bindings(argc, argv)};
         cleo::PushBindingsGuard bindings_guard{*ns_bindings};
+        cleo::require(cleo::CLEO_CORE);
         cleo::in_ns(cleo::create_symbol("cleo.core.run"));
         cleo::refer(cleo::CLEO_CORE);
         cleo::require(ns);

@@ -5,7 +5,7 @@
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
 #include <cleo/namespace.hpp>
-#include <cleo/small_map.hpp>
+#include <cleo/small_vector.hpp>
 #include <cleo/util.hpp>
 #include <iostream>
 #include <readline/readline.h>
@@ -57,12 +57,29 @@ bool eval_source(const std::string& line)
     return true;
 }
 
-int main()
+cleo::Force create_ns_bindings(int argc, const char *const* argv)
+{
+    cleo::Root ns_bindings{cleo::map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
+    cleo::Root root_lib_path{cleo::create_string(argv[1])};
+    cleo::Root project_lib_path{cleo::create_string(".")};
+    std::array<cleo::Value, 2> paths{{*root_lib_path, *project_lib_path}};
+    cleo::Root lib_paths{cleo::create_small_vector(paths.data(), paths.size())};
+    ns_bindings = cleo::map_assoc(*ns_bindings, cleo::LIB_PATHS, *lib_paths);
+    return *ns_bindings;
+}
+
+int main(int argc, const char *const* argv)
 {
     char *line;
 
-    cleo::Root ns_bindings{cleo::map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
+    if (argc < 2)
+    {
+        std::cout << "error: invalid configuration" << std::endl;
+        return 1;
+    }
+    cleo::Root ns_bindings{create_ns_bindings(argc, argv)};
     cleo::PushBindingsGuard bindings_guard{*ns_bindings};
+    cleo::require(cleo::CLEO_CORE);
     cleo::in_ns(cleo::create_symbol("user"));
     cleo::refer(cleo::CLEO_CORE);
     while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)
