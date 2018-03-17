@@ -139,8 +139,18 @@ Force read_keyword(Stream& s)
 
 void eat_ws(Stream& s)
 {
-    while (!s.eos() && is_ws(s.peek()))
-        s.next();
+    while (!s.eos() && (is_ws(s.peek()) || s.peek() == ';'))
+    {
+        if (s.peek() == ';')
+        {
+            while (!s.eos() && s.peek() != '\n')
+                s.next();
+            if (!s.eos())
+                s.next();
+        }
+        while (!s.eos() && is_ws(s.peek()))
+            s.next();
+    }
 }
 
 [[noreturn]] void throw_unexpected_end_of_input(Stream::Position pos)

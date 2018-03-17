@@ -580,6 +580,11 @@ TEST_F(reader_test, read_forms_should_read_multiple_forms)
     forms = read_forms(*source);
     ex = svec(create_keyword("a"), create_keyword("b"), create_keyword("c"));
     EXPECT_EQ_VALS(*ex, *forms);
+
+    source = create_string(";\n:a ;\n:b :c ,;\n ");
+    forms = read_forms(*source);
+    ex = svec(create_keyword("a"), create_keyword("b"), create_keyword("c"));
+    EXPECT_EQ_VALS(*ex, *forms);
 }
 
 TEST_F(reader_test, should_follow_new_lines_when_reporting_position)
@@ -614,6 +619,23 @@ TEST_F(reader_test, should_fail_when_var_name_is_missing)
     assert_unexpected_end_of_input("#'", 1, 3);
     assert_read_error("unexpected }", "#' }", 1, 4);
     assert_read_error("expected a symbol", "#' [9]", 1, 4);
+}
+
+TEST_F(reader_test, should_skip_comments)
+{
+    Root ex, val;
+    val = read_str("(1 2; \n3)");
+    ex = read_str("(1 2 3)");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("(1 ;2 \n3)");
+    ex = read_str("(1 3)");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str("(1 ;2 ) \n3);");
+    ex = read_str("(1 3)");
+    EXPECT_EQ_VALS(*ex, *val);
+    val = read_str(";\n(1 ;2 ) \n ;\n; \n 3);");
+    ex = read_str("(1 3)");
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 }
