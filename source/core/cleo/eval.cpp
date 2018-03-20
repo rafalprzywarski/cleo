@@ -587,7 +587,7 @@ Force eval_list(Value list, Value env)
     if (type.is(*type::Multimethod))
         return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
     if (type.is(*type::Fn))
-        return call_fn(elems, elems.size());
+        return call_fn(elems, elems.size() - 1);
     if (isa(type, *type::Callable))
         return call_multimethod(*rt::obj_call, elems.data(), elems.size());
     Root msg{create_string("call error " + to_string(type))};
