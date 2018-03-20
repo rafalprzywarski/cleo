@@ -248,12 +248,12 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
     auto parse_fn = [&](Value list)
     {
         params.push_back(get_list_first(list));
-        check_type("fn parameter list", params.back(), *type::SmallVector);
+        check_type("fn* parameter list", params.back(), *type::SmallVector);
         auto n = get_small_vector_size(params.back());
         for (decltype(n) i = 0; i < n; ++i)
         {
             auto p = get_small_vector_elem(params.back(), i);
-            check_type("fn parameters", p, *type::Symbol);
+            check_type("fn* parameters", p, *type::Symbol);
             if (get_symbol_namespace(p))
                 throw_illegal_argument("Can't use qualified name as parameter: " + to_string(p));
         }
@@ -642,13 +642,19 @@ Force macroexpand1(Value val, Value form, Value env)
     if (!get_value_type(val).is(*type::List) || get_int64_value(get_list_size(val)) == 0)
         return val;
 
-    auto m = get_list_first(val);
-    if (!get_value_type(m).is(*type::Macro))
+    Root m{get_list_first(val)};
+    if (get_value_tag(*m) == tag::SYMBOL)
+    {
+        if (SPECIAL_SYMBOLS.count(*m))
+            return val;
+        m = eval_symbol(*m, nil);
+    }
+    if (!get_value_type(*m).is(*type::Macro))
         return val;
 
     std::vector<Value> elems;
     elems.reserve(get_int64_value(get_list_size(val)) + 2);
-    elems.push_back(m);
+    elems.push_back(*m);
     elems.push_back(form);
     elems.push_back(env);
     for (Root arg_list{get_list_next(val)}; *arg_list; arg_list = get_list_next(*arg_list))

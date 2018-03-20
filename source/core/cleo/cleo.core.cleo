@@ -1,3 +1,57 @@
 (ns cleo.core)
 
-(def fn (macro* [& args] `(fn* ~@args)))
+
+(def reverse1
+  (fn* reverse1 [xs]
+    (loop* [r () s (seq xs)]
+      (if s
+        (recur (conj r (first s)) (next s))
+        r))))
+
+(def revmap1
+  (fn* revmap1 [f s]
+    (reverse1
+      (loop* [m () s (seq s)]
+        (if s
+          (recur (conj m (f (first s))) (next s))
+          m)))))
+
+
+(def nnext
+  (fn* nnext [x] (next (next x))))
+
+
+(def wrapdo*
+  (fn* wrapdo* [body]
+    (if (next body)
+      (if (nnext body)
+        (list (first body) (conj (next body) 'do))
+        body)
+      (list (first body)))))
+
+
+(def defmacro
+  (macro* defmacro [name & decl]
+    (list 'def name (if (vector? (first decl))
+                      `(macro* ~name ~@(wrapdo* decl))
+                      `(macro* ~name ~@(revmap1 wrapdo* decl))))))
+
+
+(def let
+  (macro* [bindings & body]
+    `(let* ~bindings ~@(if body
+                         (if (next body)
+                           (list (conj body 'do))
+                           body)
+                         ()))))
+
+
+(defmacro fn [& decl]
+  (let* [name (if (symbol? (first decl)) [(first decl)] [])
+         decl (if (symbol? (first decl)) (next decl) decl)]
+    (if (vector? (first decl))
+      `(fn* ~@name ~@(wrapdo* decl))
+      `(fn* ~@name ~@(revmap1 wrapdo* decl)))))
+
+
+(defmacro defn [name & decl] (list 'def name `(fn ~name ~@decl)))

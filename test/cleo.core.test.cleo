@@ -1,0 +1,61 @@
+(ns cleo.core.test)
+
+(def tests (atom {}))
+(def current-test (atom nil))
+(def failed-tests (atom #{}))
+
+(def deftest
+  (macro* deftest [name & body]
+    `(swap! tests assoc '~name (fn* ~name [] (do ~@body)))))
+
+(def assert=
+  (fn* assert= [expected actual]
+    (if (= expected actual)
+      nil
+      (do
+        (swap! failed-tests conj @current-test)
+        (println @current-test "assertion failed: expected:" expected "actual:" actual)))))
+
+
+(def main
+  (fn* main []
+    (do
+      (loop* [tests (seq @tests)]
+        (if tests
+          (do
+            (reset! current-test ((first tests) 0))
+            (((first tests) 1))
+            (recur (next tests)))))
+      (print "ok:" (- (count @tests) (count @failed-tests)))
+      (if (< 0 (count @failed-tests))
+        (print " failed:" (count @failed-tests)))
+      (println)
+      (if (= 0 (count @failed-tests)) 0 1))))
+
+
+(deftest defmacro
+  (assert= '(def sonia (macro* sonia [x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
+  (assert= '(def sonia (macro* sonia [x] (a))) (macroexpand '(defmacro sonia [x] (a))))
+  (assert= '(def sonia (macro* sonia [x])) (macroexpand '(defmacro sonia [x]))))
+
+
+(deftest let
+  (assert= '(let* [a 1 b 2] (do (x) (y))) (macroexpand '(let [a 1 b 2] (x) (y))))
+  (assert= '(let* [a 1 b 2] (x)) (macroexpand '(let [a 1 b 2] (x))))
+  (assert= '(let* [a 1 b 2]) (macroexpand '(let [a 1 b 2]))))
+
+
+(deftest fn
+  (assert= '(fn* [a b] (do (x) (y))) (macroexpand '(fn [a b] (x) (y))))
+  (assert= '(fn* abc [a b] (do (x) (y))) (macroexpand '(fn abc [a b] (x) (y))))
+  (assert= '(fn* [a b] (x)) (macroexpand '(fn [a b] (x))))
+  (assert= '(fn* abc [a b] (x)) (macroexpand '(fn abc [a b] (x))))
+  (assert= '(fn* [a b]) (macroexpand '(fn [a b])))
+  (assert= '(fn* abc [a b]) (macroexpand '(fn abc [a b])))
+  (assert= '(fn* ([a b] (do (x) (y))) ([z] (do (w) (q)))) (macroexpand '(fn ([a b] (x) (y)) ([z] (w) (q)))))
+  (assert= '(fn* abc ([a b] (do (x) (y))) ([z] (do (w) (q)))) (macroexpand '(fn abc ([a b] (x) (y)) ([z] (w) (q)))))
+  (assert= '(fn* ([a b] (do (x) (y))) ([z])) (macroexpand '(fn ([a b] (x) (y)) ([z])))))
+
+
+(deftest defn
+  (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y)))))

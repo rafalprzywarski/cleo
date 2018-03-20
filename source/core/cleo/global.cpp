@@ -67,6 +67,9 @@ const Value RECUR = create_symbol("recur");
 const Value PLUS = create_symbol("cleo.core", "+");
 const Value MINUS = create_symbol("cleo.core", "-");
 const Value ASTERISK = create_symbol("cleo.core", "*");
+const Value IDENTICAL = create_symbol("cleo.core", "identical?");
+const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
+const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
 const Value LT = create_symbol("cleo.core", "<");
 const Value EQ = create_symbol("cleo.core", "=");
 const Value THROW = create_symbol("throw");
@@ -91,6 +94,7 @@ const Value NEW = create_symbol("cleo.core", "new");
 const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
 const Value COMMAND_LINE_ARGS = create_symbol("cleo.core", "*command-line-args*");
+const Value LIST = create_symbol("cleo.core", "list");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -484,6 +488,26 @@ Force merge_maps(Value m1, Value m2)
     return *m;
 }
 
+Value identical(Value x, Value y)
+{
+    return x.is(y) ? TRUE : nil;
+}
+
+Value symbol_q(Value x)
+{
+    return get_value_tag(x) == tag::SYMBOL ? TRUE : nil;
+}
+
+Value vector_q(Value x)
+{
+    return get_value_type(x) == *type::SmallVector ? TRUE : nil;
+}
+
+Force list(const Value *args, std::uint8_t n)
+{
+    return create_list(args, n);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -560,6 +584,18 @@ struct Initialize
 
         define(COMMAND_LINE_ARGS, nil);
 
+        f = create_native_function2<identical, &IDENTICAL>();
+        define(IDENTICAL, *f);
+
+        f = create_native_function1<symbol_q, &SYMBOL_Q>();
+        define(SYMBOL_Q, *f);
+
+        f = create_native_function1<vector_q, &VECTOR_Q>();
+        define(VECTOR_Q, *f);
+
+        f = create_native_function(list);
+        define(LIST, *f);
+
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
         define_multimethod(FIRST, *first_type, undefined);
@@ -629,6 +665,8 @@ struct Initialize
         define_method(COUNT, *type::SmallMap, *f);
         f = create_native_function1<WrapInt64Fn<get_persistent_hash_map_size>::fn>();
         define_method(COUNT, *type::PersistentHashMap, *f);
+        f = create_native_function1<WrapUInt32Fn<get_small_set_size>::fn>();
+        define_method(COUNT, *type::SmallSet, *f);
 
         define_multimethod(GET, *first_type, undefined);
 

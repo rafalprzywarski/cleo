@@ -54,7 +54,9 @@ int main(int argc, const char *const* argv)
         cleo::require(ns);
         auto main_fn = cleo::create_symbol(ns_name, "main");
         cleo::Root call_main{cleo::create_list(&main_fn, 1)};
-        cleo::eval(*call_main);
+        cleo::Root exit_code{cleo::eval(*call_main)};
+        if (get_value_tag(*exit_code) == cleo::tag::INT64)
+            return get_int64_value(*exit_code);
     }
     catch (const cleo::Exception& )
     {

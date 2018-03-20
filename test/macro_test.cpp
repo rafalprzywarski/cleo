@@ -59,6 +59,23 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symbol)
+{
+    auto a = create_symbol("a");
+    auto b = create_symbol("b");
+    auto c = create_symbol("c");
+    auto name = create_symbol("cleo.macro.test", "m2e");
+    Root body{svec(b, c, a)};
+    Root params{svec(a, b, c)};
+    Root m{create_macro(nil, nil, *params, *body)};
+    define(name, *m);
+    Root v{svec(5, 6, 7)};
+    Root call{list(name, SEQ, FIRST, *v)};
+    Root val{macroexpand1(*call)};
+    Root ex{svec(FIRST, *v, SEQ)};
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
 {
     auto a = create_symbol("a");
