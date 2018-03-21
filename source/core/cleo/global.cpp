@@ -50,6 +50,7 @@ const Value SMALL_MAP = create_symbol("cleo.core", "small-map");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PRINT_READABLY = create_symbol("cleo.core", "*print-readably*");
+const Value PR_STR = create_symbol("cleo.core", "pr-str");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
@@ -68,6 +69,7 @@ const Value PLUS = create_symbol("cleo.core", "+");
 const Value MINUS = create_symbol("cleo.core", "-");
 const Value ASTERISK = create_symbol("cleo.core", "*");
 const Value IDENTICAL = create_symbol("cleo.core", "identical?");
+const Value ISA = create_symbol("cleo.core", "isa?");
 const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
 const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
 const Value LT = create_symbol("cleo.core", "<");
@@ -587,6 +589,9 @@ struct Initialize
         f = create_native_function2<identical, &IDENTICAL>();
         define(IDENTICAL, *f);
 
+        f = create_native_function2<isa, &ISA>();
+        define(ISA, *f);
+
         f = create_native_function1<symbol_q, &SYMBOL_Q>();
         define(SYMBOL_Q, *f);
 
@@ -608,7 +613,7 @@ struct Initialize
         f = create_native_function1<nil_seq>();
         define_method(NEXT, nil, *f);
 
-        derive(*type::List, *type::Seqable);
+        derive(*type::List, *type::Sequence);
         f = create_native_function1<list_seq>();
         define_method(SEQ, *type::List, *f);
         f = create_native_function1<get_list_first>();
@@ -901,6 +906,9 @@ struct Initialize
 
         f = create_native_function2<apply, &APPLY>();
         define(APPLY, *f);
+
+        f = create_native_function1<pr_str, &PR_STR>();
+        define(PR_STR, *f);
 
         f = create_native_function(pr);
         define(create_symbol("cleo.core", "pr"), *f);

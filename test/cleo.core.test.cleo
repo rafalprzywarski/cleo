@@ -1,20 +1,35 @@
 (ns cleo.core.test)
 
+
 (def tests (atom {}))
 (def current-test (atom nil))
 (def failed-tests (atom #{}))
+
 
 (def deftest
   (macro* deftest [name & body]
     `(swap! tests assoc '~name (fn* ~name [] (do ~@body)))))
 
+
 (def assert=
-  (fn* assert= [expected actual]
-    (if (= expected actual)
-      nil
-      (do
-        (swap! failed-tests conj @current-test)
-        (println @current-test "assertion failed: expected:" expected "actual:" actual)))))
+  (macro* assert= [expected actual]
+    `(let [expected-val# ~expected
+           actual-val# ~actual]
+       (if (= expected-val# actual-val#)
+         nil
+         (do
+           (swap! failed-tests conj @current-test)
+           (println @current-test "assertion failed:" ~(pr-str actual) "expected to equal:" expected-val# "actual:" actual-val#))))))
+
+
+(def assert
+  (macro* assert [actual]
+    `(let [actual-val# ~actual]
+       (if actual-val#
+         nil
+         (do
+           (swap! failed-tests conj @current-test)
+           (println @current-test "assertion failed:" ~(pr-str actual) "expected to be true, actual:" actual-val#))))))
 
 
 (def main
@@ -59,3 +74,47 @@
 
 (deftest defn
   (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y)))))
+
+
+(deftest not
+  (assert= nil (not 10))
+  (assert= nil (not [1]))
+  (assert= :true (not nil)))
+
+
+(deftest or
+  (assert= nil (or))
+  (assert= 10 (or 10))
+  (assert= nil (or nil))
+  (assert= :x (or nil :x))
+  (assert= :x (or :x :y))
+  (assert= nil (or nil nil))
+  (assert= :x (or nil nil :x))
+  (assert= :y (or nil :y :x))
+  (assert= :a (or :a nil :x))
+  (assert= nil (or nil nil nil)))
+
+
+(deftest and
+  (assert= :true (and))
+  (assert= 10 (and 10))
+  (assert= nil (and nil))
+  (assert= nil (and nil :x))
+  (assert= nil (and :x nil))
+  (assert= :y (and :x :y))
+  (assert= nil (and nil nil))
+  (assert= nil (and nil nil :x))
+  (assert= nil (and nil :y :x))
+  (assert= nil (and :a nil :x))
+  (assert= :d (and :a :b :c :d)))
+
+
+(deftest seq?
+  (assert (seq? ()))
+  (assert (seq? (list 1 2)))
+  (assert (not (seq? nil)))
+  (assert (not (seq? [1 2])))
+  (assert (seq? (seq [1 2])))
+  (assert (not (seq? #{1 2})))
+  (assert (not (seq? {1 2})))
+  (assert (not (seq? 10))))

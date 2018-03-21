@@ -55,3 +55,21 @@
 
 
 (defmacro defn [name & decl] (list 'def name `(fn ~name ~@decl)))
+
+
+(defmacro not [x] `(if ~x nil :true))
+
+
+(defmacro or
+  ([] nil)
+  ([x] x)
+  ([x & xs] `(let [x# ~x] (if x# x# (or ~@xs)))))
+
+
+(defmacro and
+  ([] :true)
+  ([x] x)
+  ([x & xs] `(let [x# ~x] (if x# (and ~@xs) x#))))
+
+
+(defn seq? [x] (isa? (type x) cleo.core/Sequence))
