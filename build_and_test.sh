@@ -8,3 +8,4 @@ cmake --build ${BUILD_DIR} -- -j3
 ${BUILD_DIR}/bindump
 ${BUILD_DIR}/cleo_test
 (cd ${BUILD_DIR}; make install DESTDIR=../local_inst)
+./local_inst/usr/local/bin/cleo test cleo.core.test
