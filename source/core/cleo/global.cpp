@@ -16,6 +16,7 @@
 #include "util.hpp"
 #include "clib.hpp"
 #include <iostream>
+#include <sstream>
 #include <limits>
 
 namespace cleo
@@ -263,6 +264,7 @@ const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
 const Value REQUIRE = create_symbol("cleo.core", "require");
 const Value TYPE = create_symbol("cleo.core", "type");
 const Value KEYWORD = get_type_name(*type::Keyword);
+const Value GENSYM = create_symbol("cleo.core", "gensym");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -508,6 +510,20 @@ Value vector_q(Value x)
 Force list(const Value *args, std::uint8_t n)
 {
     return create_list(args, n);
+}
+
+Force gensym(const Value *args, std::uint8_t n)
+{
+    if (n > 1)
+        throw_arity_error(GENSYM, n);
+    std::ostringstream os;
+    Root prefix{n > 0 ? print_str(args[0]) : nil};
+    if (*prefix)
+        os.write(get_string_ptr(*prefix), get_string_len(*prefix));
+    else
+        os << "G__";
+    os << gen_id();
+    return create_symbol(os.str());
 }
 
 template <std::uint32_t f(Value)>
@@ -930,6 +946,9 @@ struct Initialize
 
         f = create_native_function4<import_c_fn, &IMPORT_C_FN>();
         define(IMPORT_C_FN, *f);
+
+        f = create_native_function(gensym);
+        define(GENSYM, *f);
     }
 } initialize;
 
