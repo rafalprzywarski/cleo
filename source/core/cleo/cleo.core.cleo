@@ -18,14 +18,6 @@
           m)))))
 
 
-(def reduce1
-  (fn* [f val coll]
-    (let* [s (seq coll)]
-      (if s
-        (recur f (f val (first s)) (next s))
-        val))))
-
-
 (def nnext
   (fn* nnext [x] (next (next x))))
 
@@ -104,22 +96,40 @@
       (reduce1 bit-and* (bit-and* x y) more)))
 
 
+(defn bit-and
+  ([x y] (bit-and* x y))
+  ([x y & more]
+    (let [val (bit-and* x y)]
+      (if more
+        (recur val (first more) (next more))
+        val))))
+
+
 (defn bit-or
   ([x y] (bit-or* x y))
   ([x y & more]
-      (reduce1 bit-or* (bit-or* x y) more)))
+    (let [val (bit-or* x y)]
+      (if more
+        (recur val (first more) (next more))
+        val))))
 
 
 (defn bit-xor
   ([x y] (bit-xor* x y))
   ([x y & more]
-      (reduce1 bit-xor* (bit-xor* x y) more)))
+    (let [val (bit-xor* x y)]
+      (if more
+        (recur val (first more) (next more))
+        val))))
 
 
 (defn bit-and-not
   ([x y] (bit-and-not* x y))
   ([x y & more]
-      (reduce1 bit-and-not* (bit-and-not* x y) more)))
+    (let [val (bit-and-not* x y)]
+      (if more
+        (recur val (first more) (next more))
+        val))))
 
 
 (defn dec [x] (- x 1))
