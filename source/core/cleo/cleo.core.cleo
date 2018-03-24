@@ -73,3 +73,17 @@
 
 
 (defn seq? [x] (isa? (type x) cleo.core/Sequence))
+
+
+(defn second [x] (first (next x)))
+
+
+(defmacro when [expr & body]
+  `(if ~expr (do ~@body)))
+
+
+(defmacro cond [& pairs]
+  (when pairs
+    (if (not (next pairs))
+      (throw (new IllegalArgument  "cond requires an even number of forms"))
+      `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))

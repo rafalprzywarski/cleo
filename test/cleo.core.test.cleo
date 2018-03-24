@@ -13,8 +13,8 @@
 
 (def assert=
   (macro* assert= [expected actual]
-    `(let [expected-val# ~expected
-           actual-val# ~actual]
+    `(let* [expected-val# ~expected
+            actual-val# ~actual]
        (if (= expected-val# actual-val#)
          nil
          (do
@@ -24,13 +24,22 @@
 
 (def assert
   (macro* assert [actual]
-    `(let [actual-val# ~actual]
+    `(let* [actual-val# ~actual]
        (if actual-val#
          nil
          (do
            (swap! failed-tests conj @current-test)
            (println @current-test "assertion failed:" ~(pr-str actual) "expected to be true, actual:" actual-val#))))))
 
+
+(def assert-throws
+  (macro* [expected actual]
+    `(try*
+      (let* [actual-val# ~actual]
+        (do
+          (swap! failed-tests conj @current-test)
+          (println @current-test "assertion failed:" ~(pr-str actual) "expected to throw" ~(pr-str expected) "actual value:" actual-val#)))
+      (catch* ~expected ~'e nil))))
 
 (def main
   (fn* main []
@@ -118,3 +127,17 @@
   (assert (not (seq? #{1 2})))
   (assert (not (seq? {1 2})))
   (assert (not (seq? 10))))
+
+
+(deftest when
+  (assert= '(if x (do)) (macroexpand '(when x)))
+  (assert= '(if x (do y)) (macroexpand '(when x y)))
+  (assert= '(if x (do y z)) (macroexpand '(when x y z))))
+
+
+(deftest cond
+  (assert= nil (macroexpand '(cond)))
+  (assert= `(if (~'= 1 2) (~'= 3 4) (cond)) (macroexpand '(cond (= 1 2) (= 3 4))))
+  (assert= `(if :a :b (cond :c :d)) (macroexpand '(cond :a :b :c :d)))
+  (assert-throws IllegalArgument (cond :a))
+  (assert-throws IllegalArgument (cond (= 1 2) :b :c)))
