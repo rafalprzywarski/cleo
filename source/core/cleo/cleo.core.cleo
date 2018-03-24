@@ -87,3 +87,11 @@
     (if (not (next pairs))
       (throw (new IllegalArgument  "cond requires an even number of forms"))
       `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))
+
+
+(defn dec [x] (- x 1))
+(defn inc [x] (+ x 1))
+(defn zero? [x] (= 0 x))
+(defn pos? [x] (< 0 x))
+(defn neg? [x] (< x 0))
+(defn int? [x] (identical? (type x) Int64))
