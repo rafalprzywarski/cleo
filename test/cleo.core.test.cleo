@@ -18,7 +18,7 @@
        (if (= expected-val# actual-val#)
          nil
          (do
-           (swap! failed-tests conj @current-test)
+           (swap! failed-tests conj* @current-test)
            (println @current-test "assertion failed:" ~(pr-str actual) "expected to equal:" expected-val# "actual:" actual-val#))))))
 
 
@@ -28,8 +28,13 @@
        (if actual-val#
          nil
          (do
-           (swap! failed-tests conj @current-test)
+           (swap! failed-tests conj* @current-test)
            (println @current-test "assertion failed:" ~(pr-str actual) "expected to be true, actual:" actual-val#))))))
+
+
+(def assert-not
+  (macro* assert-not [actual]
+    `(assert (not ~actual))))
 
 
 (def assert-throws
@@ -37,9 +42,10 @@
     `(try*
       (let* [actual-val# ~actual]
         (do
-          (swap! failed-tests conj @current-test)
+          (swap! failed-tests conj* @current-test)
           (println @current-test "assertion failed:" ~(pr-str actual) "expected to throw" ~(pr-str expected) "actual value:" actual-val#)))
       (catch* ~expected ~'e nil))))
+
 
 (def main
   (fn* main []
@@ -165,3 +171,29 @@
   (assert= (bit-and-not* 12345 54321) (bit-and-not 12345 54321))
   (assert= (bit-and-not* (bit-and-not* 12345 54321) 97553) (bit-and-not 12345 54321 97553))
   (assert= (bit-and-not* (bit-and-not* (bit-and-not* 12345 54321) 97553) 57753) (bit-and-not 12345 54321 97553 57753)))
+
+
+(deftest even?
+  (assert (even? 10))
+  (assert-not (even? 11))
+  (assert (even? -10))
+  (assert-not (even? -11)))
+
+
+(deftest odd?
+  (assert (odd? 11))
+  (assert-not (odd? 10))
+  (assert (odd? -11))
+  (assert-not (odd? -10)))
+
+
+(deftest conj
+  (assert= [] (conj))
+  (assert= [10 20] (conj [10 20]))
+  (assert= [10 20 30] (conj [10 20] 30))
+  (assert= [10 20 30 40] (conj [10 20] 30 40))
+  (assert= [10 20 30 40 50] (conj [10 20] 30 40 50))
+  (assert= [10 20 nil nil] (conj [10 20] nil nil))
+  (assert= nil (conj nil))
+  (assert= '(20 10) (conj nil 10 20))
+  (assert= '(nil) (conj nil nil)))

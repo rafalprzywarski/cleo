@@ -44,7 +44,7 @@ const Value NEXT = create_symbol("cleo.core", "next");
 const Value COUNT = create_symbol("cleo.core", "count");
 const Value GET = create_symbol("cleo.core", "get");
 const Value CONTAINS = create_symbol("cleo.core", "contains");
-const Value CONJ = create_symbol("cleo.core", "conj");
+const Value CONJ = create_symbol("cleo.core", "conj*");
 const Value ASSOC = create_symbol("cleo.core", "assoc");
 const Value MERGE = create_symbol("cleo.core", "merge");
 const Value SMALL_MAP = create_symbol("cleo.core", "small-map");
@@ -634,6 +634,11 @@ Force unsigned_bit_shift_right(Value x, Value n)
     return create_int64(std::uint64_t(get_int64_value(x)) >> (get_int64_value(n) & 0x2f));
 }
 
+Force nil_conj(Value, Value x)
+{
+    return create_list(&x, 1);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -829,6 +834,9 @@ struct Initialize
 
         f = create_native_function2<list_conj>();
         define_method(CONJ, *type::List, *f);
+
+        f = create_native_function2<nil_conj>();
+        define_method(CONJ, nil, *f);
 
         define_multimethod(ASSOC, *first_type, undefined);
 

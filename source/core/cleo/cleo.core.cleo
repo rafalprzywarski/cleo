@@ -5,7 +5,7 @@
   (fn* reverse1 [xs]
     (loop* [r () s (seq xs)]
       (if s
-        (recur (conj r (first s)) (next s))
+        (recur (conj* r (first s)) (next s))
         r))))
 
 
@@ -14,7 +14,7 @@
     (reverse1
       (loop* [m () s (seq s)]
         (if s
-          (recur (conj m (f (first s))) (next s))
+          (recur (conj* m (f (first s))) (next s))
           m)))))
 
 
@@ -34,7 +34,7 @@
   (fn* wrapdo* [body]
     (if (next body)
       (if (nnext body)
-        (list (first body) (conj (next body) 'do))
+        (list (first body) (conj* (next body) 'do))
         body)
       (list (first body)))))
 
@@ -50,7 +50,7 @@
   (macro* [bindings & body]
     `(let* ~bindings ~@(if body
                          (if (next body)
-                           (list (conj body 'do))
+                           (list (conj* body 'do))
                            body)
                          ()))))
 
@@ -128,3 +128,15 @@
 (defn pos? [x] (< 0 x))
 (defn neg? [x] (< x 0))
 (defn int? [x] (identical? (type x) Int64))
+(defn even? [x] (zero? (bit-and* x 1)))
+(defn odd? [x] (not (even? x)))
+
+
+(defn conj
+  ([] [])
+  ([coll] coll)
+  ([coll x] (conj* coll x))
+  ([coll x & xs]
+    (if xs
+      (recur (conj* coll x) (first xs) (next xs))
+      (conj* coll x))))
