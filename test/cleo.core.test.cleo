@@ -203,4 +203,14 @@
   (assert= {:a 1 :b 2} (assoc {:a 1} :b 2))
   (assert= {:a 1 :b 2 :c 3} (assoc {:a 1} :b 2 :c 3))
   (assert= {:a 1 :b 2 :c 3 :d 4} (assoc {:a 1} :b 2 :c 3 :d 4))
-  (assert= {:a 1 :b 2} (assoc nil :a 1 :b 2)))
+  (assert= {:a 1 :b 2} (assoc nil :a 1 :b 2))
+  (assert-throws IllegalArgument (assoc {} :a 1 :b)))
+
+
+(deftest dissoc
+  (assert= {:a 1 :b 2} (dissoc {:a 1 :b 2}))
+  (assert= {:a 1} (dissoc {:a 1 :b 2} :b))
+  (assert= {:a 1} (dissoc {:a 1 :b 2 :c 3} :b :c))
+  (assert= {:a 1} (dissoc {:a 1 :b 2 :c 3 :d 4} :b :c :d))
+  (assert= nil (dissoc nil))
+  (assert= nil (dissoc nil :a)))

@@ -161,3 +161,13 @@
           (recur m (first kvs) (second kvs) (nnext kvs))
           (throw (new IllegalArgument "assoc expects even number of arguments")))
         m))))
+
+
+(defn dissoc
+  ([m] m)
+  ([m k] (dissoc* m k))
+  ([m k & ks]
+   (let [m (dissoc m k)]
+     (if ks
+       (recur m (first ks) (next ks))
+       m))))

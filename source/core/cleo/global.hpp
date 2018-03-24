@@ -109,6 +109,7 @@ extern const Value GET;
 extern const Value CONTAINS;
 extern const Value CONJ;
 extern const Value ASSOC;
+extern const Value DISSOC;
 extern const Value MERGE;
 extern const Value SMALL_MAP;
 extern const Value OBJ_EQ;
