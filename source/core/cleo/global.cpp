@@ -267,6 +267,18 @@ const Value KEYWORD = get_type_name(*type::Keyword);
 const Value GENSYM = create_symbol("cleo.core", "gensym");
 const Value MEMUSED = create_symbol("cleo.core", "mem-used");
 const Value MEMALLOCS = create_symbol("cleo.core", "mem-allocs");
+const Value BITNOT = create_symbol("cleo.core", "bit-not");
+const Value BITAND = create_symbol("cleo.core", "bit-and*");
+const Value BITOR = create_symbol("cleo.core", "bit-or*");
+const Value BITXOR = create_symbol("cleo.core", "bit-xor*");
+const Value BITANDNOT = create_symbol("cleo.core", "bit-and-not*");
+const Value BITCLEAR = create_symbol("cleo.core", "bit-clear");
+const Value BITSET = create_symbol("cleo.core", "bit-set");
+const Value BITFLIP = create_symbol("cleo.core", "bit-flip");
+const Value BITTEST = create_symbol("cleo.core", "bit-test");
+const Value BITSHIFTLEFT = create_symbol("cleo.core", "bit-shift-left");
+const Value BITSHIFTRIGHT = create_symbol("cleo.core", "bit-shift-right");
+const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shift-right");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -538,6 +550,90 @@ Force mem_allocs()
     return create_int64(get_mem_allocations());
 }
 
+Force bit_not(Value x)
+{
+    check_type("x", x, *type::Int64);
+    return create_int64(~get_int64_value(x));
+}
+
+Force bit_and(Value x, Value y)
+{
+    check_type("x", x, *type::Int64);
+    check_type("y", y, *type::Int64);
+    return create_int64(get_int64_value(x) & get_int64_value(y));
+}
+
+Force bit_or(Value x, Value y)
+{
+    check_type("x", x, *type::Int64);
+    check_type("y", y, *type::Int64);
+    return create_int64(get_int64_value(x) | get_int64_value(y));
+}
+
+Force bit_xor(Value x, Value y)
+{
+    check_type("x", x, *type::Int64);
+    check_type("y", y, *type::Int64);
+    return create_int64(get_int64_value(x) ^ get_int64_value(y));
+}
+
+Force bit_and_not(Value x, Value y)
+{
+    check_type("x", x, *type::Int64);
+    check_type("y", y, *type::Int64);
+    return create_int64(get_int64_value(x) & ~get_int64_value(y));
+}
+
+Force bit_clear(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    return create_int64(get_int64_value(x) & ~(Int64(1) << (get_int64_value(n) & 0x2f)));
+}
+
+Force bit_set(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    return create_int64(get_int64_value(x) | (Int64(1) << (get_int64_value(n) & 0x2f)));
+}
+
+Force bit_flip(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    return create_int64(get_int64_value(x) ^ (Int64(1) << (get_int64_value(n) & 0x2f)));
+}
+
+Value bit_test(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    return (get_int64_value(x) & (Int64(1) << (get_int64_value(n) & 0x2f))) ? TRUE : nil;
+}
+
+Force bit_shift_left(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    return create_int64(std::uint64_t(get_int64_value(x)) << (get_int64_value(n) & 0x2f));
+}
+
+Force bit_shift_right(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    static_assert(Int64(-2) >> 1 == Int64(-1), "arithmetic right shift needed");
+    return create_int64(get_int64_value(x) >> (get_int64_value(n) & 0x2f));
+}
+
+Force unsigned_bit_shift_right(Value x, Value n)
+{
+    check_type("x", x, *type::Int64);
+    check_type("n", n, *type::Int64);
+    return create_int64(std::uint64_t(get_int64_value(x)) >> (get_int64_value(n) & 0x2f));
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -555,6 +651,12 @@ struct WrapInt64Fn
         return create_int64(f(arg0));
     }
 };
+
+void define_function(Value name, Force f)
+{
+    Root fr{f};
+    define(name, *fr);
+}
 
 struct Initialize
 {
@@ -967,6 +1069,19 @@ struct Initialize
 
         f = create_native_function0<mem_allocs, &MEMALLOCS>();
         define(MEMALLOCS, *f);
+
+        define_function(BITNOT, create_native_function1<bit_not, &BITNOT>());
+        define_function(BITAND, create_native_function2<bit_and, &BITAND>());
+        define_function(BITOR, create_native_function2<bit_or, &BITOR>());
+        define_function(BITXOR, create_native_function2<bit_xor, &BITXOR>());
+        define_function(BITANDNOT, create_native_function2<bit_and_not, &BITANDNOT>());
+        define_function(BITCLEAR, create_native_function2<bit_clear, &BITCLEAR>());
+        define_function(BITSET, create_native_function2<bit_set, &BITSET>());
+        define_function(BITFLIP, create_native_function2<bit_flip, &BITFLIP>());
+        define_function(BITTEST, create_native_function2<bit_test, &BITTEST>());
+        define_function(BITSHIFTLEFT, create_native_function2<bit_shift_left, &BITSHIFTLEFT>());
+        define_function(BITSHIFTRIGHT, create_native_function2<bit_shift_right, &BITSHIFTRIGHT>());
+        define_function(UNSIGNEDBITSHIFTRIGHT, create_native_function2<unsigned_bit_shift_right, &UNSIGNEDBITSHIFTRIGHT>());
     }
 } initialize;
 

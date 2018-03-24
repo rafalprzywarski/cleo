@@ -141,3 +141,27 @@
   (assert= `(if :a :b (cond :c :d)) (macroexpand '(cond :a :b :c :d)))
   (assert-throws IllegalArgument (cond :a))
   (assert-throws IllegalArgument (cond (= 1 2) :b :c)))
+
+
+(deftest bit-and
+  (assert= (bit-and* 12345 54321) (bit-and 12345 54321))
+  (assert= (bit-and* (bit-and* 12345 54321) 97553) (bit-and 12345 54321 97553))
+  (assert= (bit-and* (bit-and* (bit-and* 12345 54321) 97553) 57753) (bit-and 12345 54321 97553 57753)))
+
+
+(deftest bit-or
+  (assert= (bit-or* 12345 54321) (bit-or 12345 54321))
+  (assert= (bit-or* (bit-or* 12345 54321) 97553) (bit-or 12345 54321 97553))
+  (assert= (bit-or* (bit-or* (bit-or* 12345 54321) 97553) 57753) (bit-or 12345 54321 97553 57753)))
+
+
+(deftest bit-xor
+  (assert= (bit-xor* 12345 54321) (bit-xor 12345 54321))
+  (assert= (bit-xor* (bit-xor* 12345 54321) 97553) (bit-xor 12345 54321 97553))
+  (assert= (bit-xor* (bit-xor* (bit-xor* 12345 54321) 97553) 57753) (bit-xor 12345 54321 97553 57753)))
+
+
+(deftest bit-and-not
+  (assert= (bit-and-not* 12345 54321) (bit-and-not 12345 54321))
+  (assert= (bit-and-not* (bit-and-not* 12345 54321) 97553) (bit-and-not 12345 54321 97553))
+  (assert= (bit-and-not* (bit-and-not* (bit-and-not* 12345 54321) 97553) 57753) (bit-and-not 12345 54321 97553 57753)))

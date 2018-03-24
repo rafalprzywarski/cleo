@@ -8,13 +8,22 @@
         (recur (conj r (first s)) (next s))
         r))))
 
-(def revmap1
-  (fn* revmap1 [f s]
+
+(def map1
+  (fn* map1 [f s]
     (reverse1
       (loop* [m () s (seq s)]
         (if s
           (recur (conj m (f (first s))) (next s))
           m)))))
+
+
+(def reduce1
+  (fn* [f val coll]
+    (let* [s (seq coll)]
+      (if s
+        (recur f (f val (first s)) (next s))
+        val))))
 
 
 (def nnext
@@ -34,7 +43,7 @@
   (macro* defmacro [name & decl]
     (list 'def name (if (vector? (first decl))
                       `(macro* ~name ~@(wrapdo* decl))
-                      `(macro* ~name ~@(revmap1 wrapdo* decl))))))
+                      `(macro* ~name ~@(map1 wrapdo* decl))))))
 
 
 (def let
@@ -51,7 +60,7 @@
          decl (if (symbol? (first decl)) (next decl) decl)]
     (if (vector? (first decl))
       `(fn* ~@name ~@(wrapdo* decl))
-      `(fn* ~@name ~@(revmap1 wrapdo* decl)))))
+      `(fn* ~@name ~@(map1 wrapdo* decl)))))
 
 
 (defmacro defn [name & decl] (list 'def name `(fn ~name ~@decl)))
@@ -87,6 +96,30 @@
     (if (not (next pairs))
       (throw (new IllegalArgument  "cond requires an even number of forms"))
       `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))
+
+
+(defn bit-and
+  ([x y] (bit-and* x y))
+  ([x y & more]
+      (reduce1 bit-and* (bit-and* x y) more)))
+
+
+(defn bit-or
+  ([x y] (bit-or* x y))
+  ([x y & more]
+      (reduce1 bit-or* (bit-or* x y) more)))
+
+
+(defn bit-xor
+  ([x y] (bit-xor* x y))
+  ([x y & more]
+      (reduce1 bit-xor* (bit-xor* x y) more)))
+
+
+(defn bit-and-not
+  ([x y] (bit-and-not* x y))
+  ([x y & more]
+      (reduce1 bit-and-not* (bit-and-not* x y) more)))
 
 
 (defn dec [x] (- x 1))
