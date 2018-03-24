@@ -22,7 +22,7 @@
 namespace cleo
 {
 
-std::vector<void *> allocations;
+std::vector<Allocation> allocations;
 std::vector<Value> extra_roots;
 unsigned gc_frequency = 64;
 unsigned gc_counter = gc_frequency - 1;
@@ -265,6 +265,8 @@ const Value REQUIRE = create_symbol("cleo.core", "require");
 const Value TYPE = create_symbol("cleo.core", "type");
 const Value KEYWORD = get_type_name(*type::Keyword);
 const Value GENSYM = create_symbol("cleo.core", "gensym");
+const Value MEMUSED = create_symbol("cleo.core", "mem-used");
+const Value MEMALLOCS = create_symbol("cleo.core", "mem-allocs");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -524,6 +526,16 @@ Force gensym(const Value *args, std::uint8_t n)
         os << "G__";
     os << gen_id();
     return create_symbol(os.str());
+}
+
+Force mem_used()
+{
+    return create_int64(get_mem_used());
+}
+
+Force mem_allocs()
+{
+    return create_int64(get_mem_allocations());
 }
 
 template <std::uint32_t f(Value)>
@@ -949,6 +961,12 @@ struct Initialize
 
         f = create_native_function(gensym);
         define(GENSYM, *f);
+
+        f = create_native_function0<mem_used, &MEMUSED>();
+        define(MEMUSED, *f);
+
+        f = create_native_function0<mem_allocs, &MEMALLOCS>();
+        define(MEMALLOCS, *f);
     }
 } initialize;
 

@@ -20,14 +20,19 @@ char& tag_ref(void *ptr)
     return *(reinterpret_cast<char *>(ptr) - OFFSET);
 }
 
-bool is_marked(void *ptr)
+bool is_ptr_marked(void *ptr)
 {
     return tag_ref(ptr) != 0;
 }
 
+bool is_marked(const Allocation& a)
+{
+    return is_ptr_marked(a.ptr);
+}
+
 void mark_value(Value val)
 {
-    if (val.is_nil() || is_marked(get_value_ptr(val)))
+    if (val.is_nil() || is_ptr_marked(get_value_ptr(val)))
         return;
     tag_ref(get_value_ptr(val)) = 1;
 
@@ -124,15 +129,15 @@ void *mem_alloc(std::size_t size)
     auto ptr = reinterpret_cast<char *>(memalign(tag::MASK + 1, OFFSET + size)) + OFFSET;
 #endif
     unmark(ptr);
-    allocations.push_back(ptr);
+    allocations.push_back({ptr, size + OFFSET});
     if ((reinterpret_cast<std::uintptr_t>(ptr) & tag::MASK) != 0)
         std::abort();
     return ptr;
 }
 
-void mem_free(void *ptr)
+void mem_free(const Allocation& a)
 {
-    std::free(reinterpret_cast<char *>(ptr) - OFFSET);
+    std::free(reinterpret_cast<char *>(a.ptr) - OFFSET);
 }
 
 void gc()
@@ -148,8 +153,21 @@ void gc()
     std::for_each(middle, end(allocations), mem_free);
     allocations.erase(middle, end(allocations));
 
-    for (auto ptr : allocations)
-        unmark(ptr);
+    for (auto a : allocations)
+        unmark(a.ptr);
+}
+
+std::size_t get_mem_used()
+{
+    std::size_t total = 0;
+    for (auto a : allocations)
+        total += a.size;
+    return total;
+}
+
+std::size_t get_mem_allocations()
+{
+    return allocations.size();
 }
 
 }

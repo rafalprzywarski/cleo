@@ -3,6 +3,7 @@
 #include "hash.hpp"
 #include "equality.hpp"
 #include "var.hpp"
+#include "memory.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -13,7 +14,7 @@
 namespace cleo
 {
 
-extern std::vector<void *> allocations;
+extern std::vector<Allocation> allocations;
 extern std::vector<Value> extra_roots;
 extern unsigned gc_frequency;
 extern unsigned gc_counter;
