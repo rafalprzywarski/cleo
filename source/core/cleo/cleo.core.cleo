@@ -140,3 +140,14 @@
     (if xs
       (recur (conj* coll x) (first xs) (next xs))
       (conj* coll x))))
+
+
+(defn assoc
+  ([m k v] (assoc* m k v))
+  ([m k v & kvs]
+    (let [m (assoc* m k v)]
+      (if kvs
+        (if (next kvs)
+          (recur m (first kvs) (second kvs) (nnext kvs))
+          (throw (new IllegalArgument "assoc expects even number of arguments")))
+        m))))

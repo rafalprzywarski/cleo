@@ -45,7 +45,7 @@ const Value COUNT = create_symbol("cleo.core", "count");
 const Value GET = create_symbol("cleo.core", "get");
 const Value CONTAINS = create_symbol("cleo.core", "contains");
 const Value CONJ = create_symbol("cleo.core", "conj*");
-const Value ASSOC = create_symbol("cleo.core", "assoc");
+const Value ASSOC = create_symbol("cleo.core", "assoc*");
 const Value MERGE = create_symbol("cleo.core", "merge");
 const Value SMALL_MAP = create_symbol("cleo.core", "small-map");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
@@ -639,6 +639,11 @@ Force nil_conj(Value, Value x)
     return create_list(&x, 1);
 }
 
+Force nil_assoc(Value, Value k, Value v)
+{
+    return persistent_hash_map_assoc(*EMPTY_MAP, k, v);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -847,6 +852,9 @@ struct Initialize
         derive(*type::PersistentHashMap, *type::PersistentMap);
         f = create_native_function3<persistent_hash_map_assoc>();
         define_method(ASSOC, *type::PersistentHashMap, *f);
+
+        f = create_native_function3<nil_assoc>();
+        define_method(ASSOC, nil, *f);
 
         f = create_native_function0<create_small_map, &SMALL_MAP>();
         define(SMALL_MAP, *f);

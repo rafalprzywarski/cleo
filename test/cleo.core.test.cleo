@@ -8,7 +8,7 @@
 
 (def deftest
   (macro* deftest [name & body]
-    `(swap! tests assoc '~name (fn* ~name [] (do ~@body)))))
+    `(swap! tests assoc* '~name (fn* ~name [] (do ~@body)))))
 
 
 (def assert=
@@ -197,3 +197,10 @@
   (assert= nil (conj nil))
   (assert= '(20 10) (conj nil 10 20))
   (assert= '(nil) (conj nil nil)))
+
+
+(deftest assoc
+  (assert= {:a 1 :b 2} (assoc {:a 1} :b 2))
+  (assert= {:a 1 :b 2 :c 3} (assoc {:a 1} :b 2 :c 3))
+  (assert= {:a 1 :b 2 :c 3 :d 4} (assoc {:a 1} :b 2 :c 3 :d 4))
+  (assert= {:a 1 :b 2} (assoc nil :a 1 :b 2)))
