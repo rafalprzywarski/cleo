@@ -837,6 +837,9 @@ struct Initialize
         f = create_native_function2<persistent_hash_map_get, &GET>();
         define_method(GET, *type::PersistentHashMap, *f);
 
+        f = create_native_function2<small_vector_get>();
+        define_method(GET, *type::SmallVector, *f);
+
         define_multimethod(CONTAINS, *first_type, undefined);
 
         f = create_native_function2<small_map_contains, &CONTAINS>();
