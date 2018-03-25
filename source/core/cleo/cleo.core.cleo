@@ -197,3 +197,11 @@
   (when-let [s (seq coll)]
     (or (pred (first s))
         (recur pred (next s)))))
+
+
+(defn partition-kv [coll]
+  (if-let [s (seq coll)]
+    (if-let [n (next s)]
+      (conj (partition-kv (next n)) [(first s) (first n)])
+      ())
+    ()))

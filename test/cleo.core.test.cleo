@@ -246,3 +246,14 @@
   (assert= nil (when-let [x (seq [:a])]))
   (assert= :a (when-let [x (seq [:a])] (+ 1 2) (first x)))
   (assert= nil (when-let [x (seq [])] (+ 1 2) (first x))))
+
+
+(deftest partition-kv
+  (assert= () (partition-kv []))
+  (assert= [[nil :b]] (partition-kv [nil :b]))
+  (assert= [[:a nil]] (partition-kv [:a nil]))
+  (assert= [[:a :b]] (partition-kv [:a :b :c]))
+  (assert= [[:a :b]] (partition-kv [:a :b nil]))
+  (assert= [[:a :b] [:c :d]] (partition-kv [:a :b :c :d]))
+  (assert= [[:a :b] [:c nil]] (partition-kv [:a :b :c nil]))
+  (assert= [[:a :b] [:c nil]] (partition-kv [:a :b :c nil :e])))
