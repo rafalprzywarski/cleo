@@ -40,11 +40,9 @@
 
 (def let
   (macro* [bindings & body]
-    `(let* ~bindings ~@(if body
-                         (if (next body)
-                           (list (conj* body 'do))
-                           body)
-                         ()))))
+    `(let* ~bindings ~(if (next body)
+                         (conj* body 'do)
+                         (first body)))))
 
 
 (defmacro fn [& decl]
@@ -171,3 +169,31 @@
      (if ks
        (recur m (first ks) (next ks))
        m))))
+
+
+(defmacro when-let [bindings & body]
+  `(let [val# ~(bindings 1)]
+     (if val#
+       (let [~(bindings 0) val#] ~@body))))
+
+
+(defmacro if-let
+  ([bindings then] `(if-let ~bindings ~then nil))
+  ([bindings then else]
+    `(let [val# ~(bindings 1)]
+       (if val#
+         (let [~(bindings 0) val#] ~then)
+         ~else))))
+
+
+(defn every? [pred coll]
+  (if-let [s (seq coll)]
+    (when (pred (first s))
+      (recur pred (next s)))
+    :true))
+
+
+(defn some [pred coll]
+  (when-let [s (seq coll)]
+    (or (pred (first s))
+        (recur pred (next s)))))
