@@ -205,3 +205,9 @@
       (conj (partition-kv (next n)) [(first s) (first n)])
       ())
     ()))
+
+
+(defn reduce1 [f val coll]
+  (if-let [s (seq coll)]
+    (recur f (f val (first s)) (next s))
+    val))
