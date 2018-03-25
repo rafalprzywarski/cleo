@@ -280,6 +280,7 @@ const Value BITTEST = create_symbol("cleo.core", "bit-test");
 const Value BITSHIFTLEFT = create_symbol("cleo.core", "bit-shift-left");
 const Value BITSHIFTRIGHT = create_symbol("cleo.core", "bit-shift-right");
 const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shift-right");
+const Value MAP_Q = create_symbol("cleo.core", "map?");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -522,6 +523,12 @@ Value vector_q(Value x)
     return get_value_type(x) == *type::SmallVector ? TRUE : nil;
 }
 
+Value map_q(Value x)
+{
+    auto vt = get_value_type(x);
+    return vt == *type::PersistentHashMap || vt == *type::SmallMap ? TRUE : nil;
+}
+
 Force list(const Value *args, std::uint8_t n)
 {
     return create_list(args, n);
@@ -743,6 +750,9 @@ struct Initialize
 
         f = create_native_function1<vector_q, &VECTOR_Q>();
         define(VECTOR_Q, *f);
+
+        f = create_native_function1<map_q, &MAP_Q>();
+        define(MAP_Q, *f);
 
         f = create_native_function(list);
         define(LIST, *f);
