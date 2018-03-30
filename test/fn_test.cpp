@@ -67,6 +67,7 @@ TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
     try
     {
         eval(*call);
+        FAIL() << "expected an exception";
     }
     catch (const Exception& )
     {
