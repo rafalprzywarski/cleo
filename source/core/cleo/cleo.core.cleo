@@ -62,13 +62,13 @@
 (defmacro or
   ([] nil)
   ([x] x)
-  ([x & xs] `(let [x# ~x] (if x# x# (or ~@xs)))))
+  ([x & xs] `(let* [x# ~x] (if x# x# (or ~@xs)))))
 
 
 (defmacro and
   ([] :true)
   ([x] x)
-  ([x & xs] `(let [x# ~x] (if x# (and ~@xs) x#))))
+  ([x & xs] `(let* [x# ~x] (if x# (and ~@xs) x#))))
 
 
 (defn seq? [x] (isa? (type x) cleo.core/Sequence))
@@ -81,11 +81,59 @@
   `(if ~expr (do ~@body)))
 
 
+(defn every? [pred coll]
+  (let* [s (seq coll)]
+    (if s
+      (when (pred (first s))
+        (recur pred (next s)))
+      :true)))
+
+
 (defmacro cond [& pairs]
   (when pairs
     (if (not (next pairs))
       (throw (new IllegalArgument  "cond requires an even number of forms"))
       `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))
+
+
+(def partition-kv nil)
+
+
+(defn partition-kv [coll]
+  (let* [s (seq coll)]
+    (if s
+      (let* [n (next s)]
+        (if n
+          (conj* (partition-kv (next n)) [(first s) (first n)])
+          ()))
+      ())))
+
+
+(defn reduce1 [f val coll]
+  (let* [s (seq coll)]
+    (if s
+      (recur f (f val (first s)) (next s))
+      val)))
+
+
+(defn conj
+  ([] [])
+  ([coll] coll)
+  ([coll x] (conj* coll x))
+  ([coll x & xs]
+    (if xs
+      (recur (conj* coll x) (first xs) (next xs))
+      (conj* coll x))))
+
+
+(defn dec [x] (- x 1))
+(defn inc [x] (+ x 1))
+(defn zero? [x] (= 0 x))
+(defn pos? [x] (< 0 x))
+(defn neg? [x] (< x 0))
+(defn int? [x] (identical? (type x) Int64))
+(defn even? [x] (zero? (bit-and* x 1)))
+(defn odd? [x] (not (even? x)))
 
 
 (defn bit-and
@@ -129,27 +177,6 @@
         (recur val (first more) (next more))
         val))))
 
-
-(defn dec [x] (- x 1))
-(defn inc [x] (+ x 1))
-(defn zero? [x] (= 0 x))
-(defn pos? [x] (< 0 x))
-(defn neg? [x] (< x 0))
-(defn int? [x] (identical? (type x) Int64))
-(defn even? [x] (zero? (bit-and* x 1)))
-(defn odd? [x] (not (even? x)))
-
-
-(defn conj
-  ([] [])
-  ([coll] coll)
-  ([coll x] (conj* coll x))
-  ([coll x & xs]
-    (if xs
-      (recur (conj* coll x) (first xs) (next xs))
-      (conj* coll x))))
-
-
 (defn assoc
   ([m k v] (assoc* m k v))
   ([m k v & kvs]
@@ -165,7 +192,7 @@
   ([m] m)
   ([m k] (dissoc* m k))
   ([m k & ks]
-   (let [m (dissoc m k)]
+   (let [m (dissoc* m k)]
      (if ks
        (recur m (first ks) (next ks))
        m))))
@@ -185,29 +212,7 @@
          (let [~(bindings 0) val#] ~then)
          ~else))))
 
-
-(defn every? [pred coll]
-  (if-let [s (seq coll)]
-    (when (pred (first s))
-      (recur pred (next s)))
-    :true))
-
-
 (defn some [pred coll]
   (when-let [s (seq coll)]
     (or (pred (first s))
         (recur pred (next s)))))
-
-
-(defn partition-kv [coll]
-  (if-let [s (seq coll)]
-    (if-let [n (next s)]
-      (conj (partition-kv (next n)) [(first s) (first n)])
-      ())
-    ()))
-
-
-(defn reduce1 [f val coll]
-  (if-let [s (seq coll)]
-    (recur f (f val (first s)) (next s))
-    val))

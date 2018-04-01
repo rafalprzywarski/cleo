@@ -28,6 +28,43 @@ struct eval_test : Test
         Root ss{create_string(s)};
         return read(*ss);
     }
+
+    void expect_symbol_not_found(std::string source)
+    {
+        Root fn{create_string(source)};
+        fn = read(*fn);
+        try
+        {
+            eval(*fn);
+            FAIL() << "expected SymbolNotFound for: " << source;
+        }
+        catch (const Exception& )
+        {
+            Root e{catch_exception()};
+            ASSERT_EQ_REFS(*type::SymbolNotFound, get_value_type(*e));
+        }
+    }
+
+    void expect_symbol_resolved(std::string expected_source, std::string body_source, std::string env_source)
+    {
+        Root env{create_string(env_source)};
+        env = read(*env);
+        Root body{create_string(body_source)};
+        body = read(*body);
+        Root ex{create_string(expected_source)};
+        ex = read(*ex);
+
+        try
+        {
+            body = resolve_value(*body, *env);
+        }
+        catch (const Exception& )
+        {
+            Root e{catch_exception()};
+            FAIL() << "exception: " << to_string(*e) << " body: " << body_source << " env: " << env_source;
+        }
+        ASSERT_EQ_VALS(*ex, *body) << "body: " << body_source << " env: " << env_source;
+    }
 };
 
 TEST_F(eval_test, should_eval_simple_values_to_themselves)
@@ -181,7 +218,7 @@ TEST_F(eval_test, fn_should_return_a_new_function)
     ASSERT_TRUE(!get_fn_name(*val));
     ASSERT_EQ(1u, get_fn_size(*val));
     ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
-    ASSERT_TRUE(body->is(get_fn_body(*val, 0)));
+    ASSERT_TRUE(*body == get_fn_body(*val, 0));
 }
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
@@ -197,7 +234,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     ASSERT_TRUE(name.is(get_fn_name(*val)));
     ASSERT_EQ(1u, get_fn_size(*val));
     ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
-    ASSERT_TRUE(body->is(get_fn_body(*val, 0)));
+    ASSERT_TRUE(*body == get_fn_body(*val, 0));
 }
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
@@ -357,6 +394,153 @@ TEST_F(eval_test, should_store_the_environment_in_created_fns)
 
     val = read_str("((((fn* [x] (fn* [y] (fn* [z] [x y z]))) 3) 4) 5)");
     val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, fn_should_fail_when_a_var_does_not_exist)
+{
+    in_ns(create_symbol("cleo.fn.missing.test"));
+
+    expect_symbol_not_found("(fn* [] bad)");
+
+    expect_symbol_not_found("(fn* [] [bad])");
+    expect_symbol_not_found("(fn* [] [nil bad])");
+    expect_symbol_not_found("(fn* [] [bad 10 20])");
+
+    expect_symbol_not_found("(fn* [] #{bad})");
+    expect_symbol_not_found("(fn* [] #{nil bad})");
+    expect_symbol_not_found("(fn* [] #{bad 10 20})");
+
+    expect_symbol_not_found("(fn* [] {bad 10})");
+    expect_symbol_not_found("(fn* [] {nil bad})");
+    expect_symbol_not_found("(fn* [] {bad 10 20 30})");
+
+    expect_symbol_not_found("(fn* [] [{#{bad} 10}])");
+
+    expect_symbol_not_found("(fn* [] (let* [x a] a))");
+    expect_symbol_not_found("(fn* [] (let* [x 10] a))");
+}
+
+TEST_F(eval_test, should_resolve_variables)
+{
+    in_ns(create_symbol("cleo.fn.resolved2.test"));
+    define(create_symbol("cleo.fn.resolved2.test", "y"), nil);
+    in_ns(create_symbol("cleo.fn.resolved.test"));
+    define(create_symbol("cleo.fn.resolved.test", "x"), nil);
+    refer(create_symbol("cleo.fn.resolved2.test"));
+
+    expect_symbol_resolved("cleo.fn.resolved.test/x", "x", "{}");
+    expect_symbol_resolved("cleo.fn.resolved2.test/y", "y", "{x nil}");
+    expect_symbol_resolved("x", "x", "{x nil}");
+    expect_symbol_resolved("y", "y", "{y nil}");
+
+    expect_symbol_resolved("[]", "[]", "{}");
+    expect_symbol_resolved("[cleo.fn.resolved.test/x cleo.fn.resolved2.test/y]", "[x y]", "{}");
+    expect_symbol_resolved("[x cleo.fn.resolved2.test/y]", "[x y]", "{x nil}");
+
+    expect_symbol_resolved("#{}", "#{}", "{}");
+    expect_symbol_resolved("#{cleo.fn.resolved.test/x cleo.fn.resolved2.test/y}", "#{x y}", "{}");
+    expect_symbol_resolved("#{x cleo.fn.resolved2.test/y}", "#{x y}", "{x nil}");
+
+    expect_symbol_resolved("{}", "{}", "{}");
+    expect_symbol_resolved("{cleo.fn.resolved.test/x 10 20 cleo.fn.resolved2.test/y}", "{x 10 20 y}", "{}");
+    expect_symbol_resolved("{x 10 20 cleo.fn.resolved2.test/y}", "{x 10 20 y}", "{x nil}");
+    expect_symbol_resolved("{cleo.fn.resolved.test/x 10 20 y}", "{x 10 20 y}", "{y nil}");
+
+    expect_symbol_resolved("()", "()", "{}");
+    expect_symbol_resolved("(cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(x y)", "{}");
+    expect_symbol_resolved("(x cleo.fn.resolved2.test/y)", "(x y)", "{x nil}");
+
+    expect_symbol_resolved("(quote a x y)", "(quote a x y)", "{}");
+
+    expect_symbol_resolved("(def x [x cleo.fn.resolved2.test/y])", "(def x [x y])", "{}");
+    expect_symbol_resolved("(def x [x y])", "(def x [x y])", "{y nil}");
+
+    expect_symbol_resolved("(do cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(do x y)", "{}");
+    expect_symbol_resolved("(do cleo.fn.resolved.test/x y)", "(do x y)", "{y nil}");
+
+    expect_symbol_resolved("(if cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(if x y)", "{}");
+    expect_symbol_resolved("(if cleo.fn.resolved.test/x y)", "(if x y)", "{y nil}");
+
+    expect_symbol_resolved("(recur cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(recur x y)", "{}");
+    expect_symbol_resolved("(recur cleo.fn.resolved.test/x y)", "(recur x y)", "{y nil}");
+
+    expect_symbol_resolved("(throw cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(throw x y)", "{}");
+    expect_symbol_resolved("(throw cleo.fn.resolved.test/x y)", "(throw x y)", "{y nil}");
+
+    expect_symbol_resolved("(try* cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(try* x y)", "{}");
+    expect_symbol_resolved("(try* cleo.fn.resolved.test/x y)", "(try* x y)", "{y nil}");
+
+    expect_symbol_resolved("(finally* cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(finally* x y)", "{}");
+    expect_symbol_resolved("(finally* cleo.fn.resolved.test/x y)", "(finally* x y)", "{y nil}");
+
+    expect_symbol_resolved("(let* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(let* [] x y)", "{}");
+    expect_symbol_resolved("(let* [a cleo.fn.resolved.test/x b cleo.fn.resolved2.test/y] a b)", "(let* [a x b y] a b)", "{}");
+    expect_symbol_resolved("(let* [x cleo.fn.resolved.test/x x x] x)", "(let* [x x x x] x)", "{}");
+    expect_symbol_resolved("(let* [x 10] x cleo.fn.resolved2.test/y)", "(let* [x 10] x y)", "{}");
+    expect_symbol_resolved("(let* [y 10] cleo.fn.resolved.test/x y)", "(let* [y 10] x y)", "{}");
+    expect_symbol_resolved("(let* [x 10] x y)", "(let* [x 10] x y)", "{y nil}");
+
+    expect_symbol_resolved("(loop* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(loop* [] x y)", "{}");
+    expect_symbol_resolved("(loop* [a cleo.fn.resolved.test/x b cleo.fn.resolved2.test/y] a b)", "(loop* [a x b y] a b)", "{}");
+    expect_symbol_resolved("(loop* [x cleo.fn.resolved.test/x x x] x)", "(loop* [x x x x] x)", "{}");
+    expect_symbol_resolved("(loop* [x 10] x cleo.fn.resolved2.test/y)", "(loop* [x 10] x y)", "{}");
+    expect_symbol_resolved("(loop* [y 10] cleo.fn.resolved.test/x y)", "(loop* [y 10] x y)", "{}");
+    expect_symbol_resolved("(loop* [x 10] x y)", "(loop* [x 10] x y)", "{y nil}");
+
+    expect_symbol_resolved("(catch* cleo.fn.resolved.test/x a a cleo.fn.resolved2.test/y)", "(catch* x a a y)", "{}");
+    expect_symbol_resolved("(catch* cleo.fn.resolved.test/x y y)", "(catch* x y y)", "{}");
+    expect_symbol_resolved("(catch* x y y)", "(catch* x y y)", "{x nil}");
+    expect_symbol_resolved("(catch* cleo.fn.resolved.test/x a y)", "(catch* x a y)", "{y nil}");
+
+    expect_symbol_resolved("(fn* [])", "(fn* [])", "{}");
+    expect_symbol_resolved("(fn* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(fn* [] x y)", "{}");
+    expect_symbol_resolved("(fn* [x] x cleo.fn.resolved2.test/y)", "(fn* [x] x y)", "{}");
+    expect_symbol_resolved("(fn* [x y] [x y])", "(fn* [x y] [x y])", "{}");
+    expect_symbol_resolved("(fn* [x] x y)", "(fn* [x] x y)", "{y nil}");
+    expect_symbol_resolved("(fn* ([]))", "(fn* ([]))", "{}");
+    expect_symbol_resolved("(fn* ([x] x cleo.fn.resolved2.test/y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{}");
+    expect_symbol_resolved("(fn* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
+
+    expect_symbol_resolved("(macro* [])", "(macro* [])", "{}");
+    expect_symbol_resolved("(macro* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(macro* [] x y)", "{}");
+    expect_symbol_resolved("(macro* [x] x cleo.fn.resolved2.test/y)", "(macro* [x] x y)", "{}");
+    expect_symbol_resolved("(macro* [x y] [x y])", "(macro* [x y] [x y])", "{}");
+    expect_symbol_resolved("(macro* [x] x y)", "(macro* [x] x y)", "{y nil}");
+    expect_symbol_resolved("(macro* ([]))", "(macro* ([]))", "{}");
+    expect_symbol_resolved("(macro* ([x] x cleo.fn.resolved2.test/y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y) ([x y] x y))", "(macro* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{}");
+    expect_symbol_resolved("(macro* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(macro* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
+}
+
+TEST_F(eval_test, resolving_should_expand_macros)
+{
+    in_ns(create_symbol("cleo.fn.resolving-macros.test"));
+    define(create_symbol("cleo.fn.resolving-macros.test", "a"), nil);
+    define(create_symbol("cleo.fn.resolving-macros.test", "b"), nil);
+    Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    define(create_symbol("cleo.fn.resolving-macros.test", "add"), *add);
+
+    expect_symbol_resolved("(fn* [c d] (cleo.core/+ (cleo.core/+ cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b) (cleo.core/+ c d)))", "(fn* [c d] (add (add a b) (add c d)))", "{}");
+    expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b))", "(fn* [add] (add a b))", "{}");
+    expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a b))", "(fn* [add] (add a b))", "{b nil}");
+}
+
+TEST_F(eval_test, should_expand_all_macros)
+{
+    in_ns(create_symbol("cleo.fn.macros.test"));
+    Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    define(create_symbol("cleo.fn.macros.test", "add"), *add);
+    Root fn{create_string("(fn* [] (add (add 1 2) (add 3 4)))")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    define(create_symbol("cleo.fn.macros.test", "add"), nil);
+    Root val{list(*fn)}, ex;
+    val = eval(*val);
+    ex = create_int64(10);
     EXPECT_EQ_VALS(*ex, *val);
 }
 

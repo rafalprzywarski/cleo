@@ -4,6 +4,8 @@
 namespace cleo
 {
 
+Force resolve_value(Value val, Value env);
+
 Force macroexpand1(Value val, Value form = nil, Value env = nil);
 Force macroexpand(Value val, Value form = nil, Value env = nil);
 Force apply(Value fn, Value args);

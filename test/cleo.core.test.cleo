@@ -145,8 +145,7 @@
   (assert= nil (macroexpand '(cond)))
   (assert= `(if (~'= 1 2) (~'= 3 4) (cond)) (macroexpand '(cond (= 1 2) (= 3 4))))
   (assert= `(if :a :b (cond :c :d)) (macroexpand '(cond :a :b :c :d)))
-  (assert-throws IllegalArgument (cond :a))
-  (assert-throws IllegalArgument (cond (= 1 2) :b :c)))
+  (assert-throws IllegalArgument (macroexpand '(cond :a))))
 
 
 (deftest bit-and

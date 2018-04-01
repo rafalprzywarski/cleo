@@ -229,6 +229,184 @@ Force eval_syntax_quote(Value list, Value env)
     return syntax_quote_val(generated, get_list_first(get_list_next(list)), env);
 }
 
+Force bind_params(Value params, Value env)
+{
+    Root lenv{env ? env : *EMPTY_MAP};
+    auto n = get_small_vector_size(params);
+    for (decltype(n) i = 0; i < n; ++i)
+    {
+        auto p = get_small_vector_elem(params, i);
+        lenv = map_assoc(*lenv, p, nil);
+    }
+    return *lenv;
+}
+
+Force resolve_symbol(Value sym, Value env)
+{
+    return map_contains(env, sym) ? sym : get_var_name(lookup_var(resolve(sym)));
+}
+
+Force resolve_bindings(Value b, Root& env)
+{
+    auto size = get_small_vector_size(b);
+    Roots roots(size);
+    std::vector<Value> vals;
+    vals.reserve(size);
+    for (decltype(size) i = 0; (i + 1) < size; i += 2)
+    {
+        auto name = get_small_vector_elem(b, i);
+        roots.set(i, name);
+        roots.set(i + 1, resolve_value(get_small_vector_elem(b, i + 1), *env));
+        env = map_assoc(*env, name, nil);
+        vals.push_back(roots[i]);
+        vals.push_back(roots[i + 1]);
+    }
+
+    return create_small_vector(vals.data(), vals.size());
+}
+
+Force resolve_pure_list(Value l, Value env)
+{
+    Root ret{*EMPTY_LIST}, val;
+    for (; l; l = get_list_next(l))
+    {
+        val = resolve_value(get_list_first(l), env);
+        ret = list_conj(*ret, *val);
+    }
+
+    return reverse_list(*ret);
+}
+
+Force resolve_fn_body(Value body, Value env)
+{
+    Root lenv{bind_params(get_list_first(body), env)}, ret;
+    ret = resolve_pure_list(get_list_next(body), *lenv);
+    return list_conj(*ret, get_list_first(body));
+}
+
+Force resolve_list(Value l, Value env)
+{
+    if (get_int64_value(get_list_size(l)) == 0)
+        return *EMPTY_LIST;
+
+    Root ret;
+
+    auto f = get_list_first(l);
+    // TODO: syntax quote
+    if (f == QUOTE || f == SYNTAX_QUOTE)
+        return l;
+    if (f == FN || f == MACRO)
+    {
+        l = get_list_next(l);
+
+        if (get_value_type(get_list_first(l)).is(*type::List))
+        {
+            ret = *EMPTY_LIST;
+            Root val;
+            for (; l; l = get_list_next(l))
+            {
+                val = resolve_fn_body(get_list_first(l), env);
+                ret = list_conj(*ret, *val);
+            }
+
+            ret = reverse_list(*ret);
+        }
+        else
+        {
+            ret = resolve_fn_body(l, env);
+        }
+        return list_conj(*ret, f);
+    }
+    if (f == LET || f == LOOP)
+    {
+        l = get_list_next(l);
+        Root lenv{env};
+        Root bindings{resolve_bindings(get_list_first(l), lenv)};
+        ret = resolve_pure_list(get_list_next(l), *lenv);
+        ret = list_conj(*ret, *bindings);
+        return list_conj(*ret, f);
+    }
+    if (f == CATCH)
+    {
+        l = get_list_next(l);
+        auto type = get_list_first(l);
+        Root resolved_type{resolve_value(type, env)};
+        l = get_list_next(l);
+        Root lenv{map_assoc(env, get_list_first(l), nil)};
+        ret = resolve_pure_list(l, *lenv);
+        ret = list_conj(*ret, *resolved_type);
+        return list_conj(*ret, f);
+    }
+    if (f == DEF)
+    {
+        l = get_list_next(l);
+        auto name = get_list_first(l);
+        Root lenv{map_assoc(env, name, nil)};
+        ret = resolve_pure_list(get_list_next(l), *lenv);
+        ret = list_conj(*ret, name);
+        return list_conj(*ret, f);
+    }
+    if (f == DO || f == IF || f == RECUR || f == THROW || f == TRY || f == FINALLY)
+    {
+        ret = resolve_pure_list(get_list_next(l), env);
+        return list_conj(*ret, f);
+    }
+    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && get_value_type(lookup(f)).is(*type::Macro))
+    {
+        Root expanded{macroexpand(l, env)};
+        return resolve_value(*expanded, env);
+    }
+
+    return resolve_pure_list(l, env);
+}
+
+Force resolve_vector(Value v, Value env)
+{
+    auto size = get_small_vector_size(v);
+    Roots roots(size);
+    std::vector<Value> vals;
+    vals.reserve(size);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        roots.set(i, resolve_value(get_small_vector_elem(v, i), env));
+        vals.push_back(roots[i]);
+    }
+
+    return create_small_vector(vals.data(), vals.size());
+}
+
+Force resolve_set(Value s, Value env)
+{
+    auto size = get_small_set_size(s);
+    Root e{create_small_set()};
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        Root val{resolve_value(get_small_set_elem(s, i), env)};
+        e = small_set_conj(*e, *val);
+    }
+    return *e;
+}
+
+Force resolve_map(Value val, Value env)
+{
+    Root e{*EMPTY_MAP}, kv, k, v;
+    for (Root seq{call_multimethod1(*rt::seq, val)}; *seq; seq = call_multimethod1(*rt::next, *seq))
+    {
+        kv = call_multimethod1(*rt::first, *seq);
+        k = resolve_value(get_small_vector_elem(*kv, 0), env);
+        v = resolve_value(get_small_vector_elem(*kv, 1), env);
+        e = map_assoc(*e, *k, *v);
+    }
+
+    return *e;
+}
+
+Force resolve_fn_body(Value params, Value body, Value env)
+{
+    Root lenv{bind_params(params, env)};
+    return resolve_value(body, *lenv);
+}
+
 template <typename CreateFn>
 Force eval_fn(Value list, Value env, CreateFn create_fn)
 {
@@ -245,6 +423,7 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
     if (!*next)
         return create_fn(*lenv, name, nullptr, nullptr, 0);
     std::vector<Value> params, bodies;
+    Roots body_roots(get_value_type(get_list_first(*next)).is(*type::List) ? get_int64_value(get_list_size(*next)) : 1);
     auto parse_fn = [&](Value list)
     {
         params.push_back(get_list_first(list));
@@ -257,9 +436,11 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
             if (get_symbol_namespace(p))
                 throw_illegal_argument("Can't use qualified name as parameter: " + to_string(p));
         }
-        auto body = get_list_next(list);
-        bodies.push_back(body ? get_list_first(body) : nil);
-        if (body && get_list_next(body))
+        auto body_list = get_list_next(list);
+        auto body = body_list ? get_list_first(body_list) : nil;
+        body_roots.set(bodies.size(), resolve_fn_body(params.back(), body, env));
+        bodies.push_back(body_roots[bodies.size()]);
+        if (body_list && get_list_next(body_list))
             throw_illegal_argument("fn* can contain only one expression");
     };
 
@@ -635,6 +816,22 @@ Force eval_map(Value m, Value env)
     return *e;
 }
 
+}
+
+Force resolve_value(Value val, Value env)
+{
+    auto type = get_value_type(val);
+    if (type.is(*type::Symbol))
+        return resolve_symbol(val, env);
+    if (type.is(*type::List))
+        return resolve_list(val, env);
+    if (type.is(*type::SmallVector))
+        return resolve_vector(val, env);
+    if (type.is(*type::SmallSet))
+        return resolve_set(val, env);
+    if (isa(type, *type::PersistentMap))
+        return resolve_map(val, env);
+    return val;
 }
 
 Force macroexpand1(Value val, Value form, Value env)
