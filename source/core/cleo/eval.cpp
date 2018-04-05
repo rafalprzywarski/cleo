@@ -277,9 +277,10 @@ Force resolve_pure_list(Value l, Value env)
     return reverse_list(*ret);
 }
 
-Force resolve_fn_body(Value body, Value env)
+Force resolve_fn_body(Value name, Value body, Value env)
 {
-    Root lenv{bind_params(get_list_first(body), env)}, ret;
+    Root lenv{name ? map_assoc(env, name, nil) : env}, ret;
+    lenv = bind_params(get_list_first(body), *lenv);
     ret = resolve_pure_list(get_list_next(body), *lenv);
     return list_conj(*ret, get_list_first(body));
 }
@@ -299,22 +300,30 @@ Force resolve_list(Value l, Value env)
     {
         l = get_list_next(l);
 
+        auto name = nil;
+        if (get_value_tag(get_list_first(l)) == tag::SYMBOL)
+        {
+            name = get_list_first(l);
+            l = get_list_next(l);
+        }
+
         if (get_value_type(get_list_first(l)).is(*type::List))
         {
             ret = *EMPTY_LIST;
             Root val;
             for (; l; l = get_list_next(l))
             {
-                val = resolve_fn_body(get_list_first(l), env);
+                val = resolve_fn_body(name, get_list_first(l), env);
                 ret = list_conj(*ret, *val);
             }
 
             ret = reverse_list(*ret);
         }
         else
-        {
-            ret = resolve_fn_body(l, env);
-        }
+            ret = resolve_fn_body(name, l, env);
+
+        if (name)
+            ret = list_conj(*ret, name);
         return list_conj(*ret, f);
     }
     if (f == LET || f == LOOP)
@@ -401,9 +410,10 @@ Force resolve_map(Value val, Value env)
     return *e;
 }
 
-Force resolve_fn_body(Value params, Value body, Value env)
+Force resolve_fn_body(Value name, Value params, Value body, Value env)
 {
-    Root lenv{bind_params(params, env)};
+    Root lenv{name ? map_assoc(env, name, nil) : env};
+    lenv = bind_params(params, *lenv);
     return resolve_value(body, *lenv);
 }
 
@@ -438,7 +448,7 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
         }
         auto body_list = get_list_next(list);
         auto body = body_list ? get_list_first(body_list) : nil;
-        body_roots.set(bodies.size(), resolve_fn_body(params.back(), body, env));
+        body_roots.set(bodies.size(), resolve_fn_body(name, params.back(), body, env));
         bodies.push_back(body_roots[bodies.size()]);
         if (body_list && get_list_next(body_list))
             throw_illegal_argument("fn* can contain only one expression");

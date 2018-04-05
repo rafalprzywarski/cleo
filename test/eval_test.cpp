@@ -397,6 +397,32 @@ TEST_F(eval_test, should_store_the_environment_in_created_fns)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, should_store_the_fn_name_in_the_environment)
+{
+    Root ex{i64(17)};
+    Root val{read_str("((fn* abc ([] 10) ([x] (cleo.core/+ x (abc)))) 7)")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = svec(100, 50, 4, 3);
+    val = read_str("((((fn* cn ([] 100) ([x] (fn* [y] (fn* [z] [(cn) x y z])))) 50) 4) 3)");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = i64(13);
+    val = read_str("((fn* cn [x] (if (cleo.core/= x 0) 10 (cleo.core/+ x (cn 0)))) 3)");
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(eval_test, fn_params_should_hide_fn_names)
+{
+    Root ex{i64(10)};
+    Root val{read_str("((fn* x [x] x) 10)")};
+    val = eval(*val);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, fn_should_fail_when_a_var_does_not_exist)
 {
     in_ns(create_symbol("cleo.fn.missing.test"));
@@ -494,6 +520,8 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved("(catch* cleo.fn.resolved.test/x a y)", "(catch* x a y)", "{y nil}");
 
     expect_symbol_resolved("(fn* [])", "(fn* [])", "{}");
+    expect_symbol_resolved("(fn* ff [] ff)", "(fn* ff [] ff)", "{}");
+    expect_symbol_resolved("(fn* ff ([] ff) ([x] ff))", "(fn* ff ([] ff) ([x] ff))", "{}");
     expect_symbol_resolved("(fn* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(fn* [] x y)", "{}");
     expect_symbol_resolved("(fn* [x] x cleo.fn.resolved2.test/y)", "(fn* [x] x y)", "{}");
     expect_symbol_resolved("(fn* [x y] [x y])", "(fn* [x y] [x y])", "{}");
@@ -503,6 +531,7 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved("(fn* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
 
     expect_symbol_resolved("(macro* [])", "(macro* [])", "{}");
+    expect_symbol_resolved("(macro* mm ([] mm) ([x] mm))", "(macro* mm ([] mm) ([x] mm))", "{}");
     expect_symbol_resolved("(macro* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(macro* [] x y)", "{}");
     expect_symbol_resolved("(macro* [x] x cleo.fn.resolved2.test/y)", "(macro* [x] x y)", "{}");
     expect_symbol_resolved("(macro* [x y] [x y])", "(macro* [x y] [x y])", "{}");

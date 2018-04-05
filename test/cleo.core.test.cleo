@@ -8,7 +8,7 @@
 
 (def deftest
   (macro* deftest [name & body]
-    `(swap! tests assoc* '~name (fn* ~name [] (do ~@body)))))
+    `(swap! tests assoc* '~name (fn* [] (do ~@body)))))
 
 
 (def assert=

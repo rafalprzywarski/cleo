@@ -1,6 +1,7 @@
 #include "fn.hpp"
 #include "global.hpp"
 #include "small_vector.hpp"
+#include "util.hpp"
 #include <array>
 
 namespace cleo
@@ -21,7 +22,13 @@ Force create_fn(Value type, Value env, Value name, const Value *params, const Va
         ms.push_back(bodies[i]);
     }
 
-    return create_object(type, ms.data(), ms.size());
+    Root fn{create_object(type, ms.data(), ms.size())};
+    if (name)
+    {
+        Root nenv{map_assoc(env, name, *fn)};
+        set_object_element(*fn, 0, *nenv);
+    }
+    return *fn;
 }
 
 }
