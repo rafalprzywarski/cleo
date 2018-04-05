@@ -75,6 +75,19 @@
   (assert= '(let* [a 1 b 2] nil) (macroexpand '(let [a 1 b 2]))))
 
 
+(deftest let-destructuring
+  (assert= nil ((fn* [v] (let [[] v] nil)) [:a :b :c]))
+  (assert= :a ((fn* [v] (let [[x] v] x)) [:a :b :c]))
+  (assert= nil ((fn* [v] (let [[x] v] x)) []))
+  (assert= '(:a :b) ((fn* [v] (let [[x y] v] (list x y))) [:a :b :c]))
+  (assert= '(:a :b :c) ((fn* [v] (let [[x y z] v] (list x y z))) [:a :b :c]))
+  (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b :c]))
+  (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) '(:a :b :c)))
+  (assert= '(:a [:b]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b]))
+  (assert= '(:a nil) ((fn* [v] (let [[x & y] v] (list x y))) [:a]))
+  (assert-throws IllegalArgument (macroexpand '(let [[x & y z] v] nil))))
+
+
 (deftest fn
   (assert= '(fn* [a b] (do (x) (y))) (macroexpand '(fn [a b] (x) (y))))
   (assert= '(fn* abc [a b] (do (x) (y))) (macroexpand '(fn abc [a b] (x) (y))))
