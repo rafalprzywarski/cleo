@@ -152,9 +152,10 @@
                                                                    (next s)
                                                                    nil)))
                                                   out))))]
-             (if
+             (cond
                (vector? b) (destructure-vector out b v)
-               (conj out b v))))
+               (symbol? b) (conj out b v)
+               :else (throw (new IllegalArgument (str "Unsupported binding form: " b))))))
          destructure-binding-pair (fn [out bv] (destructure-binding out (first bv) (second bv)))]
     (reduce1 destructure-binding-pair [] pairs)))
 
