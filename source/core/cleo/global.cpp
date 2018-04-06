@@ -847,7 +847,7 @@ struct Initialize
         f = create_native_function2<small_map_get, &GET>();
         define_method(GET, *type::SmallMap, *f);
 
-        f = create_native_function2<persistent_hash_map_get, &GET>();
+        f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get, &GET>();
         define_method(GET, *type::PersistentHashMap, *f);
 
         f = create_native_function2<small_vector_get>();
@@ -917,7 +917,7 @@ struct Initialize
         define_method(OBJ_CALL, *type::SmallMap, *f);
 
         derive(*type::PersistentHashMap, *type::Callable);
-        f = create_native_function2<persistent_hash_map_get>();
+        f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get>();
         define_method(OBJ_CALL, *type::PersistentHashMap, *f);
 
         derive(*type::Keyword, *type::Callable);
