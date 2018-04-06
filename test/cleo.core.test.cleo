@@ -80,11 +80,17 @@
   (assert= :a ((fn* [v] (let [[x] v] x)) [:a :b :c]))
   (assert= nil ((fn* [v] (let [[x] v] x)) []))
   (assert= '(:a :b) ((fn* [v] (let [[x y] v] (list x y))) [:a :b :c]))
+  (assert= '(:a :b :a :b :c) ((fn* [v] (let [[x y :as [z w u]] v] (list x y z w u))) [:a :b :c]))
   (assert= '(:a :b :c) ((fn* [v] (let [[x y z] v] (list x y z))) [:a :b :c]))
+  (assert= '(:a :b :c (:a :b :c)) ((fn* [v] (let [[x y z :as vn] v] (list x y z vn))) [:a :b :c]))
+  (assert= '(:a nil nil (:a)) ((fn* [v] (let [[x y z :as vn] v] (list x y z vn))) [:a]))
   (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b :c]))
   (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) '(:a :b :c)))
+  (assert= '(:a [:b :c] [:a :b :c]) ((fn* [v] (let [[x & y :as vn] v] (list x y vn))) '(:a :b :c)))
   (assert= '(:a [:b]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b]))
   (assert= '(:a nil) ((fn* [v] (let [[x & y] v] (list x y))) [:a]))
+  (assert= '(:a :b :c nil) ((fn* [v] (let [[[x1 x2] [y1 y2]] v] (list x1 x2 y1 y2))) [[:a :b] [:c]]))
+  (assert= '(:a :b :c) ((fn* [v] (let [[[x [y z]]] v] (list x y z))) [[:a [:b :c]]]))
   (assert-throws IllegalArgument (macroexpand '(let [[x & y z] v] nil))))
 
 

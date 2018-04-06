@@ -131,34 +131,32 @@
 
 (defn destructure [bindings]
   (let* [pairs (partition-kv bindings)
-         destructure-vector (fn destructure-vector [out b v]
-                              (let* [vsym (gensym "val__")
-                                     ssym (gensym "seq__")
-                                     out (conj out vsym v ssym `(seq ~vsym))]
-                                (loop* [out out
-                                        s (seq b)
-                                        expect-as? nil]
-                                  (if s
-                                    (cond
-                                      (= '& (first s)) (recur (conj out (second s) ssym)
-                                                              (nnext s)
-                                                              :true)
-                                      (= :as (first s)) (conj out (second s) vsym)
-                                      :else (if expect-as?
-                                              (throw (new IllegalArgument "Unsupported binding form, only :as can follow & parameter"))
-                                              (recur (conj out
-                                                           (first s) `(first ~ssym)
-                                                           ssym `(next ~ssym))
-                                                     (next s)
-                                                     nil)))
-                                    out))))
-         destructure-binding (fn [out bv]
-                               (let* [b (first bv)
-                                      v (second bv)]
-                                 (if
-                                   (vector? b) (destructure-vector out b v)
-                                   (conj out b v))))]
-    (reduce1 destructure-binding [] pairs)))
+         destructure-binding
+         (fn destructure-binding [out b v]
+           (let* [destructure-vector (fn [out b v]
+                                       (let* [vsym (gensym "val__")
+                                              ssym (gensym "seq__")
+                                              out (conj out vsym v ssym `(seq ~vsym))]
+                                         (loop* [out out
+                                                 s (seq b)
+                                                 expect-as? nil]
+                                                (if s
+                                                  (cond
+                                                    (= '& (first s)) (recur (conj out (second s) ssym)
+                                                                            (nnext s)
+                                                                            :true)
+                                                    (= :as (first s)) (destructure-binding out (second s) vsym)
+                                                    :else (if expect-as?
+                                                            (throw (new IllegalArgument "Unsupported binding form, only :as can follow & parameter"))
+                                                            (recur (conj (destructure-binding out (first s) `(first ~ssym)) ssym `(next ~ssym))
+                                                                   (next s)
+                                                                   nil)))
+                                                  out))))]
+             (if
+               (vector? b) (destructure-vector out b v)
+               (conj out b v))))
+         destructure-binding-pair (fn [out bv] (destructure-binding out (first bv) (second bv)))]
+    (reduce1 destructure-binding-pair [] pairs)))
 
 
 (defmacro let [bindings & body]
