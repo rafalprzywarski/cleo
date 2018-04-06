@@ -680,6 +680,11 @@ Value nil_get(Value, Value, Value default_val)
     return default_val;
 }
 
+Value nil_contains(Value, Value)
+{
+    return nil;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -873,6 +878,9 @@ struct Initialize
 
         f = create_native_function2<persistent_hash_map_contains, &CONTAINS>();
         define_method(CONTAINS, *type::PersistentHashMap, *f);
+
+        f = create_native_function2<nil_contains, &CONTAINS>();
+        define_method(CONTAINS, nil, *f);
 
         define_multimethod(CONJ, *first_type, undefined);
 
