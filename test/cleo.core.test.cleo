@@ -91,6 +91,11 @@
   (assert= '(:a nil) ((fn* [v] (let [[x & y] v] (list x y))) [:a]))
   (assert= '(:a :b :c nil) ((fn* [v] (let [[[x1 x2] [y1 y2]] v] (list x1 x2 y1 y2))) [[:a :b] [:c]]))
   (assert= '(:a :b :c) ((fn* [v] (let [[[x [y z]]] v] (list x y z))) [[:a [:b :c]]]))
+
+  (assert= '() ((fn* [m] (let [{} m] [])) {:a 10 :b 20}))
+  (assert= '(10) ((fn* [m] (let [{x :a} m] [x])) {:a 10 :b 20}))
+  (assert= '(10 20) ((fn* [m] (let [{x :a y :b} m] [x y])) {:a 10 :b 20}))
+  (assert= '(10 20 nil) ((fn* [m] (let [{x :a y :b z :c} m] [x y z])) {:a 10 :b 20}))
   (assert-throws IllegalArgument (macroexpand '(let [[x & y z] v] nil)))
   (assert-throws IllegalArgument (macroexpand '(let [10 v] nil))))
 
