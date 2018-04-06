@@ -670,6 +670,16 @@ Value nil_dissoc(Value, Value)
     return nil;
 }
 
+Value nil_get(Value, Value)
+{
+    return nil;
+}
+
+Value nil_get(Value, Value, Value default_val)
+{
+    return default_val;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -852,6 +862,9 @@ struct Initialize
 
         f = create_native_function2<small_vector_get>();
         define_method(GET, *type::SmallVector, *f);
+
+        f = create_native_function2or3<nil_get, nil_get, &GET>();
+        define_method(GET, nil, *f);
 
         define_multimethod(CONTAINS, *first_type, undefined);
 
