@@ -54,6 +54,7 @@ const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PRINT_READABLY = create_symbol("cleo.core", "*print-readably*");
 const Value PR_STR = create_symbol("cleo.core", "pr-str");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
+const Value STR = create_symbol("cleo.core", "str");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
 const Value SYNTAX_QUOTE = create_symbol("cleo.core", "syntax-quote");
@@ -457,6 +458,18 @@ Force println(const Value *args, std::uint8_t n)
     print(args, n);
     std::cout << std::endl;
     return nil;
+}
+
+Force str(const Value *args, std::uint8_t n)
+{
+    Root s;
+    std::string str;
+    for (decltype(n) i = 0; i < n; ++i)
+    {
+        s = print_str(args[i]);
+        str.append(get_string_ptr(*s), get_string_len(*s));
+    }
+    return create_string(str);
 }
 
 Force macroexpand_noenv(Value val)
@@ -1094,6 +1107,8 @@ struct Initialize
 
         f = create_native_function(println);
         define(create_symbol("cleo.core", "println"), *f);
+
+        define_function(STR, create_native_function(str));
 
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);

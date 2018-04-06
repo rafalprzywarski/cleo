@@ -117,6 +117,7 @@ extern const Value OBJ_CALL;
 extern const Value PRINT_READABLY;
 extern const Value PR_STR;
 extern const Value PR_STR_OBJ;
+extern const Value STR;
 extern const Value GET_MESSAGE;
 extern const Value QUOTE;
 extern const Value SYNTAX_QUOTE;
