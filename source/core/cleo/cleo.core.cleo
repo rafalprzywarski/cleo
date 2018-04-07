@@ -191,7 +191,13 @@
                                                                 `(get ~vsym (quote ~sym) ~(get defaults sym))))
                                                         out
                                                         (b :syms))
-                                           b (dissoc b :or :as :keys :syms)]
+                                           out (reduce1 (fn* [out sym]
+                                                          (conj out
+                                                                sym
+                                                                `(get ~vsym ~(name sym) ~(get defaults sym))))
+                                                        out
+                                                        (b :strs))
+                                           b (dissoc b :or :as :keys :syms :strs)]
                                       (loop* [out out
                                               s (seq b)]
                                         (if s

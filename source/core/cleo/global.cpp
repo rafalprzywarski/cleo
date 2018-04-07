@@ -283,6 +283,7 @@ const Value BITSHIFTRIGHT = create_symbol("cleo.core", "bit-shift-right");
 const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shift-right");
 const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
+const Value NAME = create_symbol("cleo.core", "name");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -702,6 +703,18 @@ Force mk_keyword(Value val)
     }
 }
 
+Force get_name(Value val)
+{
+    auto t = get_value_tag(val);
+    switch (t)
+    {
+        case tag::KEYWORD: return get_keyword_name(val);
+        case tag::SYMBOL: return get_symbol_name(val);
+        case tag::STRING: return val;
+        default: return nil;
+    }
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -804,6 +817,9 @@ struct Initialize
 
         f = create_native_function1<mk_keyword, &KEYWORD>();
         define(KEYWORD, *f);
+
+        f = create_native_function1<get_name, &NAME>();
+        define(NAME, *f);
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
