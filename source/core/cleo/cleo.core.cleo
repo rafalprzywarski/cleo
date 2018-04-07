@@ -129,6 +129,27 @@
 (defn odd? [x] (not (even? x)))
 
 
+(defn assoc
+  ([m k v] (assoc* m k v))
+  ([m k v & kvs]
+    (let* [m (assoc* m k v)]
+      (if kvs
+        (if (next kvs)
+          (recur m (first kvs) (second kvs) (nnext kvs))
+          (throw (new IllegalArgument "assoc expects even number of arguments")))
+        m))))
+
+
+(defn dissoc
+  ([m] m)
+  ([m k] (dissoc* m k))
+  ([m k & ks]
+   (let* [m (dissoc* m k)]
+     (if ks
+       (recur m (first ks) (next ks))
+       m))))
+
+
 (defn destructure [bindings]
   (let* [pairs (partition-kv bindings)
          destructure-binding
@@ -154,11 +175,18 @@
                                                   out))))
                   destructure-map (fn [out b v]
                                     (let* [vsym (gensym "val__")
-                                           out (conj out vsym v)]
+                                           out (conj out vsym v)
+                                           defaults (b :or)
+                                           b (dissoc b :or)]
                                       (loop* [out out
                                               s (seq b)]
                                         (if s
-                                          (recur (conj out (first (first s)) `(get ~vsym ~(second (first s)))) (next s))
+                                          (let* [bk (first s)
+                                                 b1 (first bk)
+                                                 key (second bk)]
+                                            (recur
+                                              (conj out b1 `(get ~vsym ~key ~(get defaults b1)))
+                                              (next s)))
                                           out))))]
              (cond
                (vector? b) (destructure-vector out b v)
@@ -209,26 +237,6 @@
       (if more
         (recur val (first more) (next more))
         val))))
-
-(defn assoc
-  ([m k v] (assoc* m k v))
-  ([m k v & kvs]
-    (let [m (assoc* m k v)]
-      (if kvs
-        (if (next kvs)
-          (recur m (first kvs) (second kvs) (nnext kvs))
-          (throw (new IllegalArgument "assoc expects even number of arguments")))
-        m))))
-
-
-(defn dissoc
-  ([m] m)
-  ([m k] (dissoc* m k))
-  ([m k & ks]
-   (let [m (dissoc* m k)]
-     (if ks
-       (recur m (first ks) (next ks))
-       m))))
 
 
 (defmacro when-let [bindings & body]
