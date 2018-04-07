@@ -205,7 +205,7 @@
                                                  b1 (first bk)
                                                  key (second bk)]
                                             (recur
-                                              (conj out b1 `(get ~vsym ~key ~(get defaults b1)))
+                                              (destructure-binding out b1 `(get ~vsym ~key ~(get defaults b1)))
                                               (next s)))
                                           out))))]
              (cond
