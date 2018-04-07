@@ -177,7 +177,9 @@
                                     (let* [vsym (gensym "val__")
                                            out (conj out vsym v)
                                            defaults (b :or)
-                                           b (dissoc b :or)]
+                                           all (b :as)
+                                           out (if all (conj out all vsym) out)
+                                           b (dissoc b :or :as)]
                                       (loop* [out out
                                               s (seq b)]
                                         (if s
