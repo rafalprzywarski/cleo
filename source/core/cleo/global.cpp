@@ -265,7 +265,7 @@ const Value READ_STRING = create_symbol("cleo.core", "read-string");
 const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
 const Value REQUIRE = create_symbol("cleo.core", "require");
 const Value TYPE = create_symbol("cleo.core", "type");
-const Value KEYWORD = get_type_name(*type::Keyword);
+const Value KEYWORD_TYPE = get_type_name(*type::Keyword);
 const Value GENSYM = create_symbol("cleo.core", "gensym");
 const Value MEMUSED = create_symbol("cleo.core", "mem-used");
 const Value MEMALLOCS = create_symbol("cleo.core", "mem-allocs");
@@ -282,6 +282,7 @@ const Value BITSHIFTLEFT = create_symbol("cleo.core", "bit-shift-left");
 const Value BITSHIFTRIGHT = create_symbol("cleo.core", "bit-shift-right");
 const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shift-right");
 const Value MAP_Q = create_symbol("cleo.core", "map?");
+const Value KEYWORD = create_symbol("cleo.core", "keyword");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -685,6 +686,22 @@ Value nil_contains(Value, Value)
     return nil;
 }
 
+Force mk_keyword(Value val)
+{
+    auto t = get_value_tag(val);
+    switch (t)
+    {
+        case tag::KEYWORD: return val;
+        case tag::SYMBOL:
+        {
+            auto name = get_symbol_name(val);
+            return create_keyword(std::string(get_string_ptr(name), get_string_len(name)));
+        }
+        case tag::STRING: return create_keyword(std::string(get_string_ptr(val), get_string_len(val)));
+        default: return nil;
+    }
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -784,6 +801,9 @@ struct Initialize
 
         f = create_native_function(list);
         define(LIST, *f);
+
+        f = create_native_function1<mk_keyword, &KEYWORD>();
+        define(KEYWORD, *f);
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);
@@ -942,7 +962,7 @@ struct Initialize
         define_method(OBJ_CALL, *type::PersistentHashMap, *f);
 
         derive(*type::Keyword, *type::Callable);
-        f = create_native_function2<keyword_get, &KEYWORD>();
+        f = create_native_function2<keyword_get, &KEYWORD_TYPE>();
         define_method(OBJ_CALL, *type::Keyword, *f);
 
         derive(*type::SmallVector, *type::Callable);

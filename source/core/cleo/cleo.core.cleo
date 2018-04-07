@@ -179,7 +179,13 @@
                                            defaults (b :or)
                                            all (b :as)
                                            out (if all (conj out all vsym) out)
-                                           b (dissoc b :or :as)]
+                                           out (reduce1 (fn* [out sym]
+                                                          (conj out
+                                                                sym
+                                                                `(get ~vsym ~(keyword sym) ~(get defaults sym))))
+                                                        out
+                                                        (b :keys))
+                                           b (dissoc b :or :as :keys)]
                                       (loop* [out out
                                               s (seq b)]
                                         (if s
