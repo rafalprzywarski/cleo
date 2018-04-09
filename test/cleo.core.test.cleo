@@ -11,40 +11,66 @@
     `(swap! tests assoc* '~name (fn* [] (do ~@body)))))
 
 
+(def fail
+  (fn* [& msg]
+    (do
+      (swap! failed-tests conj* @current-test)
+      (println @current-test (apply* str msg)))))
+
+
+(def fail-unless
+  (macro* fail-unless [conde & msg]
+    `(if ~conde
+       nil
+       (fail ~@msg))))
+
+
 (def assert=
   (macro* assert= [expected actual]
-    `(let* [expected-val# ~expected
-            actual-val# ~actual]
-       (if (= expected-val# actual-val#)
-         nil
-         (do
-           (swap! failed-tests conj* @current-test)
-           (println @current-test "assertion failed:" ~(pr-str actual) "expected to equal:" expected-val# "actual:" actual-val#))))))
+    `(let* [expected-val# ~expected]
+       (try*
+         (let* [actual-val# ~actual]
+           (fail-unless (= expected-val# actual-val#)
+                        "assertion failed: " ~(pr-str actual)
+                        " expected to equal: " expected-val#
+                        " actual: " actual-val#))
+         (catch* Exception ~'e
+           (fail "assertion failed: " ~(pr-str actual)
+                 " expected to equal: " expected-val#
+                 " actual exception: " ~'e))))))
 
 
 (def assert
   (macro* assert [actual]
-    `(let* [actual-val# ~actual]
-       (if actual-val#
-         nil
-         (do
-           (swap! failed-tests conj* @current-test)
-           (println @current-test "assertion failed:" ~(pr-str actual) "expected to be true, actual:" actual-val#))))))
+    `(try*
+       (let* [actual-val# ~actual]
+         (fail-unless actual-val#
+                      "assertion failed: " ~(pr-str actual)
+                      " expected to be true, actual: " actual-val#))
+       (catch* Exception ~'e
+         (fail "assertion failed: " ~(pr-str actual)
+               " expected to be true, actual exception: " ~'e)))))
 
 
 (def assert-not
   (macro* assert-not [actual]
-    `(assert (not ~actual))))
+    `(assert ~(list 'not actual))))
 
 
 (def assert-throws
   (macro* [expected actual]
     `(try*
-      (let* [actual-val# ~actual]
-        (do
-          (swap! failed-tests conj* @current-test)
-          (println @current-test "assertion failed:" ~(pr-str actual) "expected to throw" ~(pr-str expected) "actual value:" actual-val#)))
-      (catch* ~expected ~'e nil))))
+       (try*
+         (let* [actual-val# ~actual]
+           (fail
+            "assertion failed: " ~(pr-str actual)
+            " expected to throw " ~(pr-str expected)
+            " actual value: " actual-val#))
+         (catch* ~expected ~'e nil))
+       (catch* Exception ~'e
+         (fail "assertion failed: " ~(pr-str actual)
+               " expected to throw " ~(pr-str expected)
+               " actual exception: " ~'e)))))
 
 
 (def main
