@@ -876,6 +876,7 @@ struct Initialize
         derive(*type::SmallVectorSeq, *type::Sequence);
         derive(*type::SmallSetSeq, *type::Sequence);
         derive(*type::SmallMapSeq, *type::Sequence);
+        derive(*type::PersistentHashMapSeq, *type::Sequence);
         derive(*type::Sequence, *type::Seqable);
         f = create_native_function1<identity>();
         define_method(SEQ, *type::Sequence, *f);
