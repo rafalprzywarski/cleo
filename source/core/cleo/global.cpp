@@ -893,6 +893,8 @@ struct Initialize
         define_method(COUNT, *type::PersistentHashMap, *f);
         f = create_native_function1<WrapUInt32Fn<get_small_set_size>::fn>();
         define_method(COUNT, *type::SmallSet, *f);
+        f = create_native_function1<get_list_size>();
+        define_method(COUNT, *type::List, *f);
 
         define_multimethod(GET, *first_type, undefined);
 
