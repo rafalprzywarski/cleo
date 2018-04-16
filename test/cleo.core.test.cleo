@@ -192,6 +192,26 @@
   (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y)))))
 
 
+(defn df-example1 [[x y]] [y x])
+(defn df-example2 [[x] [y]] [y x])
+(defn df-example3 [{:keys [x y]}] [y x])
+
+
+(deftest defn-destructuring
+  (assert= [:a :b] (df-example1 [:b :a]))
+  (assert= [:a :b] (df-example2 [:b] [:a]))
+  (assert= [:a :b] (df-example3 {:x :b :y :a})))
+
+
+(defmacro dm-example1 [[x y z]] (list y x z))
+(defmacro dm-example2 [{:keys [op vals]}] (conj vals op))
+
+
+(deftest defmacro-destructuring
+  (assert= 30 (dm-example1 [10 + 20]))
+  (assert= 33 (dm-example2 {:op + :vals (11 22)})))
+
+
 (deftest not
   (assert= nil (not 10))
   (assert= nil (not [1]))
