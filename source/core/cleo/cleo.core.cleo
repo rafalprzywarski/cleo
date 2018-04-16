@@ -212,6 +212,29 @@
                                     (first body))))
 
 
+(defn destructure-fn [body]
+  (let* [params (first body)]
+    (if (every? symbol? params)
+      body
+      (loop* [s (seq params)
+              dparams []
+              locals []]
+        (if s
+          (let* [p (gensym "p__")]
+            (recur (next s) (conj dparams p) (conj locals (first s) p)))
+          `(~dparams (let ~locals ~@(next body))))))))
+
+
+(def wrapdo*
+  (fn* wrapdo* [body]
+    (destructure-fn
+      (if (next body)
+        (if (nnext body)
+          (list (first body) (conj* (next body) 'do))
+          body)
+        (list (first body))))))
+
+
 (defn bit-and
   ([x y] (bit-and* x y))
   ([x y & more]

@@ -169,6 +169,8 @@
 
 
 (deftest fn
+  (assert= '(fn* []) (macroexpand '(fn [])))
+  (assert= '(fn* [] 10) (macroexpand '(fn [] 10)))
   (assert= '(fn* [a b] (do (x) (y))) (macroexpand '(fn [a b] (x) (y))))
   (assert= '(fn* abc [a b] (do (x) (y))) (macroexpand '(fn abc [a b] (x) (y))))
   (assert= '(fn* [a b] (x)) (macroexpand '(fn [a b] (x))))
@@ -178,6 +180,12 @@
   (assert= '(fn* ([a b] (do (x) (y))) ([z] (do (w) (q)))) (macroexpand '(fn ([a b] (x) (y)) ([z] (w) (q)))))
   (assert= '(fn* abc ([a b] (do (x) (y))) ([z] (do (w) (q)))) (macroexpand '(fn abc ([a b] (x) (y)) ([z] (w) (q)))))
   (assert= '(fn* ([a b] (do (x) (y))) ([z])) (macroexpand '(fn ([a b] (x) (y)) ([z])))))
+
+
+(deftest fn-destructuring
+  (assert= [:a :b] ((fn [[x y]] [y x]) [:b :a]))
+  (assert= [:a :b] ((fn [[x] [y]] [y x]) [:b] [:a]))
+  (assert= [:a :b] ((fn [{:keys [x y]}] [y x]) {:x :b :y :a})))
 
 
 (deftest defn
