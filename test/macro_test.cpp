@@ -135,7 +135,7 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 {
     auto s = create_symbol("s");
-    Root env{smap(s, *rt::seq)};
+    Root env{amap(s, *rt::seq)};
     Root v{svec(5, 6, 7)};
     Root seq{list(s, *v)};
     Root body{list(FIRST, *seq)};
@@ -189,7 +189,7 @@ TEST_F(macro_test, should_pass_the_env_as_a_hidden_parameter)
     eval(*decl);
     Root form{create_string("(ff 1)")};
     form = read(*form);
-    Root env{smap(create_symbol("x"), 7, create_symbol("y"), 8)};
+    Root env{amap(create_symbol("x"), 7, create_symbol("y"), 8)};
     Root val{eval(*form, *env)};
     EXPECT_EQ_VALS(*env, *val);
 }

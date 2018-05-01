@@ -2,6 +2,7 @@ include_directories(${GoogleMock_INCLUDE_DIRS})
 include_directories("../source/core")
 
 add_executable(cleo_test
+  array_map_test.cpp
   clib_test.cpp
   equality_test.cpp
   eval_test.cpp
@@ -16,7 +17,6 @@ add_executable(cleo_test
   persistent_hash_map_test.cpp
   print_test.cpp
   reader_test.cpp
-  small_map_test.cpp
   small_set_test.cpp
   small_vector_test.cpp
   value_test.cpp

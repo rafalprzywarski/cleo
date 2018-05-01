@@ -73,21 +73,21 @@ TEST_F(var_test, binding_should_override)
     define_var(a, ka);
     define_var(b, kb);
     {
-        Root bindings1{smap(a, ka2)};
+        Root bindings1{amap(a, ka2)};
         PushBindingsGuard bind1{*bindings1};
         EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
         EXPECT_EQ_VALS(ka2, get_var_value(lookup_var(a)));
         EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
         EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
         {
-            Root bindings2{smap(a, ka3, b, kb2)};
+            Root bindings2{amap(a, ka3, b, kb2)};
             PushBindingsGuard bind1{*bindings2};
             EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
             EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
             EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
             EXPECT_EQ_VALS(kb2, get_var_value(lookup_var(b)));
             {
-                Root bindings3{smap()};
+                Root bindings3{amap()};
                 PushBindingsGuard bind1{*bindings3};
                 EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
                 EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
@@ -152,7 +152,7 @@ TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
     auto va = define_var(a, ka);
     auto vb = define_var(b, kb);
     {
-        Root bindings1{smap(a, ka2)};
+        Root bindings1{amap(a, ka2)};
         PushBindingsGuard bind1{*bindings1};
 
         set_var(a, kax);
@@ -160,7 +160,7 @@ TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
         EXPECT_EQ_VALS(kax, get_var_value(va));
 
         {
-            Root bindings2{smap(a, ka3, b, kb2)};
+            Root bindings2{amap(a, ka3, b, kb2)};
             PushBindingsGuard bind1{*bindings2};
             EXPECT_EQ_VALS(ka3, get_var_value(va));
             EXPECT_EQ_VALS(kb, get_var_root_value(vb));

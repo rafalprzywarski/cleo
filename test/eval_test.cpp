@@ -6,7 +6,7 @@
 #include <cleo/error.hpp>
 #include <cleo/fn.hpp>
 #include <cleo/reader.hpp>
-#include <cleo/small_map.hpp>
+#include <cleo/array_map.hpp>
 #include <cleo/memory.hpp>
 #include <cleo/reader.hpp>
 #include <cleo/util.hpp>
@@ -586,7 +586,7 @@ TEST_F(eval_test, should_eval_vectors)
     auto xs = create_symbol("x");
     Root ex{svec(*rt::seq, *rt::first, *x)};
     Root val{svec(SEQ, FIRST, xs)};
-    Root env{smap(xs, *x)};
+    Root env{amap(xs, *x)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
@@ -601,7 +601,7 @@ TEST_F(eval_test, should_eval_set)
     auto xs = create_symbol("x");
     Root ex{sset(*rt::seq, *rt::first, *x)};
     Root val{sset(SEQ, FIRST, xs)};
-    Root env{smap(xs, *x)};
+    Root env{amap(xs, *x)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
@@ -614,7 +614,7 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
 {
     Root ex{create_int64(55)};
     auto x = create_symbol("x");
-    Root env{smap(x, *ex)};
+    Root env{amap(x, *ex)};
     in_ns(create_symbol("clue.eval.test"));
     Root val{read_str("(def var1 ((fn* [] x)))")};
     val = eval(*val, *env);
@@ -626,7 +626,7 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
 TEST_F(eval_test, def_should_fail_when_ns_is_specified)
 {
     auto x = create_symbol("x");
-    Root env{smap(x, 55)};
+    Root env{amap(x, 55)};
     in_ns(create_symbol("clue.eval.test"));
     Root val{read_str("(def clue.eval.test.other/var2 ((fn* [] x)))")};
     try
@@ -682,7 +682,7 @@ TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_c
 {
     Root ex{create_int64(55)};
     auto x = create_symbol("x");
-    Root env{smap(x, *ex)};
+    Root env{amap(x, *ex)};
     in_ns(create_symbol("clue.eval.test"));
     Root val{read_str("(def clue.eval.test/var3 ((fn* [] x)))")};
     val = eval(*val, *env);
@@ -697,13 +697,13 @@ TEST_F(eval_test, should_eval_maps)
     Root y{create_int64(77)};
     auto xs = create_symbol("x");
     auto ys = create_symbol("y");
-    Root ex{smap(*rt::seq, *rt::first, *x, *y)};
-    Root val{smap(SEQ, FIRST, xs, ys)};
-    Root env{smap(xs, *x, ys, *y)};
+    Root ex{amap(*rt::seq, *rt::first, *x, *y)};
+    Root val{amap(SEQ, FIRST, xs, ys)};
+    Root env{amap(xs, *x, ys, *y)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = smap();
+    ex = amap();
     val = eval(*ex);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -716,8 +716,8 @@ TEST_F(eval_test, should_eval_let)
     EXPECT_EQ_VALS(*ex, *val);
 
     val = read_str("(let* [x 10 y 20] {:a x, :b y, :c z})");
-    ex = smap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
-    Root env{smap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
+    ex = amap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
+    Root env{amap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -777,8 +777,8 @@ TEST_F(eval_test, should_eval_loop)
     EXPECT_EQ_VALS(*ex, *val);
 
     val = read_str("(loop* [x 10 y 20] {:a x, :b y, :c z})");
-    ex = smap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
-    Root env{smap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
+    ex = amap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
+    Root env{amap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -889,12 +889,12 @@ TEST_F(eval_test, should_eval_if)
     Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw std::runtime_error("should not have been evaluated"); })};
     Root val{read_str("(if c a (bad))")};
     Root ex{create_int64(55)};
-    Root env{smap(create_symbol("c"), 11111, create_symbol("a"), 55, create_symbol("bad"), *bad)};
+    Root env{amap(create_symbol("c"), 11111, create_symbol("a"), 55, create_symbol("bad"), *bad)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
     val = read_str("(if c (bad) a)");
-    env = smap(create_symbol("c"), nil, create_symbol("a"), 55, create_symbol("bad"), *bad);
+    env = amap(create_symbol("c"), nil, create_symbol("a"), 55, create_symbol("bad"), *bad);
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -924,7 +924,7 @@ TEST_F(eval_test, if_should_fail_when_given_too_many_arguments)
 TEST_F(eval_test, should_eval_throw)
 {
     Root val{read_str("(throw x)")};
-    Root env{smap(create_symbol("x"), 107)};
+    Root env{amap(create_symbol("x"), 107)};
     Root ex{create_int64(107)};
     try
     {
@@ -943,7 +943,7 @@ TEST_F(eval_test, should_eval_throw)
 TEST_F(eval_test, should_eval_try_catch)
 {
     Root val{read_str("(try* (throw x) (catch* cleo.core/Int64 e (cleo.core/+ e a)))")};
-    Root env{smap(create_symbol("x"), 107, create_symbol("a"), 2)};
+    Root env{amap(create_symbol("x"), 107, create_symbol("a"), 2)};
     Root ex{create_int64(109)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
@@ -968,7 +968,7 @@ TEST_F(eval_test, should_eval_try_catch)
 
 TEST_F(eval_test, should_eval_do)
 {
-    Root env{smap(create_symbol("a"), create_keyword("z"))};
+    Root env{amap(create_symbol("a"), create_keyword("z"))};
     Root val, ex;
     val = read_str("(do)");
     val = eval(*val);
@@ -1006,7 +1006,7 @@ TEST_F(eval_test, should_eval_try_finally)
 {
     Root call_me{create_native_function1<on_finally>()};
     Root call_me_before{create_native_function1<on_before_finally>()};
-    Root env{smap(create_symbol("call-me"), *call_me, create_symbol("call-me-before"), *call_me_before)};
+    Root env{amap(create_symbol("call-me"), *call_me, create_symbol("call-me-before"), *call_me_before)};
 
     Root val{read_str("(try* (throw [1 2]) (finally* (call-me nil)))")};
     Root ex{svec(1, 2)};
@@ -1330,7 +1330,7 @@ TEST_F(eval_test, unquote_should_evaluate_expressions_in_syntax_quote)
     define(create_symbol("cleo.eval.syntax-quote.unquote.test", "with-val"), k);
 
     Root val, ex, env;
-    env = smap(create_symbol("z"), create_keyword("z"));
+    env = amap(create_symbol("z"), create_keyword("z"));
     ex = k;
     val = read_str("`~with-val");
     val = eval(*val, *env);
@@ -1359,7 +1359,7 @@ TEST_F(eval_test, unquote_splicing_should_splice_a_sequence_into_a_vector)
 
     Root val, ex, env;
     val = read_str("(:x :y :z)");
-    env = smap(create_symbol("xyz"), *val);
+    env = amap(create_symbol("xyz"), *val);
     ex = read_str("[1 2 :abc :x :y :z 3]");
     val = read_str("`[1 2 ~@[] ~@[abc] ~@xyz 3]");
     val = eval(*val, *env);
@@ -1373,7 +1373,7 @@ TEST_F(eval_test, unquote_splicing_should_splice_a_sequence_into_a_list)
 
     Root val, ex, env;
     val = read_str("(:x :y :z)");
-    env = smap(create_symbol("xyz"), *val);
+    env = amap(create_symbol("xyz"), *val);
     ex = read_str("(1 2 :abc :x :y :z 3)");
     val = read_str("`(1 2 ~@[] ~@[abc] ~@xyz 3)");
     val = eval(*val, *env);
@@ -1387,7 +1387,7 @@ TEST_F(eval_test, unquote_splicing_should_splice_a_sequence_into_a_set)
 
     Root val, ex, env;
     val = read_str("(:x :y :z)");
-    env = smap(create_symbol("xyz"), *val);
+    env = amap(create_symbol("xyz"), *val);
     ex = read_str("#{1 2 :abc :x :y :z 3}");
     val = read_str("`#{1 2 ~@[] ~@[abc] ~@xyz 3}");
     val = eval(*val, *env);

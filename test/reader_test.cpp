@@ -419,7 +419,7 @@ TEST_F(reader_test, should_fail_when_invoked_with_something_else_than_a_string)
 TEST_F(reader_test, should_parse_an_empty_map)
 {
     Root ex, val;
-    ex = smap();
+    ex = amap();
     val = read_str("{}");
     EXPECT_EQ_VALS(*ex, *val);
     val = read_str("{ }");
@@ -429,13 +429,13 @@ TEST_F(reader_test, should_parse_an_empty_map)
 TEST_F(reader_test, should_parse_a_map_of_expressions)
 {
     Root ex, val;
-    ex = smap(1, 2); val = read_str("{1 2}");
+    ex = amap(1, 2); val = read_str("{1 2}");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = smap(create_symbol("+"), create_keyword("abc"), -3, nil); val = read_str("{+ :abc, -3 nil}");
+    ex = amap(create_symbol("+"), create_keyword("abc"), -3, nil); val = read_str("{+ :abc, -3 nil}");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = smap(create_symbol("x"), -3);
-    ex = smap(*ex, 1);
-    ex = smap(*ex, 7);
+    ex = amap(create_symbol("x"), -3);
+    ex = amap(*ex, 1);
+    ex = amap(*ex, 7);
     val = read_str("{{{x -3} 1} 7}");
     EXPECT_EQ_VALS(*ex, *val);
 }

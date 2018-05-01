@@ -2,7 +2,7 @@
 #include <array>
 #include <cleo/list.hpp>
 #include <cleo/small_vector.hpp>
-#include <cleo/small_map.hpp>
+#include <cleo/array_map.hpp>
 #include <cleo/persistent_hash_map.hpp>
 #include <cleo/small_set.hpp>
 #include <cleo/global.hpp>
@@ -120,18 +120,18 @@ Force sset(const Ts&... elems)
     return sset_conj(*vec, elems...);
 }
 
-inline Force smap()
+inline Force amap()
 {
-    return create_small_map();
+    return create_array_map();
 }
 
 template <typename K, typename V, typename... Rest>
-Force smap(const K& k, const V& v, const Rest&... rest)
+Force amap(const K& k, const V& v, const Rest&... rest)
 {
-    Root m{smap(rest...)};
+    Root m{amap(rest...)};
     Root key{to_value(k)};
     Root val{to_value(v)};
-    return small_map_assoc(*m, *key, *val);
+    return array_map_assoc(*m, *key, *val);
 }
 
 inline Force phmap()
@@ -161,7 +161,7 @@ struct Test : testing::Test
 
     Test(const std::string& ns)
     {
-        Root bindings{smap(CURRENT_NS, *rt::current_ns)};
+        Root bindings{amap(CURRENT_NS, *rt::current_ns)};
         bindings_guard.reset(new PushBindingsGuard(*bindings));
         in_ns(create_symbol(ns));
     }

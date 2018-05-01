@@ -4,7 +4,7 @@
 #include "multimethod.hpp"
 #include "small_vector.hpp"
 #include "small_set.hpp"
-#include "small_map.hpp"
+#include "array_map.hpp"
 #include "persistent_hash_map.hpp"
 #include "error.hpp"
 #include "util.hpp"
@@ -138,19 +138,19 @@ Force pr_str_small_set(Value s)
     return create_string(str);
 }
 
-Force pr_str_small_map(Value m)
+Force pr_str_array_map(Value m)
 {
     std::string str;
     str += '{';
-    auto size = get_small_map_size(m);
+    auto size = get_array_map_size(m);
     for (decltype(size) i = 0; i != size; ++i)
     {
         if (i > 0)
             str += ", ";
-        Root s{pr_str(get_small_map_key(m, i))};
+        Root s{pr_str(get_array_map_key(m, i))};
         str.append(get_string_ptr(*s), get_string_len(*s));
         str += ' ';
-        s = pr_str(get_small_map_val(m, i));
+        s = pr_str(get_array_map_val(m, i));
         str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += '}';

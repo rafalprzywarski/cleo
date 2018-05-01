@@ -1,7 +1,7 @@
 #include "equality.hpp"
 #include "small_vector.hpp"
 #include "small_set.hpp"
-#include "small_map.hpp"
+#include "array_map.hpp"
 #include "global.hpp"
 #include "var.hpp"
 #include "multimethod.hpp"
@@ -57,15 +57,15 @@ Value are_small_sets_equal(Value left, Value right)
     return TRUE;
 }
 
-Value are_small_maps_equal(Value left, Value right)
+Value are_array_maps_equal(Value left, Value right)
 {
-    auto size = get_small_map_size(left);
-    if (size != get_small_map_size(right))
+    auto size = get_array_map_size(left);
+    if (size != get_array_map_size(right))
         return nil;
 
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (!are_equal(small_map_get(right, get_small_map_key(left, i)), get_small_map_val(left, i)))
+        if (!are_equal(array_map_get(right, get_array_map_key(left, i)), get_array_map_val(left, i)))
             return nil;
     }
 

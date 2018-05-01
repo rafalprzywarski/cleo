@@ -115,16 +115,16 @@ TEST_F(pr_str_test, should_print_vectors)
     EXPECT_EQ("[1 [2 [3]]]", str(pr_str(*val)));
 }
 
-TEST_F(pr_str_test, should_print_small_maps)
+TEST_F(pr_str_test, should_print_array_maps)
 {
-    Root val{smap()};
+    Root val{amap()};
     EXPECT_EQ("{}", str(pr_str(*val)));
-    val = smap(nil, nil);
+    val = amap(nil, nil);
     EXPECT_EQ("{nil nil}", str(pr_str(*val)));
     auto a = create_keyword("a");
     auto b = create_keyword("b");
     auto c = create_keyword("c");
-    val = smap(a, b, c, 20, 30, 40);
+    val = amap(a, b, c, 20, 30, 40);
     EXPECT_EQ("{30 40, :c 20, :a :b}", str(pr_str(*val)));
 }
 
@@ -291,14 +291,14 @@ TEST_F(print_str_test, should_print_vectors)
 
 TEST_F(print_str_test, should_print_maps)
 {
-    Root val{smap()};
+    Root val{amap()};
     EXPECT_EQ("{}", str(print_str(*val)));
-    val = smap(nil, nil);
+    val = amap(nil, nil);
     EXPECT_EQ("{nil nil}", str(print_str(*val)));
     auto a = create_keyword("a");
     auto b = create_keyword("b");
     auto c = create_keyword("c");
-    val = smap(a, b, c, "20", "30", "40");
+    val = amap(a, b, c, "20", "30", "40");
     EXPECT_EQ("{30 40, :c 20, :a :b}", str(print_str(*val)));
 }
 
