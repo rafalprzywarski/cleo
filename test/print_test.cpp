@@ -149,14 +149,14 @@ TEST_F(pr_str_test, should_print_persistent_hash_maps)
 
 TEST_F(pr_str_test, should_print_sets)
 {
-    Root val{sset()};
+    Root val{aset()};
     EXPECT_EQ("#{}", str(pr_str(*val)));
-    val = sset(nil, nil);
+    val = aset(nil, nil);
     EXPECT_EQ("#{nil}", str(pr_str(*val)));
     auto a = create_keyword("a");
     auto b = create_keyword("b");
     auto c = create_keyword("c");
-    val = sset(a, b, c, 20, 30, 40);
+    val = aset(a, b, c, 20, 30, 40);
     EXPECT_EQ("#{:a :b :c 20 30 40}", str(pr_str(*val)));
 }
 
@@ -304,14 +304,14 @@ TEST_F(print_str_test, should_print_maps)
 
 TEST_F(print_str_test, should_print_sets)
 {
-    Root val{sset()};
+    Root val{aset()};
     EXPECT_EQ("#{}", str(print_str(*val)));
-    val = sset(nil, nil);
+    val = aset(nil, nil);
     EXPECT_EQ("#{nil}", str(print_str(*val)));
     auto a = create_keyword("a");
     auto b = create_keyword("b");
     auto c = create_keyword("c");
-    val = sset(a, b, c, "20", 30, 40);
+    val = aset(a, b, c, "20", 30, 40);
     EXPECT_EQ("#{:a :b :c 20 30 40}", str(print_str(*val)));
 }
 

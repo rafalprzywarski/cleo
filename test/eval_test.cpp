@@ -599,13 +599,13 @@ TEST_F(eval_test, should_eval_set)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
-    Root ex{sset(*rt::seq, *rt::first, *x)};
-    Root val{sset(SEQ, FIRST, xs)};
+    Root ex{aset(*rt::seq, *rt::first, *x)};
+    Root val{aset(SEQ, FIRST, xs)};
     Root env{amap(xs, *x)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = sset();
+    ex = aset();
     val = eval(*ex);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -1234,19 +1234,19 @@ TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_sets)
     ex = read_str("#{}");
     val = read_str("`#{}");
     val = eval(*val);
-    EXPECT_EQ_VALS(*type::SmallSet, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::ArraySet, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = read_str("#{7}");
     val = read_str("`#{7}");
     val = eval(*val);
-    EXPECT_EQ_VALS(*type::SmallSet, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::ArraySet, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = read_str("#{7 cleo.eval.syntax-quote.test/x cleo.eval.syntax-quote.test/y 20}");
     val = read_str("`#{7 y x 20}");
     val = eval(*val);
-    EXPECT_EQ_VALS(*type::SmallSet, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::ArraySet, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 

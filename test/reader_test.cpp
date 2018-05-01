@@ -449,10 +449,10 @@ TEST_F(reader_test, should_fail_when_a_value_in_a_map_is_missing)
 TEST_F(reader_test, should_parse_an_empty_set)
 {
     Root ex, val;
-    ex = create_small_set();
+    ex = create_array_set();
     val = read_str("#{}");
     EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(*type::SmallSet, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::ArraySet, get_value_type(*val));
     val = read_str("#{ }");
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -460,13 +460,13 @@ TEST_F(reader_test, should_parse_an_empty_set)
 TEST_F(reader_test, should_parse_a_set_of_expressions)
 {
     Root ex, val;
-    ex = sset(1, 2); val = read_str("#{1 2}");
+    ex = aset(1, 2); val = read_str("#{1 2}");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = sset(create_symbol("+"), create_keyword("abc"), -3, nil); val = read_str("#{ + :abc -3 nil}");
+    ex = aset(create_symbol("+"), create_keyword("abc"), -3, nil); val = read_str("#{ + :abc -3 nil}");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = sset(create_symbol("x"), -3);
-    ex = sset(*ex, 1);
-    ex = sset(*ex, 7);
+    ex = aset(create_symbol("x"), -3);
+    ex = aset(*ex, 1);
+    ex = aset(*ex, 7);
     val = read_str("#{#{#{x -3} 1} 7}");
     EXPECT_EQ_VALS(*ex, *val);
 }

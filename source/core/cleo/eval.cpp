@@ -6,7 +6,7 @@
 #include "global.hpp"
 #include "error.hpp"
 #include "small_vector.hpp"
-#include "small_set.hpp"
+#include "array_set.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "util.hpp"
@@ -161,23 +161,23 @@ Force syntax_quote_list(Root& generated, Value l, Value env)
 Force syntax_quote_set(Root& generated, Value s, Value env)
 {
     Root ret{*EMPTY_SET}, val;
-    auto size = get_small_set_size(s);
+    auto size = get_array_set_size(s);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        auto elem = get_small_set_elem(s, i);
+        auto elem = get_array_set_elem(s, i);
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
             for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
             {
                 val = call_multimethod1(*rt::first, *s);
-                ret = small_set_conj(*ret, *val);
+                ret = array_set_conj(*ret, *val);
             }
         }
         else
         {
             val = syntax_quote_val(generated, elem, env);
-            ret = small_set_conj(*ret, *val);
+            ret = array_set_conj(*ret, *val);
         }
     }
     return *ret;
@@ -211,7 +211,7 @@ Force syntax_quote_val(Root& generated, Value val, Value env)
         return syntax_quote_vector(generated, val, env);
     if (get_value_type(val).is(*type::List))
         return syntax_quote_list(generated, val, env);
-    if (get_value_type(val).is(*type::SmallSet))
+    if (get_value_type(val).is(*type::ArraySet))
         return syntax_quote_set(generated, val, env);
     if (isa(get_value_type(val), *type::PersistentMap))
         return syntax_quote_map(generated, val, env);
@@ -386,12 +386,12 @@ Force resolve_vector(Value v, Value env)
 
 Force resolve_set(Value s, Value env)
 {
-    auto size = get_small_set_size(s);
-    Root e{create_small_set()};
+    auto size = get_array_set_size(s);
+    Root e{create_array_set()};
     for (decltype(size) i = 0; i != size; ++i)
     {
-        Root val{resolve_value(get_small_set_elem(s, i), env)};
-        e = small_set_conj(*e, *val);
+        Root val{resolve_value(get_array_set_elem(s, i), env)};
+        e = array_set_conj(*e, *val);
     }
     return *e;
 }
@@ -802,12 +802,12 @@ Force eval_vector(Value v, Value env)
 
 Force eval_set(Value s, Value env)
 {
-    auto size = get_small_set_size(s);
-    Root e{create_small_set()};
+    auto size = get_array_set_size(s);
+    Root e{create_array_set()};
     for (decltype(size) i = 0; i != size; ++i)
     {
-        Root val{eval(get_small_set_elem(s, i), env)};
-        e = small_set_conj(*e, *val);
+        Root val{eval(get_array_set_elem(s, i), env)};
+        e = array_set_conj(*e, *val);
     }
     return *e;
 }
@@ -837,7 +837,7 @@ Force resolve_value(Value val, Value env)
         return resolve_list(val, env);
     if (type.is(*type::SmallVector))
         return resolve_vector(val, env);
-    if (type.is(*type::SmallSet))
+    if (type.is(*type::ArraySet))
         return resolve_set(val, env);
     if (isa(type, *type::PersistentMap))
         return resolve_map(val, env);
@@ -908,7 +908,7 @@ Force eval(Value val, Value env)
         return eval_list(val, env);
     if (type.is(*type::SmallVector))
         return eval_vector(val, env);
-    if (type.is(*type::SmallSet))
+    if (type.is(*type::ArraySet))
         return eval_set(val, env);
     if (isa(type, *type::PersistentMap))
         return eval_map(val, env);

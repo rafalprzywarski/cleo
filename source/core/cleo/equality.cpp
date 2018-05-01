@@ -1,6 +1,6 @@
 #include "equality.hpp"
 #include "small_vector.hpp"
-#include "small_set.hpp"
+#include "array_set.hpp"
 #include "array_map.hpp"
 #include "global.hpp"
 #include "var.hpp"
@@ -44,14 +44,14 @@ Value are_seqables_equal(Value left, Value right)
     return are_seqs_equal(*ls, *rs);
 }
 
-Value are_small_sets_equal(Value left, Value right)
+Value are_array_sets_equal(Value left, Value right)
 {
-    auto size = get_small_set_size(left);
-    if (size != get_small_set_size(right))
+    auto size = get_array_set_size(left);
+    if (size != get_array_set_size(right))
         return nil;
 
     for (decltype(size) i = 0; i != size; ++i)
-        if (!small_set_contains(right, get_small_set_elem(left, i)))
+        if (!array_set_contains(right, get_array_set_elem(left, i)))
             return nil;
 
     return TRUE;

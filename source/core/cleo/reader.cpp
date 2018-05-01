@@ -2,7 +2,7 @@
 #include "list.hpp"
 #include "small_vector.hpp"
 #include "persistent_hash_map.hpp"
-#include "small_set.hpp"
+#include "array_set.hpp"
 #include "global.hpp"
 #include "error.hpp"
 #include "print.hpp"
@@ -298,18 +298,18 @@ Force read_set(Stream& s)
     s.next(); // '#'
     s.next(); // '{'
     eat_ws(s);
-    Root set{create_small_set()};
+    Root set{create_array_set()};
 
     while (!s.eos() && s.peek() != '}')
     {
         auto key_pos = s.pos();
         Root e{read(s)};
-        if (small_set_contains(*set, *e))
+        if (array_set_contains(*set, *e))
         {
             Root text{pr_str(*e)};
             throw_read_error("duplicate key: " + std::string(get_string_ptr(*text), get_string_len(*text)), key_pos);
         }
-        set = small_set_conj(*set, *e);
+        set = array_set_conj(*set, *e);
         eat_ws(s);
     }
     if (s.eos())

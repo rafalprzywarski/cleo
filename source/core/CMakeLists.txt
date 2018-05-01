@@ -2,6 +2,7 @@ include_directories("../core")
 
 add_library(cleo_core
   cleo/array_map.cpp
+  cleo/array_set.cpp
   cleo/atom.cpp
   cleo/clib.cpp
   cleo/equality.cpp
@@ -17,7 +18,6 @@ add_library(cleo_core
   cleo/persistent_hash_map.cpp
   cleo/print.cpp
   cleo/reader.cpp
-  cleo/small_set.cpp
   cleo/small_vector.cpp
   cleo/util.cpp
   cleo/value.cpp

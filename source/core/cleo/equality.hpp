@@ -5,7 +5,7 @@ namespace cleo
 {
 
 Value are_seqables_equal(Value left, Value right);
-Value are_small_sets_equal(Value left, Value right);
+Value are_array_sets_equal(Value left, Value right);
 Value are_array_maps_equal(Value left, Value right);
 Value are_maps_equal(Value left, Value right);
 Value are_equal(Value left, Value right);

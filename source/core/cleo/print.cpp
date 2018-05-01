@@ -3,7 +3,7 @@
 #include "var.hpp"
 #include "multimethod.hpp"
 #include "small_vector.hpp"
-#include "small_set.hpp"
+#include "array_set.hpp"
 #include "array_map.hpp"
 #include "persistent_hash_map.hpp"
 #include "error.hpp"
@@ -122,16 +122,16 @@ Force pr_str_small_vector(Value v)
     return create_string(str);
 }
 
-Force pr_str_small_set(Value s)
+Force pr_str_array_set(Value s)
 {
     std::string str;
     str += "#{";
-    auto size = get_small_set_size(s);
+    auto size = get_array_set_size(s);
     for (decltype(size) i = 0; i != size; ++i)
     {
         if (i > 0)
             str += ' ';
-        Root ss{pr_str(get_small_set_elem(s, i))};
+        Root ss{pr_str(get_array_set_elem(s, i))};
         str.append(get_string_ptr(*ss), get_string_len(*ss));
     }
     str += '}';

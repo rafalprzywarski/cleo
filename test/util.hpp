@@ -4,7 +4,7 @@
 #include <cleo/small_vector.hpp>
 #include <cleo/array_map.hpp>
 #include <cleo/persistent_hash_map.hpp>
-#include <cleo/small_set.hpp>
+#include <cleo/array_set.hpp>
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
 #include <cleo/namespace.hpp>
@@ -109,14 +109,14 @@ template <typename T, typename... Ts>
 Force sset_conj(Value s, const T& first, const Ts&... elems)
 {
     Root val{to_value(first)};
-    Root ns{small_set_conj(s, *val)};
+    Root ns{array_set_conj(s, *val)};
     return sset_conj(*ns, elems...);
 }
 
 template <typename... Ts>
-Force sset(const Ts&... elems)
+Force aset(const Ts&... elems)
 {
-    Root vec{create_small_set()};
+    Root vec{create_array_set()};
     return sset_conj(*vec, elems...);
 }
 

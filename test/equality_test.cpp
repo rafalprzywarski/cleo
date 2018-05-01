@@ -300,30 +300,30 @@ TEST_F(equality_test, should_compare_maps)
     EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 }
 
-TEST_F(equality_test, should_compare_small_sets)
+TEST_F(equality_test, should_compare_array_sets)
 {
     Root s1, s2;
-    s1 = sset();
-    s2 = sset();
+    s1 = aset();
+    s2 = aset();
     EXPECT_TRUE(bool(are_equal(*s1, *s2)));
 
-    s1 = sset(3, 4);
-    s2 = sset();
+    s1 = aset(3, 4);
+    s2 = aset();
     EXPECT_FALSE(bool(are_equal(*s1, *s2)));
     EXPECT_FALSE(bool(are_equal(*s2, *s1)));
 
-    s1 = sset(10, 20, 30, 40, 50, 60);
-    s2 = sset(30, 40, 50, 60, 10, 20);
+    s1 = aset(10, 20, 30, 40, 50, 60);
+    s2 = aset(30, 40, 50, 60, 10, 20);
     EXPECT_TRUE(bool(are_equal(*s1, *s2)));
     EXPECT_TRUE(bool(are_equal(*s2, *s1)));
 
-    s1 = sset(10, 99, 30, 40, 50, 60);
-    s2 = sset(30, 40, 50, 60, 10, 20);
+    s1 = aset(10, 99, 30, 40, 50, 60);
+    s2 = aset(30, 40, 50, 60, 10, 20);
     EXPECT_FALSE(bool(are_equal(*s1, *s2)));
     EXPECT_FALSE(bool(are_equal(*s2, *s1)));
 
-    s1 = sset(10, 20, 30, 40, nil);
-    s2 = sset(30, 40, 10, 20);
+    s1 = aset(10, 20, 30, 40, nil);
+    s2 = aset(30, 40, 10, 20);
     EXPECT_FALSE(bool(are_equal(*s1, *s2)));
     EXPECT_FALSE(bool(are_equal(*s2, *s1)));
 }
