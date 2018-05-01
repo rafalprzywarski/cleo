@@ -111,7 +111,7 @@ extern const Value CONJ;
 extern const Value ASSOC;
 extern const Value DISSOC;
 extern const Value MERGE;
-extern const Value SMALL_MAP;
+extern const Value ARRAY_MAP;
 extern const Value OBJ_EQ;
 extern const Value OBJ_CALL;
 extern const Value PRINT_READABLY;

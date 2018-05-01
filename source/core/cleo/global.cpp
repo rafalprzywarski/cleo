@@ -48,7 +48,7 @@ const Value CONJ = create_symbol("cleo.core", "conj*");
 const Value ASSOC = create_symbol("cleo.core", "assoc*");
 const Value DISSOC = create_symbol("cleo.core", "dissoc*");
 const Value MERGE = create_symbol("cleo.core", "merge");
-const Value SMALL_MAP = create_symbol("cleo.core", "small-map");
+const Value ARRAY_MAP = create_symbol("cleo.core", "array-map");
 const Value OBJ_EQ = create_symbol("cleo.core", "obj=");
 const Value OBJ_CALL = create_symbol("cleo.core", "obj-call");
 const Value PRINT_READABLY = create_symbol("cleo.core", "*print-readably*");
@@ -958,8 +958,8 @@ struct Initialize
         f = create_native_function2<nil_dissoc>();
         define_method(DISSOC, nil, *f);
 
-        f = create_native_function0<create_array_map, &SMALL_MAP>();
-        define(SMALL_MAP, *f);
+        f = create_native_function0<create_array_map, &ARRAY_MAP>();
+        define(ARRAY_MAP, *f);
 
         define_multimethod(MERGE, *equal_dispatch, nil);
         f = create_native_function2<merge_maps, &MERGE>();

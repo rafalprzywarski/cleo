@@ -10,7 +10,7 @@ namespace test
 
 struct array_map_test : Test
 {
-    array_map_test() : Test("cleo.small-map.test") { }
+    array_map_test() : Test("cleo.array-map.test") { }
 };
 
 TEST_F(array_map_test, should_create_an_empty_map)
@@ -117,7 +117,7 @@ TEST_F(array_map_test, should_delegate_to_get_when_called)
     Root v1{create_int64(101)};
     Root m{create_array_map()};
     m = array_map_assoc(*m, *k1, *v1);
-    auto v = create_symbol("cleo.small-map.call.test", "m");
+    auto v = create_symbol("cleo.array-map.call.test", "m");
     define(v, *m);
     Root call{list(v, *k1)};
     Root val{eval(*call)};

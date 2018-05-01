@@ -12,7 +12,7 @@ namespace test
 
 struct array_set_test : Test
 {
-    array_set_test() : Test("cleo.small-set.test") { }
+    array_set_test() : Test("cleo.array-set.test") { }
 };
 
 TEST_F(array_set_test, should_create_an_empty_set)
