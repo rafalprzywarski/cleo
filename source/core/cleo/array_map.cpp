@@ -1,7 +1,7 @@
 #include "array_map.hpp"
 #include "global.hpp"
 #include "equality.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 
 namespace cleo
 {
@@ -88,7 +88,7 @@ Force array_map_seq(Value m)
     if (get_array_map_size(m) == 0)
         return nil;
     std::array<Value, 2> kv{{get_array_map_key(m, 0), get_array_map_val(m, 0)}};
-    Root kvv{create_small_vector(kv.data(), kv.size())};
+    Root kvv{create_array(kv.data(), kv.size())};
     return create_object3(*type::ArrayMapSeq, *kvv, m, *ONE);
 }
 
@@ -104,7 +104,7 @@ Force get_array_map_seq_next(Value s)
     if (index == get_array_map_size(m))
         return nil;
     std::array<Value, 2> kv{{get_array_map_key(m, index), get_array_map_val(m, index)}};
-    Root kvv{create_small_vector(kv.data(), kv.size())};
+    Root kvv{create_array(kv.data(), kv.size())};
     Root new_index{create_int64(index + 1)};
     return create_object3(*type::ArrayMapSeq, *kvv, m, *new_index);
 }

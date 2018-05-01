@@ -1,5 +1,5 @@
 #include "equality.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "array_set.hpp"
 #include "array_map.hpp"
 #include "global.hpp"
@@ -11,13 +11,13 @@
 namespace cleo
 {
 
-Value are_small_vectors_equal(Value left, Value right)
+Value are_arrays_equal(Value left, Value right)
 {
-    auto size = get_small_vector_size(left);
-    if (size != get_small_vector_size(right))
+    auto size = get_array_size(left);
+    if (size != get_array_size(right))
         return nil;
     for (decltype(size) i = 0; i < size; ++i)
-        if (!are_equal(get_small_vector_elem(left, i), get_small_vector_elem(right, i)))
+        if (!are_equal(get_array_elem(left, i), get_array_elem(right, i)))
             return nil;
     return TRUE;
 }
@@ -81,8 +81,8 @@ Value are_maps_equal(Value left, Value right)
     for (Root seq{call_multimethod1(*rt::seq, left)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
         Root kv{call_multimethod1(*rt::first, *seq)};
-        Root other_v{call_multimethod2(*rt::get, right, get_small_vector_elem(*kv, 0))};
-        if (*other_v != get_small_vector_elem(*kv, 1))
+        Root other_v{call_multimethod2(*rt::get, right, get_array_elem(*kv, 0))};
+        if (*other_v != get_array_elem(*kv, 1))
             return nil;
     }
     return TRUE;
@@ -114,8 +114,8 @@ Value are_equal(Value left, Value right)
         case tag::OBJECT:
             if (get_object_type(left).is(*type::MetaType) || get_object_type(right).is(*type::MetaType))
                 return nil;
-            if (get_object_type(left).is(*type::SmallVector) && get_object_type(right).is(*type::SmallVector))
-                return are_small_vectors_equal(left, right);
+            if (get_object_type(left).is(*type::Array) && get_object_type(right).is(*type::Array))
+                return are_arrays_equal(left, right);
             {
                 std::array<Value, 2> args{{left, right}};
                 Root ret{call_multimethod(*rt::obj_eq, args.data(), args.size())};

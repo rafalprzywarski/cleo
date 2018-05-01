@@ -32,11 +32,11 @@ TEST_F(macro_test, macroexpand1_should_return_the_given_form_if_its_not_a_list_w
 
 TEST_F(macro_test, macroexpand1_should_eval_the_body)
 {
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root seq{list(SEQ, *v)};
     Root first{list(FIRST, *seq)};
     Root body{list(QUOTE, *first)};
-    Root params{svec()};
+    Root params{array()};
     Root m{create_macro(nil, nil, *params, *body)};
     Root call{list(*m)};
     Root val{macroexpand1(*call)};
@@ -48,14 +48,14 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
     auto a = create_symbol("a");
     auto b = create_symbol("b");
     auto c = create_symbol("c");
-    Root body{svec(b, c, a)};
-    Root params{svec(a, b, c)};
+    Root body{array(b, c, a)};
+    Root params{array(a, b, c)};
     Root m{create_macro(nil, nil, *params, *body)};
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root call{list(*m, SEQ, FIRST, *v)};
     Root val{macroexpand1(*call)};
-    Root ex{svec(FIRST, *v, SEQ)};
-    EXPECT_EQ_VALS(*type::SmallVector, get_value_type(*val));
+    Root ex{array(FIRST, *v, SEQ)};
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -65,14 +65,14 @@ TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symb
     auto b = create_symbol("b");
     auto c = create_symbol("c");
     auto name = create_symbol("cleo.macro.test", "m2e");
-    Root body{svec(b, c, a)};
-    Root params{svec(a, b, c)};
+    Root body{array(b, c, a)};
+    Root params{array(a, b, c)};
     Root m{create_macro(nil, nil, *params, *body)};
     define(name, *m);
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root call{list(name, SEQ, FIRST, *v)};
     Root val{macroexpand1(*call)};
-    Root ex{svec(FIRST, *v, SEQ)};
+    Root ex{array(FIRST, *v, SEQ)};
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -81,7 +81,7 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     auto a = create_symbol("a");
     auto b = create_symbol("b");
     auto c = create_symbol("c");
-    Root params{svec(a, b, c)};
+    Root params{array(a, b, c)};
     Root m{create_macro(nil, nil, *params, nil)};
     Root call{list(*m, SEQ, FIRST)};
     try
@@ -112,7 +112,7 @@ TEST_F(macro_test, macroexpand_should_return_the_given_form_if_its_not_a_list_wi
 
 TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 {
-    Root params{svec()};
+    Root params{array()};
     auto x = create_keyword("x");
     Root m{create_macro(nil, nil, *params, x)};
     Root call{list(*m)};
@@ -136,19 +136,19 @@ TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 {
     auto s = create_symbol("s");
     Root env{amap(s, *rt::seq)};
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root seq{list(s, *v)};
     Root body{list(FIRST, *seq)};
     body = list(QUOTE, *body);
-    Root params{svec()};
+    Root params{array()};
     Root m{create_macro(nil, nil, *params, *body)};
     Root call{list(*m)};
     Root val{eval(*call, *env)};
-    EXPECT_EQ_REFS(get_small_vector_elem(*v, 0), *val);
+    EXPECT_EQ_REFS(get_array_elem(*v, 0), *val);
 
     auto a = create_symbol("a");
     auto x = create_keyword("x");
-    params = svec(a);
+    params = array(a);
     body = list(MACRO, *params, a);
     call = list(*body, x);
     val = eval(*call, *env);
@@ -165,7 +165,7 @@ TEST_F(macro_test, should_correctly_resolve_symbols_from_macros_namespace)
     in_ns(create_symbol("cleo.macro.resolve.test2"));
     Root val{list(*fn)}, ex;
     val = eval(*val);
-    ex = svec(create_keyword("ok"), create_symbol("cleo.macro.resolve.test1", "x"), create_symbol("cleo.macro.resolve.test1", "y"));
+    ex = array(create_keyword("ok"), create_symbol("cleo.macro.resolve.test1", "x"), create_symbol("cleo.macro.resolve.test1", "y"));
     EXPECT_EQ_VALS(*ex, *val);
 }
 

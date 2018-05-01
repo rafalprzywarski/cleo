@@ -1,6 +1,6 @@
 #include "fn.hpp"
 #include "global.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "util.hpp"
 #include <array>
 
@@ -55,10 +55,10 @@ Force create_macro(Value env, Value name, const Value *params, const Value *bodi
     std::vector<Value> complete_params(n);
     for (decltype(n) i = 0; i < n; ++i)
     {
-        roots.set(i, create_small_vector(first.data(), first.size()));
-        auto size = get_small_vector_size(params[i]);
+        roots.set(i, create_array(first.data(), first.size()));
+        auto size = get_array_size(params[i]);
         for (decltype(size) j = 0; j < size; ++j)
-            roots.set(i, small_vector_conj(roots[i], get_small_vector_elem(params[i], j)));
+            roots.set(i, array_conj(roots[i], get_array_elem(params[i], j)));
         complete_params[i] = roots[i];
     }
 

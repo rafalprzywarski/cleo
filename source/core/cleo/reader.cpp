@@ -1,6 +1,6 @@
 #include "reader.hpp"
 #include "list.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "persistent_hash_map.hpp"
 #include "array_set.hpp"
 #include "global.hpp"
@@ -193,7 +193,7 @@ Force read_vector(Stream& s)
     while (!s.eos() && s.peek() != ']')
     {
         Root e{read(s)};
-        v = small_vector_conj(*v, *e);
+        v = array_conj(*v, *e);
         eat_ws(s);
     }
     if (s.eos())
@@ -398,7 +398,7 @@ Force read_forms(Value source)
     while (!s.eos())
     {
         form = read(s);
-        forms = small_vector_conj(*forms, *form);
+        forms = array_conj(*forms, *form);
         eat_ws(s);
     }
 

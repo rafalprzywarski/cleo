@@ -109,7 +109,7 @@ template <typename... Types>
 void test_fn()
 {
     auto name = create_symbol("gfn");
-    Root params{svec(id<Types>()...)};
+    Root params{array(id<Types>()...)};
     Root fn{create_c_fn((void *)add<Types...>, name, clib::int64, *params)};
     for (int i = 0; i < sizeof...(Types); ++i)
     {
@@ -319,7 +319,7 @@ TEST_F(clib_test, should_create_c_function_with_16_params)
 TEST_F(clib_test, should_fail_to_create_c_functions_with_more_than_16_params)
 {
     auto name = create_symbol("gfn16+");
-    Root params{svec(
+    Root params{array(
         clib::int64, clib::int64, clib::int64, clib::int64,
         clib::int64, clib::int64, clib::int64, clib::int64,
         clib::int64, clib::int64, clib::int64, clib::int64,
@@ -348,7 +348,7 @@ TEST_F(clib_test, no_param_function_should_check_arity)
 TEST_F(clib_test, one_param_function_should_check_arity)
 {
     auto name = create_symbol("gfn1");
-    Root params{svec(clib::int64)};
+    Root params{array(clib::int64)};
     Root fn{create_c_fn((void *)add<Int64>, name, clib::int64, *params)};
     Root call{list(*fn, 3, 7)};
     expect_call_error(*call, "Wrong number of args (2) passed to: gfn1");
@@ -357,7 +357,7 @@ TEST_F(clib_test, one_param_function_should_check_arity)
 TEST_F(clib_test, two_param_function_should_check_arity)
 {
     auto name = create_symbol("gfn2");
-    Root params{svec(clib::int64, clib::int64)};
+    Root params{array(clib::int64, clib::int64)};
     Root fn{create_c_fn((void *)add<Int64, Int64>, name, clib::int64, *params)};
     Root call{list(*fn, 3)};
     expect_call_error(*call, "Wrong number of args (1) passed to: gfn2");
@@ -366,7 +366,7 @@ TEST_F(clib_test, two_param_function_should_check_arity)
 TEST_F(clib_test, should_fail_on_invalid_declared_type)
 {
     auto name = create_symbol("gfn1");
-    Root params{svec(create_keyword("bad"))};
+    Root params{array(create_keyword("bad"))};
     try
     {
         create_c_fn((void *)add<Int64>, name, clib::int64, *params);
@@ -385,7 +385,7 @@ TEST_F(clib_test, should_fail_on_invalid_declared_type)
 TEST_F(clib_test, one_int64_param_function_should_fail_on_invalid_type)
 {
     auto name = create_symbol("gfn1");
-    Root params{svec(clib::int64)};
+    Root params{array(clib::int64)};
     Root fn{create_c_fn((void *)add<Int64>, name, clib::int64, *params)};
     Root bad{create_string("bad")};
     Root call{list(*fn, *bad)};
@@ -395,7 +395,7 @@ TEST_F(clib_test, one_int64_param_function_should_fail_on_invalid_type)
 TEST_F(clib_test, one_string_param_function_should_fail_on_invalid_type)
 {
     auto name = create_symbol("gfn1");
-    Root params{svec(clib::string)};
+    Root params{array(clib::string)};
     Root fn{create_c_fn((void *)add<const char *>, name, clib::string, *params)};
     Root bad{create_keyword("bad")};
     Root call{list(*fn, *bad)};
@@ -405,7 +405,7 @@ TEST_F(clib_test, one_string_param_function_should_fail_on_invalid_type)
 TEST_F(clib_test, two_param_function_should_fail_on_invalid_type)
 {
     auto name = create_symbol("gfn2");
-    Root params{svec(clib::int64, clib::int64)};
+    Root params{array(clib::int64, clib::int64)};
     Root fn{create_c_fn((void *)add<Int64, Int64>, name, clib::int64, *params)};
     Root bad{create_string("bad")};
     Root call{list(*fn, *bad, 7)};

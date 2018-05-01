@@ -345,7 +345,7 @@ TEST_F(reader_test, should_parse_an_apostrophe_as_quote)
 TEST_F(reader_test, should_parse_an_empty_vector)
 {
     Root ex, val;
-    ex = svec();
+    ex = array();
     val = read_str("[]");
     EXPECT_EQ_VALS(*ex, *val);
     val = read_str("[ ]");
@@ -355,17 +355,17 @@ TEST_F(reader_test, should_parse_an_empty_vector)
 TEST_F(reader_test, should_parse_a_vector_of_expressions)
 {
     Root ex, val;
-    ex = svec(1); val = read_str("[1]");
+    ex = array(1); val = read_str("[1]");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = svec(create_symbol("+"), create_symbol("abc"), -3); val = read_str("[+ abc -3]");
+    ex = array(create_symbol("+"), create_symbol("abc"), -3); val = read_str("[+ abc -3]");
     EXPECT_EQ_VALS(*ex, *val);
-    Root l7{svec(7)};
-    ex = svec(create_symbol("x"), -3);
-    ex = svec(*ex, 1);
-    ex = svec(*ex, *l7);
+    Root l7{array(7)};
+    ex = array(create_symbol("x"), -3);
+    ex = array(*ex, 1);
+    ex = array(*ex, *l7);
     val = read_str("[[[x -3] 1] [7]]");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = svec(create_keyword("x")); val = read_str("[:x]");
+    ex = array(create_keyword("x")); val = read_str("[:x]");
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -386,7 +386,7 @@ TEST_F(reader_test, should_parse_nil)
     Root ex, val;
     ex = list(nil); val = read_str("(nil)");
     EXPECT_EQ_VALS(*ex, *val);
-    ex = svec(nil); val = read_str("[nil]");
+    ex = array(nil); val = read_str("[nil]");
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -573,17 +573,17 @@ TEST_F(reader_test, read_forms_should_read_multiple_forms)
 
     source = create_string(":a");
     forms = read_forms(*source);
-    ex = svec(create_keyword("a"));
+    ex = array(create_keyword("a"));
     EXPECT_EQ_VALS(*ex, *forms);
 
     source = create_string(":a :b :c , ");
     forms = read_forms(*source);
-    ex = svec(create_keyword("a"), create_keyword("b"), create_keyword("c"));
+    ex = array(create_keyword("a"), create_keyword("b"), create_keyword("c"));
     EXPECT_EQ_VALS(*ex, *forms);
 
     source = create_string(";\n:a ;\n:b :c ,;\n ");
     forms = read_forms(*source);
-    ex = svec(create_keyword("a"), create_keyword("b"), create_keyword("c"));
+    ex = array(create_keyword("a"), create_keyword("b"), create_keyword("c"));
     EXPECT_EQ_VALS(*ex, *forms);
 }
 

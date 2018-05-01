@@ -5,7 +5,7 @@
 #include "fn.hpp"
 #include "global.hpp"
 #include "error.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "array_set.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
@@ -89,23 +89,23 @@ Force syntax_quote_symbol(Root& generated, Value sym, Value env)
 Force syntax_quote_vector(Root& generated, Value v, Value env)
 {
     Root ret{*EMPTY_VECTOR}, val;
-    auto size = get_small_vector_size(v);
+    auto size = get_array_size(v);
     for (decltype(size) i = 0; i < size; ++i)
     {
-        auto elem = get_small_vector_elem(v, i);
+        auto elem = get_array_elem(v, i);
         if (is_unquote_splicing(elem))
         {
             Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
             for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
             {
                 val = call_multimethod1(*rt::first, *s);
-                ret = small_vector_conj(*ret, *val);
+                ret = array_conj(*ret, *val);
             }
         }
         else
         {
             val = syntax_quote_val(generated, elem, env);
-            ret = small_vector_conj(*ret, *val);
+            ret = array_conj(*ret, *val);
         }
     }
     return *ret;
@@ -189,8 +189,8 @@ Force syntax_quote_map(Root& generated, Value m, Value env)
     for (Root seq{call_multimethod1(*rt::seq, m)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
         kv = call_multimethod1(*rt::first, *seq);
-        key = get_small_vector_elem(*kv, 0);
-        val = get_small_vector_elem(*kv, 1);
+        key = get_array_elem(*kv, 0);
+        val = get_array_elem(*kv, 1);
         if (is_unquote_splicing(*key) || is_unquote_splicing(*val))
         {
             Root msg{create_string("unquote-splicing only supports lists, vectors, and sets")};
@@ -207,7 +207,7 @@ Force syntax_quote_val(Root& generated, Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return syntax_quote_symbol(generated, val, env);
-    if (get_value_type(val).is(*type::SmallVector))
+    if (get_value_type(val).is(*type::Array))
         return syntax_quote_vector(generated, val, env);
     if (get_value_type(val).is(*type::List))
         return syntax_quote_list(generated, val, env);
@@ -232,10 +232,10 @@ Force eval_syntax_quote(Value list, Value env)
 Force bind_params(Value params, Value env)
 {
     Root lenv{env ? env : *EMPTY_MAP};
-    auto n = get_small_vector_size(params);
+    auto n = get_array_size(params);
     for (decltype(n) i = 0; i < n; ++i)
     {
-        auto p = get_small_vector_elem(params, i);
+        auto p = get_array_elem(params, i);
         lenv = map_assoc(*lenv, p, nil);
     }
     return *lenv;
@@ -248,21 +248,21 @@ Force resolve_symbol(Value sym, Value env)
 
 Force resolve_bindings(Value b, Root& env)
 {
-    auto size = get_small_vector_size(b);
+    auto size = get_array_size(b);
     Roots roots(size);
     std::vector<Value> vals;
     vals.reserve(size);
     for (decltype(size) i = 0; (i + 1) < size; i += 2)
     {
-        auto name = get_small_vector_elem(b, i);
+        auto name = get_array_elem(b, i);
         roots.set(i, name);
-        roots.set(i + 1, resolve_value(get_small_vector_elem(b, i + 1), *env));
+        roots.set(i + 1, resolve_value(get_array_elem(b, i + 1), *env));
         env = map_assoc(*env, name, nil);
         vals.push_back(roots[i]);
         vals.push_back(roots[i + 1]);
     }
 
-    return create_small_vector(vals.data(), vals.size());
+    return create_array(vals.data(), vals.size());
 }
 
 Force resolve_pure_list(Value l, Value env)
@@ -371,17 +371,17 @@ Force resolve_list(Value l, Value env)
 
 Force resolve_vector(Value v, Value env)
 {
-    auto size = get_small_vector_size(v);
+    auto size = get_array_size(v);
     Roots roots(size);
     std::vector<Value> vals;
     vals.reserve(size);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        roots.set(i, resolve_value(get_small_vector_elem(v, i), env));
+        roots.set(i, resolve_value(get_array_elem(v, i), env));
         vals.push_back(roots[i]);
     }
 
-    return create_small_vector(vals.data(), vals.size());
+    return create_array(vals.data(), vals.size());
 }
 
 Force resolve_set(Value s, Value env)
@@ -402,8 +402,8 @@ Force resolve_map(Value val, Value env)
     for (Root seq{call_multimethod1(*rt::seq, val)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
         kv = call_multimethod1(*rt::first, *seq);
-        k = resolve_value(get_small_vector_elem(*kv, 0), env);
-        v = resolve_value(get_small_vector_elem(*kv, 1), env);
+        k = resolve_value(get_array_elem(*kv, 0), env);
+        v = resolve_value(get_array_elem(*kv, 1), env);
         e = map_assoc(*e, *k, *v);
     }
 
@@ -437,11 +437,11 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
     auto parse_fn = [&](Value list)
     {
         params.push_back(get_list_first(list));
-        check_type("fn* parameter list", params.back(), *type::SmallVector);
-        auto n = get_small_vector_size(params.back());
+        check_type("fn* parameter list", params.back(), *type::Array);
+        auto n = get_array_size(params.back());
         for (decltype(n) i = 0; i < n; ++i)
         {
-            auto p = get_small_vector_elem(params.back(), i);
+            auto p = get_array_elem(params.back(), i);
             check_type("fn* parameters", p, *type::Symbol);
             if (get_symbol_namespace(p))
                 throw_illegal_argument("Can't use qualified name as parameter: " + to_string(p));
@@ -500,16 +500,16 @@ Force eval_let(Value list, Value env)
     check_arity(LET, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
-    if (!get_value_type(bindings).is(*type::SmallVector))
+    if (!get_value_type(bindings).is(*type::Array))
         throw_illegal_argument(to_string(LET) + " requires a vector for its binding");
-    auto size = get_small_vector_size(bindings);
+    auto size = get_array_size(bindings);
     if (size % 2 == 1)
         throw_illegal_argument(to_string(LET) + " requires an even number of forms in binding vector");
     Root lenv{!env && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
-        Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
-        auto binding = get_small_vector_elem(bindings, i);
+        Root val{eval(get_array_elem(bindings, i + 1), *lenv)};
+        auto binding = get_array_elem(bindings, i);
         if (!get_value_type(binding).is(*type::Symbol))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
         if (get_symbol_namespace(binding))
@@ -537,16 +537,16 @@ Force eval_loop(Value list, Value env)
     check_arity(LOOP, 2, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
-    if (!get_value_type(bindings).is(*type::SmallVector))
+    if (!get_value_type(bindings).is(*type::Array))
         throw_illegal_argument(to_string(LOOP) + " requires a vector for its binding");
-    auto size = get_small_vector_size(bindings);
+    auto size = get_array_size(bindings);
     if (size % 2 == 1)
         throw_illegal_argument(to_string(LOOP) + " requires an even number of forms in binding vector");
     Root lenv{!env && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
-        Root val{eval(get_small_vector_elem(bindings, i + 1), *lenv)};
-        auto binding = get_small_vector_elem(bindings, i);
+        Root val{eval(get_array_elem(bindings, i + 1), *lenv)};
+        auto binding = get_array_elem(bindings, i);
         if (!get_value_type(binding).is(*type::Symbol))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
         if (get_symbol_namespace(binding))
@@ -557,10 +557,10 @@ Force eval_loop(Value list, Value env)
     Root val{eval(get_list_first(*n), *lenv)};
     while (get_value_type(*val).is(*type::Recur))
     {
-        check_arity(RECUR, get_small_vector_size(bindings) / 2, get_object_size(*val));
-        auto size = get_small_vector_size(bindings) / 2;
+        check_arity(RECUR, get_array_size(bindings) / 2, get_object_size(*val));
+        auto size = get_array_size(bindings) / 2;
         for (decltype(size) i = 0; i != size; ++i)
-            lenv = map_assoc(*lenv, get_small_vector_elem(bindings, i * 2), get_object_element(*val, i));
+            lenv = map_assoc(*lenv, get_array_elem(bindings, i * 2), get_object_element(*val, i));
 
         val = eval(get_list_first(*n), *lenv);
     }
@@ -647,16 +647,16 @@ Force eval_try(Value list, Value env)
 bool is_va(Value fn, std::uint8_t i)
 {
     auto params = get_fn_params(fn, i);
-    auto size = get_small_vector_size(params);
+    auto size = get_array_size(params);
     return
         size >= 2 &&
-        get_small_vector_elem(params, size - 2).is(VA);
+        get_array_elem(params, size - 2).is(VA);
 }
 
 Value get_var_arg(Value params)
 {
-    auto size = get_small_vector_size(params);
-    return get_small_vector_elem(params, size - 1);
+    auto size = get_array_size(params);
+    return get_array_elem(params, size - 1);
 }
 
 std::uint8_t find_fn_index(Value fn, std::uint8_t n, std::uint8_t public_n)
@@ -665,7 +665,7 @@ std::uint8_t find_fn_index(Value fn, std::uint8_t n, std::uint8_t public_n)
     for (std::uint8_t i = 0; i < size; ++i)
     {
         auto va = is_va(fn, i);
-        auto size = get_small_vector_size(get_fn_params(fn, i));
+        auto size = get_array_size(get_fn_params(fn, i));
         if (!va && size == n)
             return i;
     }
@@ -673,7 +673,7 @@ std::uint8_t find_fn_index(Value fn, std::uint8_t n, std::uint8_t public_n)
     for (std::uint8_t i = 0; i < size; ++i)
     {
         auto va = is_va(fn, i);
-        auto size = get_small_vector_size(get_fn_params(fn, i));
+        auto size = get_array_size(get_fn_params(fn, i));
         if (va && (size - 2) <= n)
             return i;
     }
@@ -702,13 +702,13 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     auto fni = find_fn_index(fn, elems.size() - 1, public_n);
     auto va = is_va(fn, fni);
     auto params = get_fn_params(fn, fni);
-    auto n_params = va ? get_small_vector_size(params) - 1 : get_small_vector_size(params);
+    auto n_params = va ? get_array_size(params) - 1 : get_array_size(params);
     auto n_fixed_params = va ? n_params - 1 : n_params;
     Root fenv{get_fn_env(fn)};
     if (!*fenv && (n_params > 0 || va))
         fenv = *EMPTY_MAP;
     for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
-        fenv = map_assoc(*fenv, get_small_vector_elem(params, i), elems[i + 1]);
+        fenv = map_assoc(*fenv, get_array_elem(params, i), elems[i + 1]);
     if (va)
     {
         Root vargs;
@@ -722,7 +722,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     {
         check_arity(RECUR, n_params, get_object_size(*val));
         for (decltype(n_fixed_params) i = 0; i < n_fixed_params; ++i)
-            fenv = map_assoc(*fenv, get_small_vector_elem(params, i), get_object_element(*val, i));
+            fenv = map_assoc(*fenv, get_array_elem(params, i), get_object_element(*val, i));
         if (va)
             fenv = map_assoc(*fenv, get_var_arg(params), get_object_element(*val, n_params - 1));
         val = eval(body, *fenv);
@@ -787,17 +787,17 @@ Force eval_list(Value list, Value env)
 
 Force eval_vector(Value v, Value env)
 {
-    auto size = get_small_vector_size(v);
+    auto size = get_array_size(v);
     Roots roots(size);
     std::vector<Value> vals;
     vals.reserve(size);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        roots.set(i, eval(get_small_vector_elem(v, i), env));
+        roots.set(i, eval(get_array_elem(v, i), env));
         vals.push_back(roots[i]);
     }
 
-    return create_small_vector(vals.data(), vals.size());
+    return create_array(vals.data(), vals.size());
 }
 
 Force eval_set(Value s, Value env)
@@ -818,8 +818,8 @@ Force eval_map(Value m, Value env)
     for (Root seq{call_multimethod1(*rt::seq, m)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
         kv = call_multimethod1(*rt::first, *seq);
-        k = eval(get_small_vector_elem(*kv, 0), env);
-        v = eval(get_small_vector_elem(*kv, 1), env);
+        k = eval(get_array_elem(*kv, 0), env);
+        v = eval(get_array_elem(*kv, 1), env);
         e = map_assoc(*e, *k, *v);
     }
 
@@ -835,7 +835,7 @@ Force resolve_value(Value val, Value env)
         return resolve_symbol(val, env);
     if (type.is(*type::List))
         return resolve_list(val, env);
-    if (type.is(*type::SmallVector))
+    if (type.is(*type::Array))
         return resolve_vector(val, env);
     if (type.is(*type::ArraySet))
         return resolve_set(val, env);
@@ -906,7 +906,7 @@ Force eval(Value val, Value env)
     auto type = get_value_type(val);
     if (type.is(*type::List))
         return eval_list(val, env);
-    if (type.is(*type::SmallVector))
+    if (type.is(*type::Array))
         return eval_vector(val, env);
     if (type.is(*type::ArraySet))
         return eval_set(val, env);
@@ -920,13 +920,13 @@ Force load(Value source)
     Root bindings{map_assoc(*EMPTY_MAP, CURRENT_NS, *rt::current_ns)};
     PushBindingsGuard guard{*bindings};
     Root forms{read_forms(source)};
-    forms = small_vector_seq(*forms);
+    forms = array_seq(*forms);
     Root ret;
 
     while (*forms)
     {
-        ret = eval(get_small_vector_seq_first(*forms));
-        forms = get_small_vector_seq_next(*forms);
+        ret = eval(get_array_seq_first(*forms));
+        forms = get_array_seq_next(*forms);
     }
 
     return *ret;

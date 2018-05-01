@@ -5,7 +5,7 @@
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
 #include <cleo/namespace.hpp>
-#include <cleo/small_vector.hpp>
+#include <cleo/array.hpp>
 #include <cleo/util.hpp>
 #include <iostream>
 #include <readline/readline.h>
@@ -63,7 +63,7 @@ cleo::Force create_ns_bindings(int argc, const char *const* argv)
     cleo::Root root_lib_path{cleo::create_string(argv[1])};
     cleo::Root project_lib_path{cleo::create_string(".")};
     std::array<cleo::Value, 2> paths{{*root_lib_path, *project_lib_path}};
-    cleo::Root lib_paths{cleo::create_small_vector(paths.data(), paths.size())};
+    cleo::Root lib_paths{cleo::create_array(paths.data(), paths.size())};
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::LIB_PATHS, *lib_paths);
     return *ns_bindings;
 }

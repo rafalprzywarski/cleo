@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 #include <cleo/list.hpp>
-#include <cleo/small_vector.hpp>
+#include <cleo/array.hpp>
 #include <cleo/array_map.hpp>
 #include <cleo/persistent_hash_map.hpp>
 #include <cleo/array_set.hpp>
@@ -89,14 +89,14 @@ template <typename T, typename... Ts>
 Force svec_conj(Value vec, const T& first, const Ts&... elems)
 {
     Root val{to_value(first)};
-    Root nvec{small_vector_conj(vec, *val)};
+    Root nvec{array_conj(vec, *val)};
     return svec_conj(*nvec, elems...);
 }
 
 template <typename... Ts>
-Force svec(const Ts&... elems)
+Force array(const Ts&... elems)
 {
-    Root s{create_small_vector(nullptr, 0)};
+    Root s{create_array(nullptr, 0)};
     return svec_conj(*s, elems...);
 }
 

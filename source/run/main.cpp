@@ -3,7 +3,7 @@
 #include <cleo/global.hpp>
 #include <cleo/list.hpp>
 #include <cleo/namespace.hpp>
-#include <cleo/small_vector.hpp>
+#include <cleo/array.hpp>
 #include <cleo/print.hpp>
 #include <cleo/util.hpp>
 #include <iostream>
@@ -15,7 +15,7 @@ cleo::Force create_command_line_args(int argc, const char *const* argv)
     for (int i = 4; i < argc; ++i)
     {
         arg = cleo::create_string(argv[i]);
-        command_line_args = cleo::small_vector_conj(*command_line_args, *arg);
+        command_line_args = cleo::array_conj(*command_line_args, *arg);
     }
     return *command_line_args;
 }
@@ -29,7 +29,7 @@ cleo::Force create_ns_bindings(int argc, const char *const* argv)
     cleo::Root root_lib_path{cleo::create_string(argv[1])};
     cleo::Root project_lib_path{cleo::create_string(argv[2])};
     std::array<cleo::Value, 2> paths{{*root_lib_path, *project_lib_path}};
-    cleo::Root lib_paths{cleo::create_small_vector(paths.data(), paths.size())};
+    cleo::Root lib_paths{cleo::create_array(paths.data(), paths.size())};
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::LIB_PATHS, *lib_paths);
     return *ns_bindings;
 }

@@ -143,7 +143,7 @@ TEST_F(equality_test, objects_should_not_be_equal)
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
-TEST_F(equality_test, should_compare_small_vectors)
+TEST_F(equality_test, should_compare_arrays)
 {
     Root n9, n10, n11, n12, val1, val2;
     n9 = i64(9);
@@ -151,39 +151,39 @@ TEST_F(equality_test, should_compare_small_vectors)
     n11 = i64(11);
     n12 = i64(12);
     auto type = create_symbol("cleo.equality.test", "not-vector");
-    val1 = svec();
+    val1 = array();
     val2 = create_object0(type);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
     EXPECT_FALSE(bool(are_equal(*val2, *val1)));
 
-    val1 = svec();
-    val2 = svec();
+    val1 = array();
+    val2 = array();
     EXPECT_TRUE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n10);
+    val1 = array(*n10);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
-    val2 = svec(*n10);
+    val2 = array(*n10);
     EXPECT_TRUE(bool(are_equal(*val1, *val2)));
-    val2 = svec(*n9);
+    val2 = array(*n9);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n10, *n11, *n12);
-    val2 = svec(*n10, *n11, *n12);
+    val1 = array(*n10, *n11, *n12);
+    val2 = array(*n10, *n11, *n12);
     EXPECT_TRUE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n9, *n11, *n12);
+    val1 = array(*n9, *n11, *n12);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n10, *n9, *n12);
+    val1 = array(*n10, *n9, *n12);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n10, *n11, *n9);
+    val1 = array(*n10, *n11, *n9);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
 
-    val1 = svec(*n10, *n11);
-    val1 = svec(*val1, *n12);
-    val2 = svec(*n10, *n11);
-    val2 = svec(*val2, *n12);
+    val1 = array(*n10, *n11);
+    val1 = array(*val1, *n12);
+    val2 = array(*n10, *n11);
+    val2 = array(*val2, *n12);
     EXPECT_TRUE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n10);
-    val1 = svec(*val1, *n11, *n12);
-    val2 = svec(*n10, *n11);
-    val2 = svec(*val2, *n12);
+    val1 = array(*n10);
+    val1 = array(*val1, *n11, *n12);
+    val2 = array(*n10, *n11);
+    val2 = array(*val2, *n12);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
@@ -206,15 +206,15 @@ TEST_F(equality_test, should_compare_sequences)
     val2 = list(*n10, *n21);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 
-    val1 = svec();
+    val1 = array();
     val2 = list();
     ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = list(*n1);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n20);
+    val1 = array(*n20);
     val2 = list();
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
-    val1 = svec(*n10, *n20);
+    val1 = array(*n10, *n20);
     val2 = list(*n1);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
     val2 = list(*n10, *n20);
@@ -223,14 +223,14 @@ TEST_F(equality_test, should_compare_sequences)
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 
     val1 = list();
-    val2 = svec();
+    val2 = array();
     ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val1 = list(*n10, *n20);
-    val2 = svec(*n1);
+    val2 = array(*n1);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
-    val2 = svec(*n10, *n20);
+    val2 = array(*n10, *n20);
     ASSERT_TRUE(bool(are_equal(*val1, *val2)));
-    val2 = svec(*n10, *n21);
+    val2 = array(*n10, *n21);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 

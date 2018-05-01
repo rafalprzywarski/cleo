@@ -2,7 +2,7 @@
 #include "namespace.hpp"
 #include "hash.hpp"
 #include "equality.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "global.hpp"
 #include "error.hpp"
 #include "util.hpp"
@@ -44,11 +44,11 @@ void derive(Value tag, Value parent)
 
 bool isa_vectors(Value child, Value parent)
 {
-    auto size = get_small_vector_size(child);
-    if (size != get_small_vector_size(parent))
+    auto size = get_array_size(child);
+    if (size != get_array_size(parent))
         return false;
     for (decltype(size) i = 0; i < size; ++i)
-        if (!isa(get_small_vector_elem(child, i), get_small_vector_elem(parent, i)))
+        if (!isa(get_array_elem(child, i), get_array_elem(parent, i)))
             return false;
     return true;
 }
@@ -65,7 +65,7 @@ Value isa(Value child, Value parent)
 {
     return (
         child == parent ||
-        (get_value_type(child).is(*type::SmallVector) && get_value_type(parent).is(*type::SmallVector) && isa_vectors(child, parent)) ||
+        (get_value_type(child).is(*type::Array) && get_value_type(parent).is(*type::Array) && isa_vectors(child, parent)) ||
         is_ancestor(child, parent)) ? TRUE : nil;
 }
 

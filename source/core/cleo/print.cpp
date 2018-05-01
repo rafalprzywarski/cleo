@@ -2,7 +2,7 @@
 #include "global.hpp"
 #include "var.hpp"
 #include "multimethod.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "array_set.hpp"
 #include "array_map.hpp"
 #include "persistent_hash_map.hpp"
@@ -106,16 +106,16 @@ Force pr_str_object(Value val)
     return create_string(os.str());
 }
 
-Force pr_str_small_vector(Value v)
+Force pr_str_array(Value v)
 {
     std::string str;
     str += '[';
-    auto size = get_small_vector_size(v);
+    auto size = get_array_size(v);
     for (decltype(size) i = 0; i != size; ++i)
     {
         if (i > 0)
             str += ' ';
-        Root s{pr_str(get_small_vector_elem(v, i))};
+        Root s{pr_str(get_array_elem(v, i))};
         str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += ']';
@@ -166,10 +166,10 @@ Force pr_str_persistent_hash_map(Value val)
         auto kv = get_persistent_hash_map_seq_first(*seq);
         if (str.back() != '{')
             str += ", ";
-        Root s{pr_str(get_small_vector_elem(kv, 0))};
+        Root s{pr_str(get_array_elem(kv, 0))};
         str.append(get_string_ptr(*s), get_string_len(*s));
         str += ' ';
-        s = pr_str(get_small_vector_elem(kv, 1));
+        s = pr_str(get_array_elem(kv, 1));
         str.append(get_string_ptr(*s), get_string_len(*s));
     }
     str += '}';

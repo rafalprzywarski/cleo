@@ -283,7 +283,7 @@ TEST_F(hierarchy_test, isa_should_be_true_for_all_ancestors)
     EXPECT_FALSE(bool(isa(b, a)));
 }
 
-TEST_F(hierarchy_test, isa_should_treat_small_vectors_as_tuples)
+TEST_F(hierarchy_test, isa_should_treat_arrays_as_tuples)
 {
     derive(c1, p1);
     derive(c2, p2);
@@ -291,32 +291,32 @@ TEST_F(hierarchy_test, isa_should_treat_small_vectors_as_tuples)
     derive(p1, gp1);
 
     Root val1, val2;
-    val1 = svec();
-    val2 = svec();
+    val1 = array();
+    val2 = array();
     EXPECT_TRUE(bool(isa(*val1, *val2)));
     val1 = b;
     EXPECT_FALSE(bool(isa(*val1, *val2)));
     EXPECT_FALSE(bool(isa(*val2, *val1)));
 
-    val1 = svec(c1, p2);
-    val2 = svec(c1, p2);
+    val1 = array(c1, p2);
+    val2 = array(c1, p2);
     EXPECT_TRUE(bool(isa(*val1, *val2)));
-    val1 = svec(c1);
+    val1 = array(c1);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
-    val1 = svec(c1, c2);
-    val2 = svec(c3, c2);
+    val1 = array(c1, c2);
+    val2 = array(c3, c2);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
-    val2 = svec(c1, c3);
+    val2 = array(c1, c3);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
-    val2 = svec(c2, c1);
+    val2 = array(c2, c1);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
 
-    val1 = svec(c1, c2);
-    val2 = svec(gp1, p2);
+    val1 = array(c1, c2);
+    val2 = array(gp1, p2);
     EXPECT_TRUE(bool(isa(*val1, *val2)));
-    val2 = svec(p3, p2);
+    val2 = array(p3, p2);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
-    val2 = svec(gp1, p3);
+    val2 = array(gp1, p3);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
 }
 

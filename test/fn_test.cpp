@@ -17,14 +17,14 @@ struct fn_test : Test
 
 TEST_F(fn_test, should_eval_the_body)
 {
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root seq{list(SEQ, *v)};
     Root body{list(FIRST, *seq)};
-    Root params{svec()};
+    Root params{array()};
     Root fn{create_fn(nil, nil, *params, *body)};
     Root call{list(*fn)};
     Root val{eval(*call)};
-    ASSERT_TRUE(get_small_vector_elem(*v, 0).is(*val));
+    ASSERT_TRUE(get_array_elem(*v, 0).is(*val));
 }
 
 TEST_F(fn_test, should_pass_the_arguments)
@@ -33,27 +33,27 @@ TEST_F(fn_test, should_pass_the_arguments)
     auto x = create_symbol("x");
     Root seq{list(s, x)};
     Root body{list(FIRST, *seq)};
-    Root params{svec(s, x)};
+    Root params{array(s, x)};
     Root fn{create_fn(nil, nil, *params, *body)};
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root call{list(*fn, SEQ, *v)};
     Root val{eval(*call)};
-    ASSERT_TRUE(get_small_vector_elem(*v, 0).is(*val));
+    ASSERT_TRUE(get_array_elem(*v, 0).is(*val));
 }
 
 TEST_F(fn_test, should_use_values_from_the_env)
 {
     auto s = create_symbol("s");
     auto x = create_symbol("x");
-    Root v{svec(5, 6, 7)};
+    Root v{array(5, 6, 7)};
     Root env{amap(s, *rt::seq, x, *v)};
     Root seq{list(s, x)};
     Root body{list(FIRST, *seq)};
-    Root params{svec()};
+    Root params{array()};
     Root fn{create_fn(*env, nil, *params, *body)};
     Root call{list(*fn)};
     Root val{eval(*call)};
-    ASSERT_TRUE(get_small_vector_elem(*v, 0).is(*val));
+    ASSERT_TRUE(get_array_elem(*v, 0).is(*val));
 }
 
 TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
@@ -109,7 +109,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     auto y = create_keyword("y");
     call = list(*fn, x, y);
     val = eval(*call);
-    ex = svec(x, y);
+    ex = array(x, y);
     EXPECT_EQ_VALS(*ex, *val);
 
     fn = create_string("(fn* xyz ([a b] :a) ([a b & c] [a b c]))");
@@ -131,7 +131,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     call = list(*fn, y, x, x, y);
     val = eval(*call);
     ex = list(x, y);
-    ex = svec(y, x, *ex);
+    ex = array(y, x, *ex);
     EXPECT_EQ_VALS(*ex, *val);
 
     fn = create_string("(fn* xyz ([a b & c] [a b c]))");
@@ -139,7 +139,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     fn = eval(*fn);
     call = list(*fn, x, y);
     val = eval(*call);
-    ex = svec(x, y, nil);
+    ex = array(x, y, nil);
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -169,7 +169,7 @@ TEST_F(fn_test, should_correctly_resolve_symbols_from_fns_namespace)
     in_ns(create_symbol("cleo.fn.resolve.test2"));
     Root val{list(*fn)}, ex;
     val = eval(*val);
-    ex = svec(create_keyword("ok"), create_symbol("cleo.fn.resolve.test1", "x"), create_symbol("cleo.fn.resolve.test1", "y"));
+    ex = array(create_keyword("ok"), create_symbol("cleo.fn.resolve.test1", "x"), create_symbol("cleo.fn.resolve.test1", "y"));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -184,7 +184,7 @@ TEST_F(fn_test, should_correctly_resolve_symbols_from_fns_created_in_fns_from_ot
     Root val{list(*fn)}, ex;
     val = list(*val);
     val = eval(*val);
-    ex = svec(create_keyword("ok"), create_symbol("cleo.fn.resolve.test1", "x"), create_symbol("cleo.fn.resolve.test1", "y"));
+    ex = array(create_keyword("ok"), create_symbol("cleo.fn.resolve.test1", "x"), create_symbol("cleo.fn.resolve.test1", "y"));
     EXPECT_EQ_VALS(*ex, *val);
 }
 

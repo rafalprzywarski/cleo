@@ -96,22 +96,22 @@ TEST_F(pr_str_test, should_print_objects)
 TEST_F(pr_str_test, should_print_vectors)
 {
     Root val;
-    val = svec();
+    val = array();
     EXPECT_EQ("[]", str(pr_str(*val)));
-    val = svec(nil);
+    val = array(nil);
     EXPECT_EQ("[nil]", str(pr_str(*val)));
     Root elem0, elem1, elem2;
     elem0 = i64(1);
     elem1 = i64(2);
     elem2 = i64(3);
-    val = svec(*elem0, *elem1, *elem2);
+    val = array(*elem0, *elem1, *elem2);
     EXPECT_EQ("[1 2 3]", str(pr_str(*val)));
     elem0 = i64(1);
     elem1 = i64(2);
     elem2 = i64(3);
-    elem2 = svec(*elem2);
-    elem1 = svec(*elem1, *elem2);
-    val = svec(*elem0, *elem1);
+    elem2 = array(*elem2);
+    elem1 = array(*elem1, *elem2);
+    val = array(*elem0, *elem1);
     EXPECT_EQ("[1 [2 [3]]]", str(pr_str(*val)));
 }
 
@@ -165,8 +165,8 @@ TEST_F(pr_str_test, should_print_sequences)
     Root val;
     val = list();
     EXPECT_EQ("()", str(pr_str(*val)));
-    val = svec(nil);
-    val = small_vector_seq(*val);
+    val = array(nil);
+    val = array_seq(*val);
     EXPECT_EQ("(nil)", str(pr_str(*val)));
     Root elem0, elem1, elem2;
     elem0 = i64(1);
@@ -179,8 +179,8 @@ TEST_F(pr_str_test, should_print_sequences)
     elem2 = i64(3);
     elem2 = list(*elem2);
     elem1 = list(*elem1, *elem2);
-    val = svec(*elem0, *elem1);
-    val = small_vector_seq(*val);
+    val = array(*elem0, *elem1);
+    val = array_seq(*val);
     EXPECT_EQ("(1 (2 (3)))", str(pr_str(*val)));
 }
 
@@ -270,22 +270,22 @@ TEST_F(print_str_test, should_print_objects)
 TEST_F(print_str_test, should_print_vectors)
 {
     Root val;
-    val = svec();
+    val = array();
     EXPECT_EQ("[]", str(print_str(*val)));
-    val = svec(nil);
+    val = array(nil);
     EXPECT_EQ("[nil]", str(print_str(*val)));
     Root elem0, elem1, elem2;
     elem0 = i64(1);
     elem1 = i64(2);
     elem2 = create_string("3");
-    val = svec(*elem0, *elem1, *elem2);
+    val = array(*elem0, *elem1, *elem2);
     EXPECT_EQ("[1 2 3]", str(print_str(*val)));
     elem0 = i64(1);
     elem1 = create_string("2");
     elem2 = i64(3);
-    elem2 = svec(*elem2);
-    elem1 = svec(*elem1, *elem2);
-    val = svec(*elem0, *elem1);
+    elem2 = array(*elem2);
+    elem1 = array(*elem1, *elem2);
+    val = array(*elem0, *elem1);
     EXPECT_EQ("[1 [2 [3]]]", str(print_str(*val)));
 }
 
@@ -320,8 +320,8 @@ TEST_F(print_str_test, should_print_sequences)
     Root val;
     val = list();
     EXPECT_EQ("()", str(print_str(*val)));
-    val = svec(nil);
-    val = small_vector_seq(*val);
+    val = array(nil);
+    val = array_seq(*val);
     EXPECT_EQ("(nil)", str(print_str(*val)));
     Root elem0, elem1, elem2;
     elem0 = create_string("1");
@@ -334,8 +334,8 @@ TEST_F(print_str_test, should_print_sequences)
     elem2 = i64(3);
     elem2 = list(*elem2);
     elem1 = list(*elem1, *elem2);
-    val = svec(*elem0, *elem1);
-    val = small_vector_seq(*val);
+    val = array(*elem0, *elem1);
+    val = array_seq(*val);
     EXPECT_EQ("(1 (2 (3)))", str(print_str(*val)));
 }
 

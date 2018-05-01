@@ -1,5 +1,5 @@
 #include "global.hpp"
-#include "small_vector.hpp"
+#include "array.hpp"
 #include "multimethod.hpp"
 #include "equality.hpp"
 #include "list.hpp"
@@ -166,8 +166,8 @@ const Root Symbol{create_type("cleo.core", "Symbol")};
 const Root Keyword{create_type("cleo.core", "Keyword")};
 const Root Var{create_type("cleo.core", "Var")};
 const Root List{create_type("cleo.core", "List")};
-const Root SmallVector{create_type("cleo.core", "SmallVector")};
-const Root SmallVectorSeq{create_type("cleo.core", "SmallVectorSeq")};
+const Root Array{create_type("cleo.core", "Array")};
+const Root ArraySeq{create_type("cleo.core", "ArraySeq")};
 const Root ArrayMap{create_type("cleo.core", "ArrayMap")};
 const Root ArrayMapSeq{create_type("cleo.core", "ArrayMapSeq")};
 const Root ArraySet{create_type("cleo.core", "ArraySet")};
@@ -214,7 +214,7 @@ const std::array<Value, 7> type_by_tag{{
 }};
 
 const Root EMPTY_LIST{create_list(nullptr, 0)};
-const Root EMPTY_VECTOR{create_small_vector(nullptr, 0)};
+const Root EMPTY_VECTOR{create_array(nullptr, 0)};
 const Root EMPTY_SET{create_array_set()};
 const Root EMPTY_MAP{create_persistent_hash_map()};
 
@@ -300,7 +300,7 @@ const Root equal_dispatch{create_native_function([](const Value *args, std::uint
 {
     check_arity(OBJ_EQ, 2, num_args);
     std::array<Value, 2> types{{get_value_type(args[0]), get_value_type(args[1])}};
-    return create_small_vector(types.data(), types.size());
+    return create_array(types.data(), types.size());
 })};
 
 const Root ret_nil{create_native_function([](const Value *, std::uint8_t)
@@ -410,14 +410,14 @@ Force keyword_get(Value k, Value coll)
     return call_multimethod(*rt::obj_call, args.data(), args.size());
 }
 
-Value small_vector_get(Value v, Value index)
+Value array_get(Value v, Value index)
 {
     if (get_value_tag(index) != tag::INT64)
         return nil;
     auto i = get_int64_value(index);
-    if (i < 0 || i >= get_small_vector_size(v))
+    if (i < 0 || i >= get_array_size(v))
         return nil;
-    return get_small_vector_elem(v, i);
+    return get_array_elem(v, i);
 }
 
 Force pr(const Value *args, std::uint8_t n)
@@ -518,7 +518,7 @@ Force merge_maps(Value m1, Value m2)
     for (Root seq{call_multimethod1(*rt::seq, m2)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
         kv = call_multimethod1(*rt::first, *seq);
-        m = map_assoc(*m, get_small_vector_elem(*kv, 0), get_small_vector_elem(*kv, 1));
+        m = map_assoc(*m, get_array_elem(*kv, 0), get_array_elem(*kv, 1));
     }
     return *m;
 }
@@ -535,7 +535,7 @@ Value symbol_q(Value x)
 
 Value vector_q(Value x)
 {
-    return get_value_type(x) == *type::SmallVector ? TRUE : nil;
+    return get_value_type(x) == *type::Array ? TRUE : nil;
 }
 
 Value map_q(Value x)
@@ -753,8 +753,8 @@ struct Initialize
         define_type(*type::Var);
         define_type(*type::Seqable);
         define_type(*type::List);
-        define_type(*type::SmallVector);
-        define_type(*type::SmallVectorSeq);
+        define_type(*type::Array);
+        define_type(*type::ArraySeq);
         define_type(*type::ArrayMap);
         define_type(*type::ArrayMapSeq);
         define_type(*type::ArraySet);
@@ -841,13 +841,13 @@ struct Initialize
         f = create_native_function1<get_list_next>();
         define_method(NEXT, *type::List, *f);
 
-        derive(*type::SmallVector, *type::Seqable);
-        f = create_native_function1<small_vector_seq>();
-        define_method(SEQ, *type::SmallVector, *f);
-        f = create_native_function1<get_small_vector_seq_first>();
-        define_method(FIRST, *type::SmallVectorSeq, *f);
-        f = create_native_function1<get_small_vector_seq_next>();
-        define_method(NEXT, *type::SmallVectorSeq, *f);
+        derive(*type::Array, *type::Seqable);
+        f = create_native_function1<array_seq>();
+        define_method(SEQ, *type::Array, *f);
+        f = create_native_function1<get_array_seq_first>();
+        define_method(FIRST, *type::ArraySeq, *f);
+        f = create_native_function1<get_array_seq_next>();
+        define_method(NEXT, *type::ArraySeq, *f);
 
         derive(*type::ArraySet, *type::Seqable);
         f = create_native_function1<array_set_seq>();
@@ -873,7 +873,7 @@ struct Initialize
         f = create_native_function1<get_persistent_hash_map_seq_next>();
         define_method(NEXT, *type::PersistentHashMapSeq, *f);
 
-        derive(*type::SmallVectorSeq, *type::Sequence);
+        derive(*type::ArraySeq, *type::Sequence);
         derive(*type::ArraySetSeq, *type::Sequence);
         derive(*type::ArrayMapSeq, *type::Sequence);
         derive(*type::PersistentHashMapSeq, *type::Sequence);
@@ -895,8 +895,8 @@ struct Initialize
         define_method(COUNT, *type::ArraySet, *f);
         f = create_native_function1<get_list_size>();
         define_method(COUNT, *type::List, *f);
-        f = create_native_function1<WrapUInt32Fn<get_small_vector_size>::fn>();
-        define_method(COUNT, *type::SmallVector, *f);
+        f = create_native_function1<WrapUInt32Fn<get_array_size>::fn>();
+        define_method(COUNT, *type::Array, *f);
 
         define_multimethod(GET, *first_type, undefined);
 
@@ -906,8 +906,8 @@ struct Initialize
         f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get, &GET>();
         define_method(GET, *type::PersistentHashMap, *f);
 
-        f = create_native_function2<small_vector_get>();
-        define_method(GET, *type::SmallVector, *f);
+        f = create_native_function2<array_get>();
+        define_method(GET, *type::Array, *f);
 
         f = create_native_function2or3<nil_get, nil_get, &GET>();
         define_method(GET, nil, *f);
@@ -925,8 +925,8 @@ struct Initialize
 
         define_multimethod(CONJ, *first_type, undefined);
 
-        f = create_native_function2<small_vector_conj>();
-        define_method(CONJ, *type::SmallVector, *f);
+        f = create_native_function2<array_conj>();
+        define_method(CONJ, *type::Array, *f);
 
         f = create_native_function2<array_set_conj>();
         define_method(CONJ, *type::ArraySet, *f);
@@ -965,7 +965,7 @@ struct Initialize
         f = create_native_function2<merge_maps, &MERGE>();
 
         std::array<Value, 2> two_maps{{*type::PersistentMap, *type::PersistentMap}};
-        Root v{create_small_vector(two_maps.data(), two_maps.size())};
+        Root v{create_array(two_maps.data(), two_maps.size())};
         define_method(MERGE, *v, *f);
 
         define_multimethod(OBJ_CALL, *first_type, nil);
@@ -986,9 +986,9 @@ struct Initialize
         f = create_native_function2<keyword_get, &KEYWORD_TYPE>();
         define_method(OBJ_CALL, *type::Keyword, *f);
 
-        derive(*type::SmallVector, *type::Callable);
-        f = create_native_function2<small_vector_get>();
-        define_method(OBJ_CALL, *type::SmallVector, *f);
+        derive(*type::Array, *type::Callable);
+        f = create_native_function2<array_get>();
+        define_method(OBJ_CALL, *type::Array, *f);
 
         derive(*type::CFunction, *type::Callable);
         f = create_native_function(call_c_function);
@@ -1000,37 +1000,37 @@ struct Initialize
         auto define_seq_eq = [&](auto type1, auto type2)
         {
             std::array<Value, 2> two{{type1, type2}};
-            Root v{create_small_vector(two.data(), two.size())};
+            Root v{create_array(two.data(), two.size())};
             Root f{create_native_function2<are_seqables_equal>()};
             define_method(OBJ_EQ, *v, *f);
         };
 
-        define_seq_eq(*type::SmallVector, *type::SmallVector);
-        define_seq_eq(*type::SmallVector, *type::List);
-        define_seq_eq(*type::SmallVector, *type::Sequence);
-        define_seq_eq(*type::Sequence, *type::SmallVector);
+        define_seq_eq(*type::Array, *type::Array);
+        define_seq_eq(*type::Array, *type::List);
+        define_seq_eq(*type::Array, *type::Sequence);
+        define_seq_eq(*type::Sequence, *type::Array);
         define_seq_eq(*type::Sequence, *type::List);
         define_seq_eq(*type::Sequence, *type::Sequence);
-        define_seq_eq(*type::List, *type::SmallVector);
+        define_seq_eq(*type::List, *type::Array);
         define_seq_eq(*type::List, *type::List);
         define_seq_eq(*type::List, *type::Sequence);
 
         std::array<Value, 2> two_sets{{*type::ArraySet, *type::ArraySet}};
-        v = create_small_vector(two_sets.data(), two_sets.size());
+        v = create_array(two_sets.data(), two_sets.size());
         f = create_native_function2<are_array_sets_equal>();
         define_method(OBJ_EQ, *v, *f);
 
         std::array<Value, 2> two_array_maps{{*type::ArrayMap, *type::ArrayMap}};
-        v = create_small_vector(two_array_maps.data(), two_array_maps.size());
+        v = create_array(two_array_maps.data(), two_array_maps.size());
         f = create_native_function2<are_array_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
         std::array<Value, 2> two_hash_maps{{*type::PersistentHashMap, *type::PersistentHashMap}};
-        v = create_small_vector(two_hash_maps.data(), two_hash_maps.size());
+        v = create_array(two_hash_maps.data(), two_hash_maps.size());
         f = create_native_function2<are_persistent_hash_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        v = create_small_vector(two_maps.data(), two_maps.size());
+        v = create_array(two_maps.data(), two_maps.size());
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
@@ -1040,8 +1040,8 @@ struct Initialize
         f = create_native_function1<pr_str_type>();
         define_method(PR_STR_OBJ, *type::MetaType, *f);
 
-        f = create_native_function1<pr_str_small_vector>();
-        define_method(PR_STR_OBJ, *type::SmallVector, *f);
+        f = create_native_function1<pr_str_array>();
+        define_method(PR_STR_OBJ, *type::Array, *f);
         f = create_native_function1<pr_str_array_set>();
         define_method(PR_STR_OBJ, *type::ArraySet, *f);
         f = create_native_function1<pr_str_array_map>();

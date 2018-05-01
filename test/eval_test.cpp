@@ -211,7 +211,7 @@ TEST_F(eval_test, fn_should_return_a_new_function)
     auto s = create_symbol("s");
     auto x = create_symbol("x");
     Root body{list(s, x)};
-    Root params{svec(s, x)};
+    Root params{array(s, x)};
     Root call{list(FN, *params, *body)};
     Root val{eval(*call)};
     ASSERT_TRUE(type::Fn->is(get_value_type(*val)));
@@ -227,7 +227,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     auto x = create_symbol("x");
     auto name = create_symbol("fname");
     Root body{list(s, x)};
-    Root params{svec(s, x)};
+    Root params{array(s, x)};
     Root call{list(FN, name, *params, *body)};
     Root val{eval(*call)};
     ASSERT_TRUE(type::Fn->is(get_value_type(*val)));
@@ -241,9 +241,9 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
 {
     auto x = create_symbol("x");
     auto y = create_symbol("y");
-    Root params1{svec()};
-    Root params2{svec(x)};
-    Root params3{svec(x, y)};
+    Root params1{array()};
+    Root params2{array(x)};
+    Root params3{array(x, y)};
     Root call{read_str("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
     Root val{eval(*call)};
     ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
@@ -274,7 +274,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_no_arities)
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_no_body)
 {
-    Root params{svec()};
+    Root params{array()};
     Root call{read_str("(fn* [])")};
     Root val{eval(*call)};
     ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
@@ -333,8 +333,8 @@ TEST_F(eval_test, macro_should_return_a_new_macro)
     auto s = create_symbol("s");
     auto x = create_symbol("x");
     Root body{list(s, x)};
-    Root params{svec(s, x)};
-    Root exparams{svec(FORM, ENV, s, x)};
+    Root params{array(s, x)};
+    Root exparams{array(FORM, ENV, s, x)};
     Root call{list(MACRO, *params, *body)};
     Root val{eval(*call)};
     ASSERT_EQ_VALS(*type::Macro, get_value_type(*val));
@@ -350,8 +350,8 @@ TEST_F(eval_test, macro_should_return_a_new_macro_with_a_name)
     auto x = create_symbol("x");
     auto name = create_symbol("fname");
     Root body{list(s, x)};
-    Root params{svec(s, x)};
-    Root exparams{svec(FORM, ENV, s, x)};
+    Root params{array(s, x)};
+    Root exparams{array(FORM, ENV, s, x)};
     Root call{list(MACRO, name, *params, *body)};
     Root val{eval(*call)};
     ASSERT_EQ_VALS(*type::Macro, get_value_type(*val));
@@ -365,12 +365,12 @@ TEST_F(eval_test, macro_should_return_a_new_macro_with_multiple_arities)
 {
     auto x = create_symbol("x");
     auto y = create_symbol("y");
-    Root params1{svec()};
-    Root params2{svec(x)};
-    Root params3{svec(x, y)};
-    Root exparams1{svec(FORM, ENV)};
-    Root exparams2{svec(FORM, ENV, x)};
-    Root exparams3{svec(FORM, ENV, x, y)};
+    Root params1{array()};
+    Root params2{array(x)};
+    Root params3{array(x, y)};
+    Root exparams1{array(FORM, ENV)};
+    Root exparams2{array(FORM, ENV, x)};
+    Root exparams3{array(FORM, ENV, x, y)};
     Root call{create_string("(macro* xyz ([] :a) ([x] :b) ([x y] :c))")};
     call = read(*call);
     Root val{eval(*call)};
@@ -387,7 +387,7 @@ TEST_F(eval_test, macro_should_return_a_new_macro_with_multiple_arities)
 
 TEST_F(eval_test, should_store_the_environment_in_created_fns)
 {
-    Root ex{svec(3, 4, 5)};
+    Root ex{array(3, 4, 5)};
     Root val{read_str("(((fn* [x y z] (fn* [] [x y z])) 3 4 5))")};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -404,7 +404,7 @@ TEST_F(eval_test, should_store_the_fn_name_in_the_environment)
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = svec(100, 50, 4, 3);
+    ex = array(100, 50, 4, 3);
     val = read_str("((((fn* cn ([] 100) ([x] (fn* [y] (fn* [z] [(cn) x y z])))) 50) 4) 3)");
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
@@ -584,13 +584,13 @@ TEST_F(eval_test, should_eval_vectors)
 {
     Root x{create_int64(55)};
     auto xs = create_symbol("x");
-    Root ex{svec(*rt::seq, *rt::first, *x)};
-    Root val{svec(SEQ, FIRST, xs)};
+    Root ex{array(*rt::seq, *rt::first, *x)};
+    Root val{array(SEQ, FIRST, xs)};
     Root env{amap(xs, *x)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = svec();
+    ex = array();
     val = eval(*ex);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -864,8 +864,8 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_with_varargs_and_reeval
 
     val = read_str("((fn* [& xs] (if xs xs (recur [1 2 3]))))");
     val = eval(*val);
-    ex = svec(1, 2, 3);
-    EXPECT_EQ_VALS(*type::SmallVector, get_value_type(*val));
+    ex = array(1, 2, 3);
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -950,7 +950,7 @@ TEST_F(eval_test, should_eval_try_catch)
     EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 
     val = read_str("(try* (throw [1 2]) (catch* cleo.core/Seqable x x))");
-    ex = svec(1, 2);
+    ex = array(1, 2);
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(nil, *Root(catch_exception()));
@@ -1009,7 +1009,7 @@ TEST_F(eval_test, should_eval_try_finally)
     Root env{amap(create_symbol("call-me"), *call_me, create_symbol("call-me-before"), *call_me_before)};
 
     Root val{read_str("(try* (throw [1 2]) (finally* (call-me nil)))")};
-    Root ex{svec(1, 2)};
+    Root ex{array(1, 2)};
     finally_called = false;
     try
     {
@@ -1094,7 +1094,7 @@ TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
 TEST_F(eval_test, apply_should_call_functions)
 {
     Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return create_list(args, num_args); })};
-    Root args{svec(4, 3, 2, 1)};
+    Root args{array(4, 3, 2, 1)};
     Root val{apply(*fn, *args)};
     Root ex{list(4, 3, 2, 1)};
     ASSERT_EQ_VALS(*ex, *val);
@@ -1104,7 +1104,7 @@ TEST_F(eval_test, apply_should_call_functions)
     ex = list(4);
     ASSERT_EQ_VALS(*ex, *val);
 
-    args = svec();
+    args = array();
     val = apply(*fn, *args);
     ex = list();
     ASSERT_EQ_VALS(*ex, *val);
@@ -1188,19 +1188,19 @@ TEST_F(eval_test, syntax_quote_should_resolve_symbols_in_vectors)
     ex = read_str("[]");
     val = read_str("`[]");
     val = eval(*val);
-    EXPECT_EQ_VALS(*type::SmallVector, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = read_str("[7]");
     val = read_str("`[7]");
     val = eval(*val);
-    EXPECT_EQ_VALS(*type::SmallVector, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = read_str("[7 cleo.eval.syntax-quote.test/x cleo.eval.syntax-quote.test/y 20]");
     val = read_str("`[7 x y 20]");
     val = eval(*val);
-    EXPECT_EQ_VALS(*type::SmallVector, get_value_type(*val));
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 

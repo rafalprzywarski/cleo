@@ -131,14 +131,14 @@ TEST_F(array_map_test, should_delegate_to_get_when_called)
 TEST_F(array_map_test, seq_should_return_nil_for_an_empty_map)
 {
     Root m{amap()};
-    EXPECT_TRUE(Root(small_vector_seq(*m))->is_nil());
+    EXPECT_TRUE(Root(array_seq(*m))->is_nil());
 }
 
 TEST_F(array_map_test, seq_should_return_a_sequence_of_the_map_kv_vectors)
 {
     Root k{create_int64(11)};
     Root v{create_int64(12)};
-    Root kv{svec(*k, *v)};
+    Root kv{array(*k, *v)};
     Root m{amap(*k, *v)};
     Root seq{array_map_seq(*m)};
     EXPECT_EQ_VALS(*kv, get_array_map_seq_first(*seq));
@@ -147,13 +147,13 @@ TEST_F(array_map_test, seq_should_return_a_sequence_of_the_map_kv_vectors)
     Root k0, v0, kv0, k1, v1, kv1, k2, v2, kv2;
     k0 = create_int64(101);
     v0 = create_int64(102);
-    kv0 = svec(*k0, *v0);
+    kv0 = array(*k0, *v0);
     k1 = create_int64(103);
     v1 = create_int64(104);
-    kv1 = svec(*k1, *v1);
+    kv1 = array(*k1, *v1);
     k2 = create_int64(105);
     v2 = create_int64(106);
-    kv2 = svec(*k2, *v2);
+    kv2 = array(*k2, *v2);
     m = amap(*k2, *v2, *k1, *v1, *k0, *v0);
     seq = array_map_seq(*m);
     EXPECT_EQ_VALS(*kv0, get_array_map_seq_first(*seq));
