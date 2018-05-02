@@ -195,6 +195,7 @@ const Root IllegalState{create_type("cleo.core", "IllegalState")};
 const Root UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")};
 const Root FileNotFound{create_type("cleo.core", "FileNotFound")};
 const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
+const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
 }
 
 namespace clib
@@ -417,6 +418,16 @@ Value array_get(Value v, Value index)
     auto i = get_int64_value(index);
     if (i < 0 || i >= get_array_size(v))
         return nil;
+    return get_array_elem(v, i);
+}
+
+Value array_call(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        throw_illegal_argument("Key must be integer");
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_array_size(v))
+        throw_index_out_of_bounds();
     return get_array_elem(v, i);
 }
 
@@ -781,6 +792,7 @@ struct Initialize
         define_type(*type::UnexpectedEndOfInput);
         define_type(*type::FileNotFound);
         define_type(*type::ArithmeticException);
+        define_type(*type::IndexOutOfBounds);
 
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);
@@ -987,7 +999,7 @@ struct Initialize
         define_method(OBJ_CALL, *type::Keyword, *f);
 
         derive(*type::Array, *type::Callable);
-        f = create_native_function2<array_get>();
+        f = create_native_function2<array_call>();
         define_method(OBJ_CALL, *type::Array, *f);
 
         derive(*type::CFunction, *type::Callable);
@@ -1119,6 +1131,12 @@ struct Initialize
         define_method(NEW, *type::ArithmeticException, *f);
         f = create_native_function1<arithmetic_exceptio_message>();
         define_method(GET_MESSAGE, *type::ArithmeticException, *f);
+
+        derive(*type::IndexOutOfBounds, *type::Exception);
+        f = create_native_new0<new_index_out_of_bounds, &NEW>();
+        define_method(NEW, *type::IndexOutOfBounds, *f);
+        f = create_native_function1<index_out_of_bounds_message>();
+        define_method(GET_MESSAGE, *type::IndexOutOfBounds, *f);
 
         f = create_native_function1<macroexpand1_noenv, &MACROEXPAND1>();
         define(MACROEXPAND1, *f);

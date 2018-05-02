@@ -134,5 +134,14 @@ Force arithmetic_exceptio_message(Value e)
     return get_object_element(e, 0);
 }
 
+Force new_index_out_of_bounds()
+{
+    return create_object0(*type::IndexOutOfBounds);
+}
+
+Force index_out_of_bounds_message(Value)
+{
+    return nil;
+}
 
 }

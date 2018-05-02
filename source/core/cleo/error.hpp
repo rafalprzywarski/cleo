@@ -44,4 +44,7 @@ Force file_not_found_message(Value e);
 Force new_arithmetic_exception(Value msg);
 Force arithmetic_exceptio_message(Value e);
 
+Force new_index_out_of_bounds();
+Force index_out_of_bounds_message(Value e);
+
 }

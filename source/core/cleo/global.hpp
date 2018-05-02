@@ -214,6 +214,7 @@ extern const Root IllegalState;
 extern const Root UnexpectedEndOfInput;
 extern const Root FileNotFound;
 extern const Root ArithmeticException;
+extern const Root IndexOutOfBounds;
 }
 
 namespace clib

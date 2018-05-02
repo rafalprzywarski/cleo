@@ -55,11 +55,15 @@ void throw_illegal_argument(const std::string& msg)
     throw_exception(new_illegal_argument(*s));
 }
 
-
 void throw_integer_overflow()
 {
     Root s{create_string("Integer overflow")};
     throw_exception(new_arithmetic_exception(*s));
+}
+
+void throw_index_out_of_bounds()
+{
+    throw_exception(new_index_out_of_bounds());
 }
 
 bool map_contains(Value m, Value k)
