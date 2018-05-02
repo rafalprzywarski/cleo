@@ -1129,7 +1129,7 @@ struct Initialize
         derive(*type::ArithmeticException, *type::Exception);
         f = create_native_new1<new_arithmetic_exception, &NEW>();
         define_method(NEW, *type::ArithmeticException, *f);
-        f = create_native_function1<arithmetic_exceptio_message>();
+        f = create_native_function1<arithmetic_exception_message>();
         define_method(GET_MESSAGE, *type::ArithmeticException, *f);
 
         derive(*type::IndexOutOfBounds, *type::Exception);

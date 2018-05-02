@@ -129,7 +129,7 @@ Force new_arithmetic_exception(Value msg)
     return create_object1(*type::ArithmeticException, msg);
 }
 
-Force arithmetic_exceptio_message(Value e)
+Force arithmetic_exception_message(Value e)
 {
     return get_object_element(e, 0);
 }
