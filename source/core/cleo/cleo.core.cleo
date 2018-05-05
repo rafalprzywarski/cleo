@@ -1,21 +1,22 @@
 (ns cleo.core)
 
 
+(def reduce1
+  (fn* reduce1 [f val coll]
+    (let* [s (seq coll)]
+      (if s
+        (recur f (f val (first s)) (next s))
+        val))))
+
+
 (def reverse1
   (fn* reverse1 [xs]
-    (loop* [r () s (seq xs)]
-      (if s
-        (recur (conj* r (first s)) (next s))
-        r))))
+    (reduce1 conj* () xs)))
 
 
 (def map1
   (fn* map1 [f s]
-    (reverse1
-      (loop* [m () s (seq s)]
-        (if s
-          (recur (conj* m (f (first s))) (next s))
-          m)))))
+    (reverse1 (reduce1 (fn* [out x] (conj* out (f x))) () s))))
 
 
 (def nnext
@@ -97,13 +98,6 @@
           (conj* (partition-kv (next n)) [(first s) (first n)])
           ()))
       ())))
-
-
-(defn reduce1 [f val coll]
-  (let* [s (seq coll)]
-    (if s
-      (recur f (f val (first s)) (next s))
-      val)))
 
 
 (defn conj
