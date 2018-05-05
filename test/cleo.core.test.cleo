@@ -399,3 +399,14 @@
   (assert= 110 (reduce1 + 100 [10]))
   (assert= 160 (reduce1 + 100 [10 20 30]))
   (assert= [[30 20] 10] (reduce1 list 30 [20 10])))
+
+
+(deftest concati
+  (assert= [] (concati))
+  (assert= [:a :b] (concati [:a :b]))
+  (assert= [:a :b :c :d] (concati [:a :b] [:c :d]))
+  (assert= [:a :b] (concati [] '(:a :b)))
+  (assert= [:a :b] (concati () [:a :b]))
+  (assert= [:a :b] (concati [:a :b] []))
+  (assert= [:a :b :c :d :e :f] (concati [:a :b] [:c :d] [:e :f]))
+  (assert= [:a :b :c :d :e :f] (concati '(:a :b) () '(:c) [:d] '(:e :f) [])))

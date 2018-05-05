@@ -314,7 +314,21 @@
          (let [~(bindings 0) val#] ~then)
          ~else))))
 
+
 (defn some [pred coll]
   (when-let [s (seq coll)]
     (or (pred (first s))
         (recur pred (next s)))))
+
+
+(defn vec [x]
+  (if (vector? x)
+    x
+    (reduce1 conj [] x)))
+
+
+(defn concati
+  ([] [])
+  ([coll] coll)
+  ([coll1 coll2] (reduce1 conj (vec coll1) coll2))
+  ([coll1 coll2 & rest] (reduce1 concati (concati coll1 coll2) rest)))
