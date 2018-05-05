@@ -89,9 +89,6 @@
       `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))
 
 
-(def partition-kv nil)
-
-
 (defn partition-kv [coll]
   (let* [s (seq coll)]
     (if s
