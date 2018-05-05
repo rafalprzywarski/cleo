@@ -410,3 +410,13 @@
   (assert= [:a :b] (concati [:a :b] []))
   (assert= [:a :b :c :d :e :f] (concati [:a :b] [:c :d] [:e :f]))
   (assert= [:a :b :c :d :e :f] (concati '(:a :b) () '(:c) [:d] '(:e :f) [])))
+
+
+(deftest dotimes
+  (assert= [0 1 2 3 4]
+           (let [v (atom [])]
+             (dotimes [i 5] (swap! v conj i))
+             @v))
+  (assert-not (let [called? (atom nil)]
+                (dotimes [i 0] (reset! called? :true))
+                @called?)))
