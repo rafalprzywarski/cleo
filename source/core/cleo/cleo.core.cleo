@@ -336,3 +336,12 @@
            (do
              ~@body
              (recur (inc ~b))))))))
+
+
+(defmacro doseq [bindings & body]
+  (let [[b s] bindings]
+    `(loop* [s# (seq ~s)]
+       (if s#
+         (let [~b (first s#)]
+           ~@body
+           (recur (next s#)))))))

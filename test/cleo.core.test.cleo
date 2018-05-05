@@ -420,3 +420,16 @@
   (assert-not (let [called? (atom nil)]
                 (dotimes [i 0] (reset! called? :true))
                 @called?)))
+
+
+(deftest doseq
+  (assert= [:c :b :a]
+           (let [l (atom ())]
+             (doseq [x [:a :b :c]] (swap! l conj x))
+             @l))
+  (assert-not (let [called? (atom nil)]
+                (doseq [x nil] (reset! called? :true))
+                @called?))
+  (assert-not (let [called? (atom nil)]
+                (doseq [x []] (reset! called? :true))
+                @called?)))
