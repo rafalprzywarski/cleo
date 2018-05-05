@@ -192,8 +192,7 @@
                                                       (first bk)
                                                       `(get ~vsym ~(second bk) ~(get defaults (first bk)))))
                                out
-                               b)
-                      ))]
+                               b)))]
              (cond
                (vector? b) (destructure-vector out b v)
                (map? b) (destructure-map out b v)
@@ -207,6 +206,39 @@
   `(let* ~(destructure bindings) ~(if (next body)
                                     (conj* body 'do)
                                     (first body))))
+
+
+(defn interleave2 [coll1 coll2]
+  (loop* [s1 (seq coll1) s2 (seq coll2) out []]
+    (if s1
+      (recur (next s1) (next s2) (conj out (first s1) (first s2)))
+      out)))
+
+(defn pairs1 [coll1 coll2]
+  (loop* [s1 (seq coll1) s2 (seq coll2) out []]
+    (if s1
+      (recur (next s1) (next s2) (conj out [(first s1) (first s2)]))
+      out)))
+
+
+(defmacro loop [bindings & body]
+  (let [bvs (partition-kv bindings)
+        bs (map1 first bvs)]
+    (if (every? symbol? bs)
+      `(loop* ~bindings ~(if (next body)
+                           (conj* body 'do)
+                           (first body)))
+      (let [ls (map1 (fn* [p] (if (symbol? p) p (gensym "l__"))) bs)
+            lvbls (reduce1 (fn* [out bvl]
+                             (let [[[b v] l] bvl]
+                               (if (symbol? b)
+                                 (conj out b v)
+                                 (conj out l v b l))))
+                           []
+                           (pairs1 bvs ls))]
+        `(let ~lvbls
+           (loop* ~(interleave2 ls ls)
+             (let ~(interleave2 bs ls) ~@body)))))))
 
 
 (defn destructure-fn [body]

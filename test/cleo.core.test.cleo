@@ -188,6 +188,20 @@
   (assert= [:a :b] ((fn [{:keys [x y]}] [y x]) {:x :b :y :a})))
 
 
+(deftest loop
+  (assert= '(loop* [a 1 b 2] (do (x) (y))) (macroexpand '(loop [a 1 b 2] (x) (y))))
+  (assert= '(loop* [a 1 b 2] (x)) (macroexpand '(loop [a 1 b 2] (x))))
+  (assert= '(loop* [a 1 b 2] nil) (macroexpand '(loop [a 1 b 2]))))
+
+
+(deftest loop-destructuring
+  (assert= [:b :a] ((fn* [v] (loop [[x y] v] [y x])) [:a :b :c]))
+  (assert= :c ((fn* [v] (loop [[x y :as all] v] (if y (recur (next all)) x))) [:a :b :c]))
+  (assert= :b ((fn* [v] (loop [[x y :as all] v] (if y (recur (next all)) x))) [:a :b nil :c]))
+  (assert= [:c 7] ((fn* [v u] (loop [[v0 v1 :as allv] v [u0 u1 :as allu] u] (if v1 (recur (next allv) (next allu)) [v0 u0]))) [:a :b :c] [4 5 7]))
+  (assert= [:b [5 6 7]] ((fn* [v u] (loop [[x y :as all] v u u] (if y (recur (next all) (next u)) [x u]))) [:a :b nil :c] [4 5 6 7])))
+
+
 (deftest defn
   (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y)))))
 
