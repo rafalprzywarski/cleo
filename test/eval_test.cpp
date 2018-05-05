@@ -1110,6 +1110,16 @@ TEST_F(eval_test, apply_should_call_functions)
     ASSERT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(eval_test, apply_should_not_reevaluate_params)
+{
+    Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return create_list(args, num_args); })};
+    Root l{list(3, 2)};
+    Root args{array(*l, 3, 2, 1)};
+    Root val{apply(*fn, *args)};
+    Root ex{list(*l, 3, 2, 1)};
+    ASSERT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(eval_test, syntax_quote_should_fail_when_given_zero_or_more_than_one_argument)
 {
     Root val;

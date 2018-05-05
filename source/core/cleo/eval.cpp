@@ -740,6 +740,20 @@ Force call_macro(Value fn, Value list, Value env)
     return eval(*exp, env);
 }
 
+Force call_fn(Value type, const std::vector<Value>& elems)
+{
+    if (type.is(*type::NativeFunction))
+        return get_native_function_ptr(elems.front())(elems.data() + 1, elems.size() - 1);
+    if (type.is(*type::Multimethod))
+        return call_multimethod(elems.front(), elems.data() + 1, elems.size() - 1);
+    if (type.is(*type::Fn))
+        return call_fn(elems, elems.size() - 1);
+    if (isa(type, *type::Callable))
+        return call_multimethod(*rt::obj_call, elems.data(), elems.size());
+    Root msg{create_string("call error " + to_string(type))};
+    throw_exception(new_call_error(*msg));
+}
+
 Force eval_list(Value list, Value env)
 {
     if (get_int64_value(get_list_size(list)) == 0)
@@ -773,16 +787,7 @@ Force eval_list(Value list, Value env)
         return call_macro(*val, list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     auto elems = eval_args(arg_roots, *val, list, env);
-    if (type.is(*type::NativeFunction))
-        return get_native_function_ptr(*val)(elems.data() + 1, elems.size() - 1);
-    if (type.is(*type::Multimethod))
-        return call_multimethod(*val, elems.data() + 1, elems.size() - 1);
-    if (type.is(*type::Fn))
-        return call_fn(elems, elems.size() - 1);
-    if (isa(type, *type::Callable))
-        return call_multimethod(*rt::obj_call, elems.data(), elems.size());
-    Root msg{create_string("call error " + to_string(type))};
-    throw_exception(new_call_error(*msg));
+    return call_fn(type, elems);
 }
 
 Force eval_vector(Value v, Value env)
@@ -895,8 +900,7 @@ Force apply(Value fn, Value args)
         ++i;
     }
 
-    Root list{create_list(form.data(), form.size())};
-    return eval(*list);
+    return call_fn(get_value_type(form.front()), form);
 }
 
 Force eval(Value val, Value env)
