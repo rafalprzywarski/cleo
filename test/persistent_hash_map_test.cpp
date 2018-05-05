@@ -35,7 +35,7 @@ struct persistent_hash_map_test : Test
         define_method(HASH_OBJ, *HashString, *f);
 
         f = create_native_function2<are_hash_strings_equal>();
-        Root args{svec(*HashString, *HashString)};
+        Root args{array(*HashString, *HashString)};
         define_method(OBJ_EQ, *args, *f);
 
         f = create_native_function1<pr_str_hash_string>();
@@ -268,10 +268,10 @@ struct persistent_hash_map_test : Test
             ASSERT_FALSE(s->is_nil()) << testing::PrintToString(kvs[i]) << " " << testing::PrintToString(kvs);
             Root k{create_key(kvs[i].first)};
             Root v{create_int64(kvs[i].second)};
-            Root expected{svec(*k, *v)};
+            Root expected{array(*k, *v)};
             auto entry{get_persistent_hash_map_seq_first(*s)};
 
-            ASSERT_EQ_REFS(*type::SmallVector, get_value_type(entry)) << testing::PrintToString(kvs);
+            ASSERT_EQ_REFS(*type::Array, get_value_type(entry)) << testing::PrintToString(kvs);
             ASSERT_EQ_VALS(*expected, entry) << testing::PrintToString(kvs);
 
             s = get_persistent_hash_map_seq_next(*s);
