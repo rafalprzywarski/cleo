@@ -17,7 +17,8 @@ struct reader_test : Test
     static Force read_str(const std::string& s)
     {
         Root sr{create_string(s)};
-        return read(*sr);
+        ReaderStream stream{*sr};
+        return read(stream);
     }
 
     static void assert_read_error(Value exType, const std::string& msg, std::uint32_t line, std::uint32_t col, const std::string& source)
@@ -413,6 +414,8 @@ TEST_F(reader_test, should_fail_when_missing_a_closing_quote)
 
 TEST_F(reader_test, should_fail_when_invoked_with_something_else_than_a_string)
 {
+    Root source{create_string("abc")};
+    ASSERT_NO_THROW(read(*source));
     ASSERT_ANY_THROW(read(create_symbol("abc")));
 }
 
@@ -792,27 +795,26 @@ TEST_F(reader_test, unquote_splicing_should_fail_when_not_inside_a_sequence)
     EXPECT_ANY_THROW(read_str("`~@x"));
 }
 
-TEST_F(reader_test, read_forms_should_read_multiple_forms)
+TEST_F(reader_test, read_should_allow_reading_successive_forms)
 {
-    Root source, forms, ex;
-    source = create_string("  ");
-    forms = read_forms(*source);
-    EXPECT_EQ_VALS(*EMPTY_VECTOR, *forms);
+    Root source{create_string(";\n:a ;\n:b :c ,;\n ")};
+    Root form, ex;
+    ReaderStream stream{*source};
 
-    source = create_string(":a");
-    forms = read_forms(*source);
-    ex = array(create_keyword("a"));
-    EXPECT_EQ_VALS(*ex, *forms);
+    form = read(stream);
+    EXPECT_FALSE(stream.eos());
+    ex = create_keyword("a");
+    EXPECT_EQ_VALS(*ex, *form);
 
-    source = create_string(":a :b :c , ");
-    forms = read_forms(*source);
-    ex = array(create_keyword("a"), create_keyword("b"), create_keyword("c"));
-    EXPECT_EQ_VALS(*ex, *forms);
+    form = read(stream);
+    EXPECT_FALSE(stream.eos());
+    ex = create_keyword("b");
+    EXPECT_EQ_VALS(*ex, *form);
 
-    source = create_string(";\n:a ;\n:b :c ,;\n ");
-    forms = read_forms(*source);
-    ex = array(create_keyword("a"), create_keyword("b"), create_keyword("c"));
-    EXPECT_EQ_VALS(*ex, *forms);
+    form = read(stream);
+    EXPECT_TRUE(stream.eos());
+    ex = create_keyword("c");
+    EXPECT_EQ_VALS(*ex, *form);
 }
 
 TEST_F(reader_test, should_follow_new_lines_when_reporting_position)

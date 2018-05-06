@@ -18,45 +18,7 @@ namespace cleo
 namespace
 {
 
-class Stream
-{
-public:
-    struct Position
-    {
-        std::uint32_t line{}, col{};
-    };
-
-    Stream(Value text) : text(text) { }
-
-    char peek(std::uint32_t n = 0) const { return eos(n) ? 0 : get_string_ptr(text)[index + n]; }
-    bool eos(std::uint32_t n = 0) const { return (index + n) >= get_string_len(text); }
-    char next()
-    {
-        char c = peek();
-        if (c == '\n')
-        {
-            ++line;
-            col = 1;
-        }
-        else
-            ++col;
-        if (!eos())
-            index++;
-        return c;
-    }
-
-    Position pos() const
-    {
-        return {line, col};
-    }
-
-private:
-    std::uint32_t index = 0;
-    std::uint32_t line = 1, col = 1;
-    Value text{nil};
-};
-
-Force read(Stream& s);
+using Stream = ReaderStream;
 
 [[noreturn]] void throw_read_error(const std::string& msg, Stream::Position pos)
 {
@@ -478,7 +440,7 @@ Force read_var(Stream& s)
     throw_exception(new_read_error(*e, *linev, *colv));
 }
 
-Force read(Stream& s)
+Force read_form(Stream& s)
 {
     eat_ws(s);
 
@@ -511,6 +473,13 @@ Force read(Stream& s)
 
 }
 
+Force read(ReaderStream& stream)
+{
+    Root form{read_form(stream)};
+    eat_ws(stream);
+    return *form;
+}
+
 Force read(Value source)
 {
     if (get_value_tag(source) != tag::STRING)
@@ -538,7 +507,6 @@ Force read_forms(Value source)
     {
         form = read(s);
         forms = array_conj(*forms, *form);
-        eat_ws(s);
     }
 
     return *forms;
