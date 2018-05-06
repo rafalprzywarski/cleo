@@ -336,9 +336,15 @@ Force syntax_quote_symbol(Root& generated, Value sym)
     return quote(*val);
 }
 
-Force wrap_seq_elem(Value v)
+Force syntax_quote_seq_elem(Root& generated, Value v)
 {
-    std::array<Value, 2> l{{LIST, v}};
+    if (get_value_type(v).is(*type::List) && get_list_first(v).is(UNQUOTE_SPLICING))
+    {
+        auto n = get_list_next(v);
+        return n ? get_list_first(n) : nil;
+    }
+    Root q{syntax_quote(generated, v)};
+    std::array<Value, 2> l{{LIST, *q}};
     return create_list(l.data(), l.size());
 }
 
@@ -358,8 +364,7 @@ Force syntax_quote_seq(Root& generated, Value conv, Value l)
     for (Root s{call_multimethod1(*rt::seq, l)}; *s; s = call_multimethod1(*rt::next, *s))
     {
         val = call_multimethod1(*rt::first, *s);
-        val = syntax_quote(generated, *val);
-        val = wrap_seq_elem(*val);
+        val = syntax_quote_seq_elem(generated, *val);
         seq = list_conj(*seq, *val);
     }
 
@@ -395,6 +400,8 @@ Force syntax_quote(Root& generated, Value val)
             auto n = get_list_next(val);
             return n ? get_list_first(n) : nil;
         }
+        if (get_list_first(val).is(UNQUOTE_SPLICING))
+            throw_illegal_state("splice not in list");
         return syntax_quote_seq(generated, LIST, val);
     }
     if (type.is(*type::ArraySet))

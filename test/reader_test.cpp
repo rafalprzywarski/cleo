@@ -755,8 +755,6 @@ TEST_F(reader_test, syntax_quote_should_not_quote_unquoted_expressions)
     Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
     PushBindingsGuard g{*enable};
 
-    in_ns(create_symbol("cleo.reader.syntax-quote.unquote.test"));
-
     Root val, ex;
     ex = create_symbol("x");
     val = read_str("`~x");
@@ -769,6 +767,29 @@ TEST_F(reader_test, syntax_quote_should_not_quote_unquoted_expressions)
     ex = nil;
     val = read_str("`(cleo.core/unquote)");
     EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, unquote_splicing_should_splice_a_sequence_into_another_sequence)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    Root val, ex;
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list 1) x (cleo.core/list 2)))");
+    val = read_str("`[1 ~@x 2]");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati nil))");
+    val = read_str("`[(cleo.core/unquote-splicing)]");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, unquote_splicing_should_fail_when_not_inside_a_sequence)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    EXPECT_ANY_THROW(read_str("`~@x"));
 }
 
 TEST_F(reader_test, read_forms_should_read_multiple_forms)

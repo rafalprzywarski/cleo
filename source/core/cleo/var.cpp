@@ -64,8 +64,7 @@ void set_var(Value sym, Value val)
     if (!*bindings || !map_contains(get_list_first(*bindings), sym))
     {
         Root ss{pr_str(sym)};
-        Root msg{create_string("Can't change/establish root binding of: " + std::string(get_string_ptr(*ss), get_string_len(*ss)))};
-        throw_exception(new_illegal_state(*msg));
+        throw_illegal_state("Can't change/establish root binding of: " + std::string(get_string_ptr(*ss), get_string_len(*ss)));
     }
     Root latest{get_list_first(*bindings)};
     latest = map_assoc(*latest, sym, val);

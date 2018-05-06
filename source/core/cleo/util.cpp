@@ -66,6 +66,12 @@ void throw_index_out_of_bounds()
     throw_exception(new_index_out_of_bounds());
 }
 
+void throw_illegal_state(const std::string& msg)
+{
+    Root s{create_string(msg)};
+    throw_exception(new_illegal_state(*s));
+}
+
 bool map_contains(Value m, Value k)
 {
     return !Root(call_multimethod2(*rt::contains, m, k))->is_nil();
