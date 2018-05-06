@@ -24,7 +24,7 @@ namespace cleo
 
 std::vector<Allocation> allocations;
 std::vector<Value> extra_roots;
-unsigned gc_frequency = 64;
+unsigned gc_frequency = 4096;
 unsigned gc_counter = gc_frequency - 1;
 
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
