@@ -539,6 +539,8 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved("(macro* ([]))", "(macro* ([]))", "{}");
     expect_symbol_resolved("(macro* ([x] x cleo.fn.resolved2.test/y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y) ([x y] x y))", "(macro* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{}");
     expect_symbol_resolved("(macro* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(macro* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
+    expect_symbol_resolved("(macro* [x] [x &form &env])", "(macro* [x] [x &form &env])", "{}");
+    expect_symbol_resolved("(macro* ([] [&form &env]) ([x] [x &form &env]))", "(macro* ([] [&form &env]) ([x] [x &form &env]))", "{}");
 }
 
 TEST_F(eval_test, resolving_should_expand_macros)

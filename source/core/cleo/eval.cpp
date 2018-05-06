@@ -43,14 +43,16 @@ Force reverse_list(Value l)
     return *ret;
 }
 
-Force bind_params(Value params, Value env)
+Force bind_params(Value params, Value env, bool form_and_env)
 {
     Root lenv{env ? env : *EMPTY_MAP};
     auto n = get_array_size(params);
     for (decltype(n) i = 0; i < n; ++i)
+        lenv = map_assoc(*lenv, get_array_elem(params, i), nil);
+    if (form_and_env)
     {
-        auto p = get_array_elem(params, i);
-        lenv = map_assoc(*lenv, p, nil);
+        lenv = map_assoc(*lenv, FORM, nil);
+        lenv = map_assoc(*lenv, ENV, nil);
     }
     return *lenv;
 }
@@ -91,10 +93,10 @@ Force resolve_pure_list(Value l, Value env)
     return reverse_list(*ret);
 }
 
-Force resolve_fn_body(Value name, Value body, Value env)
+Force resolve_fn_body(Value name, Value body, Value env, bool is_macro)
 {
     Root lenv{name ? map_assoc(env, name, nil) : env}, ret;
-    lenv = bind_params(get_list_first(body), *lenv);
+    lenv = bind_params(get_list_first(body), *lenv, is_macro);
     ret = resolve_pure_list(get_list_next(body), *lenv);
     return list_conj(*ret, get_list_first(body));
 }
@@ -126,14 +128,14 @@ Force resolve_list(Value l, Value env)
             Root val;
             for (; l; l = get_list_next(l))
             {
-                val = resolve_fn_body(name, get_list_first(l), env);
+                val = resolve_fn_body(name, get_list_first(l), env, f == MACRO);
                 ret = list_conj(*ret, *val);
             }
 
             ret = reverse_list(*ret);
         }
         else
-            ret = resolve_fn_body(name, l, env);
+            ret = resolve_fn_body(name, l, env, f == MACRO);
 
         if (name)
             ret = list_conj(*ret, name);
@@ -226,7 +228,7 @@ Force resolve_map(Value val, Value env)
 Force resolve_fn_body(Value name, Value params, Value body, Value env)
 {
     Root lenv{name ? map_assoc(env, name, nil) : env};
-    lenv = bind_params(params, *lenv);
+    lenv = bind_params(params, *lenv, false);
     return resolve_value(body, *lenv);
 }
 
