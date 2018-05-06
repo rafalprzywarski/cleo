@@ -369,6 +369,18 @@ Force syntax_quote_seq(Root& generated, Value conv, Value l)
     return create_list(apply_vector.data(), apply_vector.size());
 }
 
+Force flatten_kv(Value m)
+{
+    Root seq{*EMPTY_LIST}, kv;
+    for (Root s{call_multimethod1(*rt::seq, m)}; *s; s = call_multimethod1(*rt::next, *s))
+    {
+        kv = call_multimethod1(*rt::first, *s);
+        seq = list_conj(*seq, get_array_elem(*kv, 1));
+        seq = list_conj(*seq, get_array_elem(*kv, 0));
+    }
+    return *seq;
+}
+
 Force syntax_quote(Root& generated, Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
@@ -380,6 +392,11 @@ Force syntax_quote(Root& generated, Value val)
         return syntax_quote_seq(generated, LIST, val);
     if (type.is(*type::ArraySet))
         return syntax_quote_seq(generated, HASH_SET, val);
+    if (isa(type, *type::PersistentMap))
+    {
+        Root kvs{flatten_kv(val)};
+        return syntax_quote_seq(generated, HASH_MAP, *kvs);
+    }
     return val;
 }
 

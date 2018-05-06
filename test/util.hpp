@@ -13,10 +13,13 @@
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
-    ASSERT_TRUE(ex == val) << "  Actual value: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
+    ASSERT_TRUE((ex) == (val)) << "  Actual value: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
 
 #define EXPECT_EQ_VALS(ex, val) \
-    EXPECT_TRUE(ex == val) << "  Actual value: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
+    EXPECT_TRUE((ex) == (val)) << "  Actual value: " << to_string(val) << "\nExpected: " << to_string(ex) << "\n"
+
+#define EXPECT_EQ_VALS_ALT2(ex1, ex2, val) \
+    EXPECT_TRUE((ex1) == (val) || (ex2) == (val)) << "  Actual value: " << to_string(val) << "\nExpected: " << to_string(ex1) << "\nOr: " << to_string(ex2) << "\n";
 
 #define ASSERT_EQ_REFS(ex, val) \
     ASSERT_TRUE((val).is(ex)) << "  Actual value: " << to_string(val) << "\nExpected value: " << to_string(ex) << "\n"

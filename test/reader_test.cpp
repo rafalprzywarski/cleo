@@ -659,10 +659,10 @@ TEST_F(reader_test, syntax_quote_should_generate_non_namespace_qualified_symbols
     val = read_str("`[x# y# x# y#]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    // ex = read_str("[([x__43__auto__] {x__43__auto__ x__43__auto__} #{x__43__auto__}) x__43__auto__]");
-    // val = read_str("`[([x#] {x# x#} #{x#}) x#]");
-    // EXPECT_EQ_VALS(*ex, *val);
-    //
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (cleo.core/apply* cleo.core/list (cleo.core/concati (cleo.core/list (cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__43__auto__))))) (cleo.core/list (cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote x__43__auto__)) (cleo.core/list (quote x__43__auto__))))) (cleo.core/list (cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list (quote x__43__auto__)))))))) (cleo.core/list (quote x__43__auto__))))");
+    val = read_str("`[([x#] {x# x#} #{x#}) x#]");
+    EXPECT_EQ_VALS(*ex, *val);
+
     // ex = read_str("[x__44__auto__ x__45__auto__]");
     // val = read_str("`[x# ~`x#]");
     // EXPECT_EQ_VALS(*ex, *val);
@@ -723,9 +723,31 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_sets)
     val = read_str("`#{7}");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
-    val = read_str("`#{7 x y 20}"); // use alternatives once a real hash set is implemented
+    Root ex1{read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
+    Root ex2{read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
+    val = read_str("`#{7 x}");
+    EXPECT_EQ_VALS_ALT2(*ex1, *ex2, *val);
+}
+
+TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_maps)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.test"));
+    Root val, ex;
+    ex = read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati))");
+    val = read_str("`{}");
     EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list 7) (cleo.core/list 9)))");
+    val = read_str("`{7 9}");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    Root ex1{read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))")};
+    Root ex2{read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20) (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
+    val = read_str("`{7 x y 20}");
+    EXPECT_EQ_VALS_ALT2(*ex1, *ex2, *val);
 }
 
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
