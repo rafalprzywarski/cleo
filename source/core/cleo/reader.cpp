@@ -378,6 +378,8 @@ Force syntax_quote(Root& generated, Value val)
         return syntax_quote_seq(generated, VECTOR, val);
     if (type.is(*type::List))
         return syntax_quote_seq(generated, LIST, val);
+    if (type.is(*type::ArraySet))
+        return syntax_quote_seq(generated, HASH_SET, val);
     return val;
 }
 

@@ -708,6 +708,26 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_lists)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_sets)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.test"));
+    Root val, ex;
+    ex = read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati))");
+    val = read_str("`#{}");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7)))");
+    val = read_str("`#{7}");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
+    val = read_str("`#{7 x y 20}"); // use alternatives once a real hash set is implemented
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
 {
     Root source, forms, ex;
