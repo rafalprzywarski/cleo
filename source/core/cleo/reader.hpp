@@ -45,6 +45,5 @@ private:
 
 Force read(ReaderStream& stream);
 Force read(Value source);
-Force read_forms(Value source);
 
 }

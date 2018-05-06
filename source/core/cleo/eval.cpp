@@ -921,16 +921,18 @@ Force eval(Value val, Value env)
 
 Force load(Value source)
 {
+    if (get_value_tag(source) != tag::STRING)
+        throw_illegal_argument("expected a string");
+
     Root bindings{map_assoc(*EMPTY_MAP, CURRENT_NS, *rt::current_ns)};
     PushBindingsGuard guard{*bindings};
-    Root forms{read_forms(source)};
-    forms = array_seq(*forms);
-    Root ret;
+    ReaderStream stream{source};
+    Root form, ret;
 
-    while (*forms)
+    while (!stream.eos())
     {
-        ret = eval(get_array_seq_first(*forms));
-        forms = get_array_seq_next(*forms);
+        form = read(stream);
+        ret = eval(*form);
     }
 
     return *ret;

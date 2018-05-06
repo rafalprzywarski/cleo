@@ -491,25 +491,4 @@ Force read(Value source)
     return read(s);
 }
 
-Force read_forms(Value source)
-{
-    if (get_value_tag(source) != tag::STRING)
-    {
-        Root msg{create_string("expected a string")};
-        throw_exception(new_illegal_argument(*msg));
-    }
-
-    Stream s(source);
-    Root forms{*EMPTY_VECTOR}, form;
-
-    eat_ws(s);
-    while (!s.eos())
-    {
-        form = read(s);
-        forms = array_conj(*forms, *form);
-    }
-
-    return *forms;
-}
-
 }
