@@ -352,20 +352,20 @@ Force list_reverse(Value l)
     return *r;
 }
 
-Force syntax_quote_vector(Root& generated, Value v)
+Force syntax_quote_seq(Root& generated, Value conv, Value l)
 {
     Root seq{*EMPTY_LIST}, val;
-    auto size = get_array_size(v);
-    for (decltype(size) i = 0; i < size; ++i)
+    for (Root s{call_multimethod1(*rt::seq, l)}; *s; s = call_multimethod1(*rt::next, *s))
     {
-        auto elem = get_array_elem(v, i);
-        val = syntax_quote(generated, elem);
+        val = call_multimethod1(*rt::first, *s);
+        val = syntax_quote(generated, *val);
         val = wrap_seq_elem(*val);
         seq = list_conj(*seq, *val);
     }
+
     seq = list_reverse(*seq);
     seq = list_conj(*seq, CONCATI);
-    std::array<Value, 3> apply_vector{{APPLY, VECTOR, *seq}};
+    std::array<Value, 3> apply_vector{{APPLY, conv, *seq}};
     return create_list(apply_vector.data(), apply_vector.size());
 }
 
@@ -373,8 +373,11 @@ Force syntax_quote(Root& generated, Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return syntax_quote_symbol(generated, val);
-    if (get_value_type(val).is(*type::Array))
-        return syntax_quote_vector(generated, val);
+    auto type = get_value_type(val);
+    if (type.is(*type::Array))
+        return syntax_quote_seq(generated, VECTOR, val);
+    if (type.is(*type::List))
+        return syntax_quote_seq(generated, LIST, val);
     return val;
 }
 
