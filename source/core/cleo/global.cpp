@@ -100,6 +100,9 @@ const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
 const Value COMMAND_LINE_ARGS = create_symbol("cleo.core", "*command-line-args*");
 const Value LIST = create_symbol("cleo.core", "list");
+const Value VECTOR = create_symbol("cleo.core", "vector");
+const Value HASH_MAP = create_symbol("cleo.core", "hash-map");
+const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value SYNTAX_QUOTE_IN_READER = create_symbol("cleo.core", "*syntax-quote-in-reader*");
 
 const Root ZERO{create_int64(0)};
@@ -562,6 +565,29 @@ Force list(const Value *args, std::uint8_t n)
     return create_list(args, n);
 }
 
+Force vector(const Value *args, std::uint8_t n)
+{
+    return create_array(args, n);
+}
+
+Force hash_map(const Value *args, std::uint8_t n)
+{
+    Root m{*EMPTY_MAP};
+    if (n % 2 == 1)
+        throw_illegal_argument("No value supplied for key: " + to_string(args[n - 1]));
+    for (std::uint8_t i = 0; i < n; i += 2)
+        m = map_assoc(*m, args[i], args[i + 1]);
+    return *m;
+}
+
+Force hash_set(const Value *args, std::uint8_t n)
+{
+    Root s{*EMPTY_SET};
+    for (std::uint8_t i = 0; i < n; ++i)
+        s = array_set_conj(*s, args[i]);
+    return *s;
+}
+
 Force gensym(const Value *args, std::uint8_t n)
 {
     if (n > 1)
@@ -830,6 +856,15 @@ struct Initialize
 
         f = create_native_function(list);
         define(LIST, *f);
+
+        f = create_native_function(vector);
+        define(VECTOR, *f);
+
+        f = create_native_function(hash_map);
+        define(HASH_MAP, *f);
+
+        f = create_native_function(hash_set);
+        define(HASH_SET, *f);
 
         f = create_native_function1<mk_keyword, &KEYWORD>();
         define(KEYWORD, *f);
