@@ -589,6 +589,18 @@ Force hash_set(const Value *args, std::uint8_t n)
     return *s;
 }
 
+Force concati(const Value *args, std::uint8_t n)
+{
+    Root v{*EMPTY_VECTOR}, val;
+    for (std::uint8_t i = 0; i < n; ++i)
+        for (Root s{call_multimethod1(*rt::seq, args[i])}; *s; s = call_multimethod1(*rt::next, *s))
+        {
+            val = call_multimethod1(*rt::first, *s);
+            v = array_conj(*v, *val);
+        }
+    return *v;
+}
+
 Force gensym(const Value *args, std::uint8_t n)
 {
     if (n > 1)
@@ -866,6 +878,9 @@ struct Initialize
 
         f = create_native_function(hash_set);
         define(HASH_SET, *f);
+
+        f = create_native_function(concati);
+        define(CONCATI, *f);
 
         f = create_native_function1<mk_keyword, &KEYWORD>();
         define(KEYWORD, *f);

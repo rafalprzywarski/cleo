@@ -321,13 +321,6 @@
     (reduce1 conj [] x)))
 
 
-(defn concati
-  ([] [])
-  ([coll] coll)
-  ([coll1 coll2] (reduce1 conj (vec coll1) coll2))
-  ([coll1 coll2 & rest] (reduce1 concati (concati coll1 coll2) rest)))
-
-
 (defmacro dotimes [bindings & body]
   (let [[b n] bindings]
     `(let* [n# ~n]
