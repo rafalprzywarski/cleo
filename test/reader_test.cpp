@@ -651,14 +651,14 @@ TEST_F(reader_test, syntax_quote_should_generate_non_namespace_qualified_symbols
     val = read_str("`abc/some#");
     EXPECT_EQ_VALS(*ex, *val);
 
-    // ex = read_str("[x__38__auto__ y__39__auto__ z__40__auto__]");
-    // val = read_str("`[x# y# z#]");
-    // EXPECT_EQ_VALS(*ex, *val);
-    //
-    // ex = read_str("[x__41__auto__ y__42__auto__ x__41__auto__ y__42__auto__]");
-    // val = read_str("`[x# y# x# y#]");
-    // EXPECT_EQ_VALS(*ex, *val);
-    //
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__38__auto__)) (cleo.core/list (quote y__39__auto__)) (cleo.core/list (quote z__40__auto__))))");
+    val = read_str("`[x# y# z#]");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__41__auto__)) (cleo.core/list (quote y__42__auto__)) (cleo.core/list (quote x__41__auto__)) (cleo.core/list (quote y__42__auto__))))");
+    val = read_str("`[x# y# x# y#]");
+    EXPECT_EQ_VALS(*ex, *val);
+
     // ex = read_str("[([x__43__auto__] {x__43__auto__ x__43__auto__} #{x__43__auto__}) x__43__auto__]");
     // val = read_str("`[([x#] {x# x#} #{x#}) x#]");
     // EXPECT_EQ_VALS(*ex, *val);
@@ -666,6 +666,26 @@ TEST_F(reader_test, syntax_quote_should_generate_non_namespace_qualified_symbols
     // ex = read_str("[x__44__auto__ x__45__auto__]");
     // val = read_str("`[x# ~`x#]");
     // EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_vectors)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.test"));
+    Root val, ex;
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati))");
+    val = read_str("`[]");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list 7)))");
+    val = read_str("`[7]");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
+    val = read_str("`[7 x y 20]");
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(reader_test, read_forms_should_read_multiple_forms)

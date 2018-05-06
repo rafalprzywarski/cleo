@@ -166,6 +166,7 @@ extern const Value LIST;
 extern const Value VECTOR;
 extern const Value HASH_MAP;
 extern const Value HASH_SET;
+extern const Value CONCATI;
 extern const Root ZERO;
 extern const Root ONE;
 extern const Root TWO;

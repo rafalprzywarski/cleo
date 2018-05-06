@@ -103,6 +103,7 @@ const Value LIST = create_symbol("cleo.core", "list");
 const Value VECTOR = create_symbol("cleo.core", "vector");
 const Value HASH_MAP = create_symbol("cleo.core", "hash-map");
 const Value HASH_SET = create_symbol("cleo.core", "hash-set");
+const Value CONCATI = create_symbol("cleo.core", "concati");
 const Value SYNTAX_QUOTE_IN_READER = create_symbol("cleo.core", "*syntax-quote-in-reader*");
 
 const Root ZERO{create_int64(0)};

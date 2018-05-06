@@ -7,6 +7,8 @@
 #include "error.hpp"
 #include "print.hpp"
 #include "namespace.hpp"
+#include "util.hpp"
+#include "multimethod.hpp"
 #include <cctype>
 #include <sstream>
 
@@ -290,6 +292,8 @@ Force read_unquote_splicing(Stream& s)
     return create_list(elems.data(), elems.size());
 }
 
+Force syntax_quote(Root& generated, Value val);
+
 bool is_generating(Value sym)
 {
     auto name = get_symbol_name(sym);
@@ -301,13 +305,13 @@ bool is_generating(Value sym)
 
 Force generate_symbol(Root& generated, Value sym)
 {
-    // Root found{call_multimethod2(*rt::get, *generated, sym)};
-    // if (*found)
-    //     return *found;
+    Root found{call_multimethod2(*rt::get, *generated, sym)};
+    if (*found)
+        return *found;
     auto name = get_symbol_name(sym);
     auto id = gen_id();
     Root g{create_symbol(std::string(get_string_ptr(name), get_string_len(name) - 1) + "__" + std::to_string(id) + "__auto__")};
-    // generated = map_assoc(*generated, sym, *g);
+    generated = map_assoc(*generated, sym, *g);
     return *g;
 }
 
@@ -332,12 +336,52 @@ Force syntax_quote_symbol(Root& generated, Value sym)
     return quote(*val);
 }
 
+Force wrap_seq_elem(Value v)
+{
+    std::array<Value, 2> l{{LIST, v}};
+    return create_list(l.data(), l.size());
+}
+
+Force list_reverse(Value l)
+{
+    if (get_int64_value(get_list_size(l)) == 0)
+        return l;
+    Root r{*EMPTY_LIST};
+    for (; l; l = get_list_next(l))
+        r = list_conj(*r, get_list_first(l));
+    return *r;
+}
+
+Force syntax_quote_vector(Root& generated, Value v)
+{
+    Root seq{*EMPTY_LIST}, val;
+    auto size = get_array_size(v);
+    for (decltype(size) i = 0; i < size; ++i)
+    {
+        auto elem = get_array_elem(v, i);
+        val = syntax_quote(generated, elem);
+        val = wrap_seq_elem(*val);
+        seq = list_conj(*seq, *val);
+    }
+    seq = list_reverse(*seq);
+    seq = list_conj(*seq, CONCATI);
+    std::array<Value, 3> apply_vector{{APPLY, VECTOR, *seq}};
+    return create_list(apply_vector.data(), apply_vector.size());
+}
+
+Force syntax_quote(Root& generated, Value val)
+{
+    if (get_value_tag(val) == tag::SYMBOL)
+        return syntax_quote_symbol(generated, val);
+    if (get_value_type(val).is(*type::Array))
+        return syntax_quote_vector(generated, val);
+    return val;
+}
+
 Force syntax_quote(Value val)
 {
     Root generated{*EMPTY_MAP};
-    if (get_value_tag(val) == tag::SYMBOL)
-        return syntax_quote_symbol(generated, val);
-    return val;
+    return syntax_quote(generated, val);
 }
 
 Force read_syntax_quote(Stream& s)
