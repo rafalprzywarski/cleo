@@ -20,16 +20,8 @@ namespace
 
 Force eval_symbol(Value sym, Value env)
 {
-    if (env)
-    {
-        if (map_contains(env, sym))
-            return call_multimethod2(*rt::get, env, sym);
-        if (map_contains(env, ENV_NS))
-        {
-            Root v{call_multimethod2(*rt::get, env, ENV_NS)};
-            return lookup(*v, sym);
-        }
-    }
+    if (env && map_contains(env, sym))
+        return call_multimethod2(*rt::get, env, sym);
     return lookup(sym);
 }
 
@@ -241,9 +233,6 @@ Force resolve_fn_body(Value name, Value params, Value body, Value env)
 template <typename CreateFn>
 Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
 {
-    Root lenv{(!env || !map_contains(env, ENV_NS)) ?
-        map_assoc(env ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
-        env};
     Root next{get_list_next(list)};
     auto name = nil;
     if (*next && get_value_tag(get_list_first(*next)) == tag::SYMBOL)
@@ -252,7 +241,7 @@ Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
         next = get_list_next(*next);
     }
     if (!*next)
-        return create_fn(*lenv, name, nullptr, nullptr, 0);
+        return create_fn(env, name, nullptr, nullptr, 0);
     std::vector<Value> params, bodies;
     Roots body_roots(get_value_type(get_list_first(*next)).is(*type::List) ? get_int64_value(get_list_size(*next)) : 1);
     auto parse_fn = [&](Value list)
@@ -280,7 +269,7 @@ Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
             parse_fn(get_list_first(*next));
     else
         parse_fn(*next);
-    return create_fn(*lenv, name, params.data(), bodies.data(), params.size());
+    return create_fn(env, name, params.data(), bodies.data(), params.size());
 }
 
 Force eval_fn(Value list, Value env)

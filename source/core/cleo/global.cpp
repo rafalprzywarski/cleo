@@ -82,7 +82,6 @@ const Value CATCH = create_symbol("catch*");
 const Value FINALLY = create_symbol("finally*");
 const Value VA = create_symbol("&");
 const Value CURRENT_NS = create_symbol("cleo.core", "*ns*");
-const Value ENV_NS = create_symbol("cleo.core", "*env-ns*");
 const Value IN_NS = create_symbol("cleo.core", "in-ns");
 const Value NS = create_symbol("cleo.core", "ns");
 const Value LIB_PATHS = create_symbol("cleo.core", "*lib-paths*");
