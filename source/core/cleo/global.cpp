@@ -100,6 +100,7 @@ const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
 const Value COMMAND_LINE_ARGS = create_symbol("cleo.core", "*command-line-args*");
 const Value LIST = create_symbol("cleo.core", "list");
+const Value SYNTAX_QUOTE_IN_READER = create_symbol("cleo.core", "*syntax-quote-in-reader*");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -253,6 +254,7 @@ const StaticVar assoc = define_var(ASSOC, nil);
 const StaticVar merge = define_var(MERGE, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
+const DynamicVar syntax_quote_in_reader = define_var(SYNTAX_QUOTE_IN_READER, nil);
 
 }
 
@@ -800,6 +802,8 @@ struct Initialize
         define_multimethod(NEW, *first_arg, nil);
 
         Root f;
+
+        define(SYNTAX_QUOTE_IN_READER, nil);
 
         define(CURRENT_NS, CLEO_CORE);
         f = create_native_function1<in_ns, &IN_NS>();

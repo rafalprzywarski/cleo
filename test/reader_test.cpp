@@ -564,6 +564,75 @@ TEST_F(reader_test, should_parse_grave_accent_as_syntax_quote)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(reader_test, should_syntax_quote_simple_values)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    Root ex, val;
+    ex = read_str("7");
+    val = read_str("`7");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str(":k");
+    val = read_str("`:k");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, syntax_quote_should_resolve_symbols)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.test"));
+    Root ex, val;
+    ex = list(QUOTE, create_symbol("cleo.reader.syntax-quote.test", "x"));
+    val = read_str("`x");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.test2"));
+    define(create_symbol("cleo.reader.syntax-quote.test2", "z"), create_keyword(":zz"));
+    in_ns(create_symbol("cleo.reader.syntax-quote.test"));
+    refer(create_symbol("cleo.reader.syntax-quote.test2"));
+
+    ex = list(QUOTE, create_symbol("cleo.reader.syntax-quote.test2", "z"));
+    val = read_str("`z");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = list(QUOTE, create_symbol("some", "abc"));
+    val = read_str("`some/abc");
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(reader_test, syntax_quote_should_not_quote_special_symbols)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    auto expect_no_quote = [](Value sym)
+    {
+        Root ex{list(QUOTE, sym)};
+        Root val{read_str("`" + to_string(sym))};
+        EXPECT_EQ_VALS(*ex, *val);
+    };
+
+    expect_no_quote(QUOTE);
+    expect_no_quote(SYNTAX_QUOTE);
+    expect_no_quote(FN);
+    expect_no_quote(MACRO);
+    expect_no_quote(DEF);
+    expect_no_quote(LET);
+    expect_no_quote(DO);
+    expect_no_quote(IF);
+    expect_no_quote(LOOP);
+    expect_no_quote(RECUR);
+    expect_no_quote(THROW);
+    expect_no_quote(TRY);
+    expect_no_quote(CATCH);
+    expect_no_quote(FINALLY);
+    expect_no_quote(VA);
+}
+
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
 {
     Root source, forms, ex;

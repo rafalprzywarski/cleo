@@ -252,12 +252,17 @@ Force read_string(Stream& s)
     return create_string(str);
 }
 
+Force quote(Value val)
+{
+    std::array<Value, 2> elems{{QUOTE, val}};
+    return create_list(elems.data(), elems.size());
+}
+
 Force read_quote(Stream& s)
 {
     s.next(); // '\''
     Root val{read(s)};
-    std::array<Value, 2> elems{{QUOTE, *val}};
-    return create_list(elems.data(), elems.size());
+    return quote(*val);
 }
 
 Force read_deref(Stream& s)
@@ -285,12 +290,42 @@ Force read_unquote_splicing(Stream& s)
     return create_list(elems.data(), elems.size());
 }
 
+Force syntax_quote_resolve_symbol(Value sym)
+{
+    if (SPECIAL_SYMBOLS.count(sym))
+        return sym;
+    auto ns{*rt::current_ns};
+    sym = resolve(ns, sym);
+    if (get_symbol_namespace(sym))
+        return sym;
+    auto sym_ns = get_symbol_name(ns);
+    auto sym_name = get_symbol_name(sym);
+    return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
+}
+
+Force syntax_quote_symbol(Value sym)
+{
+    Root val{syntax_quote_resolve_symbol(sym)};
+    return quote(*val);
+}
+
+Force syntax_quote(Value val)
+{
+    if (get_value_tag(val) == tag::SYMBOL)
+        return syntax_quote_symbol(val);
+    return val;
+}
+
 Force read_syntax_quote(Stream& s)
 {
     s.next(); // '`'
     Root val{read(s)};
-    std::array<Value, 2> elems{{SYNTAX_QUOTE, *val}};
-    return create_list(elems.data(), elems.size());
+    if (!*rt::syntax_quote_in_reader)
+    {
+        std::array<Value, 2> elems{{SYNTAX_QUOTE, *val}};
+        return create_list(elems.data(), elems.size());
+    }
+    return syntax_quote(*val);
 }
 
 Force read_set(Stream& s)
