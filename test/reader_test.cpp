@@ -663,9 +663,9 @@ TEST_F(reader_test, syntax_quote_should_generate_non_namespace_qualified_symbols
     val = read_str("`[([x#] {x# x#} #{x#}) x#]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    // ex = read_str("[x__44__auto__ x__45__auto__]");
-    // val = read_str("`[x# ~`x#]");
-    // EXPECT_EQ_VALS(*ex, *val);
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__45__auto__)) (cleo.core/list (quote x__44__auto__))))");
+    val = read_str("`[x# ~`x#]");
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_vectors)
@@ -748,6 +748,27 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_maps)
     Root ex2{read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20) (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
     val = read_str("`{7 x y 20}");
     EXPECT_EQ_VALS_ALT2(*ex1, *ex2, *val);
+}
+
+TEST_F(reader_test, syntax_quote_should_not_quote_unquoted_expressions)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.unquote.test"));
+
+    Root val, ex;
+    ex = create_symbol("x");
+    val = read_str("`~x");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list x)))");
+    val = read_str("`[~x]");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = nil;
+    val = read_str("`(cleo.core/unquote)");
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
