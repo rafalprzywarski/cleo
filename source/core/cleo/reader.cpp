@@ -386,11 +386,6 @@ Force read_syntax_quote(Stream& s)
 {
     s.next(); // '`'
     Root val{read(s)};
-    if (!*rt::syntax_quote_in_reader)
-    {
-        std::array<Value, 2> elems{{SYNTAX_QUOTE, *val}};
-        return create_list(elems.data(), elems.size());
-    }
     return syntax_quote(*val);
 }
 

@@ -57,7 +57,6 @@ const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value STR = create_symbol("cleo.core", "str");
 const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
-const Value SYNTAX_QUOTE = create_symbol("cleo.core", "syntax-quote");
 const Value UNQUOTE = create_symbol("cleo.core", "unquote");
 const Value UNQUOTE_SPLICING = create_symbol("cleo.core", "unquote-splicing");
 const Value FN = create_symbol("fn*");
@@ -104,7 +103,6 @@ const Value VECTOR = create_symbol("cleo.core", "vector");
 const Value HASH_MAP = create_symbol("cleo.core", "hash-map");
 const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value CONCATI = create_symbol("cleo.core", "concati");
-const Value SYNTAX_QUOTE_IN_READER = create_symbol("cleo.core", "*syntax-quote-in-reader*");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -114,7 +112,6 @@ const Root SENTINEL{create_object0(nil)};
 
 const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,
-    SYNTAX_QUOTE,
     FN,
     MACRO,
     DEF,
@@ -258,7 +255,6 @@ const StaticVar assoc = define_var(ASSOC, nil);
 const StaticVar merge = define_var(MERGE, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
-const DynamicVar syntax_quote_in_reader = define_var(SYNTAX_QUOTE_IN_READER, nil);
 
 }
 
@@ -841,8 +837,6 @@ struct Initialize
         define_multimethod(NEW, *first_arg, nil);
 
         Root f;
-
-        define(SYNTAX_QUOTE_IN_READER, nil);
 
         define(CURRENT_NS, CLEO_CORE);
         f = create_native_function1<in_ns, &IN_NS>();

@@ -40,76 +40,6 @@ Value eval_quote(Value list)
     return get_list_first(*next);
 }
 
-Force syntax_quote_val(Root& generated, Value val, Value env);
-
-bool is_unquote_splicing(Value val)
-{
-    return
-        get_value_type(val).is(*type::List) &&
-        get_int64_value(get_list_size(val)) == 2 &&
-        get_list_first(val).is(UNQUOTE_SPLICING);
-}
-
-bool is_generating(Value sym)
-{
-    auto name = get_symbol_name(sym);
-    return
-        !get_symbol_namespace(sym) &&
-        get_string_len(name) > 0 &&
-        get_string_ptr(name)[get_string_len(name) - 1] == '#';
-}
-
-Force generate_symbol(Root& generated, Value sym)
-{
-    Root found{call_multimethod2(*rt::get, *generated, sym)};
-    if (*found)
-        return *found;
-    auto name = get_symbol_name(sym);
-    auto id = gen_id();
-    Root g{create_symbol(std::string(get_string_ptr(name), get_string_len(name) - 1) + "__" + std::to_string(id) + "__auto__")};
-    generated = map_assoc(*generated, sym, *g);
-    return *g;
-}
-
-Force syntax_quote_symbol(Root& generated, Value sym, Value env)
-{
-    if (SPECIAL_SYMBOLS.count(sym))
-        return sym;
-    if (is_generating(sym))
-        return generate_symbol(generated, sym);
-    Root ns{(env && map_contains(env, ENV_NS)) ? map_get(env, ENV_NS) : *rt::current_ns};
-    sym = resolve(*ns, sym);
-    if (get_symbol_namespace(sym))
-        return sym;
-    auto sym_ns = get_symbol_name(*ns);
-    auto sym_name = get_symbol_name(sym);
-    return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
-}
-
-Force syntax_quote_vector(Root& generated, Value v, Value env)
-{
-    Root ret{*EMPTY_VECTOR}, val;
-    auto size = get_array_size(v);
-    for (decltype(size) i = 0; i < size; ++i)
-    {
-        auto elem = get_array_elem(v, i);
-        if (is_unquote_splicing(elem))
-        {
-            Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
-            {
-                val = call_multimethod1(*rt::first, *s);
-                ret = array_conj(*ret, *val);
-            }
-        }
-        else
-        {
-            val = syntax_quote_val(generated, elem, env);
-            ret = array_conj(*ret, *val);
-        }
-    }
-    return *ret;
-}
 
 Force reverse_list(Value l)
 {
@@ -119,114 +49,6 @@ Force reverse_list(Value l)
     for (Root f{l}; *f; f = get_list_next(*f))
         ret = list_conj(*ret, get_list_first(*f));
     return *ret;
-}
-
-Force syntax_quote_list(Root& generated, Value l, Value env)
-{
-    auto size = get_int64_value(get_list_size(l));
-    if (size == 0)
-        return *EMPTY_LIST;
-    if (get_list_first(l).is(UNQUOTE))
-    {
-        if (get_int64_value(get_list_size(l)) != 2)
-        {
-            Root msg{create_string("syntax-quote requires exactly 1 argument")};
-            throw_exception(new_illegal_argument(*msg));
-        }
-        return eval(get_list_first(get_list_next(l)), env);
-    }
-    Root ret{*EMPTY_LIST}, val;
-    for (; l; l = get_list_next(l))
-    {
-        auto elem = get_list_first(l);
-        if (is_unquote_splicing(elem))
-        {
-            Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
-            {
-                val = call_multimethod1(*rt::first, *s);
-                ret = list_conj(*ret, *val);
-            }
-        }
-        else
-        {
-            val = syntax_quote_val(generated, elem, env);
-            ret = list_conj(*ret, *val);
-        }
-    }
-
-    return reverse_list(*ret);
-}
-
-Force syntax_quote_set(Root& generated, Value s, Value env)
-{
-    Root ret{*EMPTY_SET}, val;
-    auto size = get_array_set_size(s);
-    for (decltype(size) i = 0; i < size; ++i)
-    {
-        auto elem = get_array_set_elem(s, i);
-        if (is_unquote_splicing(elem))
-        {
-            Root s{eval(get_list_first(get_list_next(elem)), env)}, val;
-            for (s = call_multimethod1(*rt::seq, *s); *s; s = call_multimethod1(*rt::next, *s))
-            {
-                val = call_multimethod1(*rt::first, *s);
-                ret = array_set_conj(*ret, *val);
-            }
-        }
-        else
-        {
-            val = syntax_quote_val(generated, elem, env);
-            ret = array_set_conj(*ret, *val);
-        }
-    }
-    return *ret;
-}
-
-Force syntax_quote_map(Root& generated, Value m, Value env)
-{
-    Root ret{*EMPTY_MAP}, kv, key, val;
-    for (Root seq{call_multimethod1(*rt::seq, m)}; *seq; seq = call_multimethod1(*rt::next, *seq))
-    {
-        kv = call_multimethod1(*rt::first, *seq);
-        key = get_array_elem(*kv, 0);
-        val = get_array_elem(*kv, 1);
-        if (is_unquote_splicing(*key) || is_unquote_splicing(*val))
-        {
-            Root msg{create_string("unquote-splicing only supports lists, vectors, and sets")};
-            throw_exception(new_illegal_argument(*msg));
-        }
-        key = syntax_quote_val(generated, *key, env);
-        val = syntax_quote_val(generated, *val, env);
-        ret = map_assoc(*ret, *key, *val);
-    }
-    return *ret;
-}
-
-Force syntax_quote_val(Root& generated, Value val, Value env)
-{
-    if (get_value_tag(val) == tag::SYMBOL)
-        return syntax_quote_symbol(generated, val, env);
-    if (get_value_type(val).is(*type::Array))
-        return syntax_quote_vector(generated, val, env);
-    if (get_value_type(val).is(*type::List))
-        return syntax_quote_list(generated, val, env);
-    if (get_value_type(val).is(*type::ArraySet))
-        return syntax_quote_set(generated, val, env);
-    if (isa(get_value_type(val), *type::PersistentMap))
-        return syntax_quote_map(generated, val, env);
-    return val;
-}
-
-Force eval_syntax_quote(Value list, Value env)
-{
-    Root generated{*EMPTY_MAP};
-    if (!get_list_next(list) || get_list_next(get_list_next(list)))
-    {
-        Root msg{create_string("syntax-quote requires exactly 1 argument")};
-        throw_exception(new_illegal_argument(*msg));
-    }
-    return syntax_quote_val(generated, get_list_first(get_list_next(list)), env);
 }
 
 Force bind_params(Value params, Value env)
@@ -293,8 +115,7 @@ Force resolve_list(Value l, Value env)
     Root ret;
 
     auto f = get_list_first(l);
-    // TODO: syntax quote
-    if (f == QUOTE || f == SYNTAX_QUOTE)
+    if (f == QUOTE)
         return l;
     if (f == FN || f == MACRO)
     {
@@ -418,7 +239,7 @@ Force resolve_fn_body(Value name, Value params, Value body, Value env)
 }
 
 template <typename CreateFn>
-Force eval_fn(Value list, Value env, CreateFn create_fn)
+Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
 {
     Root lenv{(!env || !map_contains(env, ENV_NS)) ?
         map_assoc(env ? env : *EMPTY_MAP, ENV_NS, *rt::current_ns) :
@@ -448,7 +269,7 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
         }
         auto body_list = get_list_next(list);
         auto body = body_list ? get_list_first(body_list) : nil;
-        body_roots.set(bodies.size(), resolve_fn_body(name, params.back(), body, env));
+        body_roots.set(bodies.size(), resolve_fn_body(name, params.back(), body, penv));
         bodies.push_back(body_roots[bodies.size()]);
         if (body_list && get_list_next(body_list))
             throw_illegal_argument("fn* can contain only one expression");
@@ -464,12 +285,15 @@ Force eval_fn(Value list, Value env, CreateFn create_fn)
 
 Force eval_fn(Value list, Value env)
 {
-    return eval_fn(list, env, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_fn));
+    return eval_fn(list, env, env, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_fn));
 }
 
 Force eval_macro(Value list, Value env)
 {
-    return eval_fn(list, env, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_macro));
+    Root penv{env ? env : *EMPTY_MAP};
+    penv = map_assoc(*penv, FORM, nil);
+    penv = map_assoc(*penv, ENV, nil);
+    return eval_fn(list, env, *penv, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_macro));
 }
 
 Force eval_def(Value list, Value env)
@@ -761,8 +585,6 @@ Force eval_list(Value list, Value env)
     Value first = get_list_first(list);
     if (first.is(QUOTE))
         return eval_quote(list);
-    if (first.is(SYNTAX_QUOTE))
-        return eval_syntax_quote(list, env);
     if (first.is(FN))
         return eval_fn(list, env);
     if (first.is(MACRO))
