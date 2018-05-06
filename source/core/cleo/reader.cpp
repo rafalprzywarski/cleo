@@ -290,10 +290,33 @@ Force read_unquote_splicing(Stream& s)
     return create_list(elems.data(), elems.size());
 }
 
-Force syntax_quote_resolve_symbol(Value sym)
+bool is_generating(Value sym)
+{
+    auto name = get_symbol_name(sym);
+    return
+        !get_symbol_namespace(sym) &&
+        get_string_len(name) > 0 &&
+        get_string_ptr(name)[get_string_len(name) - 1] == '#';
+}
+
+Force generate_symbol(Root& generated, Value sym)
+{
+    // Root found{call_multimethod2(*rt::get, *generated, sym)};
+    // if (*found)
+    //     return *found;
+    auto name = get_symbol_name(sym);
+    auto id = gen_id();
+    Root g{create_symbol(std::string(get_string_ptr(name), get_string_len(name) - 1) + "__" + std::to_string(id) + "__auto__")};
+    // generated = map_assoc(*generated, sym, *g);
+    return *g;
+}
+
+Force syntax_quote_resolve_symbol(Root& generated, Value sym)
 {
     if (SPECIAL_SYMBOLS.count(sym))
         return sym;
+    if (is_generating(sym))
+        return generate_symbol(generated, sym);
     auto ns{*rt::current_ns};
     sym = resolve(ns, sym);
     if (get_symbol_namespace(sym))
@@ -303,16 +326,17 @@ Force syntax_quote_resolve_symbol(Value sym)
     return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
 }
 
-Force syntax_quote_symbol(Value sym)
+Force syntax_quote_symbol(Root& generated, Value sym)
 {
-    Root val{syntax_quote_resolve_symbol(sym)};
+    Root val{syntax_quote_resolve_symbol(generated, sym)};
     return quote(*val);
 }
 
 Force syntax_quote(Value val)
 {
+    Root generated{*EMPTY_MAP};
     if (get_value_tag(val) == tag::SYMBOL)
-        return syntax_quote_symbol(val);
+        return syntax_quote_symbol(generated, val);
     return val;
 }
 

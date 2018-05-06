@@ -633,6 +633,41 @@ TEST_F(reader_test, syntax_quote_should_not_quote_special_symbols)
     expect_no_quote(VA);
 }
 
+TEST_F(reader_test, syntax_quote_should_generate_non_namespace_qualified_symbols)
+{
+    Root enable{amap(SYNTAX_QUOTE_IN_READER, TRUE)};
+    PushBindingsGuard g{*enable};
+
+    in_ns(create_symbol("cleo.reader.syntax-quote.gen.test"));
+    define(create_symbol("cleo.reader.syntax-quote.gen.test", "some#"), create_keyword("bad"));
+
+    Override<Int64> override_next_id(next_id, 37);
+    Root val, ex;
+    ex = read_str("(quote some__37__auto__)");
+    val = read_str("`some#");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    ex = read_str("(quote abc/some#)");
+    val = read_str("`abc/some#");
+    EXPECT_EQ_VALS(*ex, *val);
+
+    // ex = read_str("[x__38__auto__ y__39__auto__ z__40__auto__]");
+    // val = read_str("`[x# y# z#]");
+    // EXPECT_EQ_VALS(*ex, *val);
+    //
+    // ex = read_str("[x__41__auto__ y__42__auto__ x__41__auto__ y__42__auto__]");
+    // val = read_str("`[x# y# x# y#]");
+    // EXPECT_EQ_VALS(*ex, *val);
+    //
+    // ex = read_str("[([x__43__auto__] {x__43__auto__ x__43__auto__} #{x__43__auto__}) x__43__auto__]");
+    // val = read_str("`[([x#] {x# x#} #{x#}) x#]");
+    // EXPECT_EQ_VALS(*ex, *val);
+    //
+    // ex = read_str("[x__44__auto__ x__45__auto__]");
+    // val = read_str("`[x# ~`x#]");
+    // EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(reader_test, read_forms_should_read_multiple_forms)
 {
     Root source, forms, ex;
