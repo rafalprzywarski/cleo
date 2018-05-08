@@ -7,6 +7,7 @@
 #include <cleo/namespace.hpp>
 #include <cleo/array.hpp>
 #include <cleo/util.hpp>
+#include <cleo/list.hpp>
 #include <iostream>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -23,10 +24,11 @@ bool eval_source(const std::string& line)
     try
     {
         cleo::Root str{cleo::create_string(line)};
-        cleo::Root expr;
         try
         {
-            expr = cleo::read(*str);
+            cleo::ReaderStream stream{*str};
+            while (!stream.eos())
+                cleo::read(stream);
         }
         catch (const cleo::Exception& )
         {
@@ -36,9 +38,14 @@ bool eval_source(const std::string& line)
                 return false;
             cleo::throw_exception(*e);
         }
-        cleo::Root result{cleo::eval(*expr)};
-        cleo::Root text{cleo::pr_str(*result)};
-        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+        cleo::ReaderStream stream{*str};
+        while (!stream.eos())
+        {
+            cleo::Root expr{cleo::read(stream)};
+            cleo::Root result{cleo::eval(*expr)};
+            cleo::Root text{cleo::pr_str(*result)};
+            std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+        }
     }
     catch (const cleo::Exception& )
     {
