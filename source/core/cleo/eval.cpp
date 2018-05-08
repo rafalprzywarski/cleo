@@ -43,23 +43,23 @@ Force reverse_list(Value l)
     return *ret;
 }
 
-Force bind_params(Value params, Value env, bool form_and_env)
+Force bind_params(Value params, Value env)
 {
     Root lenv{env ? env : *EMPTY_MAP};
     auto n = get_array_size(params);
     for (decltype(n) i = 0; i < n; ++i)
         lenv = map_assoc(*lenv, get_array_elem(params, i), nil);
-    if (form_and_env)
-    {
-        lenv = map_assoc(*lenv, FORM, nil);
-        lenv = map_assoc(*lenv, ENV, nil);
-    }
     return *lenv;
 }
 
 Force resolve_symbol(Value sym, Value env)
 {
-    return map_contains(env, sym) ? sym : get_var_name(lookup_var(resolve(sym)));
+    if (map_contains(env, sym))
+        return sym;
+    auto var = lookup_var(resolve(sym));
+    if (get_value_type(get_var_value(var)).is(*type::Macro))
+        throw_illegal_state("Can't take value of a macro: " + to_string(var));
+    return get_var_name(var);
 }
 
 Force resolve_bindings(Value b, Root& env)
@@ -93,10 +93,10 @@ Force resolve_pure_list(Value l, Value env)
     return reverse_list(*ret);
 }
 
-Force resolve_fn_body(Value name, Value body, Value env, bool is_macro)
+Force resolve_fn_body(Value name, Value body, Value env)
 {
     Root lenv{name ? map_assoc(env, name, nil) : env}, ret;
-    lenv = bind_params(get_list_first(body), *lenv, is_macro);
+    lenv = bind_params(get_list_first(body), *lenv);
     ret = resolve_pure_list(get_list_next(body), *lenv);
     return list_conj(*ret, get_list_first(body));
 }
@@ -111,7 +111,9 @@ Force resolve_list(Value l, Value env)
     auto f = get_list_first(l);
     if (f == QUOTE)
         return l;
-    if (f == FN || f == MACRO)
+    if (f == MACRO)
+        throw_illegal_state("Cannot define a macro inside fn");
+    if (f == FN)
     {
         l = get_list_next(l);
 
@@ -128,14 +130,14 @@ Force resolve_list(Value l, Value env)
             Root val;
             for (; l; l = get_list_next(l))
             {
-                val = resolve_fn_body(name, get_list_first(l), env, f == MACRO);
+                val = resolve_fn_body(name, get_list_first(l), env);
                 ret = list_conj(*ret, *val);
             }
 
             ret = reverse_list(*ret);
         }
         else
-            ret = resolve_fn_body(name, l, env, f == MACRO);
+            ret = resolve_fn_body(name, l, env);
 
         if (name)
             ret = list_conj(*ret, name);
@@ -228,7 +230,7 @@ Force resolve_map(Value val, Value env)
 Force resolve_fn_body(Value name, Value params, Value body, Value env)
 {
     Root lenv{name ? map_assoc(env, name, nil) : env};
-    lenv = bind_params(params, *lenv, false);
+    lenv = bind_params(params, *lenv);
     return resolve_value(body, *lenv);
 }
 

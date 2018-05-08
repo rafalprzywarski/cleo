@@ -45,6 +45,22 @@ struct eval_test : Test
         }
     }
 
+    void expect_resolve_illegal_state(std::string source)
+    {
+        Root body{create_string(source)};
+        body = read(*body);
+        try
+        {
+            resolve_value(*body, *EMPTY_MAP);
+            FAIL() << "expected IllegalState for: " << source;
+        }
+        catch (const Exception& )
+        {
+            Root e{catch_exception()};
+            ASSERT_EQ_REFS(*type::IllegalState, get_value_type(*e)) << "exception: " << to_string(*e);
+        }
+    }
+
     void expect_symbol_resolved(std::string expected_source, std::string body_source, std::string env_source)
     {
         Root env{create_string(env_source)};
@@ -529,18 +545,6 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved("(fn* ([]))", "(fn* ([]))", "{}");
     expect_symbol_resolved("(fn* ([x] x cleo.fn.resolved2.test/y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{}");
     expect_symbol_resolved("(fn* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
-
-    expect_symbol_resolved("(macro* [])", "(macro* [])", "{}");
-    expect_symbol_resolved("(macro* mm ([] mm) ([x] mm))", "(macro* mm ([] mm) ([x] mm))", "{}");
-    expect_symbol_resolved("(macro* [] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(macro* [] x y)", "{}");
-    expect_symbol_resolved("(macro* [x] x cleo.fn.resolved2.test/y)", "(macro* [x] x y)", "{}");
-    expect_symbol_resolved("(macro* [x y] [x y])", "(macro* [x y] [x y])", "{}");
-    expect_symbol_resolved("(macro* [x] x y)", "(macro* [x] x y)", "{y nil}");
-    expect_symbol_resolved("(macro* ([]))", "(macro* ([]))", "{}");
-    expect_symbol_resolved("(macro* ([x] x cleo.fn.resolved2.test/y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x cleo.fn.resolved2.test/y) ([x y] x y))", "(macro* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{}");
-    expect_symbol_resolved("(macro* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(macro* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
-    expect_symbol_resolved("(macro* [x] [x &form &env])", "(macro* [x] [x &form &env])", "{}");
-    expect_symbol_resolved("(macro* ([] [&form &env]) ([x] [x &form &env]))", "(macro* ([] [&form &env]) ([x] [x &form &env]))", "{}");
 }
 
 TEST_F(eval_test, resolving_should_expand_macros)
@@ -556,6 +560,23 @@ TEST_F(eval_test, resolving_should_expand_macros)
     expect_symbol_resolved("(fn* [c d] (cleo.core/+ (cleo.core/+ cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b) (cleo.core/+ c d)))", "(fn* [c d] (add (add a b) (add c d)))", "{}");
     expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b))", "(fn* [add] (add a b))", "{}");
     expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a b))", "(fn* [add] (add a b))", "{b nil}");
+}
+
+TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
+{
+    in_ns(create_symbol("cleo.fn.failing-macro-args.test"));
+    Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    define(create_symbol("cleo.fn.failing-macro-args.test", "add"), *add);
+
+    expect_resolve_illegal_state("(if 10 add nil)");
+    expect_resolve_illegal_state("(let* [x add] nil)");
+}
+
+TEST_F(eval_test, resolving_should_fail_when_defining_a_macro)
+{
+    expect_resolve_illegal_state("(macro* [x y] `(cleo.core/+ ~x ~y))");
 }
 
 TEST_F(eval_test, should_expand_all_macros)
