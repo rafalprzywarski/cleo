@@ -64,8 +64,6 @@ Force resolve_symbol(Value sym, Value env)
     if (map_contains(env, sym))
         return sym;
     auto var = lookup_var(resolve(sym));
-    if (get_value_type(get_var_value(var)).is(*type::Macro))
-        throw_illegal_state("Can't take value of a macro: " + to_string(var));
     if (is_var_macro(var))
         throw_illegal_state("Can't take value of a macro: " + to_string(var));
     return get_var_name(var);
@@ -120,8 +118,6 @@ Force resolve_list(Value l, Value env)
     auto f = get_list_first(l);
     if (f == QUOTE)
         return l;
-    if (f == MACRO)
-        throw_illegal_state("Cannot define a macro inside fn");
     if (f == FN)
     {
         l = get_list_next(l);
@@ -195,7 +191,7 @@ Force resolve_list(Value l, Value env)
         ret = resolve_pure_list(get_list_next(l), env);
         return list_conj(*ret, f);
     }
-    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && (get_value_type(lookup(f)).is(*type::Macro) || is_var_macro(lookup_var(resolve(f)))))
+    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && is_var_macro(lookup_var(resolve(f))))
     {
         Root expanded{macroexpand(l, env)};
         return resolve_value(*expanded, env);
@@ -252,8 +248,7 @@ Force resolve_fn_body(Value name, Value params, Value body, Value env)
     return resolve_value(body, *lenv);
 }
 
-template <typename CreateFn>
-Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
+Force eval_fn(Value list, Value env)
 {
     Root next{get_list_next(list)};
     auto name = nil;
@@ -280,7 +275,7 @@ Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
         }
         auto body_list = get_list_next(list);
         auto body = body_list ? get_list_first(body_list) : nil;
-        body_roots.set(bodies.size(), resolve_fn_body(name, params.back(), body, penv));
+        body_roots.set(bodies.size(), resolve_fn_body(name, params.back(), body, env));
         bodies.push_back(body_roots[bodies.size()]);
         if (body_list && get_list_next(body_list))
             throw_illegal_argument("fn* can contain only one expression");
@@ -292,19 +287,6 @@ Force eval_fn(Value list, Value env, Value penv, CreateFn create_fn)
     else
         parse_fn(*next);
     return create_fn(env, name, params.data(), bodies.data(), params.size());
-}
-
-Force eval_fn(Value list, Value env)
-{
-    return eval_fn(list, env, env, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_fn));
-}
-
-Force eval_macro(Value list, Value env)
-{
-    Root penv{env ? env : *EMPTY_MAP};
-    penv = map_assoc(*penv, FORM, nil);
-    penv = map_assoc(*penv, ENV, nil);
-    return eval_fn(list, env, *penv, static_cast<Force(*)(Value, Value, const Value*, const Value*, std::uint8_t)>(create_macro));
 }
 
 Force eval_def(Value list, Value env)
@@ -607,8 +589,6 @@ Force eval_list(Value list, Value env)
         return eval_quote(list);
     if (first.is(FN))
         return eval_fn(list, env);
-    if (first.is(MACRO))
-        return eval_macro(list, env);
     if (first.is(DEF))
         return eval_def(list, env);
     if (first.is(LET))
@@ -623,24 +603,12 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first.is(TRY))
         return eval_try(list, env);
-    if (get_value_tag(first) == tag::SYMBOL)
-    {
-        auto var = nil;
-        try
-        {
-            var = lookup_var(resolve(first));
-        }
-        catch (cleo::Exception& ) { }
-        if (var && is_var_macro(var))
-            return call_macro(first, list, env);
-    }
+    if (!first.is(RECUR) && get_value_tag(first) == tag::SYMBOL && !map_contains(env, first) && is_var_macro(lookup_var(resolve(first))))
+        return call_macro(first, list, env);
     Root val{first.is(RECUR) ? *recur : eval(first, env)};
-    auto type = get_value_type(*val);
-    if (type.is(*type::Macro))
-        return call_macro(*val, list, env);
     Roots arg_roots(get_int64_value(get_list_size(list)));
     auto elems = eval_args(arg_roots, *val, list, env);
-    return call_fn(type, elems);
+    return call_fn(get_value_type(*val), elems);
 }
 
 Force eval_vector(Value v, Value env)
@@ -708,18 +676,15 @@ Force macroexpand1(Value val, Value form, Value env)
         return val;
 
     Root m{get_list_first(val)};
-    if (get_value_tag(*m) == tag::SYMBOL)
-    {
-        if (SPECIAL_SYMBOLS.count(*m))
-            return val;
-        auto var = symbol_var(*m, env);
-        if (!var)
-            return val;
-        m = get_var_value(var);
-        if (!(is_var_macro(var) && get_value_type(*m).is(*type::Fn)) && !get_value_type(*m).is(*type::Macro))
-            return val;
-    }
-    else if (!get_value_type(*m).is(*type::Macro))
+    if (get_value_tag(*m) != tag::SYMBOL)
+        return val;
+    if (SPECIAL_SYMBOLS.count(*m))
+        return val;
+    auto var = symbol_var(*m, env);
+    if (!var || !is_var_macro(var))
+        return val;
+    m = get_var_value(var);
+    if (!get_value_type(*m).is(*type::Fn))
         return val;
 
     std::vector<Value> elems;

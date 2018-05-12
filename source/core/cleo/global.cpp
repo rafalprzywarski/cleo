@@ -60,7 +60,6 @@ const Value QUOTE = create_symbol("quote");
 const Value UNQUOTE = create_symbol("cleo.core", "unquote");
 const Value UNQUOTE_SPLICING = create_symbol("cleo.core", "unquote-splicing");
 const Value FN = create_symbol("fn*");
-const Value MACRO = create_symbol("macro*");
 const Value DEF = create_symbol("def");
 const Value LET = create_symbol("let*");
 const Value DO = create_symbol("do");
@@ -113,7 +112,6 @@ const Root SENTINEL{create_object0(nil)};
 const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,
     FN,
-    MACRO,
     DEF,
     LET,
     DO,
@@ -179,7 +177,6 @@ const Root Seqable{create_type("cleo.core", "Seqable")};
 const Root Sequence{create_type("cleo.core", "Sequence")};
 const Root Callable{create_type("cleo.core", "Callable")};
 const Root Fn{create_type("cleo.core", "Fn")};
-const Root Macro{create_type("cleo.core", "Macro")};
 const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
 const Root PersistentMap{create_type("cleo.core", "PersistentMap")};
@@ -812,7 +809,6 @@ struct Initialize
         define_type(*type::Sequence);
         define_type(*type::Callable);
         define_type(*type::Fn);
-        define_type(*type::Macro);
         define_type(*type::Recur);
         define_type(*type::Atom);
         define_type(*type::PersistentMap);

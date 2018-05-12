@@ -344,63 +344,6 @@ TEST_F(eval_test, fn_should_fail_when_given_too_many_expressions)
     EXPECT_ANY_THROW(eval(*call));
 }
 
-TEST_F(eval_test, macro_should_return_a_new_macro)
-{
-    auto s = create_symbol("s");
-    auto x = create_symbol("x");
-    Root body{list(s, x)};
-    Root params{array(s, x)};
-    Root exparams{array(FORM, ENV, s, x)};
-    Root call{list(MACRO, *params, *body)};
-    Root val{eval(*call)};
-    ASSERT_EQ_VALS(*type::Macro, get_value_type(*val));
-    EXPECT_EQ_VALS(nil, get_fn_name(*val));
-    ASSERT_EQ(1u, get_fn_size(*val));
-    EXPECT_EQ_VALS(*exparams, get_fn_params(*val, 0));
-    EXPECT_EQ_VALS(*body, get_fn_body(*val, 0));
-}
-
-TEST_F(eval_test, macro_should_return_a_new_macro_with_a_name)
-{
-    auto s = create_symbol("s");
-    auto x = create_symbol("x");
-    auto name = create_symbol("fname");
-    Root body{list(s, x)};
-    Root params{array(s, x)};
-    Root exparams{array(FORM, ENV, s, x)};
-    Root call{list(MACRO, name, *params, *body)};
-    Root val{eval(*call)};
-    ASSERT_EQ_VALS(*type::Macro, get_value_type(*val));
-    EXPECT_EQ_VALS(name, get_fn_name(*val));
-    ASSERT_EQ(1u, get_fn_size(*val));
-    EXPECT_EQ_VALS(*exparams, get_fn_params(*val, 0));
-    EXPECT_EQ_VALS(*body, get_fn_body(*val, 0));
-}
-
-TEST_F(eval_test, macro_should_return_a_new_macro_with_multiple_arities)
-{
-    auto x = create_symbol("x");
-    auto y = create_symbol("y");
-    Root params1{array()};
-    Root params2{array(x)};
-    Root params3{array(x, y)};
-    Root exparams1{array(FORM, ENV)};
-    Root exparams2{array(FORM, ENV, x)};
-    Root exparams3{array(FORM, ENV, x, y)};
-    Root call{create_string("(macro* xyz ([] :a) ([x] :b) ([x y] :c))")};
-    call = read(*call);
-    Root val{eval(*call)};
-    ASSERT_EQ_VALS(*type::Macro, get_value_type(*val));
-    EXPECT_EQ_VALS(create_symbol("xyz"), get_fn_name(*val));
-    ASSERT_EQ(3u, get_fn_size(*val));
-    EXPECT_EQ_VALS(*exparams1, get_fn_params(*val, 0));
-    EXPECT_EQ_VALS(*exparams2, get_fn_params(*val, 1));
-    EXPECT_EQ_VALS(*exparams3, get_fn_params(*val, 2));
-    EXPECT_EQ_VALS(create_keyword("a"), get_fn_body(*val, 0));
-    EXPECT_EQ_VALS(create_keyword("b"), get_fn_body(*val, 1));
-    EXPECT_EQ_VALS(create_keyword("c"), get_fn_body(*val, 2));
-}
-
 TEST_F(eval_test, should_store_the_environment_in_created_fns)
 {
     Root ex{array(3, 4, 5)};
@@ -548,21 +491,6 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved("(fn* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
 }
 
-TEST_F(eval_test, resolving_should_expand_macros_OLD)
-{
-    in_ns(create_symbol("cleo.fn.resolving-macros.test"));
-    define(create_symbol("cleo.fn.resolving-macros.test", "a"), nil);
-    define(create_symbol("cleo.fn.resolving-macros.test", "b"), nil);
-    Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
-    add = read(*add);
-    add = eval(*add);
-    define(create_symbol("cleo.fn.resolving-macros.test", "add"), *add);
-
-    expect_symbol_resolved("(fn* [c d] (cleo.core/+ (cleo.core/+ cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b) (cleo.core/+ c d)))", "(fn* [c d] (add (add a b) (add c d)))", "{}");
-    expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b))", "(fn* [add] (add a b))", "{}");
-    expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a b))", "(fn* [add] (add a b))", "{b nil}");
-}
-
 TEST_F(eval_test, resolving_should_expand_macros)
 {
     in_ns(create_symbol("cleo.fn.resolving-macros.test"));
@@ -579,18 +507,6 @@ TEST_F(eval_test, resolving_should_expand_macros)
     expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a b))", "(fn* [add] (add a b))", "{b nil}");
 }
 
-TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments_OLD)
-{
-    in_ns(create_symbol("cleo.fn.failing-macro-args.test"));
-    Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
-    add = read(*add);
-    add = eval(*add);
-    define(create_symbol("cleo.fn.failing-macro-args.test", "add"), *add);
-
-    expect_resolve_illegal_state("(if 10 add nil)");
-    expect_resolve_illegal_state("(let* [x add] nil)");
-}
-
 TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
 {
     in_ns(create_symbol("cleo.fn.failing-macro-args.test"));
@@ -602,28 +518,6 @@ TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
 
     expect_resolve_illegal_state("(if 10 add nil)");
     expect_resolve_illegal_state("(let* [x add] nil)");
-}
-
-TEST_F(eval_test, resolving_should_fail_when_defining_a_macro)
-{
-    expect_resolve_illegal_state("(macro* [x y] `(cleo.core/+ ~x ~y))");
-}
-
-TEST_F(eval_test, should_expand_all_macros_OLD)
-{
-    in_ns(create_symbol("cleo.fn.macros.test"));
-    Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
-    add = read(*add);
-    add = eval(*add);
-    define(create_symbol("cleo.fn.macros.test", "add"), *add);
-    Root fn{create_string("(fn* [] (add (add 1 2) (add 3 4)))")};
-    fn = read(*fn);
-    fn = eval(*fn);
-    define(create_symbol("cleo.fn.macros.test", "add"), nil);
-    Root val{list(*fn)}, ex;
-    val = eval(*val);
-    ex = create_int64(10);
-    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(eval_test, should_expand_all_macros)

@@ -593,7 +593,6 @@ TEST_F(reader_test, syntax_quote_should_not_quote_special_symbols)
 
     expect_no_quote(QUOTE);
     expect_no_quote(FN);
-    expect_no_quote(MACRO);
     expect_no_quote(DEF);
     expect_no_quote(LET);
     expect_no_quote(DO);

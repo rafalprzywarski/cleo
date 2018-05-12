@@ -7,10 +7,7 @@
 namespace cleo
 {
 
-namespace
-{
-
-Force create_fn(Value type, Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
+Force create_fn(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
 {
     std::vector<Value> ms;
     ms.reserve(2 + 2 * n);
@@ -22,7 +19,7 @@ Force create_fn(Value type, Value env, Value name, const Value *params, const Va
         ms.push_back(bodies[i]);
     }
 
-    Root fn{create_object(type, ms.data(), ms.size())};
+    Root fn{create_object(*type::Fn, ms.data(), ms.size())};
     if (name)
     {
         Root nenv{map_assoc(env, name, *fn)};
@@ -31,38 +28,9 @@ Force create_fn(Value type, Value env, Value name, const Value *params, const Va
     return *fn;
 }
 
-}
-
 Force create_fn(Value env, Value name, Value params, Value body)
 {
     return create_fn(env, name, &params, &body, 1);
-}
-
-Force create_fn(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
-{
-    return create_fn(*type::Fn, env, name, params, bodies, n);
-}
-
-Force create_macro(Value env, Value name, Value params, Value body)
-{
-    return create_macro(env, name, &params, &body, 1);
-}
-
-Force create_macro(Value env, Value name, const Value *params, const Value *bodies, std::uint8_t n)
-{
-    std::array<Value, 2> first{{FORM, ENV}};
-    Roots roots{n};
-    std::vector<Value> complete_params(n);
-    for (decltype(n) i = 0; i < n; ++i)
-    {
-        roots.set(i, create_array(first.data(), first.size()));
-        auto size = get_array_size(params[i]);
-        for (decltype(size) j = 0; j < size; ++j)
-            roots.set(i, array_conj(roots[i], get_array_elem(params[i], j)));
-        complete_params[i] = roots[i];
-    }
-
-    return create_fn(*type::Macro, env, name, complete_params.data(), bodies, n);
 }
 
 Value get_fn_env(Value fn)
