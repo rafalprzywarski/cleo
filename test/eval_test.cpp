@@ -548,7 +548,7 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved("(fn* ([x] x y) ([y] cleo.fn.resolved.test/x y) ([] cleo.fn.resolved.test/x y) ([x y] x y))", "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
 }
 
-TEST_F(eval_test, resolving_should_expand_macros)
+TEST_F(eval_test, resolving_should_expand_macros_OLD)
 {
     in_ns(create_symbol("cleo.fn.resolving-macros.test"));
     define(create_symbol("cleo.fn.resolving-macros.test", "a"), nil);
@@ -563,7 +563,23 @@ TEST_F(eval_test, resolving_should_expand_macros)
     expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a b))", "(fn* [add] (add a b))", "{b nil}");
 }
 
-TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
+TEST_F(eval_test, resolving_should_expand_macros)
+{
+    in_ns(create_symbol("cleo.fn.resolving-macros.test"));
+    define(create_symbol("cleo.fn.resolving-macros.test", "a"), nil);
+    define(create_symbol("cleo.fn.resolving-macros.test", "b"), nil);
+    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    Root meta{amap(MACRO_KEY, TRUE)};
+    define(create_symbol("cleo.fn.resolving-macros.test", "add"), *add, *meta);
+
+    expect_symbol_resolved("(fn* [c d] (cleo.core/+ (cleo.core/+ cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b) (cleo.core/+ c d)))", "(fn* [c d] (add (add a b) (add c d)))", "{}");
+    expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a cleo.fn.resolving-macros.test/b))", "(fn* [add] (add a b))", "{}");
+    expect_symbol_resolved("(fn* [add] (add cleo.fn.resolving-macros.test/a b))", "(fn* [add] (add a b))", "{b nil}");
+}
+
+TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments_OLD)
 {
     in_ns(create_symbol("cleo.fn.failing-macro-args.test"));
     Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
@@ -575,12 +591,25 @@ TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
     expect_resolve_illegal_state("(let* [x add] nil)");
 }
 
+TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
+{
+    in_ns(create_symbol("cleo.fn.failing-macro-args.test"));
+    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    Root meta{amap(MACRO_KEY, TRUE)};
+    define(create_symbol("cleo.fn.failing-macro-args.test", "add"), *add, *meta);
+
+    expect_resolve_illegal_state("(if 10 add nil)");
+    expect_resolve_illegal_state("(let* [x add] nil)");
+}
+
 TEST_F(eval_test, resolving_should_fail_when_defining_a_macro)
 {
     expect_resolve_illegal_state("(macro* [x y] `(cleo.core/+ ~x ~y))");
 }
 
-TEST_F(eval_test, should_expand_all_macros)
+TEST_F(eval_test, should_expand_all_macros_OLD)
 {
     in_ns(create_symbol("cleo.fn.macros.test"));
     Root add{create_string("(macro* [x y] `(cleo.core/+ ~x ~y))")};
@@ -596,6 +625,25 @@ TEST_F(eval_test, should_expand_all_macros)
     ex = create_int64(10);
     EXPECT_EQ_VALS(*ex, *val);
 }
+
+TEST_F(eval_test, should_expand_all_macros)
+{
+    in_ns(create_symbol("cleo.fn.macros.test"));
+    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    Root meta{amap(MACRO_KEY, TRUE)};
+    define(create_symbol("cleo.fn.macros.test", "add"), *add, *meta);
+    Root fn{create_string("(fn* [] (add (add 1 2) (add 3 4)))")};
+    fn = read(*fn);
+    fn = eval(*fn);
+    define(create_symbol("cleo.fn.macros.test", "add"), nil);
+    Root val{list(*fn)}, ex;
+    val = eval(*val);
+    ex = create_int64(10);
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 
 TEST_F(eval_test, should_eval_an_empty_list_as_an_empty_list)
 {

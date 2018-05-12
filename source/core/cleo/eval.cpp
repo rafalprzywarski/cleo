@@ -66,6 +66,8 @@ Force resolve_symbol(Value sym, Value env)
     auto var = lookup_var(resolve(sym));
     if (get_value_type(get_var_value(var)).is(*type::Macro))
         throw_illegal_state("Can't take value of a macro: " + to_string(var));
+    if (is_var_macro(var))
+        throw_illegal_state("Can't take value of a macro: " + to_string(var));
     return get_var_name(var);
 }
 
@@ -193,7 +195,7 @@ Force resolve_list(Value l, Value env)
         ret = resolve_pure_list(get_list_next(l), env);
         return list_conj(*ret, f);
     }
-    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && get_value_type(lookup(f)).is(*type::Macro))
+    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && (get_value_type(lookup(f)).is(*type::Macro) || is_var_macro(lookup_var(resolve(f)))))
     {
         Root expanded{macroexpand(l, env)};
         return resolve_value(*expanded, env);
