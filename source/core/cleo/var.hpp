@@ -8,6 +8,7 @@ Value define_var(Value sym, Value val, Value meta);
 inline Value define_var(Value sym, Value val) { return define_var(sym, val, nil); }
 void undefine_var(Value sym);
 Value lookup_var(Value sym);
+Value lookup_var_or_nil(Value sym);
 void push_bindings(Value bindings);
 void pop_bindings();
 void set_var(Value sym, Value val);

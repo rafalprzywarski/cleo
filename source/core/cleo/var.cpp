@@ -29,14 +29,20 @@ void undefine_var(Value sym)
 
 Value lookup_var(Value sym)
 {
-    auto it = vars.find(sym);
-    if (it == end(vars))
+    auto var = lookup_var_or_nil(sym);
+    if (!var)
     {
         Root ss{pr_str(sym)};
         Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_len(*ss)))};
         throw_exception(new_symbol_not_found(*msg));
     }
-    return it->second;
+    return var;
+}
+
+Value lookup_var_or_nil(Value sym)
+{
+    auto it = vars.find(sym);
+    return (it == end(vars)) ? nil : it->second;
 }
 
 void push_bindings(Value bindings)

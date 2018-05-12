@@ -18,6 +18,13 @@ namespace cleo
 namespace
 {
 
+Value symbol_var(Value sym, Value env)
+{
+    if (env && map_contains(env, sym))
+        return nil;
+    return lookup_var_or_nil(resolve(sym));
+}
+
 Force eval_symbol(Value sym, Value env)
 {
     if (env && map_contains(env, sym))
@@ -614,6 +621,17 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first.is(TRY))
         return eval_try(list, env);
+    if (get_value_tag(first) == tag::SYMBOL)
+    {
+        auto var = nil;
+        try
+        {
+            var = lookup_var(resolve(first));
+        }
+        catch (cleo::Exception& ) { }
+        if (var && is_var_macro(var))
+            return call_macro(first, list, env);
+    }
     Root val{first.is(RECUR) ? *recur : eval(first, env)};
     auto type = get_value_type(*val);
     if (type.is(*type::Macro))
@@ -692,9 +710,14 @@ Force macroexpand1(Value val, Value form, Value env)
     {
         if (SPECIAL_SYMBOLS.count(*m))
             return val;
-        m = eval_symbol(*m, nil);
+        auto var = symbol_var(*m, env);
+        if (!var)
+            return val;
+        m = get_var_value(var);
+        if (!(is_var_macro(var) && get_value_type(*m).is(*type::Fn)) && !get_value_type(*m).is(*type::Macro))
+            return val;
     }
-    if (!get_value_type(*m).is(*type::Macro))
+    else if (!get_value_type(*m).is(*type::Macro))
         return val;
 
     std::vector<Value> elems;
@@ -705,6 +728,8 @@ Force macroexpand1(Value val, Value form, Value env)
     for (Root arg_list{get_list_next(val)}; *arg_list; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
+    if (get_value_type(*m).is(*type::Fn))
+        return call_fn(elems, elems.size() - 1);
     return call_fn(elems, elems.size() - 3);
 }
 
