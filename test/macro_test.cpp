@@ -170,6 +170,27 @@ TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
     EXPECT_EQ_REFS(get_array_elem(*v, 0), *val);
 }
 
+TEST_F(macro_test, eval_should_fail_when_evaluating_a_macro_symbol)
+{
+    Root params{array(FORM, ENV)};
+    Root m{create_fn(nil, nil, *params, nil)};
+    Root meta{amap(MACRO_KEY, TRUE)};
+    auto name = create_symbol("cleo.macro.test.mex7");
+    define(name, *m, *meta);
+
+    try
+    {
+        eval(name);
+        FAIL() << "expected an exception";
+    }
+    catch (Exception const& )
+    {
+        cleo::Root e{cleo::catch_exception()};
+        EXPECT_EQ_REFS(*type::IllegalState, get_value_type(*e));
+    }
+
+}
+
 TEST_F(macro_test, should_correctly_resolve_symbols_from_macros_namespace)
 {
     in_ns(create_symbol("cleo.macro.resolve.test1"));

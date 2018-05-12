@@ -18,6 +18,14 @@ namespace cleo
 namespace
 {
 
+Value lookup_not_macro_var(Value sym)
+{
+    auto var = lookup_var(resolve(sym));
+    if (is_var_macro(var))
+        throw_illegal_state("Can't take value of a macro: " + to_string(var));
+    return var;
+}
+
 Value symbol_var(Value sym, Value env)
 {
     if (env && map_contains(env, sym))
@@ -29,7 +37,7 @@ Force eval_symbol(Value sym, Value env)
 {
     if (env && map_contains(env, sym))
         return call_multimethod2(*rt::get, env, sym);
-    return lookup(sym);
+    return get_var_value(lookup_not_macro_var(sym));
 }
 
 Value eval_quote(Value list)
@@ -63,10 +71,7 @@ Force resolve_symbol(Value sym, Value env)
 {
     if (map_contains(env, sym))
         return sym;
-    auto var = lookup_var(resolve(sym));
-    if (is_var_macro(var))
-        throw_illegal_state("Can't take value of a macro: " + to_string(var));
-    return get_var_name(var);
+    return get_var_name(lookup_not_macro_var(sym));
 }
 
 Force resolve_bindings(Value b, Root& env)
