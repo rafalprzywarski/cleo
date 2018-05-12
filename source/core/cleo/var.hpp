@@ -5,6 +5,7 @@ namespace cleo
 {
 
 Value define_var(Value sym, Value val);
+Value define_var_macro(Value sym, Value val);
 void undefine_var(Value sym);
 Value lookup_var(Value sym);
 void push_bindings(Value bindings);
@@ -13,6 +14,7 @@ void set_var(Value sym, Value val);
 Value get_var_name(Value var);
 Value get_var_root_value(Value var);
 Value get_var_value(Value var);
+Value is_var_macro(Value var);
 
 struct PushBindingsGuard
 {

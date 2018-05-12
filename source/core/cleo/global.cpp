@@ -102,6 +102,7 @@ const Value VECTOR = create_symbol("cleo.core", "vector");
 const Value HASH_MAP = create_symbol("cleo.core", "hash-map");
 const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value CONCATI = create_symbol("cleo.core", "concati");
+const Value MACRO_KEY = create_keyword("macro");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};

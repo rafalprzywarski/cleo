@@ -21,6 +21,7 @@ TEST_F(var_test, should_define_vars)
     Root val1{Force(create_int64(10))};
     Root val2{Force(create_int64(20))};
     auto var1 = define_var(sym1, *val1);
+    ASSERT_FALSE(bool(is_var_macro(var1)));
     ASSERT_EQ_REFS(var1, lookup_var(sym1));
     ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
     ASSERT_EQ_REFS(*val1, get_var_value(var1));
@@ -28,6 +29,28 @@ TEST_F(var_test, should_define_vars)
     ASSERT_EQ_REFS(var1, lookup_var(sym1));
     ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
     ASSERT_EQ_REFS(*val1, get_var_value(var1));
+    ASSERT_FALSE(bool(is_var_macro(var2)));
+    ASSERT_EQ_REFS(var2, lookup_var(sym2));
+    ASSERT_EQ_REFS(*val2, get_var_root_value(var2));
+    ASSERT_EQ_REFS(*val2, get_var_value(var2));
+}
+
+TEST_F(var_test, should_define_macro_vars)
+{
+    auto sym1 = create_symbol("cleo.var.test", "mabc");
+    auto sym2 = create_symbol("cleo.var.test", "mxyz");
+    Root val1{Force(create_int64(10))};
+    Root val2{Force(create_int64(20))};
+    auto var1 = define_var_macro(sym1, *val1);
+    ASSERT_TRUE(bool(is_var_macro(var1)));
+    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
+    ASSERT_EQ_REFS(*val1, get_var_value(var1));
+    auto var2 = define_var_macro(sym2, *val2);
+    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
+    ASSERT_EQ_REFS(*val1, get_var_value(var1));
+    ASSERT_TRUE(bool(is_var_macro(var2)));
     ASSERT_EQ_REFS(var2, lookup_var(sym2));
     ASSERT_EQ_REFS(*val2, get_var_root_value(var2));
     ASSERT_EQ_REFS(*val2, get_var_value(var2));
@@ -44,6 +67,22 @@ TEST_F(var_test, should_redefine_vars)
     ASSERT_EQ_REFS(var, define_var(sym, *val2));
     ASSERT_EQ_REFS(*val2, get_var_value(var));
     ASSERT_EQ_REFS(*val2, get_var_root_value(var));
+}
+
+TEST_F(var_test, should_redefine_macro_vars)
+{
+    auto sym = create_symbol("cleo.var.test", "mbcd");
+    Root val1{Force(create_int64(10))};
+    Root val2{Force(create_int64(20))};
+    auto var = define_var_macro(sym, *val1);
+    ASSERT_EQ_REFS(*val1, get_var_value(var));
+    ASSERT_EQ_REFS(*val1, get_var_root_value(var));
+    ASSERT_EQ_REFS(var, define_var(sym, *val2));
+    ASSERT_FALSE(bool(is_var_macro(var)));
+    ASSERT_EQ_REFS(*val2, get_var_value(var));
+    ASSERT_EQ_REFS(*val2, get_var_root_value(var));
+    ASSERT_EQ_REFS(var, define_var_macro(sym, *val2));
+    ASSERT_TRUE(bool(is_var_macro(var)));
 }
 
 TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
