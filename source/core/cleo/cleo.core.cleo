@@ -23,28 +23,39 @@
   (fn* nnext [x] (next (next x))))
 
 
+(def rest
+  (fn* [coll]
+    (let* [n (next coll)]
+      (if n n ()))))
+
+(def prepend*
+  (fn* prepend* [p b]
+    (conj* (rest b) (apply* vector (concati p (first b))))))
+
 (def wrapdo*
-  (fn* wrapdo* [body]
-    (if (next body)
-      (if (nnext body)
-        (list (first body) (conj* (next body) 'do))
-        body)
-      (list (first body)))))
+  (fn* wrapdo* [body eparams]
+    (prepend*
+      eparams
+      (if (next body)
+        (if (nnext body)
+          (list (first body) (conj* (next body) 'do))
+          body)
+        (list (first body))))))
 
 
-(def defmacro
-  (macro* defmacro [name & decl]
-    (list 'def name (if (vector? (first decl))
-                      `(macro* ~name ~@(wrapdo* decl))
-                      `(macro* ~name ~@(map1 wrapdo* decl))))))
+(def {:macro :true} defmacro
+  (fn* defmacro [&form &env name & decl]
+    (list 'def {:macro :true} name (if (vector? (first decl))
+                      `(fn* ~name ~@(wrapdo* decl '[&form &env]))
+                      `(fn* ~name ~@(map1 (fn* [d] (wrapdo* d '[&form &env])) decl))))))
 
 
 (defmacro fn [& decl]
   (let* [name (if (symbol? (first decl)) [(first decl)] [])
          decl (if (symbol? (first decl)) (next decl) decl)]
     (if (vector? (first decl))
-      `(fn* ~@name ~@(wrapdo* decl))
-      `(fn* ~@name ~@(map1 wrapdo* decl)))))
+      `(fn* ~@name ~@(wrapdo* decl []))
+      `(fn* ~@name ~@(map1 (fn* [d] (wrapdo* d [])) decl)))))
 
 
 (defmacro defn [name & decl] (list 'def name `(fn ~name ~@decl)))
@@ -249,13 +260,15 @@
 
 
 (def wrapdo*
-  (fn* wrapdo* [body]
+  (fn* wrapdo* [body eparams]
     (destructure-fn
-      (if (next body)
-        (if (nnext body)
-          (list (first body) (conj* (next body) 'do))
-          body)
-        (list (first body))))))
+      (prepend*
+        eparams
+        (if (next body)
+          (if (nnext body)
+            (list (first body) (conj* (next body) 'do))
+            body)
+          (list (first body)))))))
 
 
 (defn bit-and

@@ -390,7 +390,7 @@ Force pr_str_exception(Value e)
 
 Force create_ns_macro()
 {
-    Root form{create_string("(macro* ns [ns] `(do (cleo.core/in-ns '~ns) (cleo.core/refer 'cleo.core)))")};
+    Root form{create_string("(fn* ns [&form &env ns] `(do (cleo.core/in-ns '~ns) (cleo.core/refer 'cleo.core)))")};
     form = read(*form);
     return eval(*form);
 }
@@ -1242,8 +1242,10 @@ struct Initialize
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);
 
+        Root macro_meta{create_persistent_hash_map()};
+        macro_meta = persistent_hash_map_assoc(*macro_meta, MACRO_KEY, TRUE);
         f = create_ns_macro();
-        define(NS, *f);
+        define(NS, *f, *macro_meta);
 
         f = create_native_function4<import_c_fn, &IMPORT_C_FN>();
         define(IMPORT_C_FN, *f);

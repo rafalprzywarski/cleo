@@ -6,8 +6,8 @@
 (def failed-tests (atom #{}))
 
 
-(def deftest
-  (macro* deftest [name & body]
+(def {:macro :true} deftest
+  (fn* deftest [&form &env name & body]
     `(swap! tests assoc* '~name (fn* [] (do ~@body)))))
 
 
@@ -18,15 +18,15 @@
       (println @current-test (apply* str msg)))))
 
 
-(def fail-unless
-  (macro* fail-unless [conde & msg]
+(def {:macro :true} fail-unless
+  (fn* fail-unless [&form &env conde & msg]
     `(if ~conde
        nil
        (fail ~@msg))))
 
 
-(def assert=
-  (macro* assert= [expected actual]
+(def {:macro :true} assert=
+  (fn assert= [&form &env expected actual]
     `(let* [expected-val# ~expected]
        (try*
          (let* [actual-val# ~actual]
@@ -40,8 +40,8 @@
                  " actual exception: " ~'e))))))
 
 
-(def assert
-  (macro* assert [actual]
+(def {:macro :true} assert
+  (fn* assert [&form &env actual]
     `(try*
        (let* [actual-val# ~actual]
          (fail-unless actual-val#
@@ -52,13 +52,13 @@
                " expected to be true, actual exception: " ~'e)))))
 
 
-(def assert-not
-  (macro* assert-not [actual]
+(def {:macro :true} assert-not
+  (fn* assert-not [&form &env actual]
     `(assert ~(list 'not actual))))
 
 
-(def assert-throws
-  (macro* [expected actual]
+(def {:macro :true} assert-throws
+  (fn* [&form &env expected actual]
     `(try*
        (try*
          (let* [actual-val# ~actual]
@@ -90,9 +90,9 @@
 
 
 (deftest defmacro
-  (assert= '(def sonia (macro* sonia [x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
-  (assert= '(def sonia (macro* sonia [x] (a))) (macroexpand '(defmacro sonia [x] (a))))
-  (assert= '(def sonia (macro* sonia [x])) (macroexpand '(defmacro sonia [x]))))
+  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
+  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))
+  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia [x]))))
 
 
 (deftest let
