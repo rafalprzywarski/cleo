@@ -167,9 +167,18 @@ Force resolve_list(Value l, Value env)
     {
         l = get_list_next(l);
         auto name = get_list_first(l);
+        auto meta = nil;
+        if (get_value_tag(name) != tag::SYMBOL)
+        {
+            meta = name;
+            l = get_list_next(l);
+            name = get_list_first(l);
+        }
         Root lenv{map_assoc(env, name, nil)};
         ret = resolve_pure_list(get_list_next(l), *lenv);
         ret = list_conj(*ret, name);
+        if (meta)
+            ret = list_conj(*ret, meta);
         return list_conj(*ret, f);
     }
     if (f == DO || f == IF || f == RECUR || f == THROW || f == TRY || f == FINALLY)
@@ -294,7 +303,16 @@ Force eval_def(Value list, Value env)
     Root next{get_list_next(list)};
     if (!*next)
         throw_arity_error(DEF, 0);
+    auto meta = nil;
     auto sym = get_list_first(*next);
+    if (get_value_type(sym).is(*type::PersistentHashMap))
+    {
+        meta = sym;
+        next = get_list_next(*next);
+        if (!*next)
+            throw_illegal_argument("Var name missing");
+        sym = get_list_first(*next);
+    }
     check_type("Symbol name", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
     if (!*rt::current_ns ||
@@ -309,7 +327,7 @@ Force eval_def(Value list, Value env)
     sym = create_symbol(
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
         {get_string_ptr(sym_name), get_string_len(sym_name)});
-    return define(sym, *val);
+    return define(sym, *val, meta);
 }
 
 Force eval_let(Value list, Value env)

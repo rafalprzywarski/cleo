@@ -4,12 +4,8 @@
 #include "print.hpp"
 #include "list.hpp"
 #include "util.hpp"
-#include "array_map.hpp"
 
 namespace cleo
-{
-
-namespace
 {
 
 Value define_var(Value sym, Value val, Value meta)
@@ -24,20 +20,6 @@ Value define_var(Value sym, Value val, Value meta)
     Root var{create_object3(*type::Var, sym, val, meta)};
     vars.insert({sym, *var});
     return *var;
-}
-
-}
-
-Value define_var(Value sym, Value val)
-{
-    return define_var(sym, val, nil);
-}
-
-Value define_var_macro(Value sym, Value val)
-{
-    Root meta{create_array_map()};
-    meta = array_map_assoc(*meta, MACRO_KEY, TRUE);
-    return define_var(sym, val, *meta);
 }
 
 void undefine_var(Value sym)
@@ -116,7 +98,7 @@ Value get_var_value(Value var)
 Value is_var_macro(Value var)
 {
     auto meta = get_object_element(var, 2);
-    return meta ? array_map_get(meta, MACRO_KEY) : nil;
+    return meta ? map_get(meta, MACRO_KEY) : nil;
 }
 
 }

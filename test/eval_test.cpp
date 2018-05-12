@@ -497,6 +497,7 @@ TEST_F(eval_test, should_resolve_variables)
 
     expect_symbol_resolved("(def x [x cleo.fn.resolved2.test/y])", "(def x [x y])", "{}");
     expect_symbol_resolved("(def x [x y])", "(def x [x y])", "{y nil}");
+    expect_symbol_resolved("(def {:some 10} x [x cleo.fn.resolved2.test/y])", "(def {:some 10} x [x y])", "{}");
 
     expect_symbol_resolved("(do cleo.fn.resolved.test/x cleo.fn.resolved2.test/y)", "(do x y)", "{}");
     expect_symbol_resolved("(do cleo.fn.resolved.test/x y)", "(do x y)", "{y nil}");
@@ -643,6 +644,7 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
     val = eval(*val, *env);
     auto name = create_symbol("clue.eval.test", "var1");
     EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_FALSE(bool(is_var_macro(*val)));
     EXPECT_EQ_VALS(*ex, lookup(name));
 }
 
@@ -682,6 +684,9 @@ TEST_F(eval_test, def_should_fail_when_name_is_not_a_symbol)
 {
     Root val{read_str("(def 20 10)")};
     ASSERT_THROW(eval(*val), Exception);
+
+    val = read_str("(def {})");
+    ASSERT_THROW(eval(*val), Exception);
 }
 
 TEST_F(eval_test, def_should_fail_when_given_too_many_arguments)
@@ -690,7 +695,7 @@ TEST_F(eval_test, def_should_fail_when_given_too_many_arguments)
     ASSERT_THROW(eval(*val), Exception);
 }
 
-TEST_F(eval_test, should_define_a_var_with_nil_value_when_not_given_a_value)
+TEST_F(eval_test, def_should_define_a_var_with_nil_value_when_not_given_a_value)
 {
     in_ns(create_symbol("clue.eval.var.default.test"));
     Root val{read_str("(def var1)")};
@@ -700,6 +705,32 @@ TEST_F(eval_test, should_define_a_var_with_nil_value_when_not_given_a_value)
     EXPECT_EQ_VALS(nil, lookup(name));
 }
 
+TEST_F(eval_test, def_should_define_a_var_with_meta)
+{
+    in_ns(create_symbol("clue.eval.var.meta.test"));
+    Root val, ex;
+    val = read_str("(def {:macro :true} var1)");
+    val = eval(*val);
+    auto name = create_symbol("clue.eval.var.meta.test", "var1");
+    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_TRUE(bool(is_var_macro(*val)));
+    EXPECT_EQ_VALS(nil, lookup(name));
+
+    val = read_str("(def {:macro :true} var2 30)");
+    val = eval(*val);
+    ex = i64(30);
+    name = create_symbol("clue.eval.var.meta.test", "var2");
+    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_TRUE(bool(is_var_macro(*val)));
+    EXPECT_EQ_VALS(*ex, lookup(name));
+}
+
+TEST_F(eval_test, def_should_fail_when_meta_is_not_a_map)
+{
+    in_ns(create_symbol("clue.eval.var.meta.test"));
+    Root val{read_str("(def 10 var1 7)")};
+    ASSERT_THROW(eval(*val), Exception);
+}
 
 TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_current_one)
 {

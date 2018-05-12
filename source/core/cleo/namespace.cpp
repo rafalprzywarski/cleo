@@ -60,7 +60,7 @@ Value refer(Value ns)
     return nil;
 }
 
-Value define(Value sym, Value val)
+Value define(Value sym, Value val, Value meta)
 {
     assert(get_value_tag(sym) == tag::SYMBOL);
     Root ns{persistent_hash_map_get(*namespaces, get_symbol_namespace(sym))};
@@ -68,7 +68,7 @@ Value define(Value sym, Value val)
         ns = *EMPTY_MAP;
     ns = persistent_hash_map_assoc(*ns, get_symbol_name(sym), sym);
     namespaces = persistent_hash_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
-    return define_var(sym, val);
+    return define_var(sym, val, meta);
 }
 
 Value resolve(Value ns, Value sym)

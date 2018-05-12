@@ -4,8 +4,8 @@
 namespace cleo
 {
 
-Value define_var(Value sym, Value val);
-Value define_var_macro(Value sym, Value val);
+Value define_var(Value sym, Value val, Value meta);
+inline Value define_var(Value sym, Value val) { return define_var(sym, val, nil); }
 void undefine_var(Value sym);
 Value lookup_var(Value sym);
 void push_bindings(Value bindings);
