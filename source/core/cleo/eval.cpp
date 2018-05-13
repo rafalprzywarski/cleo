@@ -20,7 +20,7 @@ namespace
 
 Value lookup_not_macro_var(Value sym)
 {
-    auto var = lookup_var(resolve(sym));
+    auto var = resolve_var(sym);
     if (is_var_macro(var))
         throw_illegal_state("Can't take value of a macro: " + to_string(var));
     return var;
@@ -30,7 +30,7 @@ Value symbol_var(Value sym, Value env)
 {
     if (env && map_contains(env, sym))
         return nil;
-    return lookup_var_or_nil(resolve(sym));
+    return maybe_resolve_var(sym);
 }
 
 Force eval_symbol(Value sym, Value env)
@@ -196,7 +196,7 @@ Force resolve_list(Value l, Value env)
         ret = resolve_pure_list(get_list_next(l), env);
         return list_conj(*ret, f);
     }
-    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && is_var_macro(lookup_var(resolve(f))))
+    if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && is_var_macro(resolve_var(f)))
     {
         Root expanded{macroexpand(l, env)};
         return resolve_value(*expanded, env);
@@ -608,7 +608,7 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first.is(TRY))
         return eval_try(list, env);
-    if (!first.is(RECUR) && get_value_tag(first) == tag::SYMBOL && !map_contains(env, first) && is_var_macro(lookup_var(resolve(first))))
+    if (!first.is(RECUR) && get_value_tag(first) == tag::SYMBOL && !map_contains(env, first) && is_var_macro(resolve_var(first)))
         return call_macro(first, list, env);
     Root val{first.is(RECUR) ? *recur : eval(first, env)};
     Roots arg_roots(get_int64_value(get_list_size(list)));

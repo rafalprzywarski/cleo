@@ -6,6 +6,7 @@
 #include "util.hpp"
 #include "multimethod.hpp"
 #include "persistent_hash_map.hpp"
+#include "print.hpp"
 #include <fstream>
 
 namespace cleo
@@ -66,35 +67,45 @@ Value define(Value sym, Value val, Value meta)
     Root ns{persistent_hash_map_get(*namespaces, get_symbol_namespace(sym))};
     if (!*ns)
         ns = *EMPTY_MAP;
-    ns = persistent_hash_map_assoc(*ns, get_symbol_name(sym), sym);
+    auto var = define_var(sym, val, meta);
+    ns = persistent_hash_map_assoc(*ns, get_symbol_name(sym), var);
     namespaces = persistent_hash_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
-    return define_var(sym, val, meta);
+    return var;
 }
 
-Value resolve(Value ns, Value sym)
+Value resolve_var(Value ns, Value sym)
+{
+    if (auto var = maybe_resolve_var(ns, sym))
+        return var;
+    Root ss{pr_str(sym)};
+    Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_len(*ss)))};
+    throw_exception(new_symbol_not_found(*msg));
+}
+
+Value resolve_var(Value sym)
+{
+    return resolve_var(*rt::current_ns, sym);
+}
+
+Value maybe_resolve_var(Value ns, Value sym)
 {
     auto sym_ns = get_symbol_namespace(sym);
-    if (!sym_ns)
-    {
-        ns = map_get(*namespaces, get_symbol_name(ns));
-        if (ns)
-        {
-            if (auto found = map_get(ns, get_symbol_name(sym)))
-                sym = found;
-        }
-    }
-    return sym;
+    ns = sym_ns ? sym_ns : get_symbol_name(ns);
+    ns = map_get(*namespaces, ns);
+    auto var = ns ? map_get(ns, get_symbol_name(sym)) : nil;
+    if (!var || (sym_ns && sym_ns != get_symbol_namespace(get_var_name(var))))
+        return nil;
+    return var;
 }
 
-Value resolve(Value sym)
+Value maybe_resolve_var(Value sym)
 {
-    return resolve(*rt::current_ns, sym);
+    return maybe_resolve_var(*rt::current_ns, sym);
 }
 
 Value lookup(Value ns, Value sym)
 {
-    sym = resolve(ns, sym);
-    return get_var_value(lookup_var(sym));
+    return get_var_value(resolve_var(ns, sym));
 }
 
 Value lookup(Value sym)

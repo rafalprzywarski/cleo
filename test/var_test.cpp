@@ -22,15 +22,15 @@ TEST_F(var_test, should_define_vars)
     Root val2{Force(create_int64(20))};
     auto var1 = define_var(sym1, *val1);
     ASSERT_FALSE(bool(is_var_macro(var1)));
-    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(var1, get_var(sym1));
     ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
     ASSERT_EQ_REFS(*val1, get_var_value(var1));
     auto var2 = define_var(sym2, *val2);
-    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(var1, get_var(sym1));
     ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
     ASSERT_EQ_REFS(*val1, get_var_value(var1));
     ASSERT_FALSE(bool(is_var_macro(var2)));
-    ASSERT_EQ_REFS(var2, lookup_var(sym2));
+    ASSERT_EQ_REFS(var2, get_var(sym2));
     ASSERT_EQ_REFS(*val2, get_var_root_value(var2));
     ASSERT_EQ_REFS(*val2, get_var_value(var2));
 }
@@ -44,15 +44,15 @@ TEST_F(var_test, should_define_macro_vars)
     Root meta{amap(MACRO_KEY, TRUE)};
     auto var1 = define_var(sym1, *val1, *meta);
     ASSERT_TRUE(bool(is_var_macro(var1)));
-    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(var1, get_var(sym1));
     ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
     ASSERT_EQ_REFS(*val1, get_var_value(var1));
     auto var2 = define_var(sym2, *val2, *meta);
-    ASSERT_EQ_REFS(var1, lookup_var(sym1));
+    ASSERT_EQ_REFS(var1, get_var(sym1));
     ASSERT_EQ_REFS(*val1, get_var_root_value(var1));
     ASSERT_EQ_REFS(*val1, get_var_value(var1));
     ASSERT_TRUE(bool(is_var_macro(var2)));
-    ASSERT_EQ_REFS(var2, lookup_var(sym2));
+    ASSERT_EQ_REFS(var2, get_var(sym2));
     ASSERT_EQ_REFS(*val2, get_var_root_value(var2));
     ASSERT_EQ_REFS(*val2, get_var_value(var2));
 }
@@ -92,7 +92,7 @@ TEST_F(var_test, lookup_should_fail_when_a_var_is_not_found)
     auto sym = create_symbol("cleo.var.test", "missing");
     try
     {
-        lookup_var(sym);
+        get_var(sym);
     }
     catch (const Exception& )
     {
@@ -116,35 +116,35 @@ TEST_F(var_test, binding_should_override)
     {
         Root bindings1{amap(a, ka2)};
         PushBindingsGuard bind1{*bindings1};
-        EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
-        EXPECT_EQ_VALS(ka2, get_var_value(lookup_var(a)));
-        EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
-        EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
+        EXPECT_EQ_VALS(ka, get_var_root_value(get_var(a)));
+        EXPECT_EQ_VALS(ka2, get_var_value(get_var(a)));
+        EXPECT_EQ_VALS(kb, get_var_root_value(get_var(b)));
+        EXPECT_EQ_VALS(kb, get_var_value(get_var(b)));
         {
             Root bindings2{amap(a, ka3, b, kb2)};
             PushBindingsGuard bind1{*bindings2};
-            EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
-            EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
-            EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
-            EXPECT_EQ_VALS(kb2, get_var_value(lookup_var(b)));
+            EXPECT_EQ_VALS(ka, get_var_root_value(get_var(a)));
+            EXPECT_EQ_VALS(ka3, get_var_value(get_var(a)));
+            EXPECT_EQ_VALS(kb, get_var_root_value(get_var(b)));
+            EXPECT_EQ_VALS(kb2, get_var_value(get_var(b)));
             {
                 Root bindings3{amap()};
                 PushBindingsGuard bind1{*bindings3};
-                EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
-                EXPECT_EQ_VALS(ka3, get_var_value(lookup_var(a)));
-                EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
-                EXPECT_EQ_VALS(kb2, get_var_value(lookup_var(b)));
+                EXPECT_EQ_VALS(ka, get_var_root_value(get_var(a)));
+                EXPECT_EQ_VALS(ka3, get_var_value(get_var(a)));
+                EXPECT_EQ_VALS(kb, get_var_root_value(get_var(b)));
+                EXPECT_EQ_VALS(kb2, get_var_value(get_var(b)));
             }
         }
-        EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
-        EXPECT_EQ_VALS(ka2, get_var_value(lookup_var(a)));
-        EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
-        EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
+        EXPECT_EQ_VALS(ka, get_var_root_value(get_var(a)));
+        EXPECT_EQ_VALS(ka2, get_var_value(get_var(a)));
+        EXPECT_EQ_VALS(kb, get_var_root_value(get_var(b)));
+        EXPECT_EQ_VALS(kb, get_var_value(get_var(b)));
     }
-    EXPECT_EQ_VALS(ka, get_var_root_value(lookup_var(a)));
-    EXPECT_EQ_VALS(ka, get_var_value(lookup_var(a)));
-    EXPECT_EQ_VALS(kb, get_var_root_value(lookup_var(b)));
-    EXPECT_EQ_VALS(kb, get_var_value(lookup_var(b)));
+    EXPECT_EQ_VALS(ka, get_var_root_value(get_var(a)));
+    EXPECT_EQ_VALS(ka, get_var_value(get_var(a)));
+    EXPECT_EQ_VALS(kb, get_var_root_value(get_var(b)));
+    EXPECT_EQ_VALS(kb, get_var_value(get_var(b)));
 }
 
 TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)

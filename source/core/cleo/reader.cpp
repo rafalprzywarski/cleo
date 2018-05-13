@@ -279,14 +279,16 @@ Force generate_symbol(Root& generated, Value sym)
 
 Force syntax_quote_resolve_symbol(Root& generated, Value sym)
 {
+    if (get_symbol_namespace(sym))
+        return sym;
     if (SPECIAL_SYMBOLS.count(sym))
         return sym;
     if (is_generating(sym))
         return generate_symbol(generated, sym);
     auto ns{*rt::current_ns};
-    sym = resolve(ns, sym);
-    if (get_symbol_namespace(sym))
-        return sym;
+    auto var = maybe_resolve_var(ns, sym);
+    if (var)
+        return get_var_name(var);
     auto sym_ns = get_symbol_name(ns);
     auto sym_name = get_symbol_name(sym);
     return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
@@ -425,7 +427,7 @@ Force read_var(Stream& s)
     Root sym{read(s)};
     if (get_value_tag(*sym) != tag::SYMBOL)
         throw_read_error("expected a symbol", sym_pos);
-    return lookup_var(resolve(*sym));
+    return resolve_var(*sym);
 }
 
 [[noreturn]] void throw_unexpected(char c, Stream::Position pos)

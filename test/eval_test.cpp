@@ -585,7 +585,7 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
     Root val{read_str("(def var1 ((fn* [] x)))")};
     val = eval(*val, *env);
     auto name = create_symbol("clue.eval.test", "var1");
-    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_FALSE(bool(is_var_macro(*val)));
     EXPECT_EQ_VALS(*ex, lookup(name));
 }
@@ -643,7 +643,7 @@ TEST_F(eval_test, def_should_define_a_var_with_nil_value_when_not_given_a_value)
     Root val{read_str("(def var1)")};
     val = eval(*val);
     auto name = create_symbol("clue.eval.var.default.test", "var1");
-    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_EQ_VALS(nil, lookup(name));
 }
 
@@ -654,7 +654,7 @@ TEST_F(eval_test, def_should_define_a_var_with_meta)
     val = read_str("(def {:macro :true} var1)");
     val = eval(*val);
     auto name = create_symbol("clue.eval.var.meta.test", "var1");
-    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_TRUE(bool(is_var_macro(*val)));
     EXPECT_EQ_VALS(nil, lookup(name));
 
@@ -662,7 +662,7 @@ TEST_F(eval_test, def_should_define_a_var_with_meta)
     val = eval(*val);
     ex = i64(30);
     name = create_symbol("clue.eval.var.meta.test", "var2");
-    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_TRUE(bool(is_var_macro(*val)));
     EXPECT_EQ_VALS(*ex, lookup(name));
 }
@@ -683,7 +683,7 @@ TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_c
     Root val{read_str("(def clue.eval.test/var3 ((fn* [] x)))")};
     val = eval(*val, *env);
     auto name = create_symbol("clue.eval.test", "var3");
-    EXPECT_EQ_VALS(lookup_var(name), *val);
+    EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var3")));
 }
 
@@ -1082,8 +1082,8 @@ TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
     Root val{load(*source)};
     auto ex = create_keyword("abc");
     EXPECT_EQ_VALS(ex, *val);
-    EXPECT_EQ_VALS(ex, get_var_value(lookup_var(create_symbol("cleo.eval.load2.test", "x"))));
-    EXPECT_EQ_VALS(create_keyword("xyz"), get_var_value(lookup_var(create_symbol("cleo.eval.load.test", "y"))));
+    EXPECT_EQ_VALS(ex, get_var_value(get_var(create_symbol("cleo.eval.load2.test", "x"))));
+    EXPECT_EQ_VALS(create_keyword("xyz"), get_var_value(get_var(create_symbol("cleo.eval.load.test", "y"))));
     EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), *rt::current_ns);
 }
 

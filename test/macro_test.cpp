@@ -41,7 +41,7 @@ TEST_F(macro_test, macroexpand1_should_eval_the_body)
     Root body{list(QUOTE, *first)};
     Root params{array(FORM, ENV)};
     Root m{create_fn(nil, nil, *params, *body)};
-    auto name = create_symbol("cleo.macro.test.mex1");
+    auto name = create_symbol("cleo.macro.test", "mex1");
     Root meta{amap(MACRO_KEY, TRUE)};
     define(name, *m, *meta);
     Root call{list(name)};
@@ -57,7 +57,7 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
     Root body{array(b, c, a)};
     Root params{array(FORM, ENV, a, b, c)};
     Root m{create_fn(nil, nil, *params, *body)};
-    auto name = create_symbol("cleo.macro.test.mex1");
+    auto name = create_symbol("cleo.macro.test", "mex1");
     Root meta{amap(MACRO_KEY, TRUE)};
     define(name, *m, *meta);
     Root v{array(5, 6, 7)};
@@ -94,7 +94,7 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     Root params{array(FORM, ENV, a, b, c)};
     Root m{create_fn(nil, nil, *params, nil)};
     Root meta{amap(MACRO_KEY, TRUE)};
-    auto name = create_symbol("cleo.macro.test.mex3");
+    auto name = create_symbol("cleo.macro.test", "mex3");
     define(name, *m, *meta);
     Root call{list(name, SEQ, FIRST)};
     try
@@ -129,7 +129,7 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
     Root meta{amap(MACRO_KEY, TRUE)};
     auto x = create_keyword("x");
     Root m{create_fn(nil, nil, *params, x)};
-    auto name = create_symbol("cleo.macro.test.mex3");
+    auto name = create_symbol("cleo.macro.test", "mex3");
     define(name, *m, *meta);
     Root call{list(name)};
     Root val{macroexpand(*call)};
@@ -137,7 +137,7 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 
     Root q{list(QUOTE, *call)};
     m = create_fn(nil, nil, *params, *q);
-    name = create_symbol("cleo.macro.test.mex4");
+    name = create_symbol("cleo.macro.test", "mex4");
     define(name, *m, *meta);
     call = list(name);
     val = macroexpand(*call);
@@ -145,7 +145,7 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 
     q = list(QUOTE, *call);
     m = create_fn(nil, nil, *params, *q);
-    name = create_symbol("cleo.macro.test.mex5");
+    name = create_symbol("cleo.macro.test", "mex5");
     define(name, *m, *meta);
     call = list(name);
     val = macroexpand(*call);
@@ -163,7 +163,7 @@ TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
     Root params{array(FORM, ENV)};
     Root m{create_fn(nil, nil, *params, *body)};
     Root meta{amap(MACRO_KEY, TRUE)};
-    auto name = create_symbol("cleo.macro.test.mex6");
+    auto name = create_symbol("cleo.macro.test", "mex6");
     define(name, *m, *meta);
     Root call{list(name)};
     Root val{eval(*call, *env)};
@@ -175,7 +175,7 @@ TEST_F(macro_test, eval_should_fail_when_evaluating_a_macro_symbol)
     Root params{array(FORM, ENV)};
     Root m{create_fn(nil, nil, *params, nil)};
     Root meta{amap(MACRO_KEY, TRUE)};
-    auto name = create_symbol("cleo.macro.test.mex7");
+    auto name = create_symbol("cleo.macro.test", "mex7");
     define(name, *m, *meta);
 
     try
