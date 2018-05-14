@@ -6,6 +6,7 @@ add_library(cleo_core
   cleo/array_set.cpp
   cleo/atom.cpp
   cleo/clib.cpp
+  cleo/cons.cpp
   cleo/equality.cpp
   cleo/error.cpp
   cleo/eval.cpp

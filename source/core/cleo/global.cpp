@@ -3,6 +3,7 @@
 #include "multimethod.hpp"
 #include "equality.hpp"
 #include "list.hpp"
+#include "cons.hpp"
 #include "print.hpp"
 #include "var.hpp"
 #include "error.hpp"
@@ -97,6 +98,7 @@ const Value HASH_OBJ = create_symbol("cleo.core", "hash-obj");
 const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
 const Value COMMAND_LINE_ARGS = create_symbol("cleo.core", "*command-line-args*");
 const Value LIST = create_symbol("cleo.core", "list");
+const Value CONS = create_symbol("cleo.core", "cons");
 const Value VECTOR = create_symbol("cleo.core", "vector");
 const Value HASH_MAP = create_symbol("cleo.core", "hash-map");
 const Value HASH_SET = create_symbol("cleo.core", "hash-set");
@@ -166,6 +168,7 @@ const Root Symbol{create_type("cleo.core", "Symbol")};
 const Root Keyword{create_type("cleo.core", "Keyword")};
 const Root Var{create_type("cleo.core", "Var")};
 const Root List{create_type("cleo.core", "List")};
+const Root Cons{create_type("cleo.core", "Cons")};
 const Root Array{create_type("cleo.core", "Array")};
 const Root ArraySeq{create_type("cleo.core", "ArraySeq")};
 const Root ArrayMap{create_type("cleo.core", "ArrayMap")};
@@ -732,6 +735,23 @@ Value nil_contains(Value, Value)
     return nil;
 }
 
+Value nil_count(Value)
+{
+    return *ZERO;
+}
+
+Force cons_size(Value c)
+{
+    Root nc{call_multimethod1(*rt::count, cons_next(c))};
+    return create_int64(1 + get_int64_value(*nc));
+}
+
+Force cons(Value elem, Value next)
+{
+    Root s{call_multimethod1(*rt::seq, next)};
+    return create_cons(elem, *s);
+}
+
 Force mk_keyword(Value val)
 {
     auto t = get_value_tag(val);
@@ -798,6 +818,7 @@ struct Initialize
         define_type(*type::Var);
         define_type(*type::Seqable);
         define_type(*type::List);
+        define_type(*type::Cons);
         define_type(*type::Array);
         define_type(*type::ArraySeq);
         define_type(*type::ArrayMap);
@@ -898,6 +919,14 @@ struct Initialize
         f = create_native_function1<get_list_next>();
         define_method(NEXT, *type::List, *f);
 
+        derive(*type::Cons, *type::Sequence);
+        f = create_native_function1<identity>();
+        define_method(SEQ, *type::Cons, *f);
+        f = create_native_function1<cons_first>();
+        define_method(FIRST, *type::Cons, *f);
+        f = create_native_function1<cons_next>();
+        define_method(NEXT, *type::Cons, *f);
+
         derive(*type::Array, *type::Seqable);
         f = create_native_function1<array_seq>();
         define_method(SEQ, *type::Array, *f);
@@ -952,8 +981,12 @@ struct Initialize
         define_method(COUNT, *type::ArraySet, *f);
         f = create_native_function1<get_list_size>();
         define_method(COUNT, *type::List, *f);
+        f = create_native_function1<cons_size>();
+        define_method(COUNT, *type::Cons, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_size>::fn>();
         define_method(COUNT, *type::Array, *f);
+        f = create_native_function1<nil_count>();
+        define_method(COUNT, nil, *f);
 
         define_multimethod(GET, *first_type, undefined);
 
@@ -991,8 +1024,14 @@ struct Initialize
         f = create_native_function2<list_conj>();
         define_method(CONJ, *type::List, *f);
 
+        f = create_native_function2<cons_conj>();
+        define_method(CONJ, *type::Cons, *f);
+
         f = create_native_function2<nil_conj>();
         define_method(CONJ, nil, *f);
+
+        f = create_native_function2<cons, &CONS>();
+        define(CONS, *f);
 
         define_multimethod(ASSOC, *first_type, undefined);
 
