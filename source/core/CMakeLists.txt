@@ -13,6 +13,7 @@ add_library(cleo_core
   cleo/fn.cpp
   cleo/global.cpp
   cleo/hash.cpp
+  cleo/lazy_seq.cpp
   cleo/list.cpp
   cleo/memory.cpp
   cleo/multimethod.cpp

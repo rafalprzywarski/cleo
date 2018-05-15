@@ -4,6 +4,7 @@
 #include "equality.hpp"
 #include "list.hpp"
 #include "cons.hpp"
+#include "lazy_seq.hpp"
 #include "print.hpp"
 #include "var.hpp"
 #include "error.hpp"
@@ -99,6 +100,7 @@ const Value IMPORT_C_FN = create_symbol("cleo.core", "import-c-fn");
 const Value COMMAND_LINE_ARGS = create_symbol("cleo.core", "*command-line-args*");
 const Value LIST = create_symbol("cleo.core", "list");
 const Value CONS = create_symbol("cleo.core", "cons");
+const Value LAZY_SEQ = create_symbol("cleo.core", "lazy-seq*");
 const Value VECTOR = create_symbol("cleo.core", "vector");
 const Value HASH_MAP = create_symbol("cleo.core", "hash-map");
 const Value HASH_SET = create_symbol("cleo.core", "hash-set");
@@ -169,6 +171,7 @@ const Root Keyword{create_type("cleo.core", "Keyword")};
 const Root Var{create_type("cleo.core", "Var")};
 const Root List{create_type("cleo.core", "List")};
 const Root Cons{create_type("cleo.core", "Cons")};
+const Root LazySeq{create_type("cleo.core", "LazySeq")};
 const Root Array{create_type("cleo.core", "Array")};
 const Root ArraySeq{create_type("cleo.core", "ArraySeq")};
 const Root ArrayMap{create_type("cleo.core", "ArrayMap")};
@@ -740,6 +743,15 @@ Value nil_count(Value)
     return *ZERO;
 }
 
+Force seq_count(Value s)
+{
+    Root sn{call_multimethod1(*rt::seq, s)};
+    Int64 n = 0;
+    for (; *sn; sn = call_multimethod1(*rt::next, *sn))
+        ++n;
+    return create_int64(n);
+}
+
 Force cons_size(Value c)
 {
     Root nc{call_multimethod1(*rt::count, cons_next(c))};
@@ -819,6 +831,7 @@ struct Initialize
         define_type(*type::Seqable);
         define_type(*type::List);
         define_type(*type::Cons);
+        define_type(*type::LazySeq);
         define_type(*type::Array);
         define_type(*type::ArraySeq);
         define_type(*type::ArrayMap);
@@ -927,6 +940,14 @@ struct Initialize
         f = create_native_function1<cons_next>();
         define_method(NEXT, *type::Cons, *f);
 
+        derive(*type::LazySeq, *type::Sequence);
+        f = create_native_function1<lazy_seq_seq>();
+        define_method(SEQ, *type::LazySeq, *f);
+        f = create_native_function1<lazy_seq_first>();
+        define_method(FIRST, *type::LazySeq, *f);
+        f = create_native_function1<lazy_seq_next>();
+        define_method(NEXT, *type::LazySeq, *f);
+
         derive(*type::Array, *type::Seqable);
         f = create_native_function1<array_seq>();
         define_method(SEQ, *type::Array, *f);
@@ -983,6 +1004,8 @@ struct Initialize
         define_method(COUNT, *type::List, *f);
         f = create_native_function1<cons_size>();
         define_method(COUNT, *type::Cons, *f);
+        f = create_native_function1<seq_count>();
+        define_method(COUNT, *type::Sequence, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_size>::fn>();
         define_method(COUNT, *type::Array, *f);
         f = create_native_function1<nil_count>();
@@ -1027,11 +1050,17 @@ struct Initialize
         f = create_native_function2<cons_conj>();
         define_method(CONJ, *type::Cons, *f);
 
+        f = create_native_function2<lazy_seq_conj>();
+        define_method(CONJ, *type::LazySeq, *f);
+
         f = create_native_function2<nil_conj>();
         define_method(CONJ, nil, *f);
 
         f = create_native_function2<cons, &CONS>();
         define(CONS, *f);
+
+        f = create_native_function1<create_lazy_seq, &LAZY_SEQ>();
+        define(LAZY_SEQ, *f);
 
         define_multimethod(ASSOC, *first_type, undefined);
 

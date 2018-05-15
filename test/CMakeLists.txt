@@ -10,6 +10,7 @@ add_executable(cleo_test
   eval_test.cpp
   fn_test.cpp
   hash_test.cpp
+  lazy_seq_test.cpp
   list_test.cpp
   macro_test.cpp
   math_test.cpp

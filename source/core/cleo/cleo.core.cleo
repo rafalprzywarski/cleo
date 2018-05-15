@@ -82,6 +82,9 @@
 (defn second [x] (first (next x)))
 
 
+(defmacro lazy-seq [& body] `(lazy-seq* (fn* [] (do ~@body))))
+
+
 (defmacro when [expr & body]
   `(if ~expr (do ~@body)))
 
