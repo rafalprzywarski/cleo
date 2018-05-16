@@ -290,6 +290,7 @@ const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shi
 const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
+const Value SYMBOL = create_symbol("cleo.core", "symbol");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -393,7 +394,7 @@ Force pr_str_exception(Value e)
 
 Force create_ns_macro()
 {
-    Root form{create_string("(fn* ns [&form &env ns] `(do (cleo.core/in-ns '~ns) (cleo.core/refer 'cleo.core)))")};
+    Root form{create_string("(fn* ns [&form &env ns] `(do (cleo.core/in-ns '~ns) (cleo.core/refer '~'cleo.core)))")};
     form = read(*form);
     return eval(*form);
 }
@@ -780,6 +781,15 @@ Force mk_keyword(Value val)
     }
 }
 
+Force mk_symbol(Value ns, Value name)
+{
+    check_type("ns", ns, *type::String);
+    check_type("name", name, *type::String);
+    return create_symbol(
+        std::string(get_string_ptr(ns), get_string_len(ns)),
+        std::string(get_string_ptr(name), get_string_len(name)));
+}
+
 Force get_name(Value val)
 {
     auto t = get_value_tag(val);
@@ -911,6 +921,9 @@ struct Initialize
 
         f = create_native_function1<get_name, &NAME>();
         define(NAME, *f);
+
+        f = create_native_function2<mk_symbol, &SYMBOL>();
+        define(SYMBOL, *f);
 
         auto undefined = create_symbol("cleo.core/-UNDEFINED-");
         define_multimethod(SEQ, *first_type, undefined);

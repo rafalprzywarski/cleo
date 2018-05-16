@@ -370,3 +370,13 @@
         (if (pred v)
           (cons v (filter pred n))
           (filter pred n))))))
+
+
+(defmacro ns [name & references]
+  (let [gen-reference
+        (fn [[kind & args]]
+          `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))]
+    `(do
+       (cleo.core/in-ns '~name)
+       (cleo.core/refer '~'cleo.core)
+       ~@(map gen-reference references))))
