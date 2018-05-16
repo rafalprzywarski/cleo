@@ -107,6 +107,10 @@ TEST_F(reader_test, should_parse_symbols_with_namespaces)
     EXPECT_EQ_VALS(create_symbol("abc123", "xyz"), *val);
     val = read_str("a.b.c/d.e.f");
     EXPECT_EQ_VALS(create_symbol("a.b.c", "d.e.f"), *val);
+    val = read_str("a.b.c//");
+    EXPECT_EQ_VALS(create_symbol("a.b.c", "/"), *val);
+    val = read_str("a.b.c//////");
+    EXPECT_EQ_VALS(create_symbol("a.b.c", "/////"), *val);
     val = read_str("cleo.core/seq");
     EXPECT_EQ_VALS(SEQ, *val);
 }

@@ -85,7 +85,7 @@ Force read_symbol(Stream& s)
     {
         s.next();
         std::string name;
-        while (is_symbol_char(s.peek()))
+        while (is_symbol_char(s.peek()) || s.peek() == '/')
             name += s.next();
         return create_symbol(str, name);
     }
