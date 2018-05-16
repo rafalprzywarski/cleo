@@ -433,3 +433,10 @@
   (assert-not (let [called? (atom nil)]
                 (doseq [x []] (reset! called? :true))
                 @called?)))
+
+
+(deftest map
+  (assert= () (map inc nil))
+  (assert= () (map inc []))
+  (assert= '(11) (map inc [10]))
+  (assert= '(9 7 2) (map dec [10 8 3])))
