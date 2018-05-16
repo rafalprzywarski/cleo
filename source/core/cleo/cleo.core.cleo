@@ -359,4 +359,14 @@
 (defn map [f coll]
   (lazy-seq
     (when-let [s (seq coll)]
-      (cons (f (first s)) (map f (rest s))))))
+      (cons (f (first s)) (map f (next s))))))
+
+
+(defn filter [pred coll]
+  (lazy-seq
+    (when-let [s (seq coll)]
+      (let [v (first s)
+            n (next s)]
+        (if (pred v)
+          (cons v (filter pred n))
+          (filter pred n))))))
