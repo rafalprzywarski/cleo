@@ -92,4 +92,20 @@ Force map_merge(Value m1, Value m2)
     return call_multimethod2(*rt::merge, m1, m2);
 }
 
+Value namespace_symbol(Value sym)
+{
+    auto ns = get_symbol_namespace(sym);
+    if (!ns)
+        return nil;
+    return create_symbol({get_string_ptr(ns), get_string_len(ns)});
+}
+
+Value name_symbol(Value sym)
+{
+    if (!get_symbol_namespace(sym))
+        return sym;
+    auto name = get_symbol_name(sym);
+    return create_symbol({get_string_ptr(name), get_string_len(name)});
+}
+
 }

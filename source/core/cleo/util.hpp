@@ -172,4 +172,7 @@ Force map_assoc(Value m, Value k, Value v);
 Value map_get(Value m, Value k);
 Force map_merge(Value m1, Value m2);
 
+Value namespace_symbol(Value sym);
+Value name_symbol(Value sym);
+    
 }

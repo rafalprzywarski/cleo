@@ -291,6 +291,7 @@ const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
 const Value SYMBOL = create_symbol("cleo.core", "symbol");
+const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -1348,6 +1349,8 @@ struct Initialize
         define_function(BITSHIFTLEFT, create_native_function2<bit_shift_left, &BITSHIFTLEFT>());
         define_function(BITSHIFTRIGHT, create_native_function2<bit_shift_right, &BITSHIFTRIGHT>());
         define_function(UNSIGNEDBITSHIFTRIGHT, create_native_function2<unsigned_bit_shift_right, &UNSIGNEDBITSHIFTRIGHT>());
+
+        define_function(NS_MAP, create_native_function1<ns_map, &NS_MAP>());
     }
 } initialize;
 

@@ -49,14 +49,11 @@ Value refer(Value ns)
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    auto current_ns_name = get_symbol_name(*rt::current_ns);
+    auto current_ns_name = *rt::current_ns;
     Root current_ns{map_get(*namespaces, current_ns_name)};
     if (!*current_ns)
         current_ns = *EMPTY_MAP;
-    ns =map_get(*namespaces, get_symbol_name(ns));
-    if (!ns)
-        return nil;
-    current_ns = map_merge(*current_ns, ns);
+    current_ns = map_merge(*current_ns, ns_map(ns));
     namespaces = map_assoc(*namespaces, current_ns_name, *current_ns);
     return nil;
 }
@@ -64,12 +61,14 @@ Value refer(Value ns)
 Value define(Value sym, Value val, Value meta)
 {
     assert(get_value_tag(sym) == tag::SYMBOL);
-    Root ns{persistent_hash_map_get(*namespaces, get_symbol_namespace(sym))};
+    auto ns_name = namespace_symbol(sym);
+    Root ns{persistent_hash_map_get(*namespaces, ns_name)};
     if (!*ns)
         ns = *EMPTY_MAP;
     auto var = define_var(sym, val, meta);
-    ns = persistent_hash_map_assoc(*ns, get_symbol_name(sym), var);
-    namespaces = persistent_hash_map_assoc(*namespaces, get_symbol_namespace(sym), *ns);
+    auto var_name = name_symbol(sym);
+    ns = persistent_hash_map_assoc(*ns, var_name, var);
+    namespaces = persistent_hash_map_assoc(*namespaces, ns_name, *ns);
     return var;
 }
 
@@ -89,11 +88,12 @@ Value resolve_var(Value sym)
 
 Value maybe_resolve_var(Value ns, Value sym)
 {
-    auto sym_ns = get_symbol_namespace(sym);
-    ns = sym_ns ? sym_ns : get_symbol_name(ns);
+    auto sym_ns = namespace_symbol(sym);
+    ns = sym_ns ? sym_ns : name_symbol(ns);
     ns = map_get(*namespaces, ns);
-    auto var = ns ? map_get(ns, get_symbol_name(sym)) : nil;
-    if (!var || (sym_ns && sym_ns != get_symbol_namespace(get_var_name(var))))
+    auto var_name = name_symbol(sym);
+    auto var = ns ? map_get(ns, var_name) : nil;
+    if (!var || (sym_ns && get_symbol_name(sym_ns) != get_symbol_namespace(get_var_name(var))))
         return nil;
     return var;
 }
@@ -132,6 +132,15 @@ Value require(Value ns)
     Root ssource{create_string(source)};
     load(*ssource);
     return nil;
+}
+
+Value ns_map(Value ns)
+{
+    check_type("ns", ns, *type::Symbol);
+    auto found = map_get(*namespaces, ns);
+    if (!found)
+        throw_illegal_argument("Namespace not found: " + to_string(ns));
+    return found;
 }
 
 }
