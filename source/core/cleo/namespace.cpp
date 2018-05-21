@@ -15,9 +15,9 @@ namespace cleo
 namespace
 {
 
-Force create_namespace(Value name, Value mapping)
+Force create_namespace(Value name)
 {
-    return create_object2(*type::Namespace, name, mapping);
+    return create_object3(*type::Namespace, name, *EMPTY_MAP, *EMPTY_MAP);
 }
 
 Value get_ns_mapping(Value ns)
@@ -30,12 +30,22 @@ void set_ns_mapping(Value ns, Value mapping)
     set_object_element(ns, 1, mapping);
 }
 
+Value get_ns_aliases(Value ns)
+{
+    return get_object_element(ns, 2);
+}
+
+void set_ns_aliseses(Value ns, Value aliases)
+{
+    set_object_element(ns, 2, aliases);
+}
+
 Value get_or_create_ns(Value name)
 {
     auto ns = persistent_hash_map_get(*namespaces, name);
     if (ns)
         return ns;
-    Root new_ns{create_namespace(name, nil)};
+    Root new_ns{create_namespace(name)};
     namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
     return *new_ns;
 }
@@ -91,7 +101,7 @@ Value refer(Value ns)
     }
     Root mapping{get_ns_mapping(*rt::current_ns)};
     auto other_mapping = ns_map(ns);
-    mapping = map_merge(*mapping ? *mapping : *EMPTY_MAP, other_mapping ? other_mapping : *EMPTY_MAP);
+    mapping = map_merge(*mapping, other_mapping);
     set_ns_mapping(*rt::current_ns, *mapping);
     return nil;
 }
@@ -104,7 +114,7 @@ Value define(Value sym, Value val, Value meta)
     auto var = define_var(sym, val, meta);
     auto var_name = name_symbol(sym);
     Root mapping{get_ns_mapping(ns)};
-    mapping = persistent_hash_map_assoc(*mapping ? *mapping : *EMPTY_MAP, var_name, var);
+    mapping = persistent_hash_map_assoc(*mapping, var_name, var);
     set_ns_mapping(ns, *mapping);
     return var;
 }
@@ -126,14 +136,18 @@ Value resolve_var(Value sym)
 Value maybe_resolve_var(Value ns, Value sym)
 {
     auto sym_ns = namespace_symbol(sym);
-    ns = sym_ns ? sym_ns : name_symbol(ns);
+    auto sym_name = name_symbol(sym);
     ns = persistent_hash_map_get(*namespaces, ns);
+    if (sym_ns)
+    {
+        if (auto alias = persistent_hash_map_get(get_ns_aliases(ns), sym_ns))
+            sym_ns = ns_name(alias);
+        ns = persistent_hash_map_get(*namespaces, sym_ns);
+    }
     if (!ns)
         return nil;
-    auto mapping = get_ns_mapping(ns);
-    auto var_name = name_symbol(sym);
-    auto var = mapping ? persistent_hash_map_get(mapping, var_name) : nil;
-    if (!var || (sym_ns && get_symbol_name(sym_ns) != get_symbol_namespace(get_var_name(var))))
+    auto var = persistent_hash_map_get(get_ns_mapping(ns), sym_name);
+    if (!var || (sym_ns && sym_ns != namespace_symbol(get_var_name(var))))
         return nil;
     return var;
 }
@@ -174,9 +188,22 @@ Value require(Value ns)
     return nil;
 }
 
+Value alias(Value as, Value ns)
+{
+    Root aliases{get_ns_aliases(*rt::current_ns)};
+    aliases = persistent_hash_map_assoc(*aliases, as, get_ns(ns));
+    set_ns_aliseses(*rt::current_ns, *aliases);
+    return nil;
+}
+
 Value ns_map(Value ns)
 {
     return get_ns_mapping(get_ns(ns));
+}
+
+Value ns_aliases(Value ns)
+{
+    return get_ns_aliases(get_ns(ns));
 }
 
 }

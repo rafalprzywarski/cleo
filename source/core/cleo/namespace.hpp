@@ -17,6 +17,8 @@ Value maybe_resolve_var(Value sym);
 Value lookup(Value ns, Value sym);
 Value lookup(Value sym);
 Value require(Value ns);
+Value alias(Value as, Value ns);
+Value ns_aliases(Value ns);
 Value ns_map(Value ns);
 
 }

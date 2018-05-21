@@ -80,5 +80,39 @@ TEST_F(namespace_test, refer_should_copy_var_refs_from_another_namespace)
     EXPECT_EQ_VALS(kc, lookup(c2));
 }
 
+TEST_F(namespace_test, alias_should_alias_another_namespace_in_the_current_namespace)
+{
+    auto ns1 = create_symbol("cleo.namespace.alias.test1");
+    auto ns2 = create_symbol("cleo.namespace.alias.test2");
+    auto ns3 = create_symbol("cleo.namespace.alias.test3");
+    auto a1 = create_symbol("a1");
+    auto a2 = create_symbol("a2");
+    auto s1 = create_symbol("cleo.namespace.alias.test1", "s1");
+    auto s2 = create_symbol("cleo.namespace.alias.test1", "s2");
+    auto s3 = create_symbol("cleo.namespace.alias.test2", "s3");
+    auto k1 = create_keyword("k1");
+    auto k2 = create_keyword("k2");
+    auto k3 = create_keyword("k3");
+
+    in_ns(ns1);
+    define(s1, k1);
+    define(s2, k2);
+
+    in_ns(ns2);
+    define(s3, k3);
+
+    in_ns(ns3);
+    alias(a1, ns1);
+    alias(a2, ns2);
+
+    EXPECT_EQ_VALS(k1, lookup(create_symbol("a1", "s1")));
+    EXPECT_EQ_VALS(k2, lookup(create_symbol("a1", "s2")));
+    EXPECT_EQ_VALS(k3, lookup(create_symbol("a2", "s3")));
+
+    in_ns(ns2);
+
+    EXPECT_ANY_THROW(lookup(create_symbol("a1", "s1")));
+}
+
 }
 }

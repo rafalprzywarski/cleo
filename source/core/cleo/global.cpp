@@ -271,6 +271,7 @@ const Value REFER = create_symbol("cleo.core", "refer");
 const Value READ_STRING = create_symbol("cleo.core", "read-string");
 const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
 const Value REQUIRE = create_symbol("cleo.core", "require");
+const Value ALIAS = create_symbol("cleo.core", "alias");
 const Value TYPE = create_symbol("cleo.core", "type");
 const Value KEYWORD_TYPE = get_type_name(*type::Keyword);
 const Value GENSYM = create_symbol("cleo.core", "gensym");
@@ -294,6 +295,7 @@ const Value NAME = create_symbol("cleo.core", "name");
 const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
+const Value NS_ALIASES = create_symbol("cleo.core", "ns-aliases");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -1286,6 +1288,8 @@ struct Initialize
         f = create_native_function1<require, &REQUIRE>();
         define(REQUIRE, *f);
 
+        define_function(ALIAS, create_native_function2<alias, &ALIAS>());
+
         f = create_native_function1<create_atom, &ATOM>();
         define(ATOM, *f);
 
@@ -1355,6 +1359,7 @@ struct Initialize
 
         define_function(NS_MAP, create_native_function1<ns_map, &NS_MAP>());
         define_function(NS_NAME, create_native_function1<ns_name, &NS_NAME>());
+        define_function(NS_ALIASES, create_native_function1<ns_aliases, &NS_ALIASES>());
     }
 } initialize;
 
