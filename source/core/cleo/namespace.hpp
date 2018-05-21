@@ -4,6 +4,8 @@
 namespace cleo
 {
 
+Value ns_name(Value ns);
+Value get_ns(Value name);
 Value in_ns(Value ns);
 Value refer(Value ns);
 Value define(Value sym, Value val, Value meta);
@@ -16,5 +18,5 @@ Value lookup(Value ns, Value sym);
 Value lookup(Value sym);
 Value require(Value ns);
 Value ns_map(Value ns);
-    
+
 }

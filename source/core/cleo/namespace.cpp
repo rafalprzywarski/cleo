@@ -30,15 +30,6 @@ void set_ns_mapping(Value ns, Value mapping)
     set_object_element(ns, 1, mapping);
 }
 
-Value get_ns(Value name)
-{
-    check_type("ns", name, *type::Symbol);
-    auto found = persistent_hash_map_get(*namespaces, name);
-    if (!found)
-        throw_illegal_argument("Namespace not found: " + to_string(name));
-    return found;
-}
-
 Value get_or_create_ns(Value name)
 {
     auto ns = persistent_hash_map_get(*namespaces, name);
@@ -65,6 +56,21 @@ std::string locate_source(const std::string& ns_name)
 
 }
 
+Value ns_name(Value ns)
+{
+    check_type("ns", ns, *type::Namespace);
+    return get_object_element(ns, 0);
+}
+
+Value get_ns(Value name)
+{
+    check_type("ns", name, *type::Symbol);
+    auto found = persistent_hash_map_get(*namespaces, name);
+    if (!found)
+        throw_illegal_argument("Namespace not found: " + to_string(name));
+    return found;
+}
+
 Value in_ns(Value ns)
 {
     if (get_value_tag(ns) != tag::SYMBOL)
@@ -72,8 +78,7 @@ Value in_ns(Value ns)
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    get_or_create_ns(ns);
-    rt::current_ns = ns;
+    rt::current_ns = get_or_create_ns(ns);
     return nil;
 }
 
@@ -84,12 +89,10 @@ Value refer(Value ns)
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    auto current_ns_name = *rt::current_ns;
-    auto current_ns{get_ns(current_ns_name)};
-    Root mapping{get_ns_mapping(current_ns)};
+    Root mapping{get_ns_mapping(*rt::current_ns)};
     auto other_mapping = ns_map(ns);
     mapping = map_merge(*mapping ? *mapping : *EMPTY_MAP, other_mapping ? other_mapping : *EMPTY_MAP);
-    set_ns_mapping(current_ns, *mapping);
+    set_ns_mapping(*rt::current_ns, *mapping);
     return nil;
 }
 
@@ -117,7 +120,7 @@ Value resolve_var(Value ns, Value sym)
 
 Value resolve_var(Value sym)
 {
-    return resolve_var(*rt::current_ns, sym);
+    return resolve_var(ns_name(*rt::current_ns), sym);
 }
 
 Value maybe_resolve_var(Value ns, Value sym)
@@ -137,7 +140,7 @@ Value maybe_resolve_var(Value ns, Value sym)
 
 Value maybe_resolve_var(Value sym)
 {
-    return maybe_resolve_var(*rt::current_ns, sym);
+    return maybe_resolve_var(ns_name(*rt::current_ns), sym);
 }
 
 Value lookup(Value ns, Value sym)
@@ -147,7 +150,7 @@ Value lookup(Value ns, Value sym)
 
 Value lookup(Value sym)
 {
-    return lookup(*rt::current_ns, sym);
+    return lookup(ns_name(*rt::current_ns), sym);
 }
 
 Value require(Value ns)

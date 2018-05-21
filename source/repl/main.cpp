@@ -14,7 +14,7 @@
 
 std::string get_current_ns()
 {
-    auto ns = *cleo::rt::current_ns;
+    auto ns = ns_name(*cleo::rt::current_ns);
     cleo::Root text{cleo::pr_str(ns)};
     return std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
 }

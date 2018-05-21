@@ -312,13 +312,13 @@ Force eval_def(Value list, Value env)
     check_type("Symbol name", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
     if (!*rt::current_ns ||
-        (ns && ns != get_symbol_name(*rt::current_ns)))
+        (ns && ns != get_symbol_name(ns_name(*rt::current_ns))))
         throw_illegal_argument("Can't refer to qualified var that doesn't exist: " + to_string(sym));
     next = get_list_next(*next);
     if (*next && get_list_next(*next))
         throw_arity_error(DEF, get_int64_value(get_list_size(list)) - 1);
     Root val{eval(!*next ? nil : get_list_first(*next), env)};
-    auto current_ns_name = get_symbol_name(*rt::current_ns);
+    auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
     auto sym_name = get_symbol_name(sym);
     sym = create_symbol(
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},

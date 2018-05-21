@@ -285,7 +285,7 @@ Force syntax_quote_resolve_symbol(Root& generated, Value sym)
         return sym;
     if (is_generating(sym))
         return generate_symbol(generated, sym);
-    auto ns{*rt::current_ns};
+    auto ns{ns_name(*rt::current_ns)};
     auto var = maybe_resolve_var(ns, sym);
     if (var)
         return get_var_name(var);

@@ -293,6 +293,7 @@ const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
 const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
+const Value NS_NAME = create_symbol("cleo.core", "ns-name");
 
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -881,7 +882,7 @@ struct Initialize
 
         Root f;
 
-        define(CURRENT_NS, CLEO_CORE);
+        define(CURRENT_NS, get_ns(CLEO_CORE));
         f = create_native_function1<in_ns, &IN_NS>();
         define(IN_NS, *f);
 
@@ -1353,6 +1354,7 @@ struct Initialize
         define_function(UNSIGNEDBITSHIFTRIGHT, create_native_function2<unsigned_bit_shift_right, &UNSIGNEDBITSHIFTRIGHT>());
 
         define_function(NS_MAP, create_native_function1<ns_map, &NS_MAP>());
+        define_function(NS_NAME, create_native_function1<ns_name, &NS_NAME>());
     }
 } initialize;
 

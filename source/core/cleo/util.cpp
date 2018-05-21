@@ -94,6 +94,7 @@ Force map_merge(Value m1, Value m2)
 
 Value namespace_symbol(Value sym)
 {
+    check_type("symbol", sym, *type::Symbol);
     auto ns = get_symbol_namespace(sym);
     if (!ns)
         return nil;
@@ -102,6 +103,7 @@ Value namespace_symbol(Value sym)
 
 Value name_symbol(Value sym)
 {
+    check_type("symbol", sym, *type::Symbol);
     if (!get_symbol_namespace(sym))
         return sym;
     auto name = get_symbol_name(sym);

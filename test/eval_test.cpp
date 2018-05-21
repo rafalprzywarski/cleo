@@ -977,7 +977,7 @@ TEST_F(eval_test, should_eval_do)
     val = read_str("(do (cleo.core/in-ns 'cleo.eval.do.test) a)");
     val = eval(*val, *env);
     EXPECT_EQ_VALS(create_keyword("z"), *val);
-    EXPECT_EQ_VALS(create_symbol("cleo.eval.do.test"), *rt::current_ns);
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.do.test"), ns_name(*rt::current_ns));
 }
 
 namespace
@@ -1084,7 +1084,7 @@ TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
     EXPECT_EQ_VALS(ex, *val);
     EXPECT_EQ_VALS(ex, get_var_value(get_var(create_symbol("cleo.eval.load2.test", "x"))));
     EXPECT_EQ_VALS(create_keyword("xyz"), get_var_value(get_var(create_symbol("cleo.eval.load.test", "y"))));
-    EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), *rt::current_ns);
+    EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), ns_name(*rt::current_ns));
 }
 
 TEST_F(eval_test, apply_should_call_functions)
