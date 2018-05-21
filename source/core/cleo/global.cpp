@@ -201,6 +201,7 @@ const Root UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")
 const Root FileNotFound{create_type("cleo.core", "FileNotFound")};
 const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
 const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
+const Root Namespace{create_type("cleo.core", "Namespace")};
 }
 
 namespace clib
@@ -871,6 +872,7 @@ struct Initialize
         define_type(*type::FileNotFound);
         define_type(*type::ArithmeticException);
         define_type(*type::IndexOutOfBounds);
+        define_type(*type::Namespace);
 
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);

@@ -220,6 +220,7 @@ extern const Root UnexpectedEndOfInput;
 extern const Root FileNotFound;
 extern const Root ArithmeticException;
 extern const Root IndexOutOfBounds;
+extern const Root Namespace;
 }
 
 namespace clib
