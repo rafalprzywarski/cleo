@@ -115,6 +115,22 @@ TEST_F(reader_test, should_parse_symbols_with_namespaces)
     EXPECT_EQ_VALS(SEQ, *val);
 }
 
+TEST_F(reader_test, should_parse_single_slashes_as_symbols)
+{
+    Root source{create_string("//")};
+    Root form, ex;
+    ReaderStream stream{*source};
+
+    form = read(stream);
+    EXPECT_FALSE(stream.eos());
+    ex = create_symbol("/");
+    EXPECT_EQ_VALS(*ex, *form);
+
+    form = read(stream);
+    EXPECT_TRUE(stream.eos());
+    EXPECT_EQ_VALS(*ex, *form);
+}
+
 TEST_F(reader_test, should_not_treat_newline_as_part_of_symbol)
 {
     Root val{read_str("abc123\n")};

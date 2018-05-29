@@ -79,6 +79,11 @@ Force read_number(Stream& s)
 Force read_symbol(Stream& s)
 {
     std::string str;
+    if (s.peek() == '/')
+    {
+        s.next();
+        return create_symbol("/");
+    }
     while (is_symbol_char(s.peek()))
         str += s.next();
     if (s.peek() == '/')
@@ -463,7 +468,7 @@ Force read_form(Stream& s)
             throw_unexpected(s.peek(), s.pos());
             break;
     }
-    if (is_symbol_char(s.peek()))
+    if (is_symbol_char(s.peek()) || s.peek() == '/')
         return read_symbol(s);
     throw_unexpected(s.peek(), s.pos());
 }
