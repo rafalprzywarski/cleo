@@ -6,6 +6,7 @@
 #ifndef __APPLE__
 #include <malloc.h>
 #endif
+#include <chrono>
 
 namespace cleo
 {
@@ -113,6 +114,41 @@ void mark_extra_roots()
         mark_value(val);
 }
 
+std::int64_t get_time()
+{
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count();
+}
+
+template <typename FwdIt>
+std::pair<std::size_t, std::vector<std::pair<std::size_t, unsigned>>> collect_alloc_stats(FwdIt first, FwdIt last)
+{
+    if (!gc_log)
+        return {};
+    std::unordered_map<std::size_t, unsigned> sf;
+    std::size_t total = 0;
+    for (auto a = first; a != last; ++a)
+    {
+        sf[a->size]++;
+        total += a->size;
+    }
+
+    std::vector<std::pair<std::size_t, unsigned>> ssf{begin(sf), end(sf)};
+    std::sort(begin(ssf), end(ssf));
+    return {total, std::move(ssf)};
+}
+
+    void log_stats(const std::pair<std::size_t, std::vector<std::pair<std::size_t, unsigned>>>& stats, std::int64_t t0, std::int64_t t1, std::int64_t t2, std::int64_t t3, std::int64_t t4)
+{
+    if (!gc_log)
+        return;
+    *gc_log << "freed " << stats.first << " bytes\nalloc size/count:";
+
+    for (auto& sf : stats.second)
+        *gc_log << " " << sf.first << ": " << sf.second;
+    *gc_log << "\nGC time: " << ((t1 - t0) + (t4 - t2)) << " ms, freeing time: " << (t3 - t2) << "ms, total time: " << (t4 - t0) << " ms" << std::endl;
+}
+
 }
 
 void *mem_alloc(std::size_t size)
@@ -142,6 +178,7 @@ void mem_free(const Allocation& a)
 
 void gc()
 {
+    auto t0 = get_time();
     mark_symbols();
     mark_keyword();
     mark_vars();
@@ -150,11 +187,18 @@ void gc()
     mark_extra_roots();
 
     auto middle = std::partition(begin(allocations), end(allocations), is_marked);
+    auto t1 = get_time();
+    auto stats = collect_alloc_stats(middle, end(allocations));
+    auto t2 = get_time();
     std::for_each(middle, end(allocations), mem_free);
+    auto t3 = get_time();
     allocations.erase(middle, end(allocations));
 
     for (auto a : allocations)
         unmark(a.ptr);
+
+    auto t4 = get_time();
+    log_stats(stats, t0, t1, t2, t3, t4);
 }
 
 std::size_t get_mem_used()

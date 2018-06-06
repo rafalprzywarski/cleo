@@ -10,6 +10,8 @@
 #include <array>
 #include <vector>
 #include <cassert>
+#include <ostream>
+#include <memory>
 
 namespace cleo
 {
@@ -18,6 +20,7 @@ extern std::vector<Allocation> allocations;
 extern std::vector<Value> extra_roots;
 extern unsigned gc_frequency;
 extern unsigned gc_counter;
+extern std::unique_ptr<std::ostream> gc_log;
 
 class Root
 {

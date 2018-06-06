@@ -19,6 +19,7 @@
 #include "clib.hpp"
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <limits>
 
 namespace cleo
@@ -28,6 +29,7 @@ std::vector<Allocation> allocations;
 std::vector<Value> extra_roots;
 unsigned gc_frequency = 4096;
 unsigned gc_counter = gc_frequency - 1;
+std::unique_ptr<std::ostream> gc_log;
 
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
@@ -297,7 +299,7 @@ const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
 const Value NS_ALIASES = create_symbol("cleo.core", "ns-aliases");
 const Value SLASH = create_symbol("cleo.core", "/");
-
+const Value GC_LOG = create_symbol("cleo.core", "gc-log");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -818,6 +820,14 @@ Force get_name(Value val)
         case tag::STRING: return val;
         default: return nil;
     }
+}
+
+Value set_gc_log(Value set)
+{
+    if (static_cast<bool>(set) == static_cast<bool>(gc_log))
+        return nil;
+    gc_log.reset(set ? new std::ofstream("cleo_gc.log", std::ios::app) : nullptr);
+    return nil;
 }
 
 template <std::uint32_t f(Value)>
@@ -1375,6 +1385,8 @@ struct Initialize
         define_function(NS_MAP, create_native_function1<ns_map, &NS_MAP>());
         define_function(NS_NAME, create_native_function1<ns_name, &NS_NAME>());
         define_function(NS_ALIASES, create_native_function1<ns_aliases, &NS_ALIASES>());
+
+        define_function(GC_LOG, create_native_function1<set_gc_log, &GC_LOG>());
     }
 } initialize;
 
