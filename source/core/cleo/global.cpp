@@ -21,6 +21,7 @@
 #include <sstream>
 #include <fstream>
 #include <limits>
+#include <chrono>
 
 namespace cleo
 {
@@ -300,6 +301,7 @@ const Value NS_NAME = create_symbol("cleo.core", "ns-name");
 const Value NS_ALIASES = create_symbol("cleo.core", "ns-aliases");
 const Value SLASH = create_symbol("cleo.core", "/");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
+const Value GET_TIME = create_symbol("cleo.core", "get-time");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -828,6 +830,12 @@ Value set_gc_log(Value set)
         return nil;
     gc_log.reset(set ? new std::ofstream("cleo_gc.log", std::ios::app) : nullptr);
     return nil;
+}
+
+Force get_time()
+{
+    using namespace std::chrono;
+    return create_int64(duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count());
 }
 
 template <std::uint32_t f(Value)>
@@ -1387,6 +1395,8 @@ struct Initialize
         define_function(NS_ALIASES, create_native_function1<ns_aliases, &NS_ALIASES>());
 
         define_function(GC_LOG, create_native_function1<set_gc_log, &GC_LOG>());
+
+        define_function(GET_TIME, create_native_function0<get_time, &GET_TIME>());
     }
 } initialize;
 
