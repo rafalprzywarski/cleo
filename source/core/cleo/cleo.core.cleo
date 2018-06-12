@@ -380,3 +380,7 @@
        (cleo.core/in-ns '~name)
        (cleo.core/refer '~'cleo.core)
        ~@(map gen-reference references))))
+
+
+(defn update [m k f]
+  (assoc m k (f (get m k))))

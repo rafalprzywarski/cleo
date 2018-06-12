@@ -457,3 +457,7 @@
            (macroexpand '(ns abc (:require [xyz] [rst]))))
   (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]) (cleo.core/require '[zzz] '[nnn]))
            (macroexpand '(ns abc (:require [xyz] [rst]) (:require [zzz] [nnn])))))
+
+
+(deftest update
+  (assert= {:abc 31 :xyz 12} (update {:abc 30 :xyz 12} :abc inc)))
