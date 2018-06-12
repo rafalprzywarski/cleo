@@ -341,6 +341,23 @@ TEST_F(reader_test, should_parse_a_sequence_of_characters_beginning_with_a_colon
     EXPECT_EQ_VALS(create_keyword("+x"), *val);
     val = read_str(":-x");
     EXPECT_EQ_VALS(create_keyword("-x"), *val);
+    val = read_str(":abc/def");
+    EXPECT_EQ_VALS(create_keyword("abc", "def"), *val);
+    val = read_str(":x/y/z");
+    EXPECT_EQ_VALS(create_keyword("x", "y/z"), *val);
+}
+
+TEST_F(reader_test, double_colon_should_resolve_namespace_aliases_in_a_keyword)
+{
+    Root val;
+    in_ns(create_symbol("cleo.reader.keyword.test"));
+    val = read_str("::abc123");
+    EXPECT_EQ_VALS(create_keyword("cleo.reader.keyword.test", "abc123"), *val);
+
+    in_ns(create_symbol("cleo.reader.test"));
+    alias(create_symbol("rkt"), create_symbol("cleo.reader.keyword.test"));
+    val = read_str("::rkt/abc1234");
+    EXPECT_EQ_VALS(create_keyword("cleo.reader.keyword.test", "abc1234"), *val);
 }
 
 TEST_F(reader_test, should_parse_an_apostrophe_as_quote)

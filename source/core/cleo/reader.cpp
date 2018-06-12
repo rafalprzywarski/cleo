@@ -76,13 +76,13 @@ Force read_number(Stream& s)
         read_integer(n, pos);
 }
 
-Force read_symbol(Stream& s)
+std::pair<std::string, std::string> read_raw_symbol(Stream& s)
 {
     std::string str;
     if (s.peek() == '/')
     {
         s.next();
-        return create_symbol("/");
+        return {{}, "/"};
     }
     while (is_symbol_char(s.peek()))
         str += s.next();
@@ -92,18 +92,35 @@ Force read_symbol(Stream& s)
         std::string name;
         while (is_symbol_char(s.peek()) || s.peek() == '/')
             name += s.next();
-        return create_symbol(str, name);
+        return {str, name};
     }
-    return str == "nil" ? nil : create_symbol(str);
+    return {{}, str};
+}
+
+Force read_symbol(Stream& s)
+{
+    auto rs = read_raw_symbol(s);
+    if (rs.first.empty())
+        return rs.second == "nil" ? nil : create_symbol(rs.second);
+    return create_symbol(rs.first, rs.second);
 }
 
 Force read_keyword(Stream& s)
 {
     s.next(); // ':'
-    std::string str;
-    while (is_symbol_char(s.peek()))
-        str += s.next();
-    return create_keyword(str);
+    if (s.peek() == ':')
+    {
+        s.next(); // ':'
+        auto rs = read_raw_symbol(s);
+        auto ns = rs.first.empty() ?
+            get_symbol_name(ns_name(*rt::current_ns)) :
+            get_symbol_name(ns_name(map_get(ns_aliases(ns_name(*rt::current_ns)), create_symbol(rs.first))));
+        return create_keyword({get_string_ptr(ns), get_string_len(ns)}, rs.second);
+    }
+    auto rs = read_raw_symbol(s);
+    if (rs.first.empty())
+        return create_keyword(rs.second);
+    return create_keyword(rs.first, rs.second);
 }
 
 void eat_ws(Stream& s)
