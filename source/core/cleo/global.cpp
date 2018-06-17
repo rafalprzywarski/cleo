@@ -77,6 +77,7 @@ const Value ASTERISK = create_symbol("cleo.core", "*");
 const Value IDENTICAL = create_symbol("cleo.core", "identical?");
 const Value ISA = create_symbol("cleo.core", "isa?");
 const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
+const Value KEYWORD_Q = create_symbol("cleo.core", "keyword?");
 const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
 const Value LT = create_symbol("cleo.core", "<");
 const Value EQ = create_symbol("cleo.core", "=");
@@ -572,6 +573,11 @@ Value symbol_q(Value x)
     return get_value_tag(x) == tag::SYMBOL ? TRUE : nil;
 }
 
+Value keyword_q(Value x)
+{
+    return get_value_tag(x) == tag::KEYWORD ? TRUE : nil;
+}
+
 Value vector_q(Value x)
 {
     return get_value_type(x) == *type::Array ? TRUE : nil;
@@ -931,6 +937,9 @@ struct Initialize
 
         f = create_native_function1<symbol_q, &SYMBOL_Q>();
         define(SYMBOL_Q, *f);
+
+        f = create_native_function1<keyword_q, &KEYWORD_Q>();
+        define(KEYWORD_Q, *f);
 
         f = create_native_function1<vector_q, &VECTOR_Q>();
         define(VECTOR_Q, *f);
