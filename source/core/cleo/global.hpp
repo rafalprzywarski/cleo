@@ -195,6 +195,7 @@ extern const Root List;
 extern const Root Cons;
 extern const Root LazySeq;
 extern const Root Array;
+extern const Root TransientArray;
 extern const Root ArraySeq;
 extern const Root ArrayMap;
 extern const Root ArrayMapSeq;

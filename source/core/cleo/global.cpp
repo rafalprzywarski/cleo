@@ -177,6 +177,7 @@ const Root List{create_type("cleo.core", "List")};
 const Root Cons{create_type("cleo.core", "Cons")};
 const Root LazySeq{create_type("cleo.core", "LazySeq")};
 const Root Array{create_type("cleo.core", "Array")};
+const Root TransientArray{create_type("cleo.core", "TransientArray")};
 const Root ArraySeq{create_type("cleo.core", "ArraySeq")};
 const Root ArrayMap{create_type("cleo.core", "ArrayMap")};
 const Root ArrayMapSeq{create_type("cleo.core", "ArrayMapSeq")};
@@ -303,6 +304,9 @@ const Value NS_ALIASES = create_symbol("cleo.core", "ns-aliases");
 const Value SLASH = create_symbol("cleo.core", "/");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
 const Value GET_TIME = create_symbol("cleo.core", "get-time");
+const Value TRANSIENT = create_symbol("cleo.core", "transient");
+const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
+const Value CONJ_E = create_symbol("cleo.core", "conj!");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -450,6 +454,16 @@ Value array_get(Value v, Value index)
     return get_array_elem(v, i);
 }
 
+Value transient_array_get(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        return nil;
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_int64_value(get_transient_array_size(v)))
+        return nil;
+    return get_transient_array_elem(v, i);
+}
+
 Value array_call(Value v, Value index)
 {
     if (get_value_tag(index) != tag::INT64)
@@ -458,6 +472,16 @@ Value array_call(Value v, Value index)
     if (i < 0 || i >= get_array_size(v))
         throw_index_out_of_bounds();
     return get_array_elem(v, i);
+}
+
+Value transient_array_call(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        throw_illegal_argument("Key must be integer");
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_int64_value(get_transient_array_size(v)))
+        throw_index_out_of_bounds();
+    return get_transient_array_elem(v, i);
 }
 
 Force pr(const Value *args, std::uint8_t n)
@@ -913,6 +937,7 @@ struct Initialize
         define_type(*type::ArithmeticException);
         define_type(*type::IndexOutOfBounds);
         define_type(*type::Namespace);
+        define_type(*type::TransientArray);
 
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);
@@ -1067,6 +1092,8 @@ struct Initialize
         define_method(COUNT, *type::Sequence, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_size>::fn>();
         define_method(COUNT, *type::Array, *f);
+        f = create_native_function1<get_transient_array_size>();
+        define_method(COUNT, *type::TransientArray, *f);
         f = create_native_function1<nil_count>();
         define_method(COUNT, nil, *f);
 
@@ -1080,6 +1107,9 @@ struct Initialize
 
         f = create_native_function2<array_get>();
         define_method(GET, *type::Array, *f);
+
+        f = create_native_function2<transient_array_get>();
+        define_method(GET, *type::TransientArray, *f);
 
         f = create_native_function2or3<nil_get, nil_get, &GET>();
         define_method(GET, nil, *f);
@@ -1173,6 +1203,10 @@ struct Initialize
         derive(*type::Array, *type::Callable);
         f = create_native_function2<array_call>();
         define_method(OBJ_CALL, *type::Array, *f);
+
+        derive(*type::TransientArray, *type::Callable);
+        f = create_native_function2<transient_array_call>();
+        define_method(OBJ_CALL, *type::TransientArray, *f);
 
         derive(*type::CFunction, *type::Callable);
         f = create_native_function(call_c_function);
@@ -1406,6 +1440,22 @@ struct Initialize
         define_function(GC_LOG, create_native_function1<set_gc_log, &GC_LOG>());
 
         define_function(GET_TIME, create_native_function0<get_time, &GET_TIME>());
+
+        define_multimethod(CONJ_E, *first_type, undefined);
+
+        f = create_native_function2<transient_array_conj>();
+        define_method(CONJ_E, *type::TransientArray, *f);
+
+        define_multimethod(TRANSIENT, *first_type, undefined);
+
+        f = create_native_function1<transient_array>();
+        define_method(TRANSIENT, *type::Array, *f);
+
+        define_multimethod(PERSISTENT, *first_type, undefined);
+
+        f = create_native_function1<transient_array_persistent>();
+        define_method(PERSISTENT, *type::TransientArray, *f);
+
     }
 } initialize;
 

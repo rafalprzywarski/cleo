@@ -203,6 +203,12 @@ std::uint32_t get_object_size(Value obj)
     return get_ptr<Object>(obj)->size;
 }
 
+void set_object_size(Value obj, std::uint32_t size)
+{
+    assert(size <= get_object_size(obj));
+    get_ptr<Object>(obj)->size = size;
+}
+
 Value get_object_element(Value obj, std::uint32_t index)
 {
     assert(index < get_object_size(obj));
