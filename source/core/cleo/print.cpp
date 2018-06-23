@@ -200,7 +200,6 @@ Force pr_str(Value val)
 {
     switch (get_value_tag(val))
     {
-        case tag::NIL: return create_string("nil");
         case tag::NATIVE_FUNCTION: return pr_str_native_function(val);
         case tag::SYMBOL: return pr_str_symbol(val);
         case tag::KEYWORD: return pr_str_keyword(val);
@@ -208,6 +207,8 @@ Force pr_str(Value val)
         case tag::FLOAT64: return pr_str_float(val);
         case tag::STRING: return pr_str_string(val);
         default: // tag::OBJECT
+            if (val.is_nil())
+                return create_string("nil");
             return call_multimethod(*rt::pr_str_obj, &val, 1);
     }
 }

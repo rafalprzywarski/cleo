@@ -68,14 +68,13 @@ static_assert(sizeof(Float64) == 8, "Float64 should have 64 bits");
 
 namespace tag
 {
-constexpr Tag NIL = 0;
+constexpr Tag OBJECT = 0;
 constexpr Tag NATIVE_FUNCTION = 1;
 constexpr Tag SYMBOL = 2;
 constexpr Tag KEYWORD = 3;
 constexpr Tag INT64 = 4;
 constexpr Tag FLOAT64 = 5;
 constexpr Tag STRING = 6;
-constexpr Tag OBJECT = 7;
 constexpr Tag MASK = 7;
 }
 

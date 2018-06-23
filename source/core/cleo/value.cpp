@@ -195,12 +195,12 @@ Force create_object5(Value type, Value elem0, Value elem1, Value elem2, Value el
 
 Value get_object_type(Value obj)
 {
-    return get_ptr<Object>(obj)->type;
+    return obj ? get_ptr<Object>(obj)->type : nil;
 }
 
 std::uint32_t get_object_size(Value obj)
 {
-    return get_ptr<Object>(obj)->size;
+    return obj ? get_ptr<Object>(obj)->size : 0;
 }
 
 void set_object_size(Value obj, std::uint32_t size)

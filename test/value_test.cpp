@@ -17,9 +17,9 @@ struct value_test : Test
     value_test() : Test("cleo.value.test") { }
 };
 
-TEST_F(value_test, nil_should_have_tag_NIL)
+TEST_F(value_test, nil_should_have_tag_OBJECT)
 {
-    ASSERT_EQ(tag::NIL, get_value_tag(nil));
+    ASSERT_EQ(tag::OBJECT, get_value_tag(nil));
 }
 
 TEST_F(value_test, should_store_native_functions)

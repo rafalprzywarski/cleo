@@ -438,7 +438,7 @@ Force create_swap_fn()
 
 Force keyword_get(Value k, Value coll)
 {
-    if (get_value_tag(coll) != tag::OBJECT)
+    if (coll.is_nil() || get_value_tag(coll) != tag::OBJECT)
         return nil;
     std::array<Value, 2> args{{coll, k}};
     return call_multimethod(*rt::obj_call, args.data(), args.size());
