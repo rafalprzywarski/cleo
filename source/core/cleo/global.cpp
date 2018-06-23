@@ -1094,6 +1094,8 @@ struct Initialize
         define_method(COUNT, *type::Array, *f);
         f = create_native_function1<get_transient_array_size>();
         define_method(COUNT, *type::TransientArray, *f);
+        f = create_native_function1<WrapUInt32Fn<get_string_len>::fn>();
+        define_method(COUNT, *type::String, *f);
         f = create_native_function1<nil_count>();
         define_method(COUNT, nil, *f);
 
