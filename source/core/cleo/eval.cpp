@@ -15,6 +15,8 @@
 namespace cleo
 {
 
+Force eval_resolved(Value val, Value env);
+
 namespace
 {
 
@@ -108,6 +110,7 @@ Force resolve_pure_list(Value l, Value env)
 Force resolve_fn_body(Value name, Value body, Value env)
 {
     Root lenv{name ? map_assoc(env, name, nil) : env}, ret;
+    check_type("fn* parameter list", get_list_first(body), *type::Array);
     lenv = bind_params(get_list_first(body), *lenv);
     ret = resolve_pure_list(get_list_next(body), *lenv);
     return list_conj(*ret, get_list_first(body));
@@ -116,7 +119,7 @@ Force resolve_fn_body(Value name, Value body, Value env)
 Force resolve_list(Value l, Value env)
 {
     if (get_int64_value(get_list_size(l)) == 0)
-        return *EMPTY_LIST;
+        return l;
 
     Root ret;
 
@@ -128,13 +131,15 @@ Force resolve_list(Value l, Value env)
         l = get_list_next(l);
 
         auto name = nil;
-        if (get_value_tag(get_list_first(l)) == tag::SYMBOL)
+        if (l && get_value_tag(get_list_first(l)) == tag::SYMBOL)
         {
             name = get_list_first(l);
             l = get_list_next(l);
         }
 
-        if (get_value_type(get_list_first(l)).is(*type::List))
+        if (l.is_nil())
+            ret = *EMPTY_LIST;
+        else if (get_value_type(get_list_first(l)).is(*type::List))
         {
             ret = *EMPTY_LIST;
             Root val;
@@ -156,8 +161,13 @@ Force resolve_list(Value l, Value env)
     if (f == LET || f == LOOP)
     {
         l = get_list_next(l);
+        Root bindings;
+        if (!l || !get_value_type(*(bindings = get_list_first(l))).is(*type::Array))
+            throw_illegal_argument(to_string(f) + " requires a vector for its binding");
         Root lenv{env};
-        Root bindings{resolve_bindings(get_list_first(l), lenv)};
+        if (get_array_size(*bindings) % 2 == 1)
+            throw_illegal_argument(to_string(LET) + " requires an even number of forms in binding vector");
+        bindings = resolve_bindings(get_list_first(l), lenv);
         ret = resolve_pure_list(get_list_next(l), *lenv);
         ret = list_conj(*ret, *bindings);
         return list_conj(*ret, f);
@@ -165,6 +175,8 @@ Force resolve_list(Value l, Value env)
     if (f == CATCH)
     {
         l = get_list_next(l);
+        if (!l)
+            throw_illegal_argument(to_string(f) + " expected a type");
         auto type = get_list_first(l);
         Root resolved_type{resolve_value(type, env)};
         l = get_list_next(l);
@@ -176,14 +188,19 @@ Force resolve_list(Value l, Value env)
     if (f == DEF)
     {
         l = get_list_next(l);
+        if (!l)
+            throw_illegal_argument("Var name missing");
         auto name = get_list_first(l);
         auto meta = nil;
         if (get_value_tag(name) != tag::SYMBOL)
         {
             meta = name;
             l = get_list_next(l);
+            if (!l)
+                throw_illegal_argument("Var name missing");
             name = get_list_first(l);
         }
+        check_type("Symbol name", name, *type::Symbol);
         Root lenv{map_assoc(env, name, nil)};
         ret = resolve_pure_list(get_list_next(l), *lenv);
         ret = list_conj(*ret, name);
@@ -317,7 +334,7 @@ Force eval_def(Value list, Value env)
     next = get_list_next(*next);
     if (*next && get_list_next(*next))
         throw_arity_error(DEF, get_int64_value(get_list_size(list)) - 1);
-    Root val{eval(!*next ? nil : get_list_first(*next), env)};
+    Root val{eval_resolved(!*next ? nil : get_list_first(*next), env)};
     auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
     auto sym_name = get_symbol_name(sym);
     sym = create_symbol(
@@ -339,7 +356,7 @@ Force eval_let(Value list, Value env)
     Root lenv{!env && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
-        Root val{eval(get_array_elem(bindings, i + 1), *lenv)};
+        Root val{eval_resolved(get_array_elem(bindings, i + 1), *lenv)};
         auto binding = get_array_elem(bindings, i);
         if (!get_value_type(binding).is(*type::Symbol))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
@@ -348,7 +365,7 @@ Force eval_let(Value list, Value env)
         lenv = map_assoc(*lenv, binding, *val);
     }
     n = get_list_next(*n);
-    return eval(get_list_first(*n), *lenv);
+    return eval_resolved(get_list_first(*n), *lenv);
 }
 
 Force eval_do(Value list, Value env)
@@ -357,7 +374,7 @@ Force eval_do(Value list, Value env)
     Root ret;
     while (list)
     {
-        ret = eval(get_list_first(list), env);
+        ret = eval_resolved(get_list_first(list), env);
         list = get_list_next(list);
     }
     return *ret;
@@ -376,7 +393,7 @@ Force eval_loop(Value list, Value env)
     Root lenv{!env && size > 0 ? *EMPTY_MAP : env};
     for (decltype(size) i = 0; i != size; i += 2)
     {
-        Root val{eval(get_array_elem(bindings, i + 1), *lenv)};
+        Root val{eval_resolved(get_array_elem(bindings, i + 1), *lenv)};
         auto binding = get_array_elem(bindings, i);
         if (!get_value_type(binding).is(*type::Symbol))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(binding));
@@ -385,7 +402,7 @@ Force eval_loop(Value list, Value env)
         lenv = map_assoc(*lenv, binding, *val);
     }
     n = get_list_next(*n);
-    Root val{eval(get_list_first(*n), *lenv)};
+    Root val{eval_resolved(get_list_first(*n), *lenv)};
     while (get_value_type(*val).is(*type::Recur))
     {
         check_arity(RECUR, get_array_size(bindings) / 2, get_object_size(*val));
@@ -393,7 +410,7 @@ Force eval_loop(Value list, Value env)
         for (decltype(size) i = 0; i != size; ++i)
             lenv = map_assoc(*lenv, get_array_elem(bindings, i * 2), get_object_element(*val, i));
 
-        val = eval(get_list_first(*n), *lenv);
+        val = eval_resolved(get_list_first(*n), *lenv);
     }
     return *val;
 }
@@ -404,19 +421,19 @@ Force eval_if(Value list, Value env)
     if (size < 3 || size > 4)
         throw_arity_error(IF, size - 1);
     Root n{get_list_next(list)};
-    Root cond{eval(get_list_first(*n), env)};
+    Root cond{eval_resolved(get_list_first(*n), env)};
     n = get_list_next(*n);
     if (*cond)
-        return eval(get_list_first(*n), env);
+        return eval_resolved(get_list_first(*n), env);
     n = get_list_next(*n);
-    return !*n ? nil : eval(get_list_first(*n), env);
+    return !*n ? nil : eval_resolved(get_list_first(*n), env);
 }
 
 Force eval_throw(Value list, Value env)
 {
     check_arity(THROW, 1, get_int64_value(get_list_size(list)) - 1);
     Root n{get_list_next(list)};
-    Root ex{eval(get_list_first(*n), env)};
+    Root ex{eval_resolved(get_list_first(*n), env)};
     throw_exception(*ex);
 }
 
@@ -441,7 +458,7 @@ Force eval_try(Value list, Value env)
     Root val;
     try
     {
-        val = eval(expr, env);
+        val = eval_resolved(expr, env);
     }
     catch (const Exception& )
     {
@@ -460,18 +477,18 @@ Force eval_try(Value list, Value env)
             n = get_list_next(*n);
             Root lenv{env ? env : *EMPTY_MAP};
             lenv = map_assoc(*lenv, name, *ex);
-            return eval(get_list_first(*n), *lenv);
+            return eval_resolved(get_list_first(*n), *lenv);
         }
         else { // finally
             n = get_list_next(clause);
-            eval(get_list_first(*n), env);
+            eval_resolved(get_list_first(*n), env);
             throw_exception(*ex);
         }
     }
     if (get_list_first(clause).is(FINALLY))
     {
         n = get_list_next(clause);
-        eval(get_list_first(*n), env);
+        eval_resolved(get_list_first(*n), env);
     }
     return *val;
 }
@@ -521,7 +538,7 @@ std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value list, Value
     Roots::size_type i = 0;
     for (Root arg_list{get_list_next(list)}; *arg_list; arg_list = get_list_next(*arg_list), ++i)
     {
-        arg_roots.set(i, eval(get_list_first(*arg_list), env));
+        arg_roots.set(i, eval_resolved(get_list_first(*arg_list), env));
         elems.push_back(arg_roots[i]);
     }
 
@@ -549,7 +566,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
         fenv = map_assoc(*fenv, get_var_arg(params), *vargs);
     }
     auto body = get_fn_body(fn, fni);
-    Root val{eval(body, *fenv)};
+    Root val{eval_resolved(body, *fenv)};
     while (get_value_type(*val).is(*type::Recur))
     {
         check_arity(RECUR, n_params, get_object_size(*val));
@@ -557,7 +574,7 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
             fenv = map_assoc(*fenv, get_array_elem(params, i), get_object_element(*val, i));
         if (va)
             fenv = map_assoc(*fenv, get_var_arg(params), get_object_element(*val, n_params - 1));
-        val = eval(body, *fenv);
+        val = eval_resolved(body, *fenv);
     }
     return *val;
 }
@@ -611,7 +628,7 @@ Force eval_list(Value list, Value env)
         return eval_try(list, env);
     if (!first.is(RECUR) && get_value_tag(first) == tag::SYMBOL && !map_contains(env, first) && is_var_macro(resolve_var(first)))
         return call_macro(first, list, env);
-    Root val{first.is(RECUR) ? *recur : eval(first, env)};
+    Root val{first.is(RECUR) ? *recur : eval_resolved(first, env)};
     Roots arg_roots(get_int64_value(get_list_size(list)));
     auto elems = eval_args(arg_roots, *val, list, env);
     return call_fn(get_value_type(*val), elems);
@@ -625,7 +642,7 @@ Force eval_vector(Value v, Value env)
     vals.reserve(size);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        roots.set(i, eval(get_array_elem(v, i), env));
+        roots.set(i, eval_resolved(get_array_elem(v, i), env));
         vals.push_back(roots[i]);
     }
 
@@ -638,7 +655,7 @@ Force eval_set(Value s, Value env)
     Root e{create_array_set()};
     for (decltype(size) i = 0; i != size; ++i)
     {
-        Root val{eval(get_array_set_elem(s, i), env)};
+        Root val{eval_resolved(get_array_set_elem(s, i), env)};
         e = array_set_conj(*e, *val);
     }
     return *e;
@@ -650,8 +667,8 @@ Force eval_map(Value m, Value env)
     for (Root seq{call_multimethod1(*rt::seq, m)}; *seq; seq = call_multimethod1(*rt::next, *seq))
     {
         kv = call_multimethod1(*rt::first, *seq);
-        k = eval(get_array_elem(*kv, 0), env);
-        v = eval(get_array_elem(*kv, 1), env);
+        k = eval_resolved(get_array_elem(*kv, 0), env);
+        v = eval_resolved(get_array_elem(*kv, 1), env);
         e = map_assoc(*e, *k, *v);
     }
 
@@ -701,8 +718,6 @@ Force macroexpand1(Value val, Value form, Value env)
     for (Root arg_list{get_list_next(val)}; *arg_list; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
-    if (get_value_type(*m).is(*type::Fn))
-        return call_fn(elems, elems.size() - 1);
     return call_fn(elems, elems.size() - 3);
 }
 
@@ -734,7 +749,7 @@ Force apply(Value fn, Value args)
     return call_fn(get_value_type(form.front()), form);
 }
 
-Force eval(Value val, Value env)
+Force eval_resolved(Value val, Value env)
 {
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);
@@ -750,6 +765,12 @@ Force eval(Value val, Value env)
     if (isa(type, *type::PersistentMap))
         return eval_map(val, env);
     return val;
+}
+
+Force eval(Value val, Value env)
+{
+    Root rval{resolve_value(val, env)};
+    return eval_resolved(*rval, env);
 }
 
 Force load(Value source)

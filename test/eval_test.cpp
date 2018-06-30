@@ -818,7 +818,7 @@ TEST_F(eval_test, loop_should_fail_when_not_given_bindings_and_body)
     Root val{read_str("(loop*)")};
     EXPECT_THROW(eval(*val), Exception);
 
-    val = read_str("(let* [a 10])");
+    val = read_str("(loop* [a 10])");
     EXPECT_THROW(eval(*val), Exception);
 }
 
