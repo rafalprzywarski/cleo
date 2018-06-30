@@ -579,16 +579,6 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     return *val;
 }
 
-Force call_macro(Value fn, Value list, Value env)
-{
-    Root args{get_list_next(list)};
-    if (!*args)
-        args = *EMPTY_LIST;
-    Root form{list_conj(*args, fn)};
-    Root exp{macroexpand(*form, list, env)};
-    return eval(*exp, env);
-}
-
 Force call_fn(Value type, const std::vector<Value>& elems)
 {
     if (type.is(*type::NativeFunction))
@@ -626,8 +616,6 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first.is(TRY))
         return eval_try(list, env);
-    if (!first.is(RECUR) && get_value_tag(first) == tag::SYMBOL && !map_contains(env, first) && is_var_macro(resolve_var(first)))
-        return call_macro(first, list, env);
     Root val{first.is(RECUR) ? *recur : eval_resolved(first, env)};
     Roots arg_roots(get_int64_value(get_list_size(list)));
     auto elems = eval_args(arg_roots, *val, list, env);
@@ -693,39 +681,39 @@ Force resolve_value(Value val, Value env)
     return val;
 }
 
-Force macroexpand1(Value val, Value form, Value env)
+Force macroexpand1(Value form, Value env)
 {
-    if (!get_value_type(val).is(*type::List) || get_int64_value(get_list_size(val)) == 0)
-        return val;
+    if (!get_value_type(form).is(*type::List) || get_int64_value(get_list_size(form)) == 0)
+        return form;
 
-    Root m{get_list_first(val)};
+    Root m{get_list_first(form)};
     if (get_value_tag(*m) != tag::SYMBOL)
-        return val;
+        return form;
     if (SPECIAL_SYMBOLS.count(*m))
-        return val;
+        return form;
     auto var = symbol_var(*m, env);
     if (!var || !is_var_macro(var))
-        return val;
+        return form;
     m = get_var_value(var);
     if (!get_value_type(*m).is(*type::Fn))
-        return val;
+        return form;
 
     std::vector<Value> elems;
-    elems.reserve(get_int64_value(get_list_size(val)) + 2);
+    elems.reserve(get_int64_value(get_list_size(form)) + 2);
     elems.push_back(*m);
     elems.push_back(form);
     elems.push_back(env);
-    for (Root arg_list{get_list_next(val)}; *arg_list; arg_list = get_list_next(*arg_list))
+    for (Root arg_list{get_list_next(form)}; *arg_list; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
     return call_fn(elems, elems.size() - 3);
 }
 
-Force macroexpand(Value val, Value form, Value env)
+Force macroexpand(Value form, Value env)
 {
-    Root exp{macroexpand1(val, form, env)};
-    if (!exp->is(val))
-        return macroexpand(*exp, *exp, env);
+    Root exp{macroexpand1(form, env)};
+    if (!exp->is(form))
+        return macroexpand(*exp, env);
     return *exp;
 }
 
