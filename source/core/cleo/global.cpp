@@ -207,6 +207,8 @@ const Root FileNotFound{create_type("cleo.core", "FileNotFound")};
 const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
 const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
 const Root Namespace{create_type("cleo.core", "Namespace")};
+
+const Root VarValueRef{create_type("cleo.core.internal", "VarValueRef")};
 }
 
 namespace clib
@@ -1253,6 +1255,11 @@ struct Initialize
         v = create_array(two_maps.data(), two_maps.size());
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
+        
+        std::array<Value, 2> two_var_refs{{*type::VarValueRef, *type::VarValueRef}};
+        v = create_array(two_var_refs.data(), two_var_refs.size());
+        f = create_native_function2<var_value_ref_equals>();
+        define_method(OBJ_EQ, *v, *f);
 
         define(PRINT_READABLY, TRUE);
 
@@ -1260,6 +1267,8 @@ struct Initialize
         f = create_native_function1<pr_str_type>();
         define_method(PR_STR_OBJ, *type::MetaType, *f);
 
+        f = create_native_function1<var_value_ref_pr_str>();
+        define_method(PR_STR_OBJ, *type::VarValueRef, *f);
         f = create_native_function1<pr_str_array>();
         define_method(PR_STR_OBJ, *type::Array, *f);
         f = create_native_function1<pr_str_array_set>();

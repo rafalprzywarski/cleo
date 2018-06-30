@@ -191,6 +191,7 @@ extern const Root CFunction;
 extern const Root Symbol;
 extern const Root Keyword;
 extern const Root Var;
+extern const Root VarValueRef;
 extern const Root List;
 extern const Root Cons;
 extern const Root LazySeq;

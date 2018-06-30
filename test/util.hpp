@@ -70,6 +70,25 @@ inline Force to_value(Value v)
     return force(v);
 }
 
+template <typename F>
+struct Delayed
+{
+    F f;
+    Delayed(F f) : f(std::move(f)) { }
+};
+
+template <typename F>
+Delayed<F> delayed(F f)
+{
+    return {std::move(f)};
+}
+
+template <typename F>
+inline Force to_value(const Delayed<F>& d)
+{
+    return d.f();
+}
+
 inline Force list()
 {
     return create_list(nullptr, 0);
@@ -81,6 +100,12 @@ Force list(const T& first, const Ts&... elems)
     Root l{list(elems...)};
     Root val{to_value(first)};
     return list_conj(*l, *val);
+}
+
+template <typename... Ts>
+auto listv(const Ts&... elems)
+{
+    return delayed([&] { return list(elems...); });
 }
 
 inline Force svec_conj(Value vec)
@@ -101,6 +126,12 @@ Force array(const Ts&... elems)
 {
     Root s{create_array(nullptr, 0)};
     return svec_conj(*s, elems...);
+}
+
+template <typename... Ts>
+auto arrayv(const Ts&... elems)
+{
+    return delayed([&] { return array(elems...); });
 }
 
 inline Force sset_conj(Value s)
@@ -151,6 +182,12 @@ Force phmap(const K& k, const V& v, const Rest&... rest)
     return persistent_hash_map_assoc(*m, *key, *val);
 }
 
+template <typename... Ts>
+auto phmapv(const Ts&... elems)
+{
+    return delayed([&] { return phmap(elems...); });
+}
+    
 inline Force i64(Int64 value)
 {
     return create_int64(value);

@@ -101,4 +101,24 @@ Value is_var_macro(Value var)
     return meta ? map_get(meta, MACRO_KEY) : nil;
 }
 
+Force create_var_value_ref(Value var)
+{
+    return create_object1(*type::VarValueRef, var);
+}
+    
+Value get_var_value_ref_value(Value ref)
+{
+    return get_var_value(get_object_element(ref, 0));
+}
+
+Value var_value_ref_equals(Value l, Value r)
+{
+    return get_object_element(l, 0).is(get_object_element(r, 0)) ? TRUE : nil;
+}
+
+Force var_value_ref_pr_str(Value ref)
+{
+    return create_string("#<" + to_string(get_var_name(get_object_element(ref, 0))) + ">");
+}
+
 }

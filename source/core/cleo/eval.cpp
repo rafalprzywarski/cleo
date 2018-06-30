@@ -71,7 +71,7 @@ Force resolve_symbol(Value sym, Value env)
 {
     if (map_contains(env, sym))
         return sym;
-    return get_var_name(lookup_not_macro_var(sym));
+    return create_var_value_ref(lookup_not_macro_var(sym));
 }
 
 Force resolve_bindings(Value b, Root& env)
@@ -449,7 +449,8 @@ Force eval_try(Value list, Value env)
         if (get_list_first(clause).is(CATCH))
         {
             n = get_list_next(clause);
-            auto type = lookup(get_list_first(*n));
+            auto type = get_list_first(*n);
+            type = get_value_type(type).is(*type::VarValueRef) ? get_var_value_ref_value(type) : lookup(type);
             if (!isa(get_value_type(*ex), type))
             {
                 throw_exception(*ex);
@@ -738,6 +739,8 @@ Force eval(Value val, Value env)
     if (get_value_tag(val) == tag::SYMBOL)
         return eval_symbol(val, env);
     auto type = get_value_type(val);
+    if (type.is(*type::VarValueRef))
+        return get_var_value_ref_value(val);
     if (type.is(*type::List))
         return eval_list(val, env);
     if (type.is(*type::Array))

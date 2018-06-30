@@ -32,4 +32,9 @@ struct PushBindingsGuard
     PushBindingsGuard& operator=(const PushBindingsGuard& ) = delete;
 };
 
+Force create_var_value_ref(Value var);
+Value get_var_value_ref_value(Value ref);
+Value var_value_ref_equals(Value l, Value r);
+Force var_value_ref_pr_str(Value ref);
+
 }
