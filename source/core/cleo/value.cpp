@@ -210,7 +210,13 @@ Force create_object1_2(Value type, Int64 i0, Value elem0, Value elem1)
     std::array<Value, 2> elems{{elem0, elem1}};
     return create_object(type, &i0, 1, elems.data(), elems.size());
 }
-    
+
+Force create_object1_3(Value type, Int64 i0, Value elem0, Value elem1, Value elem2)
+{
+    std::array<Value, 3> elems{{elem0, elem1, elem2}};
+    return create_object(type, &i0, 1, elems.data(), elems.size());
+}
+
 Force create_object1_4(Value type, Int64 i0, Value elem0, Value elem1, Value elem2, Value elem3)
 {
     std::array<Value, 4> elems{{elem0, elem1, elem2, elem3}};

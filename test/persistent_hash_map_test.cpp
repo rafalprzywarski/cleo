@@ -175,14 +175,14 @@ struct persistent_hash_map_test : Test
     {
         if (!get_value_type(node).is(*type::PersistentHashMapArrayNode))
             return 0;
-        return __builtin_popcount(std::uint32_t(std::uint64_t(get_int64_value(get_object_element(node, 0))) >> 32));
+        return __builtin_popcount(std::uint32_t(std::uint64_t(get_object_int(node, 0)) >> 32));
     }
 
     Int64 payload_arity(Value node)
     {
         if (!get_value_type(node).is(*type::PersistentHashMapArrayNode))
             return 0;
-        return __builtin_popcount(std::uint32_t(get_int64_value(get_object_element(node, 0))));
+        return __builtin_popcount(std::uint32_t(get_object_int(node, 0)));
     }
 
     Int64 branch_size(Value node)
@@ -193,7 +193,7 @@ struct persistent_hash_map_test : Test
         }
         if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
         {
-            std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+            std::uint64_t value_node_map = get_object_int(node, 0);
             std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
             std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
             auto node_size = get_object_size(node);
@@ -211,7 +211,7 @@ struct persistent_hash_map_test : Test
 
         if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
         {
-            std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+            std::uint64_t value_node_map = get_object_int(node, 0);
             std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
             auto node_size = get_object_size(node);
             for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)

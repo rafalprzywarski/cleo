@@ -13,7 +13,7 @@ namespace cleo
 // CollisionNode:
 //   [hash | key0 value0 key1 value1 key2? value2? ...]
 // ArrayNode:
-//   [(value-map node-map) key0? value0? key1? value1? ... node2? node1? node0?]
+//   [(value-map node-map) | key0? value0? key1? value1? ... node2? node1? node0?]
 // HashMapSeq:
 //   size 1: [[first-key first-value]]
 //   size>1: [[first-key first-value] collision-node index #SeqParent[array-node index parent-or-nil]-or-nil]
@@ -155,7 +155,7 @@ std::uint32_t map_bit(std::uint8_t shift, std::uint32_t hash)
 
 std::uint32_t map_key_index(std::uint32_t value_map, std::uint32_t bit)
 {
-    return 1 + 2 * popcount(value_map & (bit - 1));
+    return 2 * popcount(value_map & (bit - 1));
 }
 
 std::uint32_t map_node_index(std::uint32_t node_map, std::uint32_t node_size, std::uint32_t bit)
@@ -168,7 +168,7 @@ Int64 combine_maps(std::uint32_t value_map, std::uint32_t node_map)
     assert((value_map & node_map) == 0);
     return value_map | (std::uint64_t(node_map) << 32);
 }
-
+    
 Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash, Value val0, Value key1, std::uint32_t key1_hash, Value val1)
 {
     assert(key0_hash != key1_hash);
@@ -177,18 +177,18 @@ Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash,
     if (key0_bit == key1_bit)
     {
         std::uint32_t node_map = key0_bit;
-        Root map_val{create_int64(combine_maps(0, node_map))};
+        auto map_val = combine_maps(0, node_map);
         Root child_node{create_array_node(shift + 5, key0, key0_hash, val0, key1, key1_hash, val1)};
-        return create_object2(*type::PersistentHashMapArrayNode, *map_val, *child_node);
+        return create_object1_1(*type::PersistentHashMapArrayNode, map_val, *child_node);
     }
     else
     {
         std::uint32_t value_map = key0_bit | key1_bit;
-        Root map_val{create_int64(combine_maps(value_map, 0))};
+        auto map_val = combine_maps(value_map, 0);
         if (key0_bit < key1_bit)
-            return create_object5(*type::PersistentHashMapArrayNode, *map_val, key0, val0, key1, val1);
+            return create_object1_4(*type::PersistentHashMapArrayNode, map_val, key0, val0, key1, val1);
         else
-            return create_object5(*type::PersistentHashMapArrayNode, *map_val, key1, val1, key0, val0);
+            return create_object1_4(*type::PersistentHashMapArrayNode, map_val, key1, val1, key0, val0);
     }
 }
 
@@ -200,15 +200,20 @@ Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash,
     if (key0_bit == node_bit)
     {
         std::uint32_t node_map = key0_bit;
-        Root map_val{create_int64(combine_maps(0, node_map))};
+        auto map_val = combine_maps(0, node_map);
         Root child_node{create_array_node(shift + 5, key0, key0_hash, val0, node_hash, node)};
-        return create_object2(*type::PersistentHashMapArrayNode, *map_val, *child_node);
+        return create_object1_1(*type::PersistentHashMapArrayNode, map_val, *child_node);
     }
     else
     {
-        Root map_val{create_int64(combine_maps(key0_bit, node_bit))};
-        return create_object4(*type::PersistentHashMapArrayNode, *map_val, key0, val0, node);
+        auto map_val = combine_maps(key0_bit, node_bit);
+        return create_object1_3(*type::PersistentHashMapArrayNode, map_val, key0, val0, node);
     }
+}
+
+Force create_array_node(Int64 map, std::uint32_t node_size)
+{
+    return create_object(*type::PersistentHashMapArrayNode, &map, 1, nullptr, node_size);
 }
 
 Force create_array_map(Value key0, std::uint32_t key0_hash, Value val0, Value key1, std::uint32_t key1_hash, Value val1)
@@ -220,7 +225,7 @@ Force create_array_map(Value key0, std::uint32_t key0_hash, Value val0, Value ke
 Value array_node_get(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash, Value def_val)
 {
     assert(get_value_type(node).is(*type::PersistentHashMapArrayNode));
-    std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+    std::uint64_t value_node_map = get_object_int(node, 0);
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
     assert((value_map & node_map) == 0);
@@ -246,7 +251,7 @@ Value array_node_get(Value node, std::uint8_t shift, Value key, std::uint32_t ke
 Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash, Value val, bool& replaced)
 {
     assert(get_value_type(node).is(*type::PersistentHashMapArrayNode));
-    std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+    std::uint64_t value_node_map = get_object_int(node, 0);
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
     std::uint32_t key_bit = map_bit(shift, key_hash);
@@ -257,7 +262,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
         auto key0 = get_object_element(node, key_index);
         if (key0 == key)
         {
-            Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size)};
+            Root new_node{create_array_node(value_node_map, node_size)};
 
             copy_object_elements(*new_node, 0, node, 0, key_index);
             set_object_element(*new_node, key_index, key);
@@ -269,8 +274,8 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
         }
         else
         {
-            Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size - 1)};
-            Root new_value_map{create_int64(combine_maps(value_map ^ key_bit, node_map ^ key_bit))};
+            auto new_value_map = combine_maps(value_map ^ key_bit, node_map ^ key_bit);
+            Root new_node{create_array_node(new_value_map, node_size - 1)};
             auto node_index = map_node_index(node_map, node_size, key_bit);
             auto val0 = get_object_element(node, key_index + 1);
             auto key0_hash = hash_value(key0);
@@ -279,8 +284,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
                 create_collision_node(key_hash, key0, val0, key, val) :
                 create_array_node(shift + 5, key0, key0_hash, val0, key, key_hash, val)};
 
-            set_object_element(*new_node, 0, *new_value_map);
-            copy_object_elements(*new_node, 1, node, 1, key_index);
+            copy_object_elements(*new_node, 0, node, 0, key_index);
             copy_object_elements(*new_node, key_index, node, key_index + 2, node_index + 1);
             set_object_element(*new_node, node_index - 1, *new_child);
             copy_object_elements(*new_node, node_index, node, node_index + 1, node_size);
@@ -291,7 +295,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
     }
     else if (node_map & key_bit)
     {
-        Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size)};
+        Root new_node{create_array_node(value_node_map, node_size)};
         auto node_index = map_node_index(node_map, node_size, key_bit);
         auto child_node = get_object_element(node, node_index);
         Root new_child{
@@ -305,10 +309,9 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
     }
     else
     {
-        Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size + 2)};
-        Root new_value_map{create_int64(combine_maps(value_map | key_bit, node_map))};
-        set_object_element(*new_node, 0, *new_value_map);
-        copy_object_elements(*new_node, 1, node, 1, key_index);
+        Int64 new_value_map = combine_maps(value_map | key_bit, node_map);
+        Root new_node{create_array_node(new_value_map, node_size + 2)};
+        copy_object_elements(*new_node, 0, node, 0, key_index);
         set_object_element(*new_node, key_index, key);
         set_object_element(*new_node, key_index + 1, val);
         copy_object_elements(*new_node, key_index + 2, node, key_index, node_size);
@@ -320,7 +323,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
 
 std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash)
 {
-    std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+    std::uint64_t value_node_map = get_object_int(node, 0);
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
     std::uint32_t key_bit = map_bit(shift, key_hash);
@@ -333,17 +336,16 @@ std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value 
         auto node_size = get_object_size(node);
         auto value_count = popcount(value_map);
         if (value_count == 2 && node_map == 0)
-            return {get_object_element(node, 5 - key_index), get_object_element(node, 4 - key_index)};
+            return {get_object_element(node, 3 - key_index), get_object_element(node, 2 - key_index)};
         if (value_count == 1 && popcount(node_map) == 1)
         {
             auto other_child_node = get_object_element(node, node_size - 1);
             if (get_value_type(other_child_node).is(*type::PersistentHashMapCollisionNode))
                 return {other_child_node, *SENTINEL};
         }
-        Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size - 2)};
-        Root new_value_node_map{create_int64(combine_maps(value_map ^ key_bit, node_map))};
-        set_object_element(*new_node, 0, *new_value_node_map);
-        copy_object_elements(*new_node, 1, node, 1, key_index);
+        auto new_value_node_map = combine_maps(value_map ^ key_bit, node_map);
+        Root new_node{create_array_node(new_value_node_map, node_size - 2)};
+        copy_object_elements(*new_node, 0, node, 0, key_index);
         copy_object_elements(*new_node, key_index, node, key_index + 2, node_size);
         return {*new_node, *SENTINEL};
     }
@@ -362,18 +364,17 @@ std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value 
         {
             if (value_map == 0 && node_map == key_bit)
                 return {*new_child.first, new_child.second};
-            Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size + 1)};
-            Root new_value_node_map{create_int64(combine_maps(value_map ^ key_bit, node_map ^ key_bit))};
+            auto new_value_node_map = combine_maps(value_map ^ key_bit, node_map ^ key_bit);
+            Root new_node{create_array_node(new_value_node_map, node_size + 1)};
             auto key_index = map_key_index(value_map, key_bit);
-            set_object_element(*new_node, 0, *new_value_node_map);
-            copy_object_elements(*new_node, 1, node, 1, key_index);
+            copy_object_elements(*new_node, 0, node, 0, key_index);
             set_object_element(*new_node, key_index, new_child.second);
             set_object_element(*new_node, key_index + 1, *new_child.first);
             copy_object_elements(*new_node, key_index + 2, node, key_index, node_index);
             copy_object_elements(*new_node, node_index + 2, node, node_index + 1, node_size);
             return {*new_node, *SENTINEL};
         }
-        Root new_node{create_object(*type::PersistentHashMapArrayNode, nullptr, node_size)};
+        Root new_node{create_array_node(value_node_map, node_size)};
         copy_object_elements(*new_node, 0, node, 0, node_index);
         set_object_element(*new_node, node_index, *new_child.first);
         copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
@@ -388,16 +389,16 @@ Value array_node_equal(Value left, Value right)
     assert(get_value_type(left).is(*type::PersistentHashMapArrayNode));
     assert(get_value_type(right).is(*type::PersistentHashMapArrayNode));
 
-    std::uint64_t value_node_map = get_int64_value(get_object_element(left, 0));
-    if (std::uint64_t(get_int64_value(get_object_element(right, 0))) != value_node_map)
+    std::uint64_t value_node_map = get_object_int(left, 0);
+    if (std::uint64_t(get_object_int(right, 0)) != value_node_map)
         return nil;
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     auto value_count = popcount(value_map);
-    for (std::uint32_t i = 1; i < std::uint32_t(value_count * 2 + 1); ++i)
+    for (std::uint32_t i = 0; i < std::uint32_t(value_count * 2); ++i)
         if (get_object_element(left, i) != get_object_element(right, i))
             return nil;
     auto node_size = get_object_size(left);
-    for (std::uint32_t i = value_count * 2 + 1; i < node_size; ++i)
+    for (std::uint32_t i = value_count * 2; i < node_size; ++i)
     {
         auto left_child = get_object_element(left, i);
         auto right_child = get_object_element(right, i);
@@ -421,16 +422,16 @@ Force collision_node_seq(Value node, Value parent)
 
 Force array_node_seq(Value node, Value parent)
 {
-    std::uint64_t value_node_map = get_int64_value(get_object_element(node, 0));
+    std::uint64_t value_node_map = get_object_int(node, 0);
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     if (value_map != 0)
     {
-        std::array<Value, 2> kv{{get_object_element(node, 1), get_object_element(node, 2)}};
+        std::array<Value, 2> kv{{get_object_element(node, 0), get_object_element(node, 1)}};
         Root entry{create_array(kv.data(), kv.size())};
-        return create_object4(*type::PersistentHashMapSeq, *entry, node, *THREE, parent);
+        return create_object4(*type::PersistentHashMapSeq, *entry, node, *TWO, parent);
     }
-    Root child_parent{create_object3(*type::PersistentHashMapSeqParent, node, *TWO, parent)};
-    auto child = get_object_element(node, 1);
+    Root child_parent{create_object3(*type::PersistentHashMapSeqParent, node, *ONE, parent)};
+    auto child = get_object_element(node, 0);
     if (get_value_type(child).is(*type::PersistentHashMapCollisionNode))
         return collision_node_seq(child, *child_parent);
     return array_node_seq(child, *child_parent);
@@ -450,13 +451,13 @@ Force array_node_next(Value node, Value child, Value parent, Int64 index)
     Root new_index{create_int64(index + 1)};
     Root child_parent{create_object3(*type::PersistentHashMapSeqParent, node, *new_index, parent)};
 
-    std::uint64_t value_node_map = get_int64_value(get_object_element(child, 0));
+    std::uint64_t value_node_map = get_object_int(child, 0);
     std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
     if (value_map != 0)
     {
-        std::array<Value, 2> kv{{get_object_element(child, 1), get_object_element(child, 2)}};
+        std::array<Value, 2> kv{{get_object_element(child, 0), get_object_element(child, 1)}};
         Root entry{create_array(kv.data(), kv.size())};
-        return create_object4(*type::PersistentHashMapSeq, *entry, child, *THREE, *child_parent);
+        return create_object4(*type::PersistentHashMapSeq, *entry, child, *TWO, *child_parent);
     }
 
     return array_node_seq(child, *child_parent);

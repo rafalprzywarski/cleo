@@ -134,6 +134,7 @@ Force create_object4(Value type, Value elem0, Value elem1, Value elem2, Value el
 Force create_object5(Value type, Value elem0, Value elem1, Value elem2, Value elem3, Value elem4);
 Force create_object1_1(Value type, Int64 i0, Value elem0);
 Force create_object1_2(Value type, Int64 i0, Value elem0, Value elem1);
+Force create_object1_3(Value type, Int64 i0, Value elem0, Value elem1, Value elem2);
 Force create_object1_4(Value type, Int64 i0, Value elem0, Value elem1, Value elem2, Value elem3);
 Value get_object_type(Value obj);
 std::uint32_t get_object_int_size(Value obj);
