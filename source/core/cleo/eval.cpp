@@ -39,7 +39,8 @@ Force eval_symbol(Value sym, Value env)
 {
     if (env && map_contains(env, sym))
         return call_multimethod2(*rt::get, env, sym);
-    return get_var_value(lookup_not_macro_var(sym));
+    Root msg{create_string("unable to resolve symbol " + to_string(sym))};
+    throw_exception(new_symbol_not_found(*msg));
 }
 
 Value eval_quote(Value list)
