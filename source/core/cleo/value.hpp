@@ -124,7 +124,8 @@ Force create_string(const std::string& str);
 const char *get_string_ptr(Value val);
 std::uint32_t get_string_len(Value val);
 
-Force create_object(Value type, const Value *elems, std::uint32_t size);
+Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size);
+inline Force create_object(Value type, const Value *elems, std::uint32_t size) { return create_object(type, nullptr, 0, elems, size); }
 Force create_object0(Value type);
 Force create_object1(Value type, Value elem);
 Force create_object2(Value type, Value elem0, Value elem1);
@@ -132,10 +133,13 @@ Force create_object3(Value type, Value elem0, Value elem1, Value elem2);
 Force create_object4(Value type, Value elem0, Value elem1, Value elem2, Value elem3);
 Force create_object5(Value type, Value elem0, Value elem1, Value elem2, Value elem3, Value elem4);
 Value get_object_type(Value obj);
+std::uint32_t get_object_int_size(Value obj);
 std::uint32_t get_object_size(Value obj);
 void set_object_size(Value obj, std::uint32_t size);
+Int64 get_object_int(Value obj, std::uint32_t index);
 Value get_object_element(Value obj, std::uint32_t index);
 void set_object_type(Value obj, Value type);
+void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
 
 Value get_value_type(Value val);

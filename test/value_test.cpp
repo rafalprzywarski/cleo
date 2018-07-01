@@ -184,11 +184,40 @@ TEST_F(value_test, should_store_object_values)
     ASSERT_EQ(0u, get_object_size(*obj));
 }
 
-TEST_F(value_test, should_initialize_object_values_to_nil)
+TEST_F(value_test, should_store_int_values_in_objects)
 {
     auto type = create_symbol("org.xxx");
-    Root obj{create_object(type, nullptr, 3)};
+    Root elem0, elem1, elem2;
+    elem0 = create_int64(10);
+    elem1 = create_float64(20);
+    elem2 = create_symbol("elem3");
+    const std::array<Int64, 5> ints{{std::numeric_limits<Int64>::max(), std::numeric_limits<Int64>::min(), 0, 654, -1}};
+    const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
+    Root obj{create_object(type, ints.data(), ints.size(), elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
+    ASSERT_EQ(5, get_object_int_size(*obj));
+    ASSERT_EQ(std::numeric_limits<Int64>::max(), get_object_int(*obj, 0));
+    ASSERT_EQ(std::numeric_limits<Int64>::min(), get_object_int(*obj, 1));
+    ASSERT_EQ(0, get_object_int(*obj, 2));
+    ASSERT_EQ(654, get_object_int(*obj, 3));
+    ASSERT_EQ(-1, get_object_int(*obj, 4));
+    ASSERT_EQ(elems.size(), get_object_size(*obj));
+    ASSERT_TRUE(elems[0].is(get_object_element(*obj, 0)));
+    ASSERT_TRUE(elems[1].is(get_object_element(*obj, 1)));
+    ASSERT_TRUE(elems[2].is(get_object_element(*obj, 2)));
+
+    obj = create_object(type, nullptr, 0);
+    ASSERT_EQ(0u, get_object_size(*obj));
+}
+
+TEST_F(value_test, should_initialize_object_values_to_nil_or_0)
+{
+    auto type = create_symbol("org.xxx");
+    Root obj{create_object(type, nullptr, 2, nullptr, 3)};
+    ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
+    ASSERT_EQ(2u, get_object_int_size(*obj));
+    ASSERT_EQ(0, get_object_int(*obj, 0));
+    ASSERT_EQ(0, get_object_int(*obj, 1));
     ASSERT_EQ(3u, get_object_size(*obj));
     ASSERT_TRUE(get_object_element(*obj, 0).is_nil());
     ASSERT_TRUE(get_object_element(*obj, 1).is_nil());
@@ -202,16 +231,33 @@ TEST_F(value_test, should_modify_objects)
     elem0 = create_int64(10);
     elem1 = create_float64(20);
     elem2 = create_symbol("elem3");
+    const std::array<Int64, 2> ints{{7, 8}};
     const std::array<Value, 2> elems{{*elem0, *elem1}};
-    Root obj{create_object(type, elems.data(), elems.size())};
+    Root obj{create_object(type, ints.data(), ints.size(), elems.data(), elems.size())};
 
     set_object_element(*obj, 0, *elem2);
 
+    ASSERT_EQ(7, get_object_int(*obj, 0));
+    ASSERT_EQ(8, get_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
     ASSERT_TRUE(elem1->is(get_object_element(*obj, 1)));
 
     set_object_element(*obj, 1, *elem0);
 
+    ASSERT_EQ(7, get_object_int(*obj, 0));
+    ASSERT_EQ(8, get_object_int(*obj, 1));
+    ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
+    ASSERT_TRUE(elem0->is(get_object_element(*obj, 1)));
+    
+    set_object_int(*obj, 0, 10);
+    ASSERT_EQ(10, get_object_int(*obj, 0));
+    ASSERT_EQ(8, get_object_int(*obj, 1));
+    ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
+    ASSERT_TRUE(elem0->is(get_object_element(*obj, 1)));
+
+    set_object_int(*obj, 1, 11);
+    ASSERT_EQ(10, get_object_int(*obj, 0));
+    ASSERT_EQ(11, get_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
     ASSERT_TRUE(elem0->is(get_object_element(*obj, 1)));
 }

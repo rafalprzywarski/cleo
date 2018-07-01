@@ -26,8 +26,9 @@ struct Keyword
 struct Object
 {
     Value type;
-    std::uint32_t size;
-    Value firstElem;
+    std::uint32_t intCount, valCount;
+    ValueBits firstVal;
+    static constexpr int VALS_PER_INT = sizeof(Int64) / sizeof(ValueBits);
 };
 
 Value tag_ptr(void *ptr, Tag tag)
@@ -146,15 +147,22 @@ std::uint32_t get_string_len(Value val)
     return get_ptr<String>(val)->len;
 }
 
-Force create_object(Value type, const Value *elems, std::uint32_t size)
+Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size)
 {
-    auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstElem) + size * sizeof(Object::firstElem)));
+    auto int_vals_size = int_size * Object::VALS_PER_INT;
+    auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstVal) + (int_vals_size + size) * sizeof(Object::firstVal)));
     val->type = type;
-    val->size = size;
-    if (elems)
-        std::copy_n(elems, size, &val->firstElem);
+    val->intCount = int_size;
+    val->valCount = size;
+    if (ints)
+        std::memcpy(&val->firstVal, ints, int_vals_size * sizeof(Object::firstVal));
     else
-        std::fill_n(&val->firstElem, size, nil);
+        std::memset(&val->firstVal, 0, int_vals_size * sizeof(Object::firstVal));
+    auto first_obj = &val->firstVal + int_vals_size;
+    if (elems)
+        std::transform(elems, elems + size, first_obj, [](auto& v) { return v.bits(); });
+    else
+        std::fill_n(first_obj, size, nil.bits());
     return tag_ptr(val, tag::OBJECT);
 }
 
@@ -198,21 +206,35 @@ Value get_object_type(Value obj)
     return obj ? get_ptr<Object>(obj)->type : nil;
 }
 
+std::uint32_t get_object_int_size(Value obj)
+{
+    return obj ? get_ptr<Object>(obj)->intCount : 0;
+}
+
 std::uint32_t get_object_size(Value obj)
 {
-    return obj ? get_ptr<Object>(obj)->size : 0;
+    return obj ? get_ptr<Object>(obj)->valCount : 0;
 }
 
 void set_object_size(Value obj, std::uint32_t size)
 {
     assert(size <= get_object_size(obj));
-    get_ptr<Object>(obj)->size = size;
+    get_ptr<Object>(obj)->valCount = size;
+}
+
+Int64 get_object_int(Value obj, std::uint32_t index)
+{
+    assert(index < get_object_int_size(obj));
+    Int64 val{};
+    std::memcpy(&val, &get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT, sizeof(val));
+    return val;
 }
 
 Value get_object_element(Value obj, std::uint32_t index)
 {
     assert(index < get_object_size(obj));
-    return (&get_ptr<Object>(obj)->firstElem)[index];
+    auto ptr = get_ptr<Object>(obj);
+    return Value{(&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index]};
 }
 
 void set_object_type(Value obj, Value type)
@@ -220,10 +242,17 @@ void set_object_type(Value obj, Value type)
     get_ptr<Object>(obj)->type = type;
 }
 
+void set_object_int(Value obj, std::uint32_t index, Int64 val)
+{
+    assert(index < get_object_int_size(obj));
+    std::memcpy(&get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT, &val, sizeof(val));
+}
+
 void set_object_element(Value obj, std::uint32_t index, Value val)
 {
     assert(index < get_object_size(obj));
-    (&get_ptr<Object>(obj)->firstElem)[index] = val;
+    auto ptr = get_ptr<Object>(obj);
+    (&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index] = val.bits();
 }
 
 Value get_value_type(Value val)
