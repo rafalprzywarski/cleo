@@ -19,9 +19,9 @@ TEST_F(fn_test, should_eval_the_body)
 {
     Root v{array(5, 6, 7)};
     Root seqv{resolve_value(SEQ, nil)};
-    Root seq{list(*seqv, *v)};
+    Root seq{fn_call(*seqv, *v)};
     Root firstv{resolve_value(FIRST, nil)};
-    Root body{list(*firstv, *seq)};
+    Root body{fn_call(*firstv, *seq)};
     Root params{array()};
     Root fn{create_fn(nil, nil, *params, *body)};
     Root call{list(*fn)};
@@ -33,9 +33,9 @@ TEST_F(fn_test, should_pass_the_arguments)
 {
     auto s = create_symbol("s");
     auto x = create_symbol("x");
-    Root seq{list(s, x)};
+    Root seq{fn_call(s, x)};
     Root firstv{resolve_value(FIRST, nil)};
-    Root body{list(*firstv, *seq)};
+    Root body{fn_call(*firstv, *seq)};
     Root params{array(s, x)};
     Root fn{create_fn(nil, nil, *params, *body)};
     Root v{array(5, 6, 7)};
@@ -50,9 +50,9 @@ TEST_F(fn_test, should_use_values_from_the_env)
     auto x = create_symbol("x");
     Root v{array(5, 6, 7)};
     Root env{amap(s, *rt::seq, x, *v)};
-    Root seq{list(s, x)};
+    Root seq{fn_call(s, x)};
     Root firstv{resolve_value(FIRST, nil)};
-    Root body{list(*firstv, *seq)};
+    Root body{fn_call(*firstv, *seq)};
     Root params{array()};
     Root fn{create_fn(*env, nil, *params, *body)};
     Root call{list(*fn)};

@@ -11,6 +11,7 @@ add_library(cleo_core
   cleo/error.cpp
   cleo/eval.cpp
   cleo/fn.cpp
+  cleo/fn_call.cpp
   cleo/global.cpp
   cleo/hash.cpp
   cleo/lazy_seq.cpp

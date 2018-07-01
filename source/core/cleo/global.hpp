@@ -191,7 +191,6 @@ extern const Root CFunction;
 extern const Root Symbol;
 extern const Root Keyword;
 extern const Root Var;
-extern const Root VarValueRef;
 extern const Root List;
 extern const Root Cons;
 extern const Root LazySeq;
@@ -226,6 +225,9 @@ extern const Root FileNotFound;
 extern const Root ArithmeticException;
 extern const Root IndexOutOfBounds;
 extern const Root Namespace;
+
+extern const Root VarValueRef;
+extern const Root FnCall;
 }
 
 namespace clib

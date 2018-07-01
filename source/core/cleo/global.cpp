@@ -17,6 +17,7 @@
 #include "atom.hpp"
 #include "util.hpp"
 #include "clib.hpp"
+#include "fn_call.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -209,6 +210,7 @@ const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
 const Root Namespace{create_type("cleo.core", "Namespace")};
 
 const Root VarValueRef{create_type("cleo.core.internal", "VarValueRef")};
+const Root FnCall{create_type("cleo.core.internal", "FnCall")};
 }
 
 namespace clib
@@ -1255,10 +1257,15 @@ struct Initialize
         v = create_array(two_maps.data(), two_maps.size());
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
-        
+
         std::array<Value, 2> two_var_refs{{*type::VarValueRef, *type::VarValueRef}};
         v = create_array(two_var_refs.data(), two_var_refs.size());
         f = create_native_function2<var_value_ref_equals>();
+        define_method(OBJ_EQ, *v, *f);
+
+        std::array<Value, 2> two_fn_calls{{*type::FnCall, *type::FnCall}};
+        v = create_array(two_fn_calls.data(), two_fn_calls.size());
+        f = create_native_function2<fn_call_equals>();
         define_method(OBJ_EQ, *v, *f);
 
         define(PRINT_READABLY, TRUE);
@@ -1269,6 +1276,8 @@ struct Initialize
 
         f = create_native_function1<var_value_ref_pr_str>();
         define_method(PR_STR_OBJ, *type::VarValueRef, *f);
+        f = create_native_function1<fn_call_pr_str>();
+        define_method(PR_STR_OBJ, *type::FnCall, *f);
         f = create_native_function1<pr_str_array>();
         define_method(PR_STR_OBJ, *type::Array, *f);
         f = create_native_function1<pr_str_array_set>();

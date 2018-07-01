@@ -238,6 +238,7 @@ TEST_F(eval_test, fn_should_return_a_new_function)
     auto s = create_symbol("s");
     auto x = create_symbol("x");
     Root body{list(s, x)};
+    Root resolved_body{fn_call(s, x)};
     Root params{array(s, x)};
     Root call{list(FN, *params, *body)};
     Root val{eval(*call)};
@@ -245,7 +246,7 @@ TEST_F(eval_test, fn_should_return_a_new_function)
     ASSERT_TRUE(!get_fn_name(*val));
     ASSERT_EQ(1u, get_fn_size(*val));
     ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
-    ASSERT_TRUE(*body == get_fn_body(*val, 0));
+    ASSERT_TRUE(*resolved_body == get_fn_body(*val, 0));
 }
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
@@ -254,6 +255,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     auto x = create_symbol("x");
     auto name = create_symbol("fname");
     Root body{list(s, x)};
+    Root resolved_body{fn_call(s, x)};
     Root params{array(s, x)};
     Root call{list(FN, name, *params, *body)};
     Root val{eval(*call)};
@@ -261,7 +263,7 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
     ASSERT_TRUE(name.is(get_fn_name(*val)));
     ASSERT_EQ(1u, get_fn_size(*val));
     ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
-    ASSERT_TRUE(*body == get_fn_body(*val, 0));
+    ASSERT_TRUE(*resolved_body == get_fn_body(*val, 0));
 }
 
 TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
@@ -451,8 +453,8 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved(phmap(*xref, 10, 20, ysym), "{x 10 20 y}", "{y nil}");
 
     expect_symbol_resolved("()", "()", "{}");
-    expect_symbol_resolved(list(*xref, *yref), "(x y)", "{}");
-    expect_symbol_resolved(list(xsym, *yref), "(x y)", "{x nil}");
+    expect_symbol_resolved(fn_call(*xref, *yref), "(x y)", "{}");
+    expect_symbol_resolved(fn_call(xsym, *yref), "(x y)", "{x nil}");
 
     expect_symbol_resolved("(quote a x y)", "(quote a x y)", "{}");
 
@@ -466,8 +468,8 @@ TEST_F(eval_test, should_resolve_variables)
     expect_symbol_resolved(list(IF, *xref, *yref), "(if x y)", "{}");
     expect_symbol_resolved(list(IF, *xref, ysym), "(if x y)", "{y nil}");
 
-    expect_symbol_resolved(list(RECUR, *xref, *yref), "(recur x y)", "{}");
-    expect_symbol_resolved(list(RECUR, *xref, ysym), "(recur x y)", "{y nil}");
+    expect_symbol_resolved(fn_call(*recur, *xref, *yref), "(recur x y)", "{}");
+    expect_symbol_resolved(fn_call(*recur, *xref, ysym), "(recur x y)", "{y nil}");
 
     expect_symbol_resolved(list(THROW, *xref, *yref), "(throw x y)", "{}");
     expect_symbol_resolved(list(THROW, *xref, ysym), "(throw x y)", "{y nil}");
@@ -528,9 +530,9 @@ TEST_F(eval_test, resolving_should_expand_macros)
     auto d = create_symbol("d");
     auto addsym = create_symbol("add");
 
-    expect_symbol_resolved(list(FN, arrayv(c, d), listv(*plusref, listv(*plusref, *aref, *bref), listv(*plusref, c, d))), "(fn* [c d] (add (add a b) (add c d)))", "{}");
-    expect_symbol_resolved(list(FN, arrayv(addsym), listv(addsym, *aref, *bref)), "(fn* [add] (add a b))", "{}");
-    expect_symbol_resolved(list(FN, arrayv(addsym), listv(addsym, *aref, b)), "(fn* [add] (add a b))", "{b nil}");
+    expect_symbol_resolved(list(FN, arrayv(c, d), fn_callv(*plusref, fn_callv(*plusref, *aref, *bref), fn_callv(*plusref, c, d))), "(fn* [c d] (add (add a b) (add c d)))", "{}");
+    expect_symbol_resolved(list(FN, arrayv(addsym), fn_callv(addsym, *aref, *bref)), "(fn* [add] (add a b))", "{}");
+    expect_symbol_resolved(list(FN, arrayv(addsym), fn_callv(addsym, *aref, b)), "(fn* [add] (add a b))", "{b nil}");
 }
 
 TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)

@@ -10,6 +10,7 @@
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "util.hpp"
+#include "fn_call.hpp"
 #include <vector>
 
 namespace cleo
@@ -106,6 +107,26 @@ Force resolve_pure_list(Value l, Value env)
     }
 
     return reverse_list(*ret);
+}
+
+Force resolve_fn_call(Value l, Value env)
+{
+    auto size = get_int64_value(get_list_size(l));
+    assert(size > 0);
+    Roots roots(size);
+    std::vector<Value> vals;
+    vals.reserve(size);
+    roots.set(0, get_list_first(l) == RECUR ? *recur : resolve_value(get_list_first(l), env));
+    vals.push_back(roots[0]);
+    l = get_list_next(l);
+    for (decltype(size) i = 1; i != size; ++i)
+    {
+        roots.set(i, resolve_value(get_list_first(l), env));
+        vals.push_back(roots[i]);
+        l = get_list_next(l);
+    }
+
+    return create_fn_call(vals.data(), vals.size());
 }
 
 Force resolve_fn_body(Value name, Value body, Value env)
@@ -209,18 +230,20 @@ Force resolve_list(Value l, Value env)
             ret = list_conj(*ret, meta);
         return list_conj(*ret, f);
     }
-    if (f == DO || f == IF || f == RECUR || f == THROW || f == TRY || f == FINALLY)
+    if (f == DO || f == IF || f == THROW || f == TRY || f == FINALLY)
     {
         ret = resolve_pure_list(get_list_next(l), env);
         return list_conj(*ret, f);
     }
+    if (f == RECUR)
+        return resolve_fn_call(l, env);
     if (get_value_tag(f) == tag::SYMBOL && !map_contains(env, f) && is_var_macro(resolve_var(f)))
     {
         Root expanded{macroexpand(l, env)};
         return resolve_value(*expanded, env);
     }
 
-    return resolve_pure_list(l, env);
+    return resolve_fn_call(l, env);
 }
 
 Force resolve_vector(Value v, Value env)
@@ -531,15 +554,15 @@ std::uint8_t find_fn_index(Value fn, std::uint8_t n, std::uint8_t public_n)
     throw_arity_error(get_fn_name(fn), public_n);
 }
 
-std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value list, Value env)
+std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value fc, Value env)
 {
     std::vector<Value> elems;
-    elems.reserve(get_int64_value(get_list_size(list)));
+    auto size = get_fn_call_size(fc);
+    elems.reserve(size + 1);
     elems.push_back(firstVal);
-    Roots::size_type i = 0;
-    for (Root arg_list{get_list_next(list)}; *arg_list; arg_list = get_list_next(*arg_list), ++i)
+    for (Roots::size_type i = 0; i < size; ++i)
     {
-        arg_roots.set(i, eval_resolved(get_list_first(*arg_list), env));
+        arg_roots.set(i, eval_resolved(get_fn_call_arg(fc, i), env));
         elems.push_back(arg_roots[i]);
     }
 
@@ -617,9 +640,14 @@ Force eval_list(Value list, Value env)
         return eval_throw(list, env);
     if (first.is(TRY))
         return eval_try(list, env);
-    Root val{first.is(RECUR) ? *recur : eval_resolved(first, env)};
-    Roots arg_roots(get_int64_value(get_list_size(list)));
-    auto elems = eval_args(arg_roots, *val, list, env);
+    throw_illegal_state("unresolved list");
+}
+
+Force eval_fn_call(Value fc, Value env)
+{
+    Root val{eval_resolved(get_fn_call_fn(fc), env)};
+    Roots arg_roots(get_fn_call_size(fc) + 1);
+    auto elems = eval_args(arg_roots, *val, fc, env);
     return call_fn(get_value_type(*val), elems);
 }
 
@@ -747,6 +775,8 @@ Force eval_resolved(Value val, Value env)
         return get_var_value_ref_value(val);
     if (type.is(*type::List))
         return eval_list(val, env);
+    if (type.is(*type::FnCall))
+        return eval_fn_call(val, env);
     if (type.is(*type::Array))
         return eval_vector(val, env);
     if (type.is(*type::ArraySet))

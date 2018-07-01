@@ -10,6 +10,7 @@
 #include <cleo/namespace.hpp>
 #include <cleo/var.hpp>
 #include <cleo/util.hpp>
+#include <cleo/fn_call.hpp>
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
@@ -105,7 +106,7 @@ Force list(const T& first, const Ts&... elems)
 template <typename... Ts>
 auto listv(const Ts&... elems)
 {
-    return delayed([&] { return list(elems...); });
+    return delayed([=] { return list(elems...); });
 }
 
 inline Force svec_conj(Value vec)
@@ -131,7 +132,33 @@ Force array(const Ts&... elems)
 template <typename... Ts>
 auto arrayv(const Ts&... elems)
 {
-    return delayed([&] { return array(elems...); });
+    return delayed([=] { return array(elems...); });
+}
+
+inline void push_args(Roots&, std::vector<Value>&s) { }
+
+template <typename T, typename... Ts>
+void push_args(Roots& rs, std::vector<Value>& es, const T& elem, const Ts&... elems)
+{
+    rs.set(es.size(), to_value(elem));
+    es.push_back(rs[es.size()]);
+    push_args(rs, es, elems...);
+}
+
+template <typename... Ts>
+auto fn_call(Value fn, const Ts&... elems)
+{
+    Roots rs(1 + sizeof...(elems));
+    std::vector<Value> es;
+    es.reserve(1 + sizeof...(elems));
+    push_args(rs, es, fn, elems...);
+    return create_fn_call(es.data(), es.size());
+}
+
+template <typename... Ts>
+auto fn_callv(Value fn, const Ts&... elems)
+{
+    return delayed([=] { return fn_call(fn, elems...); });
 }
 
 inline Force sset_conj(Value s)
@@ -187,7 +214,7 @@ auto phmapv(const Ts&... elems)
 {
     return delayed([&] { return phmap(elems...); });
 }
-    
+
 inline Force i64(Int64 value)
 {
     return create_int64(value);
