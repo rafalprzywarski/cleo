@@ -222,7 +222,7 @@ struct persistent_hash_map_test : Test
     void check_optimal_structure(Value map)
     {
         ASSERT_EQ_REFS(*type::PersistentHashMap, get_value_type(map));
-        check_node_invariant(get_object_element(map, 1));
+        check_node_invariant(get_object_element(map, 0));
     }
 
     Force create_map(std::vector<std::pair<std::string, int>> kvs)

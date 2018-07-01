@@ -6,10 +6,10 @@ namespace cleo
 {
 
 // HashMap:
-//   size 0: [0 SENTINEL]
-//   size 1: [1 value key]
-//   size>1: [size collision-node]
-//   size>1: [size array-node]
+//   size 0: [0 | SENTINEL]
+//   size 1: [1 | value key]
+//   size>1: [size | collision-node]
+//   size>1: [size | array-node]
 // CollisionNode:
 //   [hash | key0 value0 key1 value1 key2? value2? ...]
 // ArrayNode:
@@ -41,24 +41,18 @@ Force create_collision_node(std::uint32_t hash, Value k0, Value v0, Value k1, Va
 
 Force create_single_value_map(Value k, Value v)
 {
-    return create_object3(*type::PersistentHashMap, *ONE, v, k);
-}
-
-Force create_map(Value size, Value elem0)
-{
-    return create_object2(*type::PersistentHashMap, size, elem0);
+    return create_object1_2(*type::PersistentHashMap, 1, v, k);
 }
 
 Force create_map(Int64 size, Value elem0)
 {
-    Root s{create_int64(size)};
-    return create_object2(*type::PersistentHashMap, *s, elem0);
+    return create_object1_1(*type::PersistentHashMap, size, elem0);
 }
 
 Force create_collision_map(std::uint32_t hash, Value k0, Value v0, Value k1, Value v1)
 {
     Root node{create_collision_node(hash, k0, v0, k1, v1)};
-    return create_map(*TWO, *node);
+    return create_map(2, *node);
 }
 
 Value collision_node_get(Value node, std::uint32_t size, Value key, Value def_val)
@@ -220,7 +214,7 @@ Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash,
 Force create_array_map(Value key0, std::uint32_t key0_hash, Value val0, Value key1, std::uint32_t key1_hash, Value val1)
 {
     Root node{create_array_node(0, key0, key0_hash, val0, key1, key1_hash, val1)};
-    return create_map(*TWO, *node);
+    return create_map(2, *node);
 }
 
 Value array_node_get(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash, Value def_val)
@@ -472,12 +466,12 @@ Force array_node_next(Value node, Value child, Value parent, Int64 index)
 
 Force create_persistent_hash_map()
 {
-    return create_map(*ZERO, *SENTINEL);
+    return create_map(0, *SENTINEL);
 }
 
 Int64 get_persistent_hash_map_size(Value m)
 {
-    return get_int64_value(get_object_element(m, 0));
+    return get_object_int(m, 0);
 }
 
 Value persistent_hash_map_get(Value m, Value k)
@@ -487,7 +481,7 @@ Value persistent_hash_map_get(Value m, Value k)
 
 Value persistent_hash_map_get(Value map, Value key, Value def_val)
 {
-    auto node_or_val = get_object_element(map, 1);
+    auto node_or_val = get_object_element(map, 0);
     if (node_or_val.is(*SENTINEL))
         return def_val;
     auto node_or_val_type = get_value_type(node_or_val);
@@ -501,12 +495,12 @@ Value persistent_hash_map_get(Value map, Value key, Value def_val)
         std::uint32_t key_hash = hash_value(key);
         return array_node_get(node_or_val, 0, key, key_hash, def_val);
     }
-    return get_object_element(map, 2) == key ? node_or_val : def_val;
+    return get_object_element(map, 1) == key ? node_or_val : def_val;
 }
 
 Force persistent_hash_map_assoc(Value map, Value key, Value val)
 {
-    auto node_or_val = get_object_element(map, 1);
+    auto node_or_val = get_object_element(map, 0);
     if (node_or_val.is(*SENTINEL))
         return create_single_value_map(key, val);
 
@@ -528,10 +522,10 @@ Force persistent_hash_map_assoc(Value map, Value key, Value val)
         return create_map(replaced ? size : (size + 1), *new_node);
     }
 
-    Value key0 = get_object_element(map, 2);
+    Value key0 = get_object_element(map, 1);
     if (key0 == key)
         return create_single_value_map(key, val);
-    auto val0 = get_object_element(map, 1);
+    auto val0 = get_object_element(map, 0);
     auto key_hash = hash_value(key);
     auto key0_hash = hash_value(key0);
     if (key_hash == key0_hash)
@@ -541,7 +535,7 @@ Force persistent_hash_map_assoc(Value map, Value key, Value val)
 
 Force persistent_hash_map_dissoc(Value map, Value key)
 {
-    auto node_or_val = get_object_element(map, 1);
+    auto node_or_val = get_object_element(map, 0);
     if (node_or_val.is(*SENTINEL))
         return map;
     auto node_or_val_type = get_value_type(node_or_val);
@@ -567,7 +561,7 @@ Force persistent_hash_map_dissoc(Value map, Value key)
         auto size = get_persistent_hash_map_size(map);
         return create_map(size - 1, *new_node.first);
     }
-    Value key0 = get_object_element(map, 2);
+    Value key0 = get_object_element(map, 1);
     if (key0 == key)
         return *EMPTY_MAP;
     return map;
@@ -581,10 +575,10 @@ Value persistent_hash_map_contains(Value m, Value k)
 
 Value are_persistent_hash_maps_equal(Value left, Value right)
 {
-    if (get_object_element(left, 0) != get_object_element(right, 0))
+    if (get_persistent_hash_map_size(left) != get_persistent_hash_map_size(right))
         return nil;
-    auto left_node_or_val = get_object_element(left, 1);
-    auto right_node_or_val = get_object_element(right, 1);
+    auto left_node_or_val = get_object_element(left, 0);
+    auto right_node_or_val = get_object_element(right, 0);
     if (left_node_or_val.is(*SENTINEL) || right_node_or_val.is(*SENTINEL))
         return left_node_or_val.is(right_node_or_val) ? TRUE : nil;
     auto left_type = get_value_type(left_node_or_val);
@@ -601,14 +595,14 @@ Value are_persistent_hash_maps_equal(Value left, Value right)
             return nil;
         return array_node_equal(left_node_or_val, right_node_or_val);
     }
-    auto left_key = get_object_element(left, 2);
-    auto right_key = get_object_element(right, 2);
+    auto left_key = get_object_element(left, 1);
+    auto right_key = get_object_element(right, 1);
     return (left_node_or_val == right_node_or_val && left_key == right_key) ? TRUE : nil;
 }
 
 Force persistent_hash_map_seq(Value m)
 {
-    auto node_or_val = get_object_element(m, 1);
+    auto node_or_val = get_object_element(m, 0);
     if (node_or_val.is(*SENTINEL))
         return nil;
     auto node_type = get_value_type(node_or_val);
@@ -616,7 +610,7 @@ Force persistent_hash_map_seq(Value m)
         return collision_node_seq(node_or_val, nil);
     if (node_type.is(*type::PersistentHashMapArrayNode))
         return array_node_seq(node_or_val, nil);
-    std::array<Value, 2> kv{{get_object_element(m, 2), node_or_val}};
+    std::array<Value, 2> kv{{get_object_element(m, 1), node_or_val}};
     Root entry{create_array(kv.data(), kv.size())};
     return create_object1(*type::PersistentHashMapSeq, *entry);
 }
