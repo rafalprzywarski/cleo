@@ -167,7 +167,7 @@ TEST_F(eval_test, should_eval_lists_as_function_calls)
     val = eval(*val);
 
     ASSERT_TRUE(type::List->is(get_value_type(*val)));
-    ASSERT_EQ(2, get_int64_value(get_list_size(*val)));
+    ASSERT_EQ(2, get_list_size(*val));
     ASSERT_EQ(101, get_int64_value(get_list_first(*val)));
     Root next;
     next = get_list_next(*val);
@@ -208,7 +208,7 @@ TEST_F(eval_test, should_eval_function_arguments)
     val = eval(*val);
 
     ASSERT_TRUE(type::List->is(get_value_type(*val)));
-    ASSERT_EQ(2, get_int64_value(get_list_size(*val)));
+    ASSERT_EQ(2, get_list_size(*val));
     ASSERT_EQ(101, get_int64_value(get_list_first(*val)));
     Root next;
     next = get_list_next(*val);

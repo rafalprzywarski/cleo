@@ -46,7 +46,7 @@ Force eval_symbol(Value sym, Value env)
 
 Value eval_quote(Value list)
 {
-    check_arity(QUOTE, 1, get_int64_value(get_list_size(list)) - 1);
+    check_arity(QUOTE, 1, get_list_size(list) - 1);
     Root next{get_list_next(list)};
     return get_list_first(*next);
 }
@@ -54,7 +54,7 @@ Value eval_quote(Value list)
 
 Force reverse_list(Value l)
 {
-    if (get_int64_value(get_list_size(l)) == 0)
+    if (get_list_size(l) == 0)
         return l;
     Root ret{*EMPTY_LIST};
     for (Root f{l}; *f; f = get_list_next(*f))
@@ -111,7 +111,7 @@ Force resolve_pure_list(Value l, Value env)
 
 Force resolve_fn_call(Value l, Value env)
 {
-    auto size = get_int64_value(get_list_size(l));
+    auto size = get_list_size(l);
     assert(size > 0);
     Roots roots(size);
     std::vector<Value> vals;
@@ -140,7 +140,7 @@ Force resolve_fn_body(Value name, Value body, Value env)
 
 Force resolve_list(Value l, Value env)
 {
-    if (get_int64_value(get_list_size(l)) == 0)
+    if (get_list_size(l) == 0)
         return l;
 
     Root ret;
@@ -306,7 +306,7 @@ Force eval_fn(Value list, Value env)
     if (!*next)
         return create_fn(env, name, nullptr, nullptr, 0);
     std::vector<Value> params, bodies;
-    Roots body_roots(get_value_type(get_list_first(*next)).is(*type::List) ? get_int64_value(get_list_size(*next)) : 1);
+    Roots body_roots(get_value_type(get_list_first(*next)).is(*type::List) ? get_list_size(*next) : 1);
     auto parse_fn = [&](Value list)
     {
         params.push_back(get_list_first(list));
@@ -357,7 +357,7 @@ Force eval_def(Value list, Value env)
         throw_illegal_argument("Can't refer to qualified var that doesn't exist: " + to_string(sym));
     next = get_list_next(*next);
     if (*next && get_list_next(*next))
-        throw_arity_error(DEF, get_int64_value(get_list_size(list)) - 1);
+        throw_arity_error(DEF, get_list_size(list) - 1);
     Root val{eval_resolved(!*next ? nil : get_list_first(*next), env)};
     auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
     auto sym_name = get_symbol_name(sym);
@@ -369,7 +369,7 @@ Force eval_def(Value list, Value env)
 
 Force eval_let(Value list, Value env)
 {
-    check_arity(LET, 2, get_int64_value(get_list_size(list)) - 1);
+    check_arity(LET, 2, get_list_size(list) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
     if (!get_value_type(bindings).is(*type::Array))
@@ -406,7 +406,7 @@ Force eval_do(Value list, Value env)
 
 Force eval_loop(Value list, Value env)
 {
-    check_arity(LOOP, 2, get_int64_value(get_list_size(list)) - 1);
+    check_arity(LOOP, 2, get_list_size(list) - 1);
     Root n{get_list_next(list)};
     auto bindings = get_list_first(*n);
     if (!get_value_type(bindings).is(*type::Array))
@@ -441,7 +441,7 @@ Force eval_loop(Value list, Value env)
 
 Force eval_if(Value list, Value env)
 {
-    auto size = get_int64_value(get_list_size(list));
+    auto size = get_list_size(list);
     if (size < 3 || size > 4)
         throw_arity_error(IF, size - 1);
     Root n{get_list_next(list)};
@@ -455,7 +455,7 @@ Force eval_if(Value list, Value env)
 
 Force eval_throw(Value list, Value env)
 {
-    check_arity(THROW, 1, get_int64_value(get_list_size(list)) - 1);
+    check_arity(THROW, 1, get_list_size(list) - 1);
     Root n{get_list_next(list)};
     Root ex{eval_resolved(get_list_first(*n), env)};
     throw_exception(*ex);
@@ -463,16 +463,16 @@ Force eval_throw(Value list, Value env)
 
 Force eval_try(Value list, Value env)
 {
-    check_arity(TRY, 2, get_int64_value(get_list_size(list)) - 1);
+    check_arity(TRY, 2, get_list_size(list) - 1);
     Root n{get_list_next(list)};
     auto expr = get_list_first(*n);
     n = get_list_next(*n);
     auto clause = get_list_first(*n);
     if (get_list_first(clause).is(FINALLY))
-        check_arity(FINALLY, 1, get_int64_value(get_list_size(clause)) - 1);
+        check_arity(FINALLY, 1, get_list_size(clause) - 1);
     else if (get_list_first(clause).is(CATCH))
     {
-        check_arity(CATCH, 3, get_int64_value(get_list_size(clause)) - 1);
+        check_arity(CATCH, 3, get_list_size(clause) - 1);
         auto name = get_list_first(get_list_next(get_list_next(clause)));
         if (get_value_tag(name) != tag::SYMBOL || get_symbol_namespace(name))
             throw_illegal_argument("Bad binding form, expected symbol, got: " + to_string(name));
@@ -619,7 +619,7 @@ Force call_fn(Value type, const std::vector<Value>& elems)
 
 Force eval_list(Value list, Value env)
 {
-    if (get_int64_value(get_list_size(list)) == 0)
+    if (get_list_size(list) == 0)
         return list;
     Value first = get_list_first(list);
     if (first.is(QUOTE))
@@ -712,7 +712,7 @@ Force resolve_value(Value val, Value env)
 
 Force macroexpand1(Value form, Value env)
 {
-    if (!get_value_type(form).is(*type::List) || get_int64_value(get_list_size(form)) == 0)
+    if (!get_value_type(form).is(*type::List) || get_list_size(form) == 0)
         return form;
 
     Root m{get_list_first(form)};
@@ -728,7 +728,7 @@ Force macroexpand1(Value form, Value env)
         return form;
 
     std::vector<Value> elems;
-    elems.reserve(get_int64_value(get_list_size(form)) + 2);
+    elems.reserve(get_list_size(form) + 2);
     elems.push_back(*m);
     elems.push_back(form);
     elems.push_back(env);

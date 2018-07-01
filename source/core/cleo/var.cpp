@@ -55,7 +55,7 @@ void push_bindings(Value bindings)
 void pop_bindings()
 {
     assert(*bindings);
-    assert(get_int64_value(get_list_size(*bindings)) != 0);
+    assert(get_list_size(*bindings) != 0);
 
     bindings = get_list_next(*bindings);
 }

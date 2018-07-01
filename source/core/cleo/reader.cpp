@@ -336,7 +336,7 @@ Force syntax_quote_seq_elem(Root& generated, Value v)
 
 Force list_reverse(Value l)
 {
-    if (get_int64_value(get_list_size(l)) == 0)
+    if (get_list_size(l) == 0)
         return l;
     Root r{*EMPTY_LIST};
     for (; l; l = get_list_next(l))

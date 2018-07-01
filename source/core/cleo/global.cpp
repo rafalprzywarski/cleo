@@ -1088,7 +1088,7 @@ struct Initialize
         define_method(COUNT, *type::PersistentHashMap, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_set_size>::fn>();
         define_method(COUNT, *type::ArraySet, *f);
-        f = create_native_function1<get_list_size>();
+        f = create_native_function1<WrapInt64Fn<get_list_size>::fn>();
         define_method(COUNT, *type::List, *f);
         f = create_native_function1<cons_size>();
         define_method(COUNT, *type::Cons, *f);
