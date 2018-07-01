@@ -189,7 +189,7 @@ struct persistent_hash_map_test : Test
     {
         if (get_value_type(node).is(*type::PersistentHashMapCollisionNode))
         {
-            return (get_object_size(node) - 1) / 2;
+            return get_object_size(node) / 2;
         }
         if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
         {
