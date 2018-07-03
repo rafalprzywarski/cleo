@@ -28,6 +28,10 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             stack.push_back(get_array_elem(constants, read_u16(p + 1)));
             p += 3;
             break;
+        case LDV:
+            stack.push_back(get_var_value(get_array_elem(vars, read_u16(p + 1))));
+            p += 3;
+            break;
         case POP:
             stack.pop_back();
             ++p;

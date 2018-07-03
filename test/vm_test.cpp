@@ -32,8 +32,17 @@ struct vm_test : Test
         for (auto& v : vals)
         {
             rs.set(v.first, i64(v.second));
-            vs.push_back(rs[v.first]);
+            vs[v.first] = rs[v.first];
         }
+        return create_array(vs.data(), vs.size());
+    }
+
+    static Force create_vars(std::vector<std::pair<std::uint32_t, Value>> vals)
+    {
+        std::uint32_t size = 65536;
+        std::vector<Value> vs(size);
+        for (auto& v : vals)
+            vs[v.first] = v.second;
         return create_array(vs.data(), vs.size());
     }
 };
@@ -75,6 +84,34 @@ TEST_F(vm_test, ldc)
     EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[2]);
     EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[1]);
     EXPECT_EQ_VALS(get_array_elem(*constants, 255), stack[0]);
+}
+
+TEST_F(vm_test, ldv)
+{
+    in_ns(create_symbol("vm.ldv.test"));
+    auto v1 = define(create_symbol("vm.ldv.test", "a"), *THREE);
+    auto v2 = define(create_symbol("vm.ldv.test", "b"), *TWO);
+    auto v3 = define(create_symbol("vm.ldv.test", "c"), *ZERO);
+    auto v4 = define(create_symbol("vm.ldv.test", "d"), *ONE);
+    Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
+
+    const std::array<Byte, 3> bc1{{LDV, Byte(-1), 0}};
+    eval_bytecode(stack, nil, *vars, 0, bc1.data(), bc1.size());
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
+
+    const std::array<Byte, 9> bc2{{
+        LDV, 0, 0,
+        LDV, 1, 0,
+        LDV, Byte(-1), Byte(-1)}};
+    eval_bytecode(stack, nil, *vars, 0, bc2.data(), bc2.size());
+
+    ASSERT_EQ(4u, stack.size());
+    EXPECT_EQ_VALS(get_var_value(v4), stack[3]);
+    EXPECT_EQ_VALS(get_var_value(v3), stack[2]);
+    EXPECT_EQ_VALS(get_var_value(v2), stack[1]);
+    EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
 }
 
 TEST_F(vm_test, pop)
