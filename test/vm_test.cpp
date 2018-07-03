@@ -24,6 +24,12 @@ struct vm_test : Test
         extra_roots.push_back(val.value());
     }
 
+    template <std::size_t N>
+    void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Byte, N>& bc)
+    {
+        vm::eval_bytecode(stack, constants, vars, locals_size, bc.data(), bc.size());
+    }
+
     static Force create_constants(std::vector<std::pair<std::uint32_t, Int64>> vals)
     {
         std::uint32_t size = 65536;
@@ -60,7 +66,7 @@ TEST_F(vm_test, ldc)
       {65535, 305}})};
 
     const std::array<Byte, 3> bc1{{LDC, Byte(-1), 0}};
-    eval_bytecode(stack, *constants, nil, 0, bc1.data(), bc1.size());
+    eval_bytecode(*constants, nil, 0, bc1);
 
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(get_array_elem(*constants, 255), stack[0]);
@@ -73,7 +79,7 @@ TEST_F(vm_test, ldc)
         LDC, 0, 1,
         LDC, Byte(-1), 127,
         LDC, Byte(-1), Byte(-1)}};
-    eval_bytecode(stack, *constants, nil, 0, bc2.data(), bc2.size());
+    eval_bytecode(*constants, nil, 0, bc2);
 
     ASSERT_EQ(8u, stack.size());
     EXPECT_EQ_VALS(get_array_elem(*constants, 65535), stack[7]);
@@ -96,7 +102,7 @@ TEST_F(vm_test, ldv)
     Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
 
     const std::array<Byte, 3> bc1{{LDV, Byte(-1), 0}};
-    eval_bytecode(stack, nil, *vars, 0, bc1.data(), bc1.size());
+    eval_bytecode(nil, *vars, 0, bc1);
 
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
@@ -105,13 +111,58 @@ TEST_F(vm_test, ldv)
         LDV, 0, 0,
         LDV, 1, 0,
         LDV, Byte(-1), Byte(-1)}};
-    eval_bytecode(stack, nil, *vars, 0, bc2.data(), bc2.size());
+    eval_bytecode(nil, *vars, 0, bc2);
 
     ASSERT_EQ(4u, stack.size());
     EXPECT_EQ_VALS(get_var_value(v4), stack[3]);
     EXPECT_EQ_VALS(get_var_value(v3), stack[2]);
     EXPECT_EQ_VALS(get_var_value(v2), stack[1]);
     EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
+}
+
+TEST_F(vm_test, br)
+{
+    Root constants{create_constants({{0, 10}, {1, 20}})};
+    const std::array<Byte, 6> bc1{{BR, 0, 0, LDC, 0, 0}};
+
+    eval_bytecode(*constants, nil, 0, bc1);
+    ASSERT_EQ(1u, stack.size());
+    ASSERT_EQ(get_array_elem(*constants, 0), stack[0]);
+    stack.clear();
+
+    const std::array<Byte, 9> bc2{{BR, 3, 0, LDC, 0, 0, LDC, 1, 0}};
+    eval_bytecode(*constants, nil, 0, bc2);
+
+    ASSERT_EQ(1u, stack.size());
+    ASSERT_EQ(get_array_elem(*constants, 1), stack[0]);
+    stack.clear();
+
+    const std::array<Byte, 15> bc3{{BR, 3, 0, BR, 6, 0, LDC, 0, 0, BR, Byte(-9), Byte(-1), LDC, 1, 0}};
+    eval_bytecode(*constants, nil, 0, bc3);
+
+    ASSERT_EQ(2u, stack.size());
+    ASSERT_EQ(get_array_elem(*constants, 1), stack[1]);
+    ASSERT_EQ(get_array_elem(*constants, 0), stack[0]);
+    stack.clear();
+
+    const std::array<Byte, 264> bc4{{
+        BR, 2, 1,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 1, 0}};
+    eval_bytecode(*constants, nil, 0, bc4);
+
+    ASSERT_EQ(1u, stack.size());
+    ASSERT_EQ(get_array_elem(*constants, 1), stack[0]);
 }
 
 TEST_F(vm_test, pop)
@@ -121,13 +172,13 @@ TEST_F(vm_test, pop)
     push(*TWO);
 
     const std::array<Byte, 1> bc1{{POP}};
-    eval_bytecode(stack, nil, nil, 0, bc1.data(), bc1.size());
+    eval_bytecode(nil, nil, 0, bc1);
     ASSERT_EQ(2u, stack.size());
     EXPECT_EQ_VALS(*ONE, stack[1]);
     EXPECT_EQ_VALS(*THREE, stack[0]);
 
     const std::array<Byte, 2> bc2{{POP, POP}};
-    eval_bytecode(stack, nil, nil, 0, bc2.data(), bc2.size());
+    eval_bytecode(nil, nil, 0, bc2);
     ASSERT_TRUE(stack.empty());
 }
 

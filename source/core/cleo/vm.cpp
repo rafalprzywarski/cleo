@@ -14,6 +14,11 @@ std::uint16_t read_u16(const Byte *p)
     return std::uint8_t(p[0]) | std::uint16_t(std::uint8_t(p[1])) << 8;
 }
 
+std::int16_t read_i16(const Byte *p)
+{
+    return std::int16_t(read_u16(p));
+}
+
 }
 
 void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, const Byte *bytecode, std::uint32_t size)
@@ -35,6 +40,9 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         case POP:
             stack.pop_back();
             ++p;
+            break;
+        case BR:
+            p += 3 + read_i16(p + 1);
             break;
         }
     }
