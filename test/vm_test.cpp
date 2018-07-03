@@ -127,22 +127,22 @@ TEST_F(vm_test, br)
 
     eval_bytecode(*constants, nil, 0, bc1);
     ASSERT_EQ(1u, stack.size());
-    ASSERT_EQ(get_array_elem(*constants, 0), stack[0]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[0]);
     stack.clear();
 
     const std::array<Byte, 9> bc2{{BR, 3, 0, LDC, 0, 0, LDC, 1, 0}};
     eval_bytecode(*constants, nil, 0, bc2);
 
     ASSERT_EQ(1u, stack.size());
-    ASSERT_EQ(get_array_elem(*constants, 1), stack[0]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[0]);
     stack.clear();
 
     const std::array<Byte, 15> bc3{{BR, 3, 0, BR, 6, 0, LDC, 0, 0, BR, Byte(-9), Byte(-1), LDC, 1, 0}};
     eval_bytecode(*constants, nil, 0, bc3);
 
     ASSERT_EQ(2u, stack.size());
-    ASSERT_EQ(get_array_elem(*constants, 1), stack[1]);
-    ASSERT_EQ(get_array_elem(*constants, 0), stack[0]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[1]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[0]);
     stack.clear();
 
     const std::array<Byte, 264> bc4{{
@@ -162,7 +162,48 @@ TEST_F(vm_test, br)
     eval_bytecode(*constants, nil, 0, bc4);
 
     ASSERT_EQ(1u, stack.size());
-    ASSERT_EQ(get_array_elem(*constants, 1), stack[0]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[0]);
+}
+
+TEST_F(vm_test, bnil)
+{
+    Root constants{create_constants({{0, 10}, {1, 20}})};
+    const std::array<Byte, 9> bc1{{BNIL, 3, 0, LDC, 0, 0, LDC, 1, 0}};
+
+    stack.push_back(nil);
+    push(i64(7));
+    eval_bytecode(*constants, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[2]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[1]);
+    EXPECT_EQ_VALS(nil, stack[0]);
+    stack.clear();
+
+    stack.push_back(nil);
+    eval_bytecode(*constants, nil, 0, bc1);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[0]);
+}
+
+TEST_F(vm_test, bnnil)
+{
+    Root constants{create_constants({{0, 10}, {1, 20}})};
+    const std::array<Byte, 9> bc1{{BNNIL, 3, 0, LDC, 0, 0, LDC, 1, 0}};
+
+    push(i64(7));
+    stack.push_back(nil);
+    eval_bytecode(*constants, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[2]);
+    EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[1]);
+    stack.clear();
+
+    push(i64(7));
+    eval_bytecode(*constants, nil, 0, bc1);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[0]);
 }
 
 TEST_F(vm_test, pop)

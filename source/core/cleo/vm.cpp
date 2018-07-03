@@ -19,6 +19,18 @@ std::int16_t read_i16(const Byte *p)
     return std::int16_t(read_u16(p));
 }
 
+const Byte *br(const Byte *p)
+{
+    return p + (3 + read_i16(p + 1));
+}
+
+Value pop(Stack& stack)
+{
+    auto val = stack.back();
+    stack.pop_back();
+    return val;
+}
+
 }
 
 void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, const Byte *bytecode, std::uint32_t size)
@@ -41,8 +53,20 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             stack.pop_back();
             ++p;
             break;
+        case BNIL:
+        {
+            auto c = pop(stack);
+            p = c ? p + 3 : br(p);
+            break;
+        }
+        case BNNIL:
+        {
+            auto c = pop(stack);
+            p = c ? br(p) : p + 3;
+            break;
+        }
         case BR:
-            p += 3 + read_i16(p + 1);
+            p = br(p);
             break;
         }
     }
