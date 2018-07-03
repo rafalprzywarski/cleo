@@ -25,6 +25,7 @@ add_library(cleo_core
   cleo/util.cpp
   cleo/value.cpp
   cleo/var.cpp
+  cleo/vm.cpp
 )
 
 target_link_libraries(cleo_core dl)

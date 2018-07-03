@@ -1,0 +1,27 @@
+#pragma once
+#include "global.hpp"
+
+namespace cleo
+{
+namespace vm
+{
+
+using Stack = std::vector<Value>;
+using Byte = char;
+
+constexpr Byte LDC = 1;
+constexpr Byte LDL = 2;
+constexpr Byte LDV = 3;
+constexpr Byte STL = 4;
+constexpr Byte POP = 5;
+constexpr Byte BNIL = 6;
+constexpr Byte BNNIL = 7;
+constexpr Byte BR = 8;
+constexpr Byte CALL = 9;
+constexpr Byte APPLY = 10;
+constexpr Byte THROW = 11;
+
+void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, const Byte *bytecode, std::uint32_t size);
+
+}
+}

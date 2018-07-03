@@ -22,6 +22,7 @@ add_executable(cleo_test
   reader_test.cpp
   value_test.cpp
   var_test.cpp
+  vm_test.cpp
   main.cpp
 )
 target_link_libraries(cleo_test cleo_core gmock pthread)
