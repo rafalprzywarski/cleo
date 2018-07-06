@@ -37,12 +37,17 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
 {
     auto p = bytecode;
     auto endp = p + size;
+    auto stack_base = stack.size() - locals_size;
     while (p != endp)
     {
         switch (*p)
         {
         case LDC:
             stack.push_back(get_array_elem(constants, read_u16(p + 1)));
+            p += 3;
+            break;
+        case LDL:
+            stack.push_back(Value{stack[stack_base + read_i16(p + 1)]});
             p += 3;
             break;
         case LDV:

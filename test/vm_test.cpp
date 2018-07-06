@@ -92,6 +92,42 @@ TEST_F(vm_test, ldc)
     EXPECT_EQ_VALS(get_array_elem(*constants, 255), stack[0]);
 }
 
+TEST_F(vm_test, ldl)
+{
+    Root x{i64(17)};
+    stack.push_back(*x);
+    const std::array<Byte, 3> bc1{{LDL, 0, 0}};
+    eval_bytecode(nil, nil, 1, bc1);
+
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_VALS(*x, stack[1]);
+    EXPECT_EQ_VALS(*x, stack[0]);
+
+    Root y{i64(35)}, a{i64(7)}, b{i64(8)};
+    stack.clear();
+    stack.push_back(*b);
+    stack.push_back(*a);
+    stack.resize(stack.size() + 1024, *x);
+    stack.push_back(*y);
+    const std::array<Byte, 12> bc2{{
+        LDL, Byte(-1), 3,
+        LDL, 0, 4,
+        LDL, Byte(-1), Byte(-1),
+        LDL, Byte(-2), Byte(-1)}};
+    eval_bytecode(nil, nil, 1025, bc2);
+
+    ASSERT_EQ(1031u, stack.size());
+    EXPECT_EQ_VALS(*b, stack[1030]);
+    EXPECT_EQ_VALS(*a, stack[1029]);
+    EXPECT_EQ_VALS(*y, stack[1028]);
+    EXPECT_EQ_VALS(*x, stack[1027]);
+    EXPECT_EQ_VALS(*y, stack[1026]);
+    EXPECT_EQ_VALS(*x, stack[1025]);
+    EXPECT_EQ_VALS(*x, stack[2]);
+    EXPECT_EQ_VALS(*a, stack[1]);
+    EXPECT_EQ_VALS(*b, stack[0]);
+}
+
 TEST_F(vm_test, ldv)
 {
     in_ns(create_symbol("vm.ldv.test"));
