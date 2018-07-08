@@ -4,6 +4,7 @@
 #include "equality.hpp"
 #include "var.hpp"
 #include "memory.hpp"
+#include "vm.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -21,6 +22,8 @@ extern std::vector<Value> extra_roots;
 extern unsigned gc_frequency;
 extern unsigned gc_counter;
 extern std::unique_ptr<std::ostream> gc_log;
+
+extern vm::Stack stack;
 
 class Root
 {

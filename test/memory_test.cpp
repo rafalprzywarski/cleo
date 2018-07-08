@@ -234,5 +234,32 @@ TEST_F(memory_test, should_trace_global_hierarchy)
     ASSERT_EQ(num_allocations, allocations.size());
 }
 
+TEST_F(memory_test, should_trace_global_stack)
+{
+    auto num_allocations = allocations.size();
+
+    stack.push_back(create_int64(20).value());
+    ASSERT_EQ(num_allocations + 1, allocations.size());
+
+    gc();
+    ASSERT_EQ(num_allocations + 1, allocations.size());
+
+    stack.push_back(create_int64(20).value());
+    stack.push_back(create_int64(20).value());
+    ASSERT_EQ(num_allocations + 3, allocations.size());
+
+    gc();
+    ASSERT_EQ(num_allocations + 3, allocations.size());
+
+    stack.pop_back();
+    stack.pop_back();
+    gc();
+    ASSERT_EQ(num_allocations + 1, allocations.size());
+
+    stack.back() = nil;
+    gc();
+    ASSERT_EQ(num_allocations, allocations.size());
+}
+
 }
 }

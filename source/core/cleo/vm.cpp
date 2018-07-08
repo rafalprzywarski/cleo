@@ -1,10 +1,13 @@
 #include "vm.hpp"
 #include "array.hpp"
+#include "var.hpp"
 
 namespace cleo
 {
 namespace vm
 {
+
+static_assert(std::is_same<std::int8_t, signed char>::value, "bytes must be 8-bit, 2's complement");
 
 namespace
 {

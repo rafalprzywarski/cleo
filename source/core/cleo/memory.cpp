@@ -114,6 +114,12 @@ void mark_extra_roots()
         mark_value(val);
 }
 
+void mark_stack()
+{
+    for (auto val : stack)
+        mark_value(val);
+}
+
 std::int64_t get_time()
 {
     using namespace std::chrono;
@@ -185,6 +191,7 @@ void gc()
     mark_multimethods();
     mark_global_hierarchy();
     mark_extra_roots();
+    mark_stack();
 
     auto middle = std::partition(begin(allocations), end(allocations), is_marked);
     auto t1 = get_time();

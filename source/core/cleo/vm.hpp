@@ -1,5 +1,6 @@
 #pragma once
-#include "global.hpp"
+#include "value.hpp"
+#include <vector>
 
 namespace cleo
 {

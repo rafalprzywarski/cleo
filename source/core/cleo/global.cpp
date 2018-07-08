@@ -33,6 +33,8 @@ unsigned gc_frequency = 4096;
 unsigned gc_counter = gc_frequency - 1;
 std::unique_ptr<std::ostream> gc_log;
 
+vm::Stack stack;
+
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
 
