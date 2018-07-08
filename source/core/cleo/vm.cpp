@@ -1,6 +1,7 @@
 #include "vm.hpp"
 #include "array.hpp"
 #include "var.hpp"
+#include "global.hpp"
 
 namespace cleo
 {
@@ -27,13 +28,6 @@ const Byte *br(const Byte *p)
     return p + (3 + read_i16(p + 1));
 }
 
-Value pop(Stack& stack)
-{
-    auto val = stack.back();
-    stack.pop_back();
-    return val;
-}
-
 }
 
 void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, const Byte *bytecode, std::uint32_t size)
@@ -46,38 +40,38 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         switch (*p)
         {
         case LDC:
-            stack.push_back(get_array_elem(constants, read_u16(p + 1)));
+            stack_push(get_array_elem(constants, read_u16(p + 1)));
             p += 3;
             break;
         case LDL:
-            stack.push_back(Value{stack[stack_base + read_i16(p + 1)]});
+            stack_push(Value{stack[stack_base + read_i16(p + 1)]});
             p += 3;
             break;
         case LDV:
-            stack.push_back(get_var_value(get_array_elem(vars, read_u16(p + 1))));
+            stack_push(get_var_value(get_array_elem(vars, read_u16(p + 1))));
             p += 3;
             break;
         case STL:
         {
-            auto val = pop(stack);
-            stack[stack_base + read_i16(p + 1)] = val;
+            stack[stack_base + read_i16(p + 1)] = stack.back();
+            stack_pop();
             p += 3;
             break;
         }
         case POP:
-            stack.pop_back();
+            stack_pop();
             ++p;
             break;
         case BNIL:
         {
-            auto c = pop(stack);
-            p = c ? p + 3 : br(p);
+            p = stack.back() ? p + 3 : br(p);
+            stack_pop();
             break;
         }
         case BNNIL:
         {
-            auto c = pop(stack);
-            p = c ? br(p) : p + 3;
+            p = stack.back() ? br(p) : p + 3;
+            stack_pop();
             break;
         }
         case BR:

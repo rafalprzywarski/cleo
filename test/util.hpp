@@ -231,6 +231,12 @@ struct Test : testing::Test
         Root bindings{amap(CURRENT_NS, *rt::current_ns)};
         bindings_guard.reset(new PushBindingsGuard(*bindings));
         in_ns(create_symbol(ns));
+        EXPECT_TRUE(stack.empty());
+    }
+
+    ~Test()
+    {
+        stack.clear();
     }
 
     void TearDown() override

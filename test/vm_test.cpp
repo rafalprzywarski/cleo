@@ -12,17 +12,7 @@ using namespace cleo::test;
 
 struct vm_test : Test
 {
-    Stack stack;
-    const std::size_t extra_roots_size;
-
-    vm_test() : Test("cleo.vm.test"), extra_roots_size(extra_roots.size()) { }
-    ~vm_test() { extra_roots.resize(extra_roots_size); }
-
-    void push(Force val)
-    {
-        stack.push_back(val.value());
-        extra_roots.push_back(val.value());
-    }
+    vm_test() : Test("cleo.vm.test") { }
 
     template <std::size_t N>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Byte, N>& bc)
@@ -95,7 +85,7 @@ TEST_F(vm_test, ldc)
 TEST_F(vm_test, ldl)
 {
     Root x{i64(17)};
-    stack.push_back(*x);
+    stack_push(*x);
     const std::array<Byte, 3> bc1{{LDL, 0, 0}};
     eval_bytecode(nil, nil, 1, bc1);
 
@@ -105,10 +95,10 @@ TEST_F(vm_test, ldl)
 
     Root y{i64(35)}, a{i64(7)}, b{i64(8)};
     stack.clear();
-    stack.push_back(*b);
-    stack.push_back(*a);
+    stack_push(*b);
+    stack_push(*a);
     stack.resize(stack.size() + 1024, *x);
-    stack.push_back(*y);
+    stack_push(*y);
     const std::array<Byte, 12> bc2{{
         LDL, Byte(-1), 3,
         LDL, 0, 4,
@@ -131,8 +121,8 @@ TEST_F(vm_test, ldl)
 TEST_F(vm_test, stl)
 {
     Root x{i64(17)};
-    stack.push_back(*x);
-    stack.push_back(nil);
+    stack_push(*x);
+    stack_push(nil);
     const std::array<Byte, 6> bc1{{LDL, Byte(-1), Byte(-1), STL, 0, 0}};
     eval_bytecode(nil, nil, 1, bc1);
 
@@ -142,10 +132,10 @@ TEST_F(vm_test, stl)
 
     Root y{i64(35)}, a{i64(7)}, b{i64(8)};
     stack.clear();
-    stack.push_back(*b);
-    stack.push_back(*a);
+    stack_push(*b);
+    stack_push(*a);
     stack.resize(stack.size() + 1024, *x);
-    stack.push_back(*y);
+    stack_push(*y);
     const std::array<Byte, 30> bc2{{
         LDL, Byte(-1), Byte(-1), STL, 0, 0,
         LDL, Byte(-2), Byte(-1), STL, 1, 0,
@@ -242,8 +232,8 @@ TEST_F(vm_test, bnil)
     Root constants{create_constants({{0, 10}, {1, 20}})};
     const std::array<Byte, 9> bc1{{BNIL, 3, 0, LDC, 0, 0, LDC, 1, 0}};
 
-    stack.push_back(nil);
-    push(i64(7));
+    stack_push(nil);
+    stack_push(i64(7));
     eval_bytecode(*constants, nil, 0, bc1);
 
     ASSERT_EQ(3u, stack.size());
@@ -252,7 +242,7 @@ TEST_F(vm_test, bnil)
     EXPECT_EQ_VALS(nil, stack[0]);
     stack.clear();
 
-    stack.push_back(nil);
+    stack_push(nil);
     eval_bytecode(*constants, nil, 0, bc1);
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[0]);
@@ -263,8 +253,8 @@ TEST_F(vm_test, bnnil)
     Root constants{create_constants({{0, 10}, {1, 20}})};
     const std::array<Byte, 9> bc1{{BNNIL, 3, 0, LDC, 0, 0, LDC, 1, 0}};
 
-    push(i64(7));
-    stack.push_back(nil);
+    stack_push(i64(7));
+    stack_push(nil);
     eval_bytecode(*constants, nil, 0, bc1);
 
     ASSERT_EQ(3u, stack.size());
@@ -272,7 +262,7 @@ TEST_F(vm_test, bnnil)
     EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[1]);
     stack.clear();
 
-    push(i64(7));
+    stack_push(i64(7));
     eval_bytecode(*constants, nil, 0, bc1);
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[0]);
@@ -280,9 +270,9 @@ TEST_F(vm_test, bnnil)
 
 TEST_F(vm_test, pop)
 {
-    push(*THREE);
-    push(*ONE);
-    push(*TWO);
+    stack_push(*THREE);
+    stack_push(*ONE);
+    stack_push(*TWO);
 
     const std::array<Byte, 1> bc1{{POP}};
     eval_bytecode(nil, nil, 0, bc1);

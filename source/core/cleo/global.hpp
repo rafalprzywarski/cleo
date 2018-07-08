@@ -25,6 +25,17 @@ extern std::unique_ptr<std::ostream> gc_log;
 
 extern vm::Stack stack;
 
+inline void stack_push(Force val)
+{
+    stack.push_back(val.value());
+}
+
+inline void stack_pop()
+{
+    if (!stack.empty())
+        stack.pop_back();
+}
+
 class Root
 {
 public:

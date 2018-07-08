@@ -18,6 +18,12 @@ struct memory_test : testing::Test
     memory_test()
     {
         gc();
+        EXPECT_TRUE(stack.empty());
+    }
+
+    ~memory_test()
+    {
+        stack.clear();
     }
 };
 
