@@ -2,6 +2,7 @@
 #include "array.hpp"
 #include "var.hpp"
 #include "global.hpp"
+#include "eval.hpp"
 
 namespace cleo
 {
@@ -77,6 +78,15 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         case BR:
             p = br(p);
             break;
+        case CALL:
+        {
+            auto n = std::uint8_t(p[1]) + 1;
+            auto& first = stack[stack.size() - n];
+            first = call(&first, n).value();
+            stack.resize(stack.size() - (n - 1));
+            p += 2;
+            break;
+        }
         }
     }
 }

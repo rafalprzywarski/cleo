@@ -569,10 +569,10 @@ std::vector<Value> eval_args(Roots& arg_roots, Value firstVal, Value fc, Value e
     return elems;
 }
 
-Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
+Force call_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_n)
 {
     const auto fn = elems[0];
-    auto fni = find_fn_index(fn, elems.size() - 1, public_n);
+    auto fni = find_fn_index(fn, elems_size - 1, public_n);
     auto va = is_va(fn, fni);
     auto params = get_fn_params(fn, fni);
     auto n_params = va ? get_array_size(params) - 1 : get_array_size(params);
@@ -585,8 +585,8 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     if (va)
     {
         Root vargs;
-        if (elems.size() - 1 > n_fixed_params)
-            vargs = create_list(elems.data() + n_fixed_params + 1, elems.size() - n_fixed_params - 1);
+        if (elems_size - 1 > n_fixed_params)
+            vargs = create_list(elems + n_fixed_params + 1, elems_size - n_fixed_params - 1);
         fenv = map_assoc(*fenv, get_var_arg(params), *vargs);
     }
     auto body = get_fn_body(fn, fni);
@@ -603,16 +603,16 @@ Force call_fn(const std::vector<Value>& elems, std::uint8_t public_n)
     return *val;
 }
 
-Force call_fn(Value type, const std::vector<Value>& elems)
+Force call_fn(Value type, const Value *elems, std::uint32_t elems_size)
 {
     if (type.is(*type::NativeFunction))
-        return get_native_function_ptr(elems.front())(elems.data() + 1, elems.size() - 1);
+        return get_native_function_ptr(elems[0])(elems + 1, elems_size - 1);
     if (type.is(*type::Multimethod))
-        return call_multimethod(elems.front(), elems.data() + 1, elems.size() - 1);
+        return call_multimethod(elems[0], elems + 1, elems_size - 1);
     if (type.is(*type::Fn))
-        return call_fn(elems, elems.size() - 1);
+        return call_fn(elems, elems_size, elems_size - 1);
     if (isa(type, *type::Callable))
-        return call_multimethod(*rt::obj_call, elems.data(), elems.size());
+        return call_multimethod(*rt::obj_call, elems, elems_size);
     Root msg{create_string("call error " + to_string(type))};
     throw_exception(new_call_error(*msg));
 }
@@ -648,7 +648,7 @@ Force eval_fn_call(Value fc, Value env)
     Root val{eval_resolved(get_fn_call_fn(fc), env)};
     Roots arg_roots(get_fn_call_size(fc) + 1);
     auto elems = eval_args(arg_roots, *val, fc, env);
-    return call_fn(get_value_type(*val), elems);
+    return call_fn(get_value_type(*val), elems.data(), elems.size());
 }
 
 Force eval_vector(Value v, Value env)
@@ -735,7 +735,7 @@ Force macroexpand1(Value form, Value env)
     for (Root arg_list{get_list_next(form)}; *arg_list; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
-    return call_fn(elems, elems.size() - 3);
+    return call_fn(elems.data(), elems.size(), elems.size() - 3);
 }
 
 Force macroexpand(Value form, Value env)
@@ -763,7 +763,7 @@ Force apply(Value fn, Value args)
         ++i;
     }
 
-    return call_fn(get_value_type(form.front()), form);
+    return call_fn(get_value_type(form.front()), form.data(), form.size());
 }
 
 Force eval_resolved(Value val, Value env)
@@ -784,6 +784,11 @@ Force eval_resolved(Value val, Value env)
     if (isa(type, *type::PersistentMap))
         return eval_map(val, env);
     return val;
+}
+
+Force call(const Value *vals, std::uint32_t size)
+{
+    return call_fn(get_value_type(vals[0]), vals, size);
 }
 
 Force eval(Value val, Value env)

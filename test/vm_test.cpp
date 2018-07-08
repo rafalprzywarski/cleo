@@ -285,6 +285,57 @@ TEST_F(vm_test, pop)
     ASSERT_TRUE(stack.empty());
 }
 
+TEST_F(vm_test, call)
+{
+    Root x{i64(7)};
+    Root constants{array(arrayv(*x, 8), *rt::first)};
+    const std::array<Byte, 8> bc1{{LDC, 1, 0, LDC, 0, 0, CALL, 1}};
+    eval_bytecode(*constants, nil, 0, bc1);
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*x, stack[0]);
+    stack.clear();
+
+    constants = array(phmapv(10, 20), 30, 40, *rt::assoc);
+    const std::array<Byte, 14> bc2{{LDC, 3, 0, LDC, 0, 0, LDC, 1, 0, LDC, 2, 0, CALL, 3}};
+    stack_push(*x);
+    eval_bytecode(*constants, nil, 0, bc2);
+
+    Root ex{phmap(10, 20, 30, 40)};
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[1]);
+    EXPECT_EQ_VALS(*x, stack[0]);
+    stack.clear();
+
+    Root count_args{create_native_function([](const Value *, std::uint8_t n) { return i64(n); })};
+    constants = array(*x, *count_args);
+    const std::array<Byte, 392> bc3{{
+        LDC, 1, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        CALL, Byte(-127),
+    }};
+    eval_bytecode(*constants, nil, 0, bc3);
+
+    ex = i64(129);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+}
+
 }
 }
 }
