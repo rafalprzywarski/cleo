@@ -604,10 +604,19 @@ Force call_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_
     return *val;
 }
 
+Value find_bytecode_fn_body(Value fn, std::uint8_t arity)
+{
+    auto n = get_bytecode_fn_size(fn);
+    for (decltype(n) i = 0; i < n; ++i)
+        if (get_bytecode_fn_arity(fn, i) == arity)
+            return get_bytecode_fn_body(fn, i);
+    throw_arity_error(get_bytecode_fn_name(fn), arity);
+}
+
 Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size)
 {
     auto fn = elems[0];
-    auto body = get_bytecode_fn_body(fn, 0);
+    auto body = find_bytecode_fn_body(fn, elems_size - 1);
     auto consts = get_bytecode_fn_body_consts(body);
     auto vars = get_bytecode_fn_body_vars(body);
     auto locals_size = get_bytecode_fn_body_locals_size(body);
