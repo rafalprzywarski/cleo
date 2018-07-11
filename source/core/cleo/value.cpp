@@ -249,8 +249,13 @@ Int64 get_object_int(Value obj, std::uint32_t index)
 {
     assert(index < get_object_int_size(obj));
     Int64 val{};
-    std::memcpy(&val, &get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT, sizeof(val));
+    std::memcpy(&val, get_object_int_ptr(obj, index), sizeof(val));
     return val;
+}
+
+const void *get_object_int_ptr(Value obj, std::uint32_t index)
+{
+    return &get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT;
 }
 
 Value get_object_element(Value obj, std::uint32_t index)

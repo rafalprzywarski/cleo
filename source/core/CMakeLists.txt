@@ -5,6 +5,7 @@ add_library(cleo_core
   cleo/array_map.cpp
   cleo/array_set.cpp
   cleo/atom.cpp
+  cleo/bytecode_fn.cpp
   cleo/clib.cpp
   cleo/cons.cpp
   cleo/equality.cpp

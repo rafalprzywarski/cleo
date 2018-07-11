@@ -141,6 +141,7 @@ std::uint32_t get_object_int_size(Value obj);
 std::uint32_t get_object_size(Value obj);
 void set_object_size(Value obj, std::uint32_t size);
 Int64 get_object_int(Value obj, std::uint32_t index);
+const void *get_object_int_ptr(Value obj, std::uint32_t index);
 Value get_object_element(Value obj, std::uint32_t index);
 void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);

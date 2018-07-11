@@ -220,6 +220,8 @@ extern const Root Seqable;
 extern const Root Sequence;
 extern const Root Callable;
 extern const Root Fn;
+extern const Root BytecodeFn;
+extern const Root BytecodeFnBody;
 extern const Root Recur;
 extern const Root Atom;
 extern const Root PersistentMap;

@@ -191,6 +191,8 @@ const Root Seqable{create_type("cleo.core", "Seqable")};
 const Root Sequence{create_type("cleo.core", "Sequence")};
 const Root Callable{create_type("cleo.core", "Callable")};
 const Root Fn{create_type("cleo.core", "Fn")};
+const Root BytecodeFn{create_type("cleo.core", "BytecodeFn")};
+const Root BytecodeFnBody{create_type("cleo.core", "BytecodeFnBody")};
 const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
 const Root PersistentMap{create_type("cleo.core", "PersistentMap")};
@@ -925,6 +927,8 @@ struct Initialize
         define_type(*type::Sequence);
         define_type(*type::Callable);
         define_type(*type::Fn);
+        define_type(*type::BytecodeFn);
+        define_type(*type::BytecodeFnBody);
         define_type(*type::Recur);
         define_type(*type::Atom);
         define_type(*type::PersistentMap);

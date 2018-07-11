@@ -11,6 +11,7 @@
 #include "reader.hpp"
 #include "util.hpp"
 #include "fn_call.hpp"
+#include "bytecode_fn.hpp"
 #include <vector>
 
 namespace cleo
@@ -603,6 +604,24 @@ Force call_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_
     return *val;
 }
 
+Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size)
+{
+    auto fn = elems[0];
+    auto body = get_bytecode_fn_body(fn, 0);
+    auto consts = get_bytecode_fn_body_consts(body);
+    auto vars = get_bytecode_fn_body_vars(body);
+    auto locals_size = get_bytecode_fn_body_locals_size(body);
+    auto bytes = get_bytecode_fn_body_bytes(body);
+    auto bytes_size = get_bytecode_fn_body_bytes_size(body);
+    auto stack_size = stack.size();
+    stack.insert(stack.end(), elems + 1, elems + elems_size);
+    stack.resize(stack.size() + locals_size, nil);
+    vm::eval_bytecode(stack, consts, vars, locals_size, bytes, bytes_size);
+    auto result = stack.back();
+    stack.resize(stack_size);
+    return result;
+}
+
 Force call_fn(Value type, const Value *elems, std::uint32_t elems_size)
 {
     if (type.is(*type::NativeFunction))
@@ -611,6 +630,8 @@ Force call_fn(Value type, const Value *elems, std::uint32_t elems_size)
         return call_multimethod(elems[0], elems + 1, elems_size - 1);
     if (type.is(*type::Fn))
         return call_fn(elems, elems_size, elems_size - 1);
+    if (type.is(*type::BytecodeFn))
+        return call_bytecode_fn(elems, elems_size);
     if (isa(type, *type::Callable))
         return call_multimethod(*rt::obj_call, elems, elems_size);
     Root msg{create_string("call error " + to_string(type))};
