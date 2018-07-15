@@ -72,6 +72,12 @@ void throw_illegal_state(const std::string& msg)
     throw_exception(new_illegal_state(*s));
 }
 
+[[noreturn]] void throw_compilation_error(const std::string& msg)
+{
+    Root s{create_string(msg)};
+    throw_exception(new_compilation_error(*s));
+}
+
 bool map_contains(Value m, Value k)
 {
     return !Root(call_multimethod2(*rt::contains, m, k))->is_nil();

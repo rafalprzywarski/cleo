@@ -15,6 +15,7 @@ void check_type(const std::string& name, Value val, Value type);
 [[noreturn]] void throw_integer_overflow();
 [[noreturn]] void throw_index_out_of_bounds();
 [[noreturn]] void throw_illegal_state(const std::string& msg);
+[[noreturn]] void throw_compilation_error(const std::string& msg);
 
 template <const Value *name>
 inline Value deref_name() { return *name; }
@@ -174,5 +175,5 @@ Force map_merge(Value m1, Value m2);
 
 Value namespace_symbol(Value sym);
 Value name_symbol(Value sym);
-    
+
 }

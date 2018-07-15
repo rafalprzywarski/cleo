@@ -47,4 +47,7 @@ Force arithmetic_exception_message(Value e);
 Force new_index_out_of_bounds();
 Force index_out_of_bounds_message(Value e);
 
+Force new_compilation_error(Value msg);
+Force compilation_error_message(Value e);
+
 }

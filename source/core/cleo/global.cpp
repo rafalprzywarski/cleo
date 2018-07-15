@@ -211,6 +211,7 @@ const Root UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")
 const Root FileNotFound{create_type("cleo.core", "FileNotFound")};
 const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
 const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
+const Root CompilationError{create_type("cleo.core", "CompilationError")};
 const Root Namespace{create_type("cleo.core", "Namespace")};
 
 const Root VarValueRef{create_type("cleo.core.internal", "VarValueRef")};
@@ -1371,6 +1372,10 @@ struct Initialize
         define_method(NEW, *type::IndexOutOfBounds, *f);
         f = create_native_function1<index_out_of_bounds_message>();
         define_method(GET_MESSAGE, *type::IndexOutOfBounds, *f);
+
+        derive(*type::CompilationError, *type::Exception);
+        f = create_native_function1<compilation_error_message>();
+        define_method(GET_MESSAGE, *type::CompilationError, *f);
 
         f = create_native_function1<macroexpand1_noenv, &MACROEXPAND1>();
         define(MACROEXPAND1, *f);

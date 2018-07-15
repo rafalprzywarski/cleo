@@ -144,4 +144,14 @@ Force index_out_of_bounds_message(Value)
     return nil;
 }
 
+Force new_compilation_error(Value msg)
+{
+    return create_object1(*type::CompilationError, msg);
+}
+
+Force compilation_error_message(Value e)
+{
+    return get_object_element(e, 0);
+}
+
 }
