@@ -604,26 +604,41 @@ Force call_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_
     return *val;
 }
 
-Value find_bytecode_fn_body(Value fn, std::uint8_t arity)
+std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity)
 {
     auto n = get_bytecode_fn_size(fn);
     for (decltype(n) i = 0; i < n; ++i)
         if (get_bytecode_fn_arity(fn, i) == arity)
-            return get_bytecode_fn_body(fn, i);
+            return {get_bytecode_fn_body(fn, i), arity};
+    if (n > 0)
+    {
+        auto va_arity = get_bytecode_fn_arity(fn, n - 1);
+        if (va_arity < 0 && ~va_arity <= arity)
+            return {get_bytecode_fn_body(fn, n - 1), va_arity};
+    }
     throw_arity_error(get_bytecode_fn_name(fn), arity);
 }
 
 Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size)
 {
     auto fn = elems[0];
-    auto body = find_bytecode_fn_body(fn, elems_size - 1);
+    auto body_and_arity = find_bytecode_fn_body(fn, elems_size - 1);
+    auto body = body_and_arity.first;
+    auto arity = body_and_arity.second;
     auto consts = get_bytecode_fn_body_consts(body);
     auto vars = get_bytecode_fn_body_vars(body);
     auto locals_size = get_bytecode_fn_body_locals_size(body);
     auto bytes = get_bytecode_fn_body_bytes(body);
     auto bytes_size = get_bytecode_fn_body_bytes_size(body);
     auto stack_size = stack.size();
-    stack.insert(stack.end(), elems + 1, elems + elems_size);
+    if (arity < 0)
+    {
+        auto rest = ~arity + 1;
+        stack.insert(stack.end(), elems + 1, elems + rest);
+        stack_push(rest < elems_size ?  create_array(elems + rest, elems_size - rest) : nil);
+    }
+    else
+        stack.insert(stack.end(), elems + 1, elems + elems_size);
     stack.resize(stack.size() + locals_size, nil);
     vm::eval_bytecode(stack, consts, vars, locals_size, bytes, bytes_size);
     auto result = stack.back();
