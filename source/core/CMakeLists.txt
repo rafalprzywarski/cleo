@@ -7,6 +7,7 @@ add_library(cleo_core
   cleo/atom.cpp
   cleo/bytecode_fn.cpp
   cleo/clib.cpp
+  cleo/compile.cpp
   cleo/cons.cpp
   cleo/equality.cpp
   cleo/error.cpp

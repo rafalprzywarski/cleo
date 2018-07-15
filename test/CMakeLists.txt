@@ -7,6 +7,7 @@ add_executable(cleo_test
   array_set_test.cpp
   bytecode_fn_test.cpp
   clib_test.cpp
+  compile_test.cpp
   equality_test.cpp
   eval_test.cpp
   fn_test.cpp
