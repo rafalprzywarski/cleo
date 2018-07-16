@@ -56,6 +56,16 @@ struct compile_test : Test
             EXPECT_EQ(arities[i], get_bytecode_fn_arity(fn, i)) << "index: " << unsigned(i);;
     }
 
+    void expect_body_with_bytecode(Value fn, std::uint8_t index, std::vector<vm::Byte> code)
+    {
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
+
     template <typename Consts>
     void expect_body_with_consts_and_bytecode(Value fn, std::uint8_t index, Consts constsv, std::vector<vm::Byte> code)
     {
@@ -118,6 +128,25 @@ TEST_F(compile_test, should_compile_functions_with_multiple_arities)
     ASSERT_NO_FATAL_FAILURE(expect_fn_with_arities(*fn, {1, ~Int64(2)}));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(12), b(vm::LDC, 0, 0));
     expect_body_with_consts_and_bytecode(*fn, 1, arrayv(11), b(vm::LDC, 0, 0));
+}
+
+TEST_F(compile_test, should_compile_functions_returning_parameters)
+{
+    Root fn{compile_fn("(fn* [a] a)")};
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, vm::Byte(-1), vm::Byte(-1)));
+
+    fn = compile_fn("(fn* ([a b] a) ([a b c] c))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, vm::Byte(-2), vm::Byte(-1)));
+    expect_body_with_bytecode(*fn, 1, b(vm::LDL, vm::Byte(-1), vm::Byte(-1)));
+
+    fn = compile_fn("(fn* [a b & c] a)");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, vm::Byte(-3), vm::Byte(-1)));
+
+    fn = compile_fn("(fn* [a b & c] b)");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, vm::Byte(-2), vm::Byte(-1)));
+
+    fn = compile_fn("(fn* [a b & c] c)");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, vm::Byte(-1), vm::Byte(-1)));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)

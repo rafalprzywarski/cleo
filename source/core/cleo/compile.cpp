@@ -17,11 +17,45 @@ Int64 get_arity(Value params)
     return size > 1 && get_array_elem(params, size - 2) == VA ? ~(size - 2) : size;
 }
 
+Int64 find_param(Value params, Value param)
+{
+    auto size = get_array_size(params);
+    for (std::uint32_t i = 0; i < size; ++i)
+        if (get_array_elem(params, i) == param)
+            return i;
+    return -1;
+}
+
+Force normalize_params(Value params)
+{
+    auto arity = get_arity(params);
+    if (arity >= 0)
+        return params;
+    std::vector<Value> nparams;
+    nparams.reserve(~arity + 1);
+    for (Int64 i = 0; i < ~arity; ++i)
+        nparams.push_back(get_array_elem(params, i));
+    nparams.push_back(get_array_elem(params, ~arity + 1));
+    return create_array(nparams.data(), nparams.size());
+}
+
 Force compile_fn_body(Value form)
 {
-    std::array<vm::Byte, 3> code{{vm::LDC, 0, 0}};
+    std::vector<vm::Byte> code;
     Value val = get_list_first(get_list_next(form));
-    Root consts{create_array(&val, 1)};
+    Root consts;
+    if (get_value_tag(val) != tag::SYMBOL)
+    {
+        consts = create_array(&val, 1);
+        code = {vm::LDC, 0, 0};
+    }
+    else
+    {
+        Root nparams{normalize_params(get_list_first(form))};
+        auto arity = get_array_size(*nparams);
+        auto i = find_param(*nparams, val);
+        code = {vm::LDL, vm::Byte(i - arity), vm::Byte(-1)};
+    }
     return create_bytecode_fn_body(*consts, nil, 0, code.data(), code.size());
 }
 
