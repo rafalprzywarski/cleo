@@ -11,6 +11,12 @@ namespace cleo
 namespace
 {
 
+Int64 get_arity(Value params)
+{
+    Int64 size = get_array_size(params);
+    return size > 1 && get_array_elem(params, size - 2) == VA ? ~(size - 2) : size;
+}
+
 Force compile_fn_body(Value form)
 {
     std::array<vm::Byte, 3> code{{vm::LDC, 0, 0}};
@@ -21,7 +27,9 @@ Force compile_fn_body(Value form)
 
 Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bodies)
 {
-    std::sort(begin(arities_and_bodies), end(arities_and_bodies), [](auto& l, auto& r) { return l.first < r.first; });
+    std::sort(
+        begin(arities_and_bodies), end(arities_and_bodies),
+        [](auto& l, auto& r) { return std::abs(l.first) < std::abs(r.first); });
     std::vector<Int64> arities;
     arities.reserve(arities_and_bodies.size());
     std::vector<Value> bodies;
@@ -60,7 +68,7 @@ Force compile_fn(Value form, Value env)
     {
         auto form = get_list_first(*forms);
         rbodies.set(i, compile_fn_body(form));
-        arities_and_bodies.emplace_back(get_array_size(get_list_first(form)), rbodies[i]);
+        arities_and_bodies.emplace_back(get_arity(get_list_first(form)), rbodies[i]);
         forms = get_list_next(*forms);
     }
     return create_fn(name, std::move(arities_and_bodies));
