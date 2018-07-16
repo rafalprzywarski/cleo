@@ -8,6 +8,34 @@
 namespace cleo
 {
 
+namespace
+{
+
+Force compile_fn_body(Value form)
+{
+    std::array<vm::Byte, 3> code{{vm::LDC, 0, 0}};
+    Value val = get_list_first(get_list_next(form));
+    Root consts{create_array(&val, 1)};
+    return create_bytecode_fn_body(*consts, nil, 0, code.data(), code.size());
+}
+
+Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bodies)
+{
+    std::sort(begin(arities_and_bodies), end(arities_and_bodies), [](auto& l, auto& r) { return l.first < r.first; });
+    std::vector<Int64> arities;
+    arities.reserve(arities_and_bodies.size());
+    std::vector<Value> bodies;
+    bodies.reserve(arities_and_bodies.size());
+    for (auto& ab : arities_and_bodies)
+    {
+        arities.push_back(ab.first);
+        bodies.push_back(ab.second);
+    }
+    return create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
+}
+
+}
+
 Force compile_fn(Value form, Value env)
 {
     if (!get_value_type(form).is(*type::List))
@@ -23,15 +51,19 @@ Force compile_fn(Value form, Value env)
     }
     if (form.is_nil())
         return create_bytecode_fn(name, nullptr, nullptr, 0);
-    if (get_value_type(get_list_first(form)).is(*type::List))
-        form = get_list_first(form);
-    std::array<vm::Byte, 3> code{{vm::LDC, 0, 0}};
-    Value val = get_list_first(get_list_next(form));
-    Root consts{create_array(&val, 1)};
-    std::vector<Int64> arities{0};
-    Root rbody{create_bytecode_fn_body(*consts, nil, 0, code.data(), code.size())};
-    std::vector<Value> bodies{*rbody};
-    return create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
+    Root forms{get_value_type(get_list_first(form)).is(*type::List) ? form : create_list(&form, 1)};
+    auto count = get_list_size(*forms);
+    Roots rbodies(count);
+    std::vector<std::pair<Int64, Value>> arities_and_bodies;
+    arities_and_bodies.reserve(count);
+    for (Int64 i = 0; i < count; ++i)
+    {
+        auto form = get_list_first(*forms);
+        rbodies.set(i, compile_fn_body(form));
+        arities_and_bodies.emplace_back(get_array_size(get_list_first(form)), rbodies[i]);
+        forms = get_list_next(*forms);
+    }
+    return create_fn(name, std::move(arities_and_bodies));
 }
 
 }

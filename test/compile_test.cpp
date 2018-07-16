@@ -96,6 +96,13 @@ TEST_F(compile_test, should_compile_functions_with_multiple_arities)
     ASSERT_NO_FATAL_FAILURE(expect_fn_with_arities(*fn, {0}));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(13), b(vm::LDC, 0, 0));
     EXPECT_EQ_VALS(create_symbol("some"), get_bytecode_fn_name(*fn));
+
+    fn = compile_fn("(fn* some ([a b c] 13) ([] 14) ([a b] 15))");
+    ASSERT_NO_FATAL_FAILURE(expect_fn_with_arities(*fn, {0, 2, 3}));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(14), b(vm::LDC, 0, 0));
+    expect_body_with_consts_and_bytecode(*fn, 1, arrayv(15), b(vm::LDC, 0, 0));
+    expect_body_with_consts_and_bytecode(*fn, 2, arrayv(13), b(vm::LDC, 0, 0));
+    EXPECT_EQ_VALS(create_symbol("some"), get_bytecode_fn_name(*fn));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
