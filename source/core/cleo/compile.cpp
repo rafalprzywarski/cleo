@@ -4,6 +4,7 @@
 #include "array.hpp"
 #include "list.hpp"
 #include "util.hpp"
+#include "namespace.hpp"
 
 namespace cleo
 {
@@ -43,7 +44,7 @@ Force compile_fn_body(Value form)
 {
     std::vector<vm::Byte> code;
     Value val = get_list_first(get_list_next(form));
-    Root consts;
+    Root consts, vars;
     if (get_value_tag(val) != tag::SYMBOL)
     {
         consts = create_array(&val, 1);
@@ -54,9 +55,18 @@ Force compile_fn_body(Value form)
         Root nparams{normalize_params(get_list_first(form))};
         auto arity = get_array_size(*nparams);
         auto i = find_param(*nparams, val);
-        code = {vm::LDL, vm::Byte(i - arity), vm::Byte(-1)};
+        if (i >= 0)
+            code = {vm::LDL, vm::Byte(i - arity), vm::Byte(-1)};
+        else
+        {
+            auto v = maybe_resolve_var(val);
+            if (!v)
+                throw_compilation_error("unable to resolve symbol: " + to_string(val));
+            vars = create_array(&v, 1);
+            code = {vm::LDV, 0, 0};
+        }
     }
-    return create_bytecode_fn_body(*consts, nil, 0, code.data(), code.size());
+    return create_bytecode_fn_body(*consts, *vars, 0, code.data(), code.size());
 }
 
 Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bodies)

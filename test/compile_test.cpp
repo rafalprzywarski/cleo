@@ -78,6 +78,19 @@ struct compile_test : Test
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
+
+    template <typename Vars>
+    void expect_body_with_vars_and_bytecode(Value fn, std::uint8_t index, Vars varsv, std::vector<vm::Byte> code)
+    {
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
+        Root vars{to_value(varsv)};
+        EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
 };
 
 TEST_F(compile_test, should_compile_functions_returning_constants)
@@ -149,10 +162,19 @@ TEST_F(compile_test, should_compile_functions_returning_parameters)
     expect_body_with_bytecode(*fn, 0, b(vm::LDL, vm::Byte(-1), vm::Byte(-1)));
 }
 
+TEST_F(compile_test, should_compile_functions_returning_vars)
+{
+    in_ns(create_symbol("cleo.compile.vars.test"));
+    auto x = define(create_symbol("cleo.compile.vars.test", "x"), create_keyword(":abc"));
+    Root fn{compile_fn("(fn* [] x)")};
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(x), b(vm::LDV, 0, 0));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
     expect_compilation_error("(bad [] 10)");
+    expect_compilation_error("(fn* [] xyz)");
 }
 
 }
