@@ -12,6 +12,15 @@ namespace cleo
 namespace
 {
 
+void append(std::vector<vm::Byte>&) { }
+
+template <typename... Bs>
+void append(std::vector<vm::Byte>& v, vm::Byte b, Bs... bs)
+{
+    v.push_back(b);
+    append(v, bs...);
+}
+
 Int64 get_arity(Value params)
 {
     Int64 size = get_array_size(params);
@@ -27,6 +36,17 @@ Int64 find_param(Value params, Value param)
     return -1;
 }
 
+Int64 add_var(Root& vars, Value v)
+{
+    auto n = get_int64_value(get_transient_array_size(*vars));
+    for (Int64 i = 0; i < n; ++i)
+        if (get_transient_array_elem(*vars, i).is(v))
+            return i;
+
+    vars = transient_array_conj(*vars, v);
+    return n;
+}
+
 Force normalize_params(Value params)
 {
     auto arity = get_arity(params);
@@ -40,32 +60,49 @@ Force normalize_params(Value params)
     return create_array(nparams.data(), nparams.size());
 }
 
+void compile_symbol(std::vector<vm::Byte>& code, Root& vars, Value nparams, Value sym)
+{
+    auto i = find_param(nparams, sym);
+    if (i >= 0)
+    {
+        auto arity = get_array_size(nparams);
+        append(code, vm::LDL, i - arity, -1);
+    }
+    else
+    {
+        auto v = maybe_resolve_var(sym);
+        if (!v)
+            throw_compilation_error("unable to resolve symbol: " + to_string(sym));
+        auto vi = add_var(vars, v);
+        append(code, vm::LDV, vi, 0);
+    }
+}
+
 Force compile_fn_body(Value form)
 {
     std::vector<vm::Byte> code;
     Value val = get_list_first(get_list_next(form));
-    Root consts, vars;
+    Root consts;
+    Root vars{transient_array(*EMPTY_VECTOR)};
+    Root nparams{normalize_params(get_list_first(form))};
     if (get_value_tag(val) != tag::SYMBOL)
     {
-        consts = create_array(&val, 1);
-        code = {vm::LDC, 0, 0};
-    }
-    else
-    {
-        Root nparams{normalize_params(get_list_first(form))};
-        auto arity = get_array_size(*nparams);
-        auto i = find_param(*nparams, val);
-        if (i >= 0)
-            code = {vm::LDL, vm::Byte(i - arity), vm::Byte(-1)};
+        if (get_value_type(val).is(*type::List))
+        {
+            for (auto e = val; e; e = get_list_next(e))
+                compile_symbol(code, vars, *nparams, get_list_first(e));
+            append(code, vm::CALL, get_list_size(val) - 1);
+        }
         else
         {
-            auto v = maybe_resolve_var(val);
-            if (!v)
-                throw_compilation_error("unable to resolve symbol: " + to_string(val));
-            vars = create_array(&v, 1);
-            code = {vm::LDV, 0, 0};
+            consts = create_array(&val, 1);
+            append(code, vm::LDC, 0, 0);
         }
     }
+    else
+        compile_symbol(code, vars, *nparams, val);
+
+    vars = get_int64_value(get_transient_array_size(*vars)) > 0 ? transient_array_persistent(*vars) : nil;
     return create_bytecode_fn_body(*consts, *vars, 0, code.data(), code.size());
 }
 

@@ -170,6 +170,46 @@ TEST_F(compile_test, should_compile_functions_returning_vars)
     expect_body_with_vars_and_bytecode(*fn, 0, arrayv(x), b(vm::LDV, 0, 0));
 }
 
+TEST_F(compile_test, should_compile_functions_calling_functions)
+{
+    in_ns(create_symbol("cleo.compile.fns.test"));
+    auto f = define(create_symbol("cleo.compile.fns.test", "f"), nil);
+    auto g = define(create_symbol("cleo.compile.fns.test", "g"), nil);
+    auto h = define(create_symbol("cleo.compile.fns.test", "h"), nil);
+    Root fn{compile_fn("(fn* [f] (f))")};
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::CALL, 0));
+
+    fn = compile_fn("(fn* [f a b] (f a b))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1,
+                                        vm::LDL, -2, -1,
+                                        vm::LDL, -1, -1,
+                                        vm::CALL, 2));
+
+    fn = compile_fn("(fn* [b f c a] (f a b c))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1,
+                                        vm::LDL, -1, -1,
+                                        vm::LDL, -4, -1,
+                                        vm::LDL, -2, -1,
+                                        vm::CALL, 3));
+
+    fn = compile_fn("(fn* [x] (f x g h))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(f, g, h), b(vm::LDV, 0, 0,
+                                                                  vm::LDL, -1, -1,
+                                                                  vm::LDV, 1, 0,
+                                                                  vm::LDV, 2, 0,
+                                                                  vm::CALL, 3));
+
+    fn = compile_fn("(fn* [] (f f g h h g))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(f, g, h), b(vm::LDV, 0, 0,
+                                                                  vm::LDV, 0, 0,
+                                                                  vm::LDV, 1, 0,
+                                                                  vm::LDV, 2, 0,
+                                                                  vm::LDV, 2, 0,
+                                                                  vm::LDV, 1, 0,
+                                                                  vm::CALL, 5));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
