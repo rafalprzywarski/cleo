@@ -47,6 +47,17 @@ Int64 add_var(Root& vars, Value v)
     return n;
 }
 
+Int64 add_const(Root& consts, Value c)
+{
+    auto n = get_int64_value(get_transient_array_size(*consts));
+    for (Int64 i = 0; i < n; ++i)
+        if (get_transient_array_elem(*consts, i) == c)
+            return i;
+
+    consts = transient_array_conj(*consts, c);
+    return n;
+}
+
 Force normalize_params(Value params)
 {
     auto arity = get_arity(params);
@@ -78,30 +89,37 @@ void compile_symbol(std::vector<vm::Byte>& code, Root& vars, Value nparams, Valu
     }
 }
 
+void compile_const(std::vector<vm::Byte>& code, Root& consts, Value c)
+{
+    auto ci = add_const(consts, c);
+    append(code, vm::LDC, ci, 0);
+}
+
+void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
+{
+    if (get_value_tag(val) == tag::SYMBOL)
+        return compile_symbol(code, vars, nparams, val);
+
+    if (get_value_type(val).is(*type::List))
+    {
+        for (auto e = val; e; e = get_list_next(e))
+            compile_value(code, consts, vars, nparams, get_list_first(e));
+        append(code, vm::CALL, get_list_size(val) - 1);
+        return;
+    }
+
+    compile_const(code, consts, val);
+}
+
 Force compile_fn_body(Value form)
 {
     std::vector<vm::Byte> code;
     Value val = get_list_first(get_list_next(form));
-    Root consts;
+    Root consts{transient_array(*EMPTY_VECTOR)};
     Root vars{transient_array(*EMPTY_VECTOR)};
     Root nparams{normalize_params(get_list_first(form))};
-    if (get_value_tag(val) != tag::SYMBOL)
-    {
-        if (get_value_type(val).is(*type::List))
-        {
-            for (auto e = val; e; e = get_list_next(e))
-                compile_symbol(code, vars, *nparams, get_list_first(e));
-            append(code, vm::CALL, get_list_size(val) - 1);
-        }
-        else
-        {
-            consts = create_array(&val, 1);
-            append(code, vm::LDC, 0, 0);
-        }
-    }
-    else
-        compile_symbol(code, vars, *nparams, val);
-
+    compile_value(code, consts, vars, *nparams, val);
+    consts = get_int64_value(get_transient_array_size(*consts)) > 0 ? transient_array_persistent(*consts) : nil;
     vars = get_int64_value(get_transient_array_size(*vars)) > 0 ? transient_array_persistent(*vars) : nil;
     return create_bytecode_fn_body(*consts, *vars, 0, code.data(), code.size());
 }
