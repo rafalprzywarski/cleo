@@ -186,6 +186,7 @@ extern const Value CONCATI;
 extern const Value MACRO_KEY;
 extern const Root ZERO;
 extern const Root ONE;
+extern const Root NEG_ONE;
 extern const Root TWO;
 extern const Root THREE;
 extern const Root SENTINEL;

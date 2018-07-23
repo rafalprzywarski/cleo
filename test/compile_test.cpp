@@ -110,6 +110,31 @@ struct compile_test : Test
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
+
+    template <typename Consts, typename Vars>
+    void expect_body_with_locals_consts_vars_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size,  Consts constsv, Vars varsv, std::vector<vm::Byte> code)
+    {
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        Root consts{to_value(constsv)};
+        Root vars{to_value(varsv)};
+        EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
+        EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
+        EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
+
+    void expect_body_with_locals_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size, std::vector<vm::Byte> code)
+    {
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
 };
 
 TEST_F(compile_test, should_compile_functions_returning_constants)
@@ -347,6 +372,76 @@ TEST_F(compile_test, should_compile_quote)
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(listv(a_var_sym, xyz, 10)), b(vm::LDC, 0, 0));
 }
 
+TEST_F(compile_test, should_compile_let_forms)
+{
+    Root fn{compile_fn("(fn* [a] (let* [] (a 10 a-var)))")};
+    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(10), arrayv(a_var),
+                                              b(vm::LDL, -1, -1,
+                                                vm::LDC, 0, 0,
+                                                vm::LDV, 0, 0,
+                                                vm::CALL, 2));
+
+    fn = compile_fn("(fn* [a] (let* [x a] x))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 1, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0));
+
+    fn = compile_fn("(fn* [x] (let* [x x] x))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 1, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0));
+
+    fn = compile_fn("(fn* [a b] (let* [x b y a-var z 10] (z x y)))");
+    expect_body_with_locals_consts_vars_and_bytecode(*fn, 0, 3, arrayv(10), arrayv(a_var),
+                                                     b(vm::LDL, -1, -1,
+                                                       vm::STL, 0, 0,
+                                                       vm::LDV, 0, 0,
+                                                       vm::STL, 1, 0,
+                                                       vm::LDC, 0, 0,
+                                                       vm::STL, 2, 0,
+                                                       vm::LDL, 2, 0,
+                                                       vm::LDL, 0, 0,
+                                                       vm::LDL, 1, 0,
+                                                       vm::CALL, 2));
+
+    fn = compile_fn("(fn* [a] (let* [x (let* [y (let* [z a] z)] y)] x))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 1, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0));
+
+    fn = compile_fn("(fn* [a] (let* [x a y x] (let* [x y z x] (let* [w z] w))))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 5, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 1, 0,
+                                                      vm::LDL, 1, 0,
+                                                      vm::STL, 2, 0,
+                                                      vm::LDL, 2, 0,
+                                                      vm::STL, 3, 0,
+                                                      vm::LDL, 3, 0,
+                                                      vm::STL, 4, 0,
+                                                      vm::LDL, 4, 0));
+
+    fn = compile_fn("(fn* [a] (if a (let* [x a y a] (x y)) (let* [x a] x)))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 2, b(vm::LDL, -1, -1,
+                                                      vm::BNIL, 23, 0,
+                                                      vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, -1, -1,
+                                                      vm::STL, 1, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::LDL, 1, 0,
+                                                      vm::CALL, 1,
+                                                      vm::BR, 9, 0,
+                                                      vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
@@ -355,6 +450,11 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 
     expect_compilation_error("(fn* [] (quote))");
     expect_compilation_error("(fn* [] (quote 10 20))");
+
+    expect_compilation_error("(fn* [] (let*))");
+    expect_compilation_error("(fn* [] (let* () nil))");
+    expect_compilation_error("(fn* [] (let* [a 10 b] nil))");
+    expect_compilation_error("(fn* [] (let* [x x] nil))");
 }
 
 }

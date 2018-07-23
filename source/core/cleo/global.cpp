@@ -116,6 +116,7 @@ const Value MACRO_KEY = create_keyword("macro");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
+const Root NEG_ONE{create_int64(-1)};
 const Root TWO{create_int64(2)};
 const Root THREE{create_int64(3)};
 const Root SENTINEL{create_object0(nil)};
