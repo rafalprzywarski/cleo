@@ -135,6 +135,8 @@ void compile_do(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value npa
 
 void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
 {
+    if (val.is_nil())
+        return append(code, vm::CNIL);
     if (get_value_tag(val) == tag::SYMBOL)
         return compile_symbol(code, vars, nparams, val);
 

@@ -268,6 +268,12 @@ TEST_F(compile_test, should_compile_empty_lists_to_empty_list_constants)
                                                                         vm::CALL, 1));
 }
 
+TEST_F(compile_test, should_compile_functions_with_nil_body)
+{
+    Root fn(compile_fn("(fn* [] nil)"));
+    expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
+}
+
 TEST_F(compile_test, should_compile_functions_with_if_blocks)
 {
     Root fn{compile_fn("(fn* [a b c] (if a b c))")};
