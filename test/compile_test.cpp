@@ -253,6 +253,51 @@ TEST_F(compile_test, should_compile_functions_calling_functions)
                                                 vm::CALL, 1));
 }
 
+TEST_F(compile_test, shuold_compile_empty_lists_to_empty_list_constants)
+{
+    Root fn{compile_fn("(fn* [] ())")};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_LIST), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [f] (f ()))");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_LIST), b(vm::LDL, -1, -1,
+                                                                        vm::LDC, 0, 0,
+                                                                        vm::CALL, 1));
+}
+
+TEST_F(compile_test, should_compile_functions_with_if_blocks)
+{
+    Root fn{compile_fn("(fn* [a b c] (if a b c))")};
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1,
+                                        vm::BNIL, 6, 0,
+                                        vm::LDL, -2, -1,
+                                        vm::BR, 3, 0,
+                                        vm::LDL, -1, -1));
+
+    fn = compile_fn("(fn* [a b c] (if (a) (b) (c)))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1,
+                                        vm::CALL, 0,
+                                        vm::BNIL, 8, 0,
+                                        vm::LDL, -2, -1,
+                                        vm::CALL, 0,
+                                        vm::BR, 5, 0,
+                                        vm::LDL, -1, -1,
+                                        vm::CALL, 0));
+    fn = compile_fn("(fn* [a b c] (if a (if b (if c 101 102) 103) 104))");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(101, 102, 103, 104), b(vm::LDL, -3, -1,
+                                                                               vm::BNIL, 30, 0,
+                                                                               vm::LDL, -2, -1,
+                                                                               vm::BNIL, 18, 0,
+                                                                               vm::LDL, -1, -1,
+                                                                               vm::BNIL, 6, 0,
+                                                                               vm::LDC, 0, 0,
+                                                                               vm::BR, 3, 0,
+                                                                               vm::LDC, 1, 0,
+                                                                               vm::BR, 3, 0,
+                                                                               vm::LDC, 2, 0,
+                                                                               vm::BR, 3, 0,
+                                                                               vm::LDC, 3, 0));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
