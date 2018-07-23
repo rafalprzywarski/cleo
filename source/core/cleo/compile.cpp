@@ -116,7 +116,7 @@ void compile_if(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value npa
     append(code, vm::BR, 0, 0);
     code[bnil_offset + 1] = code.size() - bnil_offset - 3;
     auto else_ = get_list_next(then);
-    compile_value(code, consts, vars, nparams, get_list_first(else_));
+    compile_value(code, consts, vars, nparams, else_ ? get_list_first(else_) : nil);
     code[br_offset + 1] = code.size() - br_offset - 3;
 }
 

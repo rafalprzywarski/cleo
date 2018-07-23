@@ -293,19 +293,27 @@ TEST_F(compile_test, should_compile_functions_with_if_blocks)
                                         vm::LDL, -1, -1,
                                         vm::CALL, 0));
     fn = compile_fn("(fn* [a b c] (if a (if b (if c 101 102) 103) 104))");
-    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(101, 102, 103, 104), b(vm::LDL, -3, -1,
-                                                                               vm::BNIL, 30, 0,
-                                                                               vm::LDL, -2, -1,
-                                                                               vm::BNIL, 18, 0,
-                                                                               vm::LDL, -1, -1,
-                                                                               vm::BNIL, 6, 0,
-                                                                               vm::LDC, 0, 0,
-                                                                               vm::BR, 3, 0,
-                                                                               vm::LDC, 1, 0,
-                                                                               vm::BR, 3, 0,
-                                                                               vm::LDC, 2, 0,
-                                                                               vm::BR, 3, 0,
-                                                                               vm::LDC, 3, 0));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(101, 102, 103, 104),
+                                         b(vm::LDL, -3, -1,
+                                           vm::BNIL, 30, 0,
+                                           vm::LDL, -2, -1,
+                                           vm::BNIL, 18, 0,
+                                           vm::LDL, -1, -1,
+                                           vm::BNIL, 6, 0,
+                                           vm::LDC, 0, 0,
+                                           vm::BR, 3, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::BR, 3, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::BR, 3, 0,
+                                           vm::LDC, 3, 0));
+
+    fn = compile_fn("(fn* [x] (if a-var x))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(a_var), b(vm::LDV, 0, 0,
+                                                                vm::BNIL, 6, 0,
+                                                                vm::LDL, -1, -1,
+                                                                vm::BR, 1, 0,
+                                                                vm::CNIL));
 }
 
 TEST_F(compile_test, should_compile_do_blocks)
