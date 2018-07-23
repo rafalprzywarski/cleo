@@ -257,7 +257,7 @@ TEST_F(compile_test, should_compile_functions_calling_functions)
                                                 vm::CALL, 1));
 }
 
-TEST_F(compile_test, shuold_compile_empty_lists_to_empty_list_constants)
+TEST_F(compile_test, should_compile_empty_lists_to_empty_list_constants)
 {
     Root fn{compile_fn("(fn* [] ())")};
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_LIST), b(vm::LDC, 0, 0));

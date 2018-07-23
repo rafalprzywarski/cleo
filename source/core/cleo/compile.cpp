@@ -146,7 +146,7 @@ void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value 
         if (first == DO)
             return compile_do(code, consts, vars, nparams, val);
 
-        return compile_call(code, consts, vars, nparams, val);;
+        return compile_call(code, consts, vars, nparams, val);
     }
 
     compile_const(code, consts, val);
