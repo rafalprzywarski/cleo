@@ -100,7 +100,7 @@ void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value 
     if (get_value_tag(val) == tag::SYMBOL)
         return compile_symbol(code, vars, nparams, val);
 
-    if (get_value_type(val).is(*type::List))
+    if (get_value_type(val).is(*type::List) && get_list_size(val) > 0)
     {
         for (auto e = val; e; e = get_list_next(e))
             compile_value(code, consts, vars, nparams, get_list_first(e));

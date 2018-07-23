@@ -253,6 +253,17 @@ TEST_F(compile_test, should_compile_functions_calling_functions)
                                                 vm::CALL, 1));
 }
 
+TEST_F(compile_test, shuold_compile_empty_lists_to_empty_list_constants)
+{
+    Root fn{compile_fn("(fn* [] ())")};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_LIST), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [f] (f ()))");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_LIST), b(vm::LDL, -1, -1,
+                                                                        vm::LDC, 0, 0,
+                                                                        vm::CALL, 1));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
