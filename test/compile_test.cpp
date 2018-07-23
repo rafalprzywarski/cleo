@@ -12,7 +12,11 @@ namespace test
 
 struct compile_test : Test
 {
-    compile_test() : Test("cleo.compile.test") {}
+    Value a_var;
+    compile_test() : Test("cleo.compile.test")
+    {
+        a_var = define(create_symbol("cleo.compile.test", "a-var"), nil);
+    }
     Force read_str(const std::string& s)
     {
         Root ss{create_string(s)};
@@ -296,6 +300,29 @@ TEST_F(compile_test, should_compile_functions_with_if_blocks)
                                                                                vm::LDC, 2, 0,
                                                                                vm::BR, 3, 0,
                                                                                vm::LDC, 3, 0));
+}
+
+TEST_F(compile_test, should_compile_do_blocks)
+{
+    Root fn{compile_fn("(fn* [] (do))")};
+    expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
+
+    fn = compile_fn("(fn* [x] (do (x)))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::CALL, 0));
+
+    fn = compile_fn("(fn* [x y z] (do (x 10) (y a-var) (z)))");
+    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(10), arrayv(a_var),
+                                              b(vm::LDL, -3, -1,
+                                                vm::LDC, 0, 0,
+                                                vm::CALL, 1,
+                                                vm::POP,
+                                                vm::LDL, -2, -1,
+                                                vm::LDV, 0, 0,
+                                                vm::CALL, 1,
+                                                vm::POP,
+                                                vm::LDL, -1, -1,
+                                                vm::CALL, 0));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)

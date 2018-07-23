@@ -120,6 +120,19 @@ void compile_if(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value npa
     code[br_offset + 1] = code.size() - br_offset - 3;
 }
 
+void compile_do(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
+{
+    if (get_list_size(val) == 1)
+        return append(code, vm::CNIL);
+
+    for (val = get_list_next(val); get_list_next(val); val = get_list_next(val))
+    {
+        compile_value(code, consts, vars, nparams, get_list_first(val));
+        append(code, vm::POP);
+    }
+    compile_value(code, consts, vars, nparams, get_list_first(val));
+}
+
 void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
@@ -130,6 +143,8 @@ void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value 
         auto first = get_list_first(val);
         if (first == IF)
             return compile_if(code, consts, vars, nparams, val);
+        if (first == DO)
+            return compile_do(code, consts, vars, nparams, val);
 
         return compile_call(code, consts, vars, nparams, val);;
     }
