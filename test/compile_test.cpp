@@ -339,11 +339,22 @@ TEST_F(compile_test, should_compile_do_blocks)
                                                 vm::CALL, 0));
 }
 
+TEST_F(compile_test, should_compile_quote)
+{
+    Root fn{compile_fn("(fn* [a] (quote (a-var xyz 10)))")};
+    auto a_var_sym = create_symbol("a-var");
+    auto xyz = create_symbol("xyz");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(listv(a_var_sym, xyz, 10)), b(vm::LDC, 0, 0));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
     expect_compilation_error("(bad [] 10)");
     expect_compilation_error("(fn* [] xyz)");
+
+    expect_compilation_error("(fn* [] (quote))");
+    expect_compilation_error("(fn* [] (quote 10 20))");
 }
 
 }

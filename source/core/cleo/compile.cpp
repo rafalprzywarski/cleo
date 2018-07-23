@@ -12,6 +12,12 @@ namespace cleo
 namespace
 {
 
+void check_compiletime_arity(Value name, Value form, std::uint8_t num_args, std::uint8_t actual_num_args)
+{
+    if (num_args != actual_num_args)
+        throw_compilation_error("Wrong number of args (" + std::to_string(actual_num_args) + ") passed to " + to_string(name) + ", form: " + to_string(form));
+}
+
 void append(std::vector<vm::Byte>&) { }
 
 template <typename... Bs>
@@ -133,6 +139,12 @@ void compile_do(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value npa
     compile_value(code, consts, vars, nparams, get_list_first(val));
 }
 
+void compile_quote(std::vector<vm::Byte>& code, Root& consts, Value form)
+{
+    check_compiletime_arity(QUOTE, form, 1, get_list_size(form) - 1);
+    compile_const(code, consts, get_list_first(get_list_next(form)));
+}
+
 void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
 {
     if (val.is_nil())
@@ -147,6 +159,8 @@ void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value 
             return compile_if(code, consts, vars, nparams, val);
         if (first == DO)
             return compile_do(code, consts, vars, nparams, val);
+        if (first == QUOTE)
+            return compile_quote(code, consts, val);
 
         return compile_call(code, consts, vars, nparams, val);
     }
