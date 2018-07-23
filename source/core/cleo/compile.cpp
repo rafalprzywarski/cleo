@@ -95,6 +95,31 @@ void compile_const(std::vector<vm::Byte>& code, Root& consts, Value c)
     append(code, vm::LDC, ci, 0);
 }
 
+void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val);
+
+void compile_call(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
+{
+    for (auto e = val; e; e = get_list_next(e))
+        compile_value(code, consts, vars, nparams, get_list_first(e));
+    append(code, vm::CALL, get_list_size(val) - 1);
+}
+
+void compile_if(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
+{
+    auto cond = get_list_next(val);
+    compile_value(code, consts, vars, nparams, get_list_first(cond));
+    auto bnil_offset = code.size();
+    append(code, vm::BNIL, 0, 0);
+    auto then = get_list_next(cond);
+    compile_value(code, consts, vars, nparams, get_list_first(then));
+    auto br_offset = code.size();
+    append(code, vm::BR, 0, 0);
+    code[bnil_offset + 1] = code.size() - bnil_offset - 3;
+    auto else_ = get_list_next(then);
+    compile_value(code, consts, vars, nparams, get_list_first(else_));
+    code[br_offset + 1] = code.size() - br_offset - 3;
+}
+
 void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value nparams, Value val)
 {
     if (get_value_tag(val) == tag::SYMBOL)
@@ -102,10 +127,11 @@ void compile_value(std::vector<vm::Byte>& code, Root& consts, Root& vars, Value 
 
     if (get_value_type(val).is(*type::List) && get_list_size(val) > 0)
     {
-        for (auto e = val; e; e = get_list_next(e))
-            compile_value(code, consts, vars, nparams, get_list_first(e));
-        append(code, vm::CALL, get_list_size(val) - 1);
-        return;
+        auto first = get_list_first(val);
+        if (first == IF)
+            return compile_if(code, consts, vars, nparams, val);
+
+        return compile_call(code, consts, vars, nparams, val);;
     }
 
     compile_const(code, consts, val);
