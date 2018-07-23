@@ -336,6 +336,25 @@ TEST_F(vm_test, call)
     EXPECT_EQ_VALS(*ex, stack[0]);
 }
 
+TEST_F(vm_test, cnil)
+{
+    stack_push(*THREE);
+
+    const std::array<Byte, 1> bc1{{CNIL}};
+    eval_bytecode(nil, nil, 0, bc1);
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[1]);
+    EXPECT_EQ_VALS(*THREE, stack[0]);
+
+    const std::array<Byte, 2> bc2{{CNIL, CNIL}};
+    eval_bytecode(nil, nil, 0, bc2);
+    ASSERT_EQ(4u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[3]);
+    EXPECT_EQ_VALS(nil, stack[2]);
+    EXPECT_EQ_VALS(nil, stack[1]);
+    EXPECT_EQ_VALS(*THREE, stack[0]);
+}
+
 }
 }
 }

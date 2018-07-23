@@ -87,6 +87,10 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             p += 2;
             break;
         }
+        case CNIL:
+            stack_push(nil);
+            ++p;
+            break;
         }
     }
 }
