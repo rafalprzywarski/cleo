@@ -189,7 +189,8 @@ void Compiler::compile_let(Value locals, Value form)
     {
         compile_value(*llocals, get_array_elem(bindings, i + 1));
         std::tie(llocals, index) = add_local(*llocals, get_array_elem(bindings, i));
-        append(code, vm::STL, index, 0);
+        append(code, vm::STL);
+        append_i16(code, index);
     }
     update_locals_size(*llocals);
     compile_value(*llocals, expr);

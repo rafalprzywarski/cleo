@@ -135,6 +135,11 @@ struct compile_test : Test
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
+
+    std::vector<vm::Byte> subvec(const std::vector<vm::Byte>& v, std::size_t start)
+    {
+        return {v.begin() + start, v.end()};
+    }
 };
 
 TEST_F(compile_test, should_compile_functions_returning_constants)
@@ -440,6 +445,44 @@ TEST_F(compile_test, should_compile_let_forms)
                                                       vm::LDL, -1, -1,
                                                       vm::STL, 0, 0,
                                                       vm::LDL, 0, 0));
+
+    fn = compile_fn("(fn* [a] (let* [a00 nil a01 nil a02 nil a03 nil a04 nil a05 nil a06 nil a07 nil\n"
+                    "                a08 nil a09 nil a0a nil a0b nil a0c nil a0d nil a0e nil a0f nil\n"
+                    "                a10 nil a11 nil a12 nil a13 nil a14 nil a15 nil a16 nil a17 nil\n"
+                    "                a18 nil a19 nil a1a nil a1b nil a1c nil a1d nil a1e nil a1f nil\n"
+                    "                a20 nil a21 nil a22 nil a23 nil a24 nil a25 nil a26 nil a27 nil\n"
+                    "                a28 nil a29 nil a2a nil a2b nil a2c nil a2d nil a2e nil a2f nil\n"
+                    "                a30 nil a31 nil a32 nil a33 nil a34 nil a35 nil a36 nil a37 nil\n"
+                    "                a38 nil a39 nil a3a nil a3b nil a3c nil a3d nil a3e nil a3f nil\n"
+                    "                a40 nil a41 nil a42 nil a43 nil a44 nil a45 nil a46 nil a47 nil\n"
+                    "                a48 nil a49 nil a4a nil a4b nil a4c nil a4d nil a4e nil a4f nil\n"
+                    "                a50 nil a51 nil a52 nil a53 nil a54 nil a55 nil a56 nil a57 nil\n"
+                    "                a58 nil a59 nil a5a nil a5b nil a5c nil a5d nil a5e nil a5f nil\n"
+                    "                a60 nil a61 nil a62 nil a63 nil a64 nil a65 nil a66 nil a67 nil\n"
+                    "                a68 nil a69 nil a6a nil a6b nil a6c nil a6d nil a6e nil a6f nil\n"
+                    "                a70 nil a71 nil a72 nil a73 nil a74 nil a75 nil a76 nil a77 nil\n"
+                    "                a78 nil a79 nil a7a nil a7b nil a7c nil a7d nil a7e nil a7f nil\n"
+                    "                a80 nil a81 nil a82 nil a83 nil a84 nil a85 nil a86 nil a87 nil\n"
+                    "                a88 nil a89 nil a8a nil a8b nil a8c nil a8d nil a8e nil a8f nil\n"
+                    "                a90 nil a91 nil a92 nil a93 nil a94 nil a95 nil a96 nil a97 nil\n"
+                    "                a98 nil a99 nil a9a nil a9b nil a9c nil a9d nil a9e nil a9f nil\n"
+                    "                aa0 nil aa1 nil aa2 nil aa3 nil aa4 nil aa5 nil aa6 nil aa7 nil\n"
+                    "                aa8 nil aa9 nil aaa nil aab nil aac nil aad nil aae nil aaf nil\n"
+                    "                ab0 nil ab1 nil ab2 nil ab3 nil ab4 nil ab5 nil ab6 nil ab7 nil\n"
+                    "                ab8 nil ab9 nil aba nil abb nil abc nil abd nil abe nil abf nil\n"
+                    "                ac0 nil ac1 nil ac2 nil ac3 nil ac4 nil ac5 nil ac6 nil ac7 nil\n"
+                    "                ac8 nil ac9 nil aca nil acb nil acc nil acd nil ace nil acf nil\n"
+                    "                ad0 nil ad1 nil ad2 nil ad3 nil ad4 nil ad5 nil ad6 nil ad7 nil\n"
+                    "                ad8 nil ad9 nil ada nil adb nil adc nil add nil ade nil adf nil\n"
+                    "                ae0 nil ae1 nil ae2 nil ae3 nil ae4 nil ae5 nil ae6 nil ae7 nil\n"
+                    "                ae8 nil ae9 nil aea nil aeb nil aec nil aed nil aee nil aef nil\n"
+                    "                af0 nil af1 nil af2 nil af3 nil af4 nil af5 nil af6 nil af7 nil\n"
+                    "                af8 nil af9 nil afa nil afb nil afc nil afd nil afe nil aff nil\n"
+                    "                a100 a] a100))\n");
+    EXPECT_EQ(257u, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*fn, 0)));
+    auto code = bc(get_bytecode_fn_body(*fn, 0));
+    ASSERT_GE(code.size(), 4 * 256);
+    EXPECT_EQ(b(vm::LDL, -1, -1, vm::STL, 0, 1, vm::LDL, 0, 1), subvec(code, 4 * 256));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
