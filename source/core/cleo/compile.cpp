@@ -19,6 +19,8 @@ struct Compiler
     {
         Value locals;
         std::uint16_t recur_arity{};
+        std::int16_t recur_locals_index{};
+        Int64 recur_start_offset{};
         std::uint16_t locals_size{};
     };
 
@@ -34,7 +36,9 @@ struct Compiler
     void compile_do(Scope scope, Value val);
     void compile_quote(Value form);
     void update_locals_size(Scope scope);
+    Scope compile_let_bindings(Scope scope, Value bindings, Root& llocals);
     void compile_let(Scope scope, Value form);
+    void compile_loop(Scope scope, Value form);
     void compile_recur(Scope scope, Value form);
     void compile_value(Scope scope, Value val);
 };
@@ -143,7 +147,7 @@ void Compiler::compile_call(Scope scope, Value val)
     append(code, vm::CALL, get_list_size(val) - 1);
 }
 
-    void Compiler::compile_if(Scope scope, Value val)
+void Compiler::compile_if(Scope scope, Value val)
 {
     auto cond = get_list_next(val);
     compile_value(scope, get_list_first(cond));
@@ -192,18 +196,19 @@ std::pair<Compiler::Scope, std::int16_t> add_local(Compiler::Scope scope, Value 
     return {scope, scope.locals_size - 1};
 }
 
-void Compiler::compile_let(Scope scope, Value form)
+Value check_let_bindings(Value tag, Value form)
 {
-    check_compiletime_arity(LET, form, 2, get_list_size(form) - 1);
-    form = get_list_next(form);
-    auto bindings = get_list_first(form);
+    check_compiletime_arity(tag, form, 2, get_list_size(form) - 1);
+    auto bindings = get_list_first(get_list_next(form));
     if (!get_value_type(bindings).is(*type::Array))
         throw_compilation_error("Bad binding form, expected vector");
     if (get_array_size(bindings) % 2)
         throw_compilation_error("Bad binding form, expected matched symbol expression pairs");
+    return bindings;
+}
 
-    auto expr = get_list_first(get_list_next(form));
-    Root llocals;
+Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root& llocals)
+{
     std::int16_t index{};
     for (Int64 i = 0; i < get_array_size(bindings); i += 2)
     {
@@ -212,6 +217,31 @@ void Compiler::compile_let(Scope scope, Value form)
         append_STL(code, index);
     }
     update_locals_size(scope);
+    return scope;
+}
+
+void Compiler::compile_let(Scope scope, Value form)
+{
+    auto bindings = check_let_bindings(LET, form);
+    Root llocals;
+    scope = compile_let_bindings(scope, bindings, llocals);
+
+    auto expr = get_list_first(get_list_next(get_list_next(form)));
+    compile_value(scope, expr);
+}
+
+void Compiler::compile_loop(Scope scope, Value form)
+{
+    auto bindings = check_let_bindings(LOOP, form);
+    Root llocals;
+    scope = compile_let_bindings(scope, bindings, llocals);
+
+    auto loop_locals_size = get_array_size(bindings) / 2;
+    scope.recur_arity = loop_locals_size;
+    scope.recur_locals_index = scope.locals_size - loop_locals_size;
+    scope.recur_start_offset = code.size();
+
+    auto expr = get_list_first(get_list_next(get_list_next(form)));
     compile_value(scope, expr);
 }
 
@@ -225,8 +255,8 @@ void Compiler::compile_recur(Scope scope, Value form)
     for (; form; form = get_list_next(form))
         compile_value(scope, get_list_first(form));
     for (Int64 i = 0; i < size; ++i)
-        append_STL(code, -i - 1);
-    append_BR(code, -3 - Int64(code.size()));
+        append_STL(code, scope.recur_locals_index + (size - i - 1));
+    append_BR(code, scope.recur_start_offset - 3 - Int64(code.size()));
 }
 
 void Compiler::compile_value(Scope scope, Value val)
@@ -249,6 +279,8 @@ void Compiler::compile_value(Scope scope, Value val)
             return compile_let(scope, val);
         if (first == RECUR)
             return compile_recur(scope, val);
+        if (first == LOOP)
+            return compile_loop(scope, val);
 
         return compile_call(scope, val);
     }
@@ -258,7 +290,8 @@ void Compiler::compile_value(Scope scope, Value val)
 
 Compiler::Scope create_fn_body_scope(Value form, Value locals)
 {
-    return {locals, std::uint16_t(std::abs(get_arity(get_list_first(form))))};
+    auto recur_arity = std::uint16_t(std::abs(get_arity(get_list_first(form))));
+    return {locals, recur_arity, std::int16_t(-recur_arity)};
 }
 
 Force compile_fn_body(Value form)

@@ -530,6 +530,68 @@ TEST_F(compile_test, should_compile_functions_with_recur)
                                            vm::BR, -15, -1));
 }
 
+TEST_F(compile_test, should_compile_functions_with_loop)
+{
+    Root fn{compile_fn("(fn* [a] (loop* [] (a 10 a-var)))")};
+    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(10), arrayv(a_var),
+                                              b(vm::LDL, -1, -1,
+                                                vm::LDC, 0, 0,
+                                                vm::LDV, 0, 0,
+                                                vm::CALL, 2));
+
+    fn = compile_fn("(fn* [a b] (loop* [x b y a-var z 10] (z x y)))");
+    expect_body_with_locals_consts_vars_and_bytecode(*fn, 0, 3, arrayv(10), arrayv(a_var),
+                                                     b(vm::LDL, -1, -1,
+                                                       vm::STL, 0, 0,
+                                                       vm::LDV, 0, 0,
+                                                       vm::STL, 1, 0,
+                                                       vm::LDC, 0, 0,
+                                                       vm::STL, 2, 0,
+                                                       vm::LDL, 2, 0,
+                                                       vm::LDL, 0, 0,
+                                                       vm::LDL, 1, 0,
+                                                       vm::CALL, 2));
+
+    fn = compile_fn("(fn* [] (loop* [] (recur)))");
+    expect_body_with_bytecode(*fn, 0, b(vm::BR, -3, -1));
+
+    fn = compile_fn("(fn* [a b f] (do (f) (loop* [x a y b] (recur y x))))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 2, b(vm::LDL, -1, -1,
+                                                      vm::CALL, 0,
+                                                      vm::POP,
+                                                      vm::LDL, -3, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, -2, -1,
+                                                      vm::STL, 1, 0,
+                                                      vm::LDL, 1, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 1, 0,
+                                                      vm::STL, 0, 0,
+                                                      vm::BR, -15, -1));
+
+    fn = compile_fn("(fn* [x] (let* [a x] (loop* [b a a a] (recur a x))))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 3, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 1, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 2, 0,
+                                                      vm::LDL, 2, 0,
+                                                      vm::LDL, -1, -1,
+                                                      vm::STL, 2, 0,
+                                                      vm::STL, 1, 0,
+                                                      vm::BR, -15, -1));
+
+    fn = compile_fn("(fn* [a b] (loop* [x a] (loop* [y b] (recur x))))");
+    expect_body_with_locals_and_bytecode(*fn, 0, 2, b(vm::LDL, -2, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, -1, -1,
+                                                      vm::STL, 1, 0,
+                                                      vm::LDL, 0, 0,
+                                                      vm::STL, 1, 0,
+                                                      vm::BR, -9, -1));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
@@ -543,6 +605,15 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [] (let* () nil))");
     expect_compilation_error("(fn* [] (let* [a 10 b] nil))");
     expect_compilation_error("(fn* [] (let* [x x] nil))");
+
+    expect_compilation_error("(fn* [] (loop*))");
+    expect_compilation_error("(fn* [] (loop* () nil))");
+    expect_compilation_error("(fn* [] (loop* [a 10 b] nil))");
+    expect_compilation_error("(fn* [] (loop* [x x] nil))");
+    expect_compilation_error("(fn* [x] (loop* [] (recur 1)))");
+    expect_compilation_error("(fn* [] (loop* [x y] (recur)))");
+    expect_compilation_error("(fn* [] (loop* [x y] (recur 1)))");
+    expect_compilation_error("(fn* [] (loop* [x y] (recur 1 2 3)))");
 
     expect_compilation_error("(fn* [] (recur 1))");
     expect_compilation_error("(fn* [x y] (recur 1))");
