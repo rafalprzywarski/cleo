@@ -485,6 +485,51 @@ TEST_F(compile_test, should_compile_let_forms)
     EXPECT_EQ(b(vm::LDL, -1, -1, vm::STL, 0, 1, vm::LDL, 0, 1), subvec(code, 4 * 256));
 }
 
+TEST_F(compile_test, should_compile_functions_with_recur)
+{
+    Root fn{compile_fn("(fn* [] (recur))")};
+
+    expect_body_with_bytecode(*fn, 0, b(vm::BR, -3, -1));
+
+    fn = compile_fn("(fn* [x] (recur 10))");
+
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(10),
+                                         b(vm::LDC, 0, 0,
+                                           vm::STL, -1, -1,
+                                           vm::BR, -9, -1));
+
+    fn = compile_fn("(fn* [x y z] (recur a-var z x))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(a_var),
+                                       b(vm::LDV, 0, 0,
+                                         vm::LDL, -1, -1,
+                                         vm::LDL, -3, -1,
+                                         vm::STL, -1, -1,
+                                         vm::STL, -2, -1,
+                                         vm::STL, -3, -1,
+                                         vm::BR, -21, -1));
+
+    fn = compile_fn("(fn* [f x] (if x (recur f (f x))))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::BNIL, 23, 0,
+                                        vm::LDL, -2, -1,
+                                        vm::LDL, -2, -1,
+                                        vm::LDL, -1, -1,
+                                        vm::CALL, 1,
+                                        vm::STL, -1, -1,
+                                        vm::STL, -2, -1,
+                                        vm::BR, -26, -1,
+                                        vm::BR, 1, 0,
+                                        vm::CNIL));
+
+    fn = compile_fn("(fn* [x & xs] (recur 1 2))");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(1, 2),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::STL, -1, -1,
+                                           vm::STL, -2, -1,
+                                           vm::BR, -15, -1));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
@@ -498,6 +543,12 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [] (let* () nil))");
     expect_compilation_error("(fn* [] (let* [a 10 b] nil))");
     expect_compilation_error("(fn* [] (let* [x x] nil))");
+
+    expect_compilation_error("(fn* [] (recur 1))");
+    expect_compilation_error("(fn* [x y] (recur 1))");
+    expect_compilation_error("(fn* [x y] (recur 1 2 3))");
+    expect_compilation_error("(fn* [x & y] (recur 1))");
+    expect_compilation_error("(fn* [x & y] (recur 1 2 3))");
 }
 
 }
