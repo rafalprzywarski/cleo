@@ -19,6 +19,7 @@ struct Compiler
     {
         Value locals;
         std::uint16_t recur_arity{};
+        std::uint16_t locals_size{};
     };
 
     std::vector<vm::Byte> code;
@@ -32,7 +33,7 @@ struct Compiler
     void compile_if(Scope scope, Value val);
     void compile_do(Scope scope, Value val);
     void compile_quote(Value form);
-    void update_locals_size(Value locals);
+    void update_locals_size(Scope scope);
     void compile_let(Scope scope, Value form);
     void compile_recur(Scope scope, Value form);
     void compile_value(Scope scope, Value val);
@@ -177,18 +178,18 @@ void Compiler::compile_quote(Value form)
     compile_const(get_list_first(get_list_next(form)));
 }
 
-void Compiler::update_locals_size(Value locals)
+void Compiler::update_locals_size(Scope scope)
 {
-    auto size = persistent_hash_map_get(locals, *ZERO, *ZERO);
-    locals_size = std::max(locals_size, std::int16_t(get_int64_value(size)));
+    locals_size = std::max(locals_size, std::int16_t(scope.locals_size));
 }
 
-std::pair<Force, std::int16_t> add_local(Value locals, Value sym)
+std::pair<Compiler::Scope, std::int16_t> add_local(Compiler::Scope scope, Value sym, Root& holder)
 {
-    auto size = persistent_hash_map_get(locals, *ZERO, *ZERO);
-    Root new_locals{persistent_hash_map_assoc(locals, sym, size)};
-    Root new_size{create_int64(get_int64_value(size) + 1)};
-    return {persistent_hash_map_assoc(*new_locals, *ZERO, *new_size), std::int16_t(get_int64_value(size))};
+    Root index{create_int64(scope.locals_size)};
+    holder = persistent_hash_map_assoc(scope.locals, sym, *index);
+    scope.locals = *holder;
+    scope.locals_size++;
+    return {scope, scope.locals_size - 1};
 }
 
 void Compiler::compile_let(Scope scope, Value form)
@@ -202,16 +203,15 @@ void Compiler::compile_let(Scope scope, Value form)
         throw_compilation_error("Bad binding form, expected matched symbol expression pairs");
 
     auto expr = get_list_first(get_list_next(form));
-    Root llocals{scope.locals};
+    Root llocals;
     std::int16_t index{};
     for (Int64 i = 0; i < get_array_size(bindings); i += 2)
     {
         compile_value(scope, get_array_elem(bindings, i + 1));
-        std::tie(llocals, index) = add_local(*llocals, get_array_elem(bindings, i));
-        scope.locals = *llocals;
+        std::tie(scope, index) = add_local(scope, get_array_elem(bindings, i), llocals);
         append_STL(code, index);
     }
-    update_locals_size(*llocals);
+    update_locals_size(scope);
     compile_value(scope, expr);
 }
 
