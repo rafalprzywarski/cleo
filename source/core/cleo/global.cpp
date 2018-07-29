@@ -258,6 +258,10 @@ const Root recur{create_native_function([](const Value *args, std::uint8_t n)
 namespace rt
 {
 
+const Root transient_array{create_native_function1<cleo::transient_array>()};
+const Root transient_array_conj{create_native_function2<cleo::transient_array_conj>()};
+const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent>()};
+
 const DynamicVar current_ns = define_var(CURRENT_NS, nil);
 const DynamicVar lib_paths = define_var(LIB_PATHS, nil);
 const StaticVar obj_eq = define_var(OBJ_EQ, nil);
@@ -1475,18 +1479,15 @@ struct Initialize
 
         define_multimethod(CONJ_E, *first_type, undefined);
 
-        f = create_native_function2<transient_array_conj>();
-        define_method(CONJ_E, *type::TransientArray, *f);
+        define_method(CONJ_E, *type::TransientArray, *rt::transient_array_conj);
 
         define_multimethod(TRANSIENT, *first_type, undefined);
 
-        f = create_native_function1<transient_array>();
-        define_method(TRANSIENT, *type::Array, *f);
+        define_method(TRANSIENT, *type::Array, *rt::transient_array);
 
         define_multimethod(PERSISTENT, *first_type, undefined);
 
-        f = create_native_function1<transient_array_persistent>();
-        define_method(PERSISTENT, *type::TransientArray, *f);
+        define_method(PERSISTENT, *type::TransientArray, *rt::transient_array_persistent);
 
     }
 } initialize;

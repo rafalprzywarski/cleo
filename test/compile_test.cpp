@@ -592,6 +592,67 @@ TEST_F(compile_test, should_compile_functions_with_loop)
                                                       vm::BR, -9, -1));
 }
 
+TEST_F(compile_test, should_compile_vectors)
+{
+    Root fn{compile_fn("(fn* [] [])")};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_VECTOR), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [] [5 6 7])");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(arrayv(5, 6, 7)), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [x] [3 4 x])");
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::transient_array_persistent,
+                                                *rt::transient_array_conj,
+                                                *rt::transient_array,
+                                                arrayv(3, 4)),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::LDC, 3, 0,
+                                           vm::CALL, 1,
+                                           vm::LDL, -1, -1,
+                                           vm::CALL, 2,
+                                           vm::CALL, 1));
+
+    fn = compile_fn("(fn* [x y z] [z x y])");
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::transient_array_persistent,
+                                                *rt::transient_array_conj,
+                                                *rt::transient_array,
+                                                *EMPTY_VECTOR),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::LDC, 3, 0,
+                                           vm::CALL, 1,
+                                           vm::LDL, -1, -1,
+                                           vm::CALL, 2,
+                                           vm::LDL, -3, -1,
+                                           vm::CALL, 2,
+                                           vm::LDL, -2, -1,
+                                           vm::CALL, 2,
+                                           vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f] [2 4.0 \"x\" :k (f 3)])");
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::transient_array_persistent,
+                                                *rt::transient_array_conj,
+                                                *rt::transient_array,
+                                                arrayv(2, 4.0, "x", create_keyword("k")),
+                                                3),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::LDC, 3, 0,
+                                           vm::CALL, 1,
+                                           vm::LDL, -1, -1,
+                                           vm::LDC, 4, 0,
+                                           vm::CALL, 1,
+                                           vm::CALL, 2,
+                                           vm::CALL, 1));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");

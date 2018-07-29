@@ -40,6 +40,7 @@ struct Compiler
     void compile_let(Scope scope, Value form);
     void compile_loop(Scope scope, Value form);
     void compile_recur(Scope scope, Value form);
+    void compile_vector(Scope scepe, Value val);
     void compile_value(Scope scope, Value val);
 };
 
@@ -259,6 +260,51 @@ void Compiler::compile_recur(Scope scope, Value form)
     append_BR(code, scope.recur_start_offset - 3 - Int64(code.size()));
 }
 
+bool is_const(Value val)
+{
+    auto tag = get_value_tag(val);
+    return tag != tag::SYMBOL && tag != tag::OBJECT;
+}
+
+Int64 get_vector_const_prefix_len(Value val)
+{
+    auto size = get_array_size(val);
+    Int64 prefix_len = 0;
+    while (prefix_len < size && is_const(get_array_elem(val, prefix_len)))
+        ++prefix_len;
+    return prefix_len;
+}
+
+Force get_vector_prefix(Value val, Int64 prefix_len)
+{
+    if (prefix_len == 0)
+        return *EMPTY_VECTOR;
+    Root prefix{transient_array(*EMPTY_VECTOR)};
+    for (Int64 i = 0; i < prefix_len; ++i)
+        prefix = transient_array_conj(*prefix, get_array_elem(val, i));
+    return transient_array_persistent(*prefix);
+}
+
+void Compiler::compile_vector(Scope scope, Value val)
+{
+    auto size = get_array_size(val);
+    Int64 prefix_len = get_vector_const_prefix_len(val);
+    if (prefix_len == size)
+        return compile_const(val);
+    compile_const(*rt::transient_array_persistent);
+    compile_const(*rt::transient_array_conj);
+    compile_const(*rt::transient_array);
+    Root prefix{get_vector_prefix(val, prefix_len)};
+    compile_const(*prefix);
+    append(code, vm::CALL, 1);
+    for (Int64 i = prefix_len; i < size; ++i)
+    {
+        compile_value(scope, get_array_elem(val, i));
+        append(code, vm::CALL, 2);
+    }
+    append(code, vm::CALL, 1);
+}
+
 void Compiler::compile_value(Scope scope, Value val)
 {
     if (val.is_nil())
@@ -266,7 +312,8 @@ void Compiler::compile_value(Scope scope, Value val)
     if (get_value_tag(val) == tag::SYMBOL)
         return compile_symbol(scope.locals, val);
 
-    if (get_value_type(val).is(*type::List) && get_list_size(val) > 0)
+    auto vtype = get_value_type(val);
+    if (vtype.is(*type::List) && get_list_size(val) > 0)
     {
         auto first = get_list_first(val);
         if (first == IF)
@@ -284,6 +331,9 @@ void Compiler::compile_value(Scope scope, Value val)
 
         return compile_call(scope, val);
     }
+
+    if (vtype.is(*type::Array))
+        return compile_vector(scope, val);
 
     compile_const(val);
 }

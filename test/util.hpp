@@ -66,6 +66,11 @@ inline Force to_value(int n)
     return create_int64(n);
 }
 
+inline Force to_value(double x)
+{
+    return create_float64(x);
+}
+
 inline Force to_value(Value v)
 {
     return force(v);
