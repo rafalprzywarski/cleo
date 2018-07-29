@@ -261,6 +261,7 @@ namespace rt
 const Root transient_array{create_native_function1<cleo::transient_array>()};
 const Root transient_array_conj{create_native_function2<cleo::transient_array_conj>()};
 const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent>()};
+const Root array_set_conj{create_native_function2<cleo::array_set_conj>()};
 
 const DynamicVar current_ns = define_var(CURRENT_NS, nil);
 const DynamicVar lib_paths = define_var(LIB_PATHS, nil);
@@ -1148,8 +1149,7 @@ struct Initialize
         f = create_native_function2<array_conj>();
         define_method(CONJ, *type::Array, *f);
 
-        f = create_native_function2<array_set_conj>();
-        define_method(CONJ, *type::ArraySet, *f);
+        define_method(CONJ, *type::ArraySet, *rt::array_set_conj);
 
         f = create_native_function2<list_conj>();
         define_method(CONJ, *type::List, *f);

@@ -186,6 +186,12 @@ Force aset(const Ts&... elems)
     return sset_conj(*vec, elems...);
 }
 
+template <typename... Ts>
+auto asetv(const Ts&... elems)
+{
+    return delayed([=] { return aset(elems...); });
+}
+
 inline Force amap()
 {
     return create_array_map();

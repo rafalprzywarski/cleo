@@ -275,6 +275,7 @@ namespace rt
 extern const Root transient_array;
 extern const Root transient_array_conj;
 extern const Root transient_array_persistent;
+extern const Root array_set_conj;
 
 extern const DynamicVar current_ns;
 extern const DynamicVar lib_paths;

@@ -2,6 +2,7 @@
 #include "bytecode_fn.hpp"
 #include "global.hpp"
 #include "array.hpp"
+#include "array_set.hpp"
 #include "list.hpp"
 #include "util.hpp"
 #include "namespace.hpp"
@@ -40,7 +41,8 @@ struct Compiler
     void compile_let(Scope scope, Value form);
     void compile_loop(Scope scope, Value form);
     void compile_recur(Scope scope, Value form);
-    void compile_vector(Scope scepe, Value val);
+    void compile_vector(Scope scope, Value val);
+    void compile_hash_set(Scope scope, Value val);
     void compile_value(Scope scope, Value val);
 };
 
@@ -306,6 +308,39 @@ void Compiler::compile_vector(Scope scope, Value val)
     append(code, vm::CALL, 1);
 }
 
+Force get_hash_set_const_subset(Value val)
+{
+    Root ss{*EMPTY_SET};
+    Int64 size = get_array_set_size(val);
+    for (Int64 i = 0; i < size; ++i)
+    {
+        auto e = get_array_set_elem(val, i);
+        if (is_const(e))
+            ss = array_set_conj(*ss, e);
+    }
+    return *ss;
+}
+
+void Compiler::compile_hash_set(Scope scope, Value val)
+{
+    Root subset{get_hash_set_const_subset(val)};
+    if (get_array_set_size(*subset) == get_array_set_size(val))
+        return compile_const(val);
+    Int64 size = get_array_set_size(val);
+    for (Int64 i = get_array_set_size(*subset); i < size; ++i)
+        compile_const(*rt::array_set_conj);
+    compile_const(*subset);
+    for (Int64 i = 0; i < size; ++i)
+    {
+        auto e = get_array_set_elem(val, i);
+        if (!is_const(e))
+        {
+            compile_value(scope, e);
+            append(code, vm::CALL, 2);
+        }
+    }
+}
+
 void Compiler::compile_value(Scope scope, Value val)
 {
     if (val.is_nil())
@@ -335,6 +370,8 @@ void Compiler::compile_value(Scope scope, Value val)
 
     if (vtype.is(*type::Array))
         return compile_vector(scope, val);
+    if (vtype.is(*type::ArraySet))
+        return compile_hash_set(scope, val);
 
     compile_const(val);
 }
