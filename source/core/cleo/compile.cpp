@@ -292,7 +292,8 @@ void Compiler::compile_vector(Scope scope, Value val)
     if (prefix_len == size)
         return compile_const(val);
     compile_const(*rt::transient_array_persistent);
-    compile_const(*rt::transient_array_conj);
+    for (Int64 i = prefix_len; i < size; ++i)
+        compile_const(*rt::transient_array_conj);
     compile_const(*rt::transient_array);
     Root prefix{get_vector_prefix(val, prefix_len)};
     compile_const(*prefix);
