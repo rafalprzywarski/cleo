@@ -147,6 +147,15 @@ TEST_F(var_test, binding_should_override)
     EXPECT_EQ_VALS(kb, get_var_value(get_var(b)));
 }
 
+TEST_F(var_test, set_var_root_value_should_change_the_root_value)
+{
+    auto s = create_symbol("cleo.var.test/rv");
+    auto var = define_var(s, create_keyword("xxx"));
+    auto newv = create_keyword("yyy");
+    set_var_root_value(var, newv);
+    EXPECT_EQ_VALS(newv, get_var_root_value(var));
+}
+
 TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
 {
     auto s = create_symbol("cleo.var.test/nob");

@@ -60,6 +60,11 @@ void pop_bindings()
     bindings = get_list_next(*bindings);
 }
 
+void set_var_root_value(Value var, Value val)
+{
+    set_object_element(var, 1, val);
+}
+
 void set_var(Value sym, Value val)
 {
     if (!*bindings || !map_contains(get_list_first(*bindings), sym))
@@ -105,7 +110,7 @@ Force create_var_value_ref(Value var)
 {
     return create_object1(*type::VarValueRef, var);
 }
-    
+
 Value get_var_value_ref_value(Value ref)
 {
     return get_var_value(get_object_element(ref, 0));

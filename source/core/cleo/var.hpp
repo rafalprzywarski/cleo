@@ -10,6 +10,7 @@ void undefine_var(Value sym);
 Value get_var(Value sym);
 void push_bindings(Value bindings);
 void pop_bindings();
+void set_var_root_value(Value var, Value val);
 void set_var(Value sym, Value val);
 Value get_var_name(Value var);
 Value get_var_root_value(Value var);
