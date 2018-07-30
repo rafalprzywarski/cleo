@@ -700,6 +700,38 @@ TEST_F(compile_test, should_compile_hash_sets)
                                            vm::CALL, 2));
 }
 
+TEST_F(compile_test, should_expand_macros)
+{
+    in_ns(create_symbol("cleo.compile.macro.test"));
+    auto plus = get_var(PLUS);
+    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
+    add = read(*add);
+    add = eval(*add);
+    Root meta{amap(MACRO_KEY, TRUE)};
+    define(create_symbol("cleo.compile.macro.test", "add"), *add, *meta);
+    Root fn{compile_fn("(fn* [] (add (add 1 2) (add 3 4)))")};
+    expect_body_with_consts_vars_and_bytecode(*fn, 0,
+                                              arrayv(1, 2, 3, 4),
+                                              arrayv(plus),
+                                              b(vm::LDV, 0, 0,
+                                                vm::LDV, 0, 0,
+                                                vm::LDC, 0, 0,
+                                                vm::LDC, 1, 0,
+                                                vm::CALL, 2,
+                                                vm::LDV, 0, 0,
+                                                vm::LDC, 2, 0,
+                                                vm::LDC, 3, 0,
+                                                vm::CALL, 2,
+                                                vm::CALL, 2));
+
+    Root nilf{create_string("(fn* [&form &env x] nil)")};
+    nilf = read(*nilf);
+    nilf = eval(*nilf);
+    define(create_symbol("cleo.compile.macro.test", "nilf"), *nilf, *meta);
+    fn = compile_fn("(fn* [] (nilf 10))");
+    expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");

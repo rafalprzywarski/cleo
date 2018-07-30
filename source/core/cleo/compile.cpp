@@ -7,6 +7,7 @@
 #include "util.hpp"
 #include "namespace.hpp"
 #include "persistent_hash_map.hpp"
+#include "eval.hpp"
 
 namespace cleo
 {
@@ -343,6 +344,9 @@ void Compiler::compile_hash_set(Scope scope, Value val)
 
 void Compiler::compile_value(Scope scope, Value val)
 {
+    Root xval{macroexpand(val)};
+    val = *xval;
+
     if (val.is_nil())
         return append(code, vm::CNIL);
     if (get_value_tag(val) == tag::SYMBOL)
