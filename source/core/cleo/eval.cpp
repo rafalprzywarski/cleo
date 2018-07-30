@@ -604,7 +604,7 @@ Force call_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_
     return *val;
 }
 
-std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity)
+std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity, std::uint8_t public_n)
 {
     auto n = get_bytecode_fn_size(fn);
     for (decltype(n) i = 0; i < n; ++i)
@@ -616,13 +616,13 @@ std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity)
         if (va_arity < 0 && ~va_arity <= arity)
             return {get_bytecode_fn_body(fn, n - 1), va_arity};
     }
-    throw_arity_error(get_bytecode_fn_name(fn), arity);
+    throw_arity_error(get_bytecode_fn_name(fn), public_n);
 }
 
-Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size)
+Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_n)
 {
     auto fn = elems[0];
-    auto body_and_arity = find_bytecode_fn_body(fn, elems_size - 1);
+    auto body_and_arity = find_bytecode_fn_body(fn, elems_size - 1, public_n);
     auto body = body_and_arity.first;
     auto arity = body_and_arity.second;
     auto consts = get_bytecode_fn_body_consts(body);
@@ -646,20 +646,25 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size)
     return result;
 }
 
-Force call_fn(Value type, const Value *elems, std::uint32_t elems_size)
+Force call_fn(Value type, const Value *elems, std::uint32_t elems_size, std::uint8_t public_n)
 {
     if (type.is(*type::NativeFunction))
         return get_native_function_ptr(elems[0])(elems + 1, elems_size - 1);
     if (type.is(*type::Multimethod))
         return call_multimethod(elems[0], elems + 1, elems_size - 1);
     if (type.is(*type::Fn))
-        return call_fn(elems, elems_size, elems_size - 1);
+        return call_fn(elems, elems_size, public_n);
     if (type.is(*type::BytecodeFn))
-        return call_bytecode_fn(elems, elems_size);
+        return call_bytecode_fn(elems, elems_size, public_n);
     if (isa(type, *type::Callable))
         return call_multimethod(*rt::obj_call, elems, elems_size);
     Root msg{create_string("call error " + to_string(type))};
     throw_exception(new_call_error(*msg));
+}
+
+Force call_fn(Value type, const Value *elems, std::uint32_t elems_size)
+{
+    return call_fn(type, elems, elems_size, elems_size - 1);
 }
 
 Force eval_list(Value list, Value env)
@@ -769,7 +774,8 @@ Force macroexpand1(Value form, Value env)
     if (!var || !is_var_macro(var))
         return form;
     m = get_var_value(var);
-    if (!get_value_type(*m).is(*type::Fn))
+    Value mtype = get_value_type(*m);
+    if (!mtype.is(*type::Fn) && !mtype.is(*type::BytecodeFn))
         return form;
 
     std::vector<Value> elems;
@@ -780,7 +786,7 @@ Force macroexpand1(Value form, Value env)
     for (Root arg_list{get_list_next(form)}; *arg_list; arg_list = get_list_next(*arg_list))
         elems.push_back(get_list_first(*arg_list));
 
-    return call_fn(elems.data(), elems.size(), elems.size() - 3);
+    return call_fn(mtype, elems.data(), elems.size(), elems.size() - 3);
 }
 
 Force macroexpand(Value form, Value env)

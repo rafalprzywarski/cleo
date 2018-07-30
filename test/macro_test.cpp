@@ -3,6 +3,7 @@
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
 #include <cleo/reader.hpp>
+#include <cleo/compile.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -58,6 +59,22 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
     Root params{array(FORM, ENV, a, b, c)};
     Root m{create_fn(nil, nil, *params, *body)};
     auto name = create_symbol("cleo.macro.test", "mex1");
+    Root meta{amap(MACRO_KEY, TRUE)};
+    define(name, *m, *meta);
+    Root v{array(5, 6, 7)};
+    Root call{list(name, SEQ, FIRST, *v)};
+    Root val{macroexpand1(*call)};
+    Root ex{array(FIRST, *v, SEQ)};
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(macro_test, macroexpand1_should_evaluate_bytecode_fns)
+{
+    Root m{create_string("(fn* [&form &env a b c] [b c a])")};
+    m = read(*m);
+    m = compile_fn(*m, nil);
+    auto name = create_symbol("cleo.macro.test", "bcmex1");
     Root meta{amap(MACRO_KEY, TRUE)};
     define(name, *m, *meta);
     Root v{array(5, 6, 7)};

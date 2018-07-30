@@ -704,9 +704,7 @@ TEST_F(compile_test, should_expand_macros)
 {
     in_ns(create_symbol("cleo.compile.macro.test"));
     auto plus = get_var(PLUS);
-    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
-    add = read(*add);
-    add = eval(*add);
+    Root add{compile_fn("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
     Root meta{amap(MACRO_KEY, TRUE)};
     define(create_symbol("cleo.compile.macro.test", "add"), *add, *meta);
     Root fn{compile_fn("(fn* [] (add (add 1 2) (add 3 4)))")};
@@ -724,9 +722,7 @@ TEST_F(compile_test, should_expand_macros)
                                                 vm::CALL, 2,
                                                 vm::CALL, 2));
 
-    Root nilf{create_string("(fn* [&form &env x] nil)")};
-    nilf = read(*nilf);
-    nilf = eval(*nilf);
+    Root nilf{compile_fn("(fn* [&form &env x] nil)")};
     define(create_symbol("cleo.compile.macro.test", "nilf"), *nilf, *meta);
     fn = compile_fn("(fn* [] (nilf 10))");
     expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
