@@ -262,6 +262,7 @@ const Root transient_array{create_native_function1<cleo::transient_array>()};
 const Root transient_array_conj{create_native_function2<cleo::transient_array_conj>()};
 const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent>()};
 const Root array_set_conj{create_native_function2<cleo::array_set_conj>()};
+const Root persistent_hash_map_assoc{create_native_function3<cleo::persistent_hash_map_assoc>()};
 
 const DynamicVar current_ns = define_var(CURRENT_NS, nil);
 const DynamicVar lib_paths = define_var(LIB_PATHS, nil);
@@ -1176,8 +1177,7 @@ struct Initialize
         define_method(ASSOC, *type::ArrayMap, *f);
 
         derive(*type::PersistentHashMap, *type::PersistentMap);
-        f = create_native_function3<persistent_hash_map_assoc>();
-        define_method(ASSOC, *type::PersistentHashMap, *f);
+        define_method(ASSOC, *type::PersistentHashMap, *rt::persistent_hash_map_assoc);
 
         f = create_native_function3<nil_assoc>();
         define_method(ASSOC, nil, *f);

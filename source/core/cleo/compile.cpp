@@ -44,6 +44,7 @@ struct Compiler
     void compile_recur(Scope scope, Value form);
     void compile_vector(Scope scope, Value val);
     void compile_hash_set(Scope scope, Value val);
+    void compile_hash_map(Scope scope, Value val);
     void compile_def(Scope scope, Value form);
     void compile_value(Scope scope, Value val);
 };
@@ -326,19 +327,58 @@ Force get_hash_set_const_subset(Value val)
 void Compiler::compile_hash_set(Scope scope, Value val)
 {
     Root subset{get_hash_set_const_subset(val)};
-    if (get_array_set_size(*subset) == get_array_set_size(val))
+    auto size = get_array_set_size(val);
+    auto subset_size = get_array_set_size(*subset);
+    if (subset_size == size)
         return compile_const(val);
-    Int64 size = get_array_set_size(val);
-    for (Int64 i = get_array_set_size(*subset); i < size; ++i)
+    for (Int64 i = subset_size; i < size; ++i)
         compile_const(*rt::array_set_conj);
     compile_const(*subset);
     for (Int64 i = 0; i < size; ++i)
     {
         auto e = get_array_set_elem(val, i);
-        if (!is_const(e))
+        if (!array_set_contains(*subset,  e))
         {
             compile_value(scope, e);
             append(code, vm::CALL, 2);
+        }
+    }
+}
+
+Force get_hash_map_const_submap(Value val)
+{
+    Root sm{*EMPTY_MAP};
+    for (Root s{persistent_hash_map_seq(val)}; *s; s = get_persistent_hash_map_seq_next(*s))
+    {
+        auto kv = get_persistent_hash_map_seq_first(*s);
+        auto k = get_array_elem(kv, 0);
+        auto v = get_array_elem(kv, 1);
+        if (is_const(k) && is_const(v))
+            sm = persistent_hash_map_assoc(*sm, k, v);
+    }
+    return *sm;
+}
+
+void Compiler::compile_hash_map(Scope scope, Value val)
+{
+    Root submap{get_hash_map_const_submap(val)};
+    auto size = get_persistent_hash_map_size(val);
+    auto submap_size = get_persistent_hash_map_size(*submap);
+    if (submap_size == size)
+        return compile_const(val);
+    for (Int64 i = submap_size; i < size; ++i)
+        compile_const(*rt::persistent_hash_map_assoc);
+    compile_const(*submap);
+    for (Root s{persistent_hash_map_seq(val)}; *s; s = get_persistent_hash_map_seq_next(*s))
+    {
+        auto kv = get_persistent_hash_map_seq_first(*s);
+        auto k = get_array_elem(kv, 0);
+        auto v = get_array_elem(kv, 1);
+        if (!persistent_hash_map_contains(*submap, k))
+        {
+            compile_value(scope, k);
+            compile_value(scope, v);
+            append(code, vm::CALL, 3);
         }
     }
 }
@@ -417,6 +457,8 @@ void Compiler::compile_value(Scope scope, Value val)
         return compile_vector(scope, val);
     if (vtype.is(*type::ArraySet))
         return compile_hash_set(scope, val);
+    if (vtype.is(*type::PersistentHashMap))
+        return compile_hash_map(scope, val);
 
     compile_const(val);
 }

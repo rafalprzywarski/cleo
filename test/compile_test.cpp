@@ -4,11 +4,14 @@
 #include <cleo/reader.hpp>
 #include <cleo/global.hpp>
 #include <cleo/bytecode_fn.hpp>
+#include <gmock/gmock.h>
 
 namespace cleo
 {
 namespace test
 {
+
+using testing::AnyOf;
 
 struct compile_test : Test
 {
@@ -704,6 +707,67 @@ TEST_F(compile_test, should_compile_hash_sets)
                                            vm::LDC, 2, 0,
                                            vm::CALL, 1,
                                            vm::CALL, 2));
+}
+
+TEST_F(compile_test, should_compile_hash_maps)
+{
+    Root fn{compile_fn("(fn* [] {})")};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(*EMPTY_MAP), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [] {5 6 7 8})");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(phmapv(5, 6, 7, 8)), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [x y] {3 4 5 6 x y})");
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::persistent_hash_map_assoc,
+                                                phmapv(3, 4, 5, 6)),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDL, -2, -1,
+                                           vm::LDL, -1, -1,
+                                           vm::CALL, 3));
+
+    fn = compile_fn("(fn* [x] {3 4 x 6})");
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::persistent_hash_map_assoc,
+                                                phmapv(3, 4),
+                                                6),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDL, -1, -1,
+                                           vm::LDC, 2, 0,
+                                           vm::CALL, 3));
+
+    fn = compile_fn("(fn* [x] {3 4 5 x})");
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::persistent_hash_map_assoc,
+                                                phmapv(3, 4),
+                                                5),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::LDL, -1, -1,
+                                           vm::CALL, 3));
+
+    fn = compile_fn("(fn* [x y] {3 4 5 x y 6})");
+    ASSERT_THAT(bc(get_bytecode_fn_body(*fn, 0)), AnyOf(b(vm::LDC, 0, 0,
+                                                          vm::LDC, 0, 0,
+                                                          vm::LDC, 1, 0,
+                                                          vm::LDC, 2, 0,
+                                                          vm::LDL, -2, -1,
+                                                          vm::CALL, 3,
+                                                          vm::LDL, -1, -1,
+                                                          vm::LDC, 3, 0,
+                                                          vm::CALL, 3),
+                                                        b(vm::LDC, 0, 0,
+                                                          vm::LDC, 0, 0,
+                                                          vm::LDC, 1, 0,
+                                                          vm::LDL, -1, -1,
+                                                          vm::LDC, 3, 0,
+                                                          vm::CALL, 3,
+                                                          vm::LDC, 2, 0,
+                                                          vm::LDL, -2, -1,
+                                                          vm::CALL, 3)));
 }
 
 TEST_F(compile_test, should_expand_macros)
