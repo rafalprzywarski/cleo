@@ -31,7 +31,7 @@ struct compile_test : Test
     template <typename... Ts>
     std::vector<vm::Byte> b(Ts... bytes) { return {static_cast<vm::Byte>(bytes)...}; }
 
-    void expect_compilation_error(std::string form_str)
+    void expect_compilation_error(std::string form_str, std::string msg = {})
     {
         Root form{read_str(form_str)};
         try
@@ -43,6 +43,12 @@ struct compile_test : Test
         {
             Root e{catch_exception()};
             ASSERT_EQ_REFS(*type::CompilationError, get_value_type(*e));
+            if (!msg.empty())
+            {
+                Root expected_msg{create_string(msg)};
+                Root actual_msg{compilation_error_message(*e)};
+                ASSERT_EQ_VALS(*expected_msg, *actual_msg);
+            }
         }
     }
 
@@ -728,6 +734,42 @@ TEST_F(compile_test, should_expand_macros)
     expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
 }
 
+TEST_F(compile_test, should_compile_def)
+{
+    in_ns(create_symbol("cleo.compile.def.test"));
+    Root fn{compile_fn("(fn* [] (def x 10))")};
+    auto v = get_var(create_symbol("cleo.compile.def.test", "x"));
+    EXPECT_EQ_REFS(v, resolve_var(create_symbol("x")));
+    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(10), arrayv(v), b(vm::LDV, 0, 0, vm::LDC, 0, 0, vm::CNIL, vm::SETV));
+
+    fn = compile_fn("(fn* [f z] (def y (f z)))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(get_var(create_symbol("cleo.compile.def.test", "y"))),
+                                       b(vm::LDV, 0, 0,
+                                         vm::LDL, -2, -1,
+                                         vm::LDL, -1, -1,
+                                         vm::CALL, 1,
+                                         vm::CNIL,
+                                         vm::SETV));
+
+    fn = compile_fn("(fn* [] (def {10 20} z 13))");
+    Root meta{phmap(10, 20)};
+    v = get_var(create_symbol("cleo.compile.def.test", "z"));
+    EXPECT_EQ_VALS(*meta, get_var_meta(v));
+    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(13, *meta), arrayv(v), b(vm::LDV, 0, 0, vm::LDC, 0, 0, vm::LDC, 1, 0, vm::SETV));
+
+    fn = compile_fn("(fn* [] (def w))");
+    v = get_var(create_symbol("cleo.compile.def.test", "w"));
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+
+    v = define(create_symbol("cleo.compile.def.test", "ex"), nil, nil);
+    fn = compile_fn("(fn* [] (def ex))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+
+    fn = compile_fn("(fn* [] (def cleo.compile.def.test/nv))");
+    v = get_var(create_symbol("cleo.compile.def.test", "nv"));
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
@@ -756,6 +798,17 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [x y] (recur 1 2 3))");
     expect_compilation_error("(fn* [x & y] (recur 1))");
     expect_compilation_error("(fn* [x & y] (recur 1 2 3))");
+
+    expect_compilation_error("(fn* [] (def))", "Too few arguments to def");
+    expect_compilation_error("(fn* [] (def {2 3}))", "Too few arguments to def");
+    expect_compilation_error("(fn* [] (def x y))");
+    expect_compilation_error("(fn* [] (def x 10 30))", "Too many arguments to def");
+    expect_compilation_error("(fn* [] (def {} x 10 30))", "Too many arguments to def");
+    expect_compilation_error("(fn* [] (def 10 20))", "First argument to def must be a Symbol");
+    expect_compilation_error("(fn* [] (def 10 x))", "First argument to def must be a Symbol");
+    define(create_symbol("cleo.compile.def.test.other", "ex"), nil, nil);
+    expect_compilation_error("(fn* [] (def cleo.compile.def.test.other/ex))", "Can't create defs outside of current ns");
+    expect_compilation_error("(fn* [] (def cleo.compile.def.test.other/nex))", "Can't refer to qualified var that doesn't exist");
 }
 
 }

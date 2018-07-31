@@ -44,6 +44,7 @@ struct Compiler
     void compile_recur(Scope scope, Value form);
     void compile_vector(Scope scope, Value val);
     void compile_hash_set(Scope scope, Value val);
+    void compile_def(Scope scope, Value form);
     void compile_value(Scope scope, Value val);
 };
 
@@ -342,6 +343,44 @@ void Compiler::compile_hash_set(Scope scope, Value val)
     }
 }
 
+void Compiler::compile_def(Scope scope, Value form)
+{
+    form = get_list_next(form);
+    if (!form)
+        throw_compilation_error("Too few arguments to def");
+    auto name = get_list_first(form);
+    form = get_list_next(form);
+    Value meta = nil;
+    if (get_value_type(name).is(*type::PersistentHashMap))
+    {
+        if (!form)
+            throw_compilation_error("Too few arguments to def");
+        meta = name;
+        name = get_list_first(form);
+        form = get_list_next(form);
+    }
+    if (get_value_tag(name) != tag::SYMBOL)
+        throw_compilation_error("First argument to def must be a Symbol");
+    auto val = form ? get_list_first(form) : nil;
+    if (form && get_list_next(form))
+        throw_compilation_error("Too many arguments to def");
+    auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
+    auto sym_ns = get_symbol_namespace(name);
+    if (sym_ns && sym_ns != current_ns_name)
+        throw_compilation_error(maybe_resolve_var(name) ?
+                                "Can't create defs outside of current ns" :
+                                "Can't refer to qualified var that doesn't exist");
+    auto sym_name = get_symbol_name(name);
+    name = create_symbol(
+        {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
+        {get_string_ptr(sym_name), get_string_len(sym_name)});
+    define(name, nil, meta);
+    compile_symbol(scope.locals, name);
+    compile_value(scope, val);
+    compile_value(scope, meta);
+    append(code, vm::SETV);
+}
+
 void Compiler::compile_value(Scope scope, Value val)
 {
     Root xval{macroexpand(val)};
@@ -368,6 +407,8 @@ void Compiler::compile_value(Scope scope, Value val)
             return compile_recur(scope, val);
         if (first == LOOP)
             return compile_loop(scope, val);
+        if (first == DEF)
+            return compile_def(scope, val);
 
         return compile_call(scope, val);
     }
