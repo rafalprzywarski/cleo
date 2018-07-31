@@ -158,16 +158,20 @@ TEST_F(vm_test, setv)
 {
     in_ns(create_symbol("vm.setv.test"));
     auto var = define(create_symbol("vm.setv.test", "a"), *THREE);
+    Root meta{phmap(10, 20)};
     stack_push(var);
     stack_push(*TWO);
-    const std::array<Byte, 7> bc1{{LDL, -2, -1, LDL, -1, -1, SETV}};
+    stack_push(*meta);
+    const std::array<Byte, 10> bc1{{LDL, -3, -1, LDL, -2, -1, LDL, -1, -1, SETV}};
     eval_bytecode(nil, nil, 0, bc1);
 
-    ASSERT_EQ(3u, stack.size());
-    EXPECT_EQ_VALS(var, stack[2]);
+    ASSERT_EQ(4u, stack.size());
+    EXPECT_EQ_VALS(var, stack[3]);
+    EXPECT_EQ_VALS(*meta, stack[2]);
     EXPECT_EQ_VALS(*TWO, stack[1]);
     EXPECT_EQ_VALS(var, stack[0]);
     EXPECT_EQ_VALS(*TWO, get_var_root_value(var));
+    EXPECT_EQ_VALS(*meta, get_var_meta(var));
 }
 
 TEST_F(vm_test, ldv)

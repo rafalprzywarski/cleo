@@ -61,7 +61,10 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         }
         case SETV:
         {
-            set_var_root_value(stack[stack.size() - 2], stack.back());
+            auto var = stack[stack.size() - 3];
+            set_var_root_value(var, stack[stack.size() - 2]);
+            set_var_meta(var, stack.back());
+            stack_pop();
             stack_pop();
             ++p;
             break;

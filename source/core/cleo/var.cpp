@@ -13,8 +13,8 @@ Value define_var(Value sym, Value val, Value meta)
     auto found = vars.find(sym);
     if (found != end(vars))
     {
-        set_object_element(found->second, 1, val);
-        set_object_element(found->second, 2, meta);
+        set_var_root_value(found->second, val);
+        set_var_meta(found->second, meta);
         return found->second;
     }
     Root var{create_object3(*type::Var, sym, val, meta)};
@@ -65,6 +65,11 @@ void set_var_root_value(Value var, Value val)
     set_object_element(var, 1, val);
 }
 
+void set_var_meta(Value var, Value meta)
+{
+    set_object_element(var, 2, meta);
+}
+
 void set_var(Value sym, Value val)
 {
     if (!*bindings || !map_contains(get_list_first(*bindings), sym))
@@ -102,8 +107,13 @@ Value get_var_value(Value var)
 
 Value is_var_macro(Value var)
 {
-    auto meta = get_object_element(var, 2);
+    auto meta = get_var_meta(var);
     return meta ? map_get(meta, MACRO_KEY) : nil;
+}
+
+Value get_var_meta(Value var)
+{
+    return get_object_element(var, 2);
 }
 
 Force create_var_value_ref(Value var)
