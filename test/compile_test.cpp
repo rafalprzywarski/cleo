@@ -834,6 +834,43 @@ TEST_F(compile_test, should_compile_def)
     expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
 }
 
+TEST_F(compile_test, should_compile_functions_applying_functions)
+{
+    in_ns(create_symbol("cleo.compile.apply.test"));
+    auto f = define(create_symbol("cleo.compile.apply.test", "f"), nil);
+    auto g = define(create_symbol("cleo.compile.apply.test", "g"), nil);
+    auto h = define(create_symbol("cleo.compile.apply.test", "h"), nil);
+    Root fn{compile_fn("(fn* [f] (apply* f nil))")};
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::CNIL,
+                                        vm::APPLY, 0));
+
+    fn = compile_fn("(fn* [x] (apply* f x g h))");
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(f, g, h), b(vm::LDV, 0, 0,
+                                                                  vm::LDL, -1, -1,
+                                                                  vm::LDV, 1, 0,
+                                                                  vm::LDV, 2, 0,
+                                                                  vm::APPLY, 2));
+
+    fn = compile_fn("(fn* [x] (apply* f (apply* g x (h 10 10) (h 20))))");
+    expect_body_with_consts_vars_and_bytecode(*fn, 0,
+                                              arrayv(10, 20),
+                                              arrayv(f, g, h),
+                                              b(vm::LDV, 0, 0,
+                                                vm::LDV, 1, 0,
+                                                vm::LDL, -1, -1,
+                                                vm::LDV, 2, 0,
+                                                vm::LDC, 0, 0,
+                                                vm::LDC, 0, 0,
+                                                vm::CALL, 2,
+                                                vm::LDV, 2, 0,
+                                                vm::LDC, 1, 0,
+                                                vm::CALL, 1,
+                                                vm::APPLY, 2,
+                                                vm::APPLY, 0));
+}
+
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
@@ -873,6 +910,9 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     define(create_symbol("cleo.compile.def.test.other", "ex"), nil, nil);
     expect_compilation_error("(fn* [] (def cleo.compile.def.test.other/ex))", "Can't create defs outside of current ns");
     expect_compilation_error("(fn* [] (def cleo.compile.def.test.other/nex))", "Can't refer to qualified var that doesn't exist");
+
+    expect_compilation_error("(fn* [] (apply*))", "Wrong number of args (0) passed to apply*, form: (apply*)");
+    expect_compilation_error("(fn* [f] (apply* f))", "Wrong number of args (1) passed to apply*, form: (apply* f)");
 }
 
 }

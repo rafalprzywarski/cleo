@@ -34,6 +34,7 @@ struct Compiler
     void compile_symbol(Value locals, Value sym);
     void compile_const(Value c);
     void compile_call(Scope scope, Value val);
+    void compile_apply(Scope scope, Value form);
     void compile_if(Scope scope, Value val);
     void compile_do(Scope scope, Value val);
     void compile_quote(Value form);
@@ -49,10 +50,15 @@ struct Compiler
     void compile_value(Scope scope, Value val);
 };
 
+void throw_compiletime_arity_error(Value name, Value form, std::uint8_t actual_num_args)
+{
+    throw_compilation_error("Wrong number of args (" + std::to_string(actual_num_args) + ") passed to " + to_string(name) + ", form: " + to_string(form));
+}
+
 void check_compiletime_arity(Value name, Value form, std::uint8_t num_args, std::uint8_t actual_num_args)
 {
     if (num_args != actual_num_args)
-        throw_compilation_error("Wrong number of args (" + std::to_string(actual_num_args) + ") passed to " + to_string(name) + ", form: " + to_string(form));
+        throw_compiletime_arity_error(name, form, actual_num_args);
 }
 
 void append(std::vector<vm::Byte>&) { }
@@ -152,6 +158,17 @@ void Compiler::compile_call(Scope scope, Value val)
         compile_value(scope, get_list_first(e));
     append(code, vm::CALL, get_list_size(val) - 1);
 }
+
+void Compiler::compile_apply(Scope scope, Value form)
+{
+    auto size = get_list_size(form);
+    if (size < 3)
+        throw_compiletime_arity_error(APPLY_SPECIAL, form, size - 1);
+    for (auto e = get_list_next(form); e; e = get_list_next(e))
+        compile_value(scope, get_list_first(e));
+    append(code, vm::APPLY, size - 3);
+}
+
 
 void Compiler::compile_if(Scope scope, Value val)
 {
@@ -449,6 +466,8 @@ void Compiler::compile_value(Scope scope, Value val)
             return compile_loop(scope, val);
         if (first == DEF)
             return compile_def(scope, val);
+        if (first == APPLY_SPECIAL)
+            return compile_apply(scope, val);
 
         return compile_call(scope, val);
     }

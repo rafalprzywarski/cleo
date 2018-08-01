@@ -146,6 +146,7 @@ extern const Value DO;
 extern const Value IF;
 extern const Value LOOP;
 extern const Value RECUR;
+extern const Value APPLY_SPECIAL;
 extern const Value PLUS;
 extern const Value MINUS;
 extern const Value ASTERISK;

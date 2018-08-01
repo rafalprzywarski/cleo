@@ -74,6 +74,7 @@ const Value DO = create_symbol("do");
 const Value IF = create_symbol("if");
 const Value LOOP = create_symbol("loop*");
 const Value RECUR = create_symbol("recur");
+const Value APPLY_SPECIAL = create_symbol("apply*");
 const Value PLUS = create_symbol("cleo.core", "+");
 const Value MINUS = create_symbol("cleo.core", "-");
 const Value ASTERISK = create_symbol("cleo.core", "*");
@@ -130,6 +131,7 @@ const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     IF,
     LOOP,
     RECUR,
+    APPLY_SPECIAL,
     THROW,
     TRY,
     CATCH,
