@@ -799,14 +799,21 @@ Force macroexpand(Value form, Value env)
 
 Force apply(Value fn, Value args)
 {
+    std::array<Value, 2> vals{{fn, args}};
+    return apply(vals.data(), vals.size());
+}
+
+Force apply(const Value *vals, std::uint32_t size)
+{
+    assert(size >= 2);
+    auto args = vals[size - 1];
     std::uint32_t len = 0;
     for (Root s{call_multimethod1(*rt::seq, args)}; *s; s = call_multimethod1(*rt::next, *s))
         ++len;
     Roots roots{len};
 
     std::uint32_t i = 0;
-    std::vector<Value> form;
-    form.push_back(fn);
+    std::vector<Value> form(vals, vals + (size - 1));
     for (Root s{call_multimethod1(*rt::seq, args)}; *s; s = call_multimethod1(*rt::next, *s))
     {
         roots.set(i, call_multimethod1(*rt::first, *s));

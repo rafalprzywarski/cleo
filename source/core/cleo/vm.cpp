@@ -97,6 +97,15 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             p += 2;
             break;
         }
+        case APPLY:
+        {
+            auto n = std::uint8_t(p[1]) + 2;
+            auto& first = stack[stack.size() - n];
+            first = apply(&first, n).value();
+            stack.resize(stack.size() - (n - 1));
+            p += 2;
+            break;
+        }
         case CNIL:
             stack_push(nil);
             ++p;

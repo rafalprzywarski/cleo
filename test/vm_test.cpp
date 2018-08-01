@@ -356,6 +356,92 @@ TEST_F(vm_test, call)
     EXPECT_EQ_VALS(*ex, stack[0]);
 }
 
+TEST_F(vm_test, apply)
+{
+    Root x{i64(7)};
+    Root constants{array(arrayv(*x, 8), *rt::first)};
+    const std::array<Byte, 9> bc1{{LDC, 1, 0, LDC, 0, 0, CNIL, APPLY, 1}};
+    eval_bytecode(*constants, nil, 0, bc1);
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*x, stack[0]);
+    stack.clear();
+
+    constants = array(phmapv(10, 20), 30, 40, *rt::assoc);
+    const std::array<Byte, 15> bc2{{LDC, 3, 0, LDC, 0, 0, LDC, 1, 0, LDC, 2, 0, CNIL, APPLY, 3}};
+    stack_push(*x);
+    eval_bytecode(*constants, nil, 0, bc2);
+
+    Root ex{phmap(10, 20, 30, 40)};
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[1]);
+    EXPECT_EQ_VALS(*x, stack[0]);
+    stack.clear();
+
+    Root count_args{create_native_function([](const Value *, std::uint8_t n) { return i64(n); })};
+    constants = array(*x, *count_args);
+    const std::array<Byte, 393> bc3{{
+        LDC, 1, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        CNIL,
+        APPLY, Byte(-127),
+    }};
+    eval_bytecode(*constants, nil, 0, bc3);
+    ex = i64(129);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+    stack.clear();
+
+    Root pick_args{create_native_function([](const Value *args, std::uint8_t n) { return array(n, args[0], args[128], args[129], args[128 + 50]); })};
+    constants = array(*x,
+                      arrayv(1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                             11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                             21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+                             31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+                             41, 42, 43, 44, 45, 46, 47, 48, 49, 50),
+                      *pick_args);
+    const std::array<Byte, 395> bc4{{
+        LDC, 2, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0, LDC, 0, 0,
+        LDC, 1, 0,
+        APPLY, Byte(-127),
+    }};
+    eval_bytecode(*constants, nil, 0, bc4);
+    ex = array(129 + 50, *x, *x, 1, 50);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+}
+
 TEST_F(vm_test, cnil)
 {
     stack_push(*THREE);
