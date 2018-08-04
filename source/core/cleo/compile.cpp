@@ -15,10 +15,13 @@ namespace cleo
 namespace
 {
 
+Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals);
+
 struct Compiler
 {
     struct Scope
     {
+        Value parent_locals;
         Value locals;
         std::uint16_t recur_arity{};
         std::int16_t recur_locals_index{};
@@ -30,9 +33,13 @@ struct Compiler
     std::int16_t locals_size = 0;
     Root consts{transient_array(*EMPTY_VECTOR)};
     Root vars{transient_array(*EMPTY_VECTOR)};
+    Root local_refs{transient_array(*EMPTY_VECTOR)};
+    std::vector<std::uint32_t> local_ref_offsets;
 
-    void compile_symbol(Value locals, Value sym);
+    void compile_symbol(const Scope& scope, Value sym);
     void compile_const(Value c);
+    Int64 add_local_ref(Value sym);
+    void compile_local_ref(Value sym);
     void compile_call(Scope scope, Value val);
     void compile_apply(Scope scope, Value form);
     void compile_if(Scope scope, Value val);
@@ -47,6 +54,7 @@ struct Compiler
     void compile_hash_set(Scope scope, Value val);
     void compile_hash_map(Scope scope, Value val);
     void compile_def(Scope scope, Value form);
+    void compile_fn(Scope scope, Value form);
     void compile_value(Scope scope, Value val);
 };
 
@@ -115,9 +123,20 @@ Int64 add_const(Root& consts, Value c)
     return n;
 }
 
+Int64 Compiler::add_local_ref(Value sym)
+{
+    auto n = get_int64_value(get_transient_array_size(*local_refs));
+    for (Int64 i = 0; i < n; ++i)
+        if (get_transient_array_elem(*local_refs, i) == sym)
+            return i;
+
+    local_refs = transient_array_conj(*local_refs, sym);
+    return n;
+}
+
 Force create_locals(Value params)
 {
-    Root locals{create_persistent_hash_map()}, index;
+    Root locals{*EMPTY_MAP}, index;
     auto arity = get_arity(params);
     auto fixed_arity = arity < 0 ? ~arity : arity;
     auto total_arity = arity < 0 ? ~arity + 1 : arity;
@@ -131,13 +150,15 @@ Force create_locals(Value params)
     return *locals;
 }
 
-void Compiler::compile_symbol(Value locals, Value sym)
+void Compiler::compile_symbol(const Scope& scope, Value sym)
 {
-    if (auto index = persistent_hash_map_get(locals, sym))
+    if (auto index = persistent_hash_map_get(scope.locals, sym))
     {
         append(code, vm::LDL);
         return append_i16(code, get_int64_value(index));
     }
+    if (persistent_hash_map_contains(scope.parent_locals, sym))
+        return compile_local_ref(sym);
 
     auto v = maybe_resolve_var(sym);
     if (!v)
@@ -150,6 +171,13 @@ void Compiler::compile_const(Value c)
 {
     auto ci = add_const(consts, c);
     append(code, vm::LDC, ci, 0);
+}
+
+void Compiler::compile_local_ref(Value sym)
+{
+    auto ri = add_local_ref(sym);
+    local_ref_offsets.push_back(code.size() + 1);
+    append(code, vm::LDC, ri, 0);
 }
 
 void Compiler::compile_call(Scope scope, Value val)
@@ -432,10 +460,24 @@ void Compiler::compile_def(Scope scope, Value form)
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
         {get_string_ptr(sym_name), get_string_len(sym_name)});
     define(name, nil, meta);
-    compile_symbol(scope.locals, name);
+    compile_symbol(scope, name);
     compile_value(scope, val);
     compile_value(scope, meta);
     append(code, vm::SETV);
+}
+
+void Compiler::compile_fn(Scope scope, Value form)
+{
+    Root used_locals;
+    Root fn{compile_ifn(form, nil, scope.locals, used_locals)};
+    compile_const(*fn);
+    if (*used_locals)
+    {
+        auto size = get_array_size(*used_locals);
+        for (Int64 i = 0; i < size; ++i)
+            compile_symbol(scope, get_array_elem(*used_locals, i));
+        append(code, vm::IFN, size);
+    }
 }
 
 void Compiler::compile_value(Scope scope, Value val)
@@ -446,7 +488,7 @@ void Compiler::compile_value(Scope scope, Value val)
     if (val.is_nil())
         return append(code, vm::CNIL);
     if (get_value_tag(val) == tag::SYMBOL)
-        return compile_symbol(scope.locals, val);
+        return compile_symbol(scope, val);
 
     auto vtype = get_value_type(val);
     if (vtype.is(*type::List) && get_list_size(val) > 0)
@@ -468,6 +510,8 @@ void Compiler::compile_value(Scope scope, Value val)
             return compile_def(scope, val);
         if (first == APPLY_SPECIAL)
             return compile_apply(scope, val);
+        if (first == FN)
+            return compile_fn(scope, val);
 
         return compile_call(scope, val);
     }
@@ -482,21 +526,29 @@ void Compiler::compile_value(Scope scope, Value val)
     compile_const(val);
 }
 
-Compiler::Scope create_fn_body_scope(Value form, Value locals)
+Compiler::Scope create_fn_body_scope(Value form, Value locals, Value parent_locals)
 {
     auto recur_arity = std::uint16_t(std::abs(get_arity(get_list_first(form))));
-    return {locals, recur_arity, std::int16_t(-recur_arity)};
+    return {parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
 }
 
-Force compile_fn_body(Value form)
+Force compile_fn_body(Value form, Value parent_locals, Root& used_locals)
 {
     Compiler c;
     Value val = get_list_first(get_list_next(form));
     Root locals{create_locals(get_list_first(form))};
-    auto scope = create_fn_body_scope(form, *locals);
+    auto scope = create_fn_body_scope(form, *locals, parent_locals);
     c.compile_value(scope, val);
-    Root consts{get_int64_value(get_transient_array_size(*c.consts)) > 0 ? transient_array_persistent(*c.consts) : nil};
+    auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
+    auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
+    for (auto off : c.local_ref_offsets)
+        c.code[off] += consts_size;
+    for (Int64 i = 0; i < used_locals_size; ++i)
+        c.consts = transient_array_conj(*c.consts, nil);
+    consts_size += used_locals_size;
+    Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
     Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
+    used_locals = used_locals_size > 0 ? transient_array_persistent(*c.local_refs) : nil;
     return create_bytecode_fn_body(*consts, *vars, c.locals_size, c.code.data(), c.code.size());
 }
 
@@ -517,9 +569,7 @@ Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bod
     return create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
 }
 
-}
-
-Force compile_fn(Value form, Value env)
+Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
 {
     if (!get_value_type(form).is(*type::List))
         throw_compilation_error("form must be a list");
@@ -542,11 +592,19 @@ Force compile_fn(Value form, Value env)
     for (Int64 i = 0; i < count; ++i)
     {
         auto form = get_list_first(*forms);
-        rbodies.set(i, compile_fn_body(form));
+        rbodies.set(i, compile_fn_body(form, parent_locals, used_locals));
         arities_and_bodies.emplace_back(get_arity(get_list_first(form)), rbodies[i]);
         forms = get_list_next(*forms);
     }
     return create_fn(name, std::move(arities_and_bodies));
+}
+
+}
+
+Force compile_fn(Value form, Value env)
+{
+    Root used_locals;
+    return compile_ifn(form, env, *EMPTY_MAP, used_locals);
 }
 
 }

@@ -55,10 +55,17 @@ struct compile_test : Test
         }
     }
 
+    template <typename Env>
+    Force compile_fn(const std::string& s, Env envv)
+    {
+        Root env{to_value(envv)};
+        Root form{read_str(s)};
+        return cleo::compile_fn(*form, *env);
+    }
+
     Force compile_fn(const std::string& s)
     {
-        Root form{read_str(s)};
-        return cleo::compile_fn(*form, nil);
+        return compile_fn(s, nil);
     }
 
     void expect_fn_with_arities(Value fn, std::vector<Int64> arities)
@@ -92,6 +99,27 @@ struct compile_test : Test
         EXPECT_EQ(code, bc(body));
     }
 
+    template <typename Consts>
+    void expect_body_with_locals_consts_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size, Consts constsv, std::vector<vm::Byte> code)
+    {
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        Root consts{to_value(constsv)};
+        EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
+        EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
+
+    Value get_fn_const(Value fn, std::uint8_t index, Int64 cindex)
+    {
+        auto consts = get_bytecode_fn_body_consts(get_bytecode_fn_body(fn, index));
+        if (!get_value_type(consts).is(*type::Array))
+            return nil;
+        return get_array_elem(consts, cindex);
+    }
+
     template <typename Vars>
     void expect_body_with_vars_and_bytecode(Value fn, std::uint8_t index, Vars varsv, std::vector<vm::Byte> code)
     {
@@ -121,7 +149,7 @@ struct compile_test : Test
     }
 
     template <typename Consts, typename Vars>
-    void expect_body_with_locals_consts_vars_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size,  Consts constsv, Vars varsv, std::vector<vm::Byte> code)
+    void expect_body_with_locals_consts_vars_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size, Consts constsv, Vars varsv, std::vector<vm::Byte> code)
     {
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
@@ -870,6 +898,74 @@ TEST_F(compile_test, should_compile_functions_applying_functions)
                                                 vm::APPLY, 0));
 }
 
+TEST_F(compile_test, should_compile_functions_creating_functions)
+{
+    Root fn{compile_fn("(fn* [] (fn* [] 10))")};
+    auto inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(10), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [x y] (fn* [] (x y)))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(inner_fn),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDL, -2, -1,
+                                           vm::LDL, -1, -1,
+                                           vm::IFN, 2));
+    expect_body_with_consts_and_bytecode(inner_fn, 0,
+                                         arrayv(nil, nil),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::CALL, 1));
+
+    fn = compile_fn("(fn* [x y] (fn* [] (x 10 y y x 20 30)))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(inner_fn),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDL, -2, -1,
+                                           vm::LDL, -1, -1,
+                                           vm::IFN, 2));
+    expect_body_with_consts_and_bytecode(inner_fn, 0,
+                                         arrayv(10, 20, 30, nil, nil),
+                                         b(vm::LDC, 3, 0,
+                                           vm::LDC, 0, 0,
+                                           vm::LDC, 4, 0,
+                                           vm::LDC, 4, 0,
+                                           vm::LDC, 3, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::CALL, 6));
+
+    fn = compile_fn("(fn* [x y] (let* [z x] (fn* [] (z x))))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_locals_consts_and_bytecode(*fn, 0, 1,
+                                                arrayv(inner_fn),
+                                                b(vm::LDL, -2, -1,
+                                                  vm::STL, 0, 0,
+                                                  vm::LDC, 0, 0,
+                                                  vm::LDL, 0, 0,
+                                                  vm::LDL, -2, -1,
+                                                  vm::IFN, 2));
+    expect_body_with_consts_and_bytecode(inner_fn, 0,
+                                         arrayv(nil, nil),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::CALL, 1));
+
+    fn = compile_fn("(fn* [x y a-var] (fn* [x] (let* [y 5] (x y a-var))))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
+    expect_body_with_locals_consts_and_bytecode(inner_fn, 0, 1,
+                                                arrayv(5, nil),
+                                                b(vm::LDC, 0, 0,
+                                                  vm::STL, 0, 0,
+                                                  vm::LDL, -1, -1,
+                                                  vm::LDL, 0, 0,
+                                                  vm::LDC, 1, 0,
+                                                  vm::CALL, 2));
+}
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
