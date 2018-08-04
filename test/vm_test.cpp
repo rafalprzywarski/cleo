@@ -1,4 +1,5 @@
 #include <cleo/vm.hpp>
+#include <cleo/bytecode_fn.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -459,6 +460,45 @@ TEST_F(vm_test, cnil)
     EXPECT_EQ_VALS(nil, stack[2]);
     EXPECT_EQ_VALS(nil, stack[1]);
     EXPECT_EQ_VALS(*THREE, stack[0]);
+}
+
+TEST_F(vm_test, ifn)
+{
+    auto name = create_symbol("abc");
+    Root fn{create_bytecode_fn(name, nullptr, nullptr, 0)};
+    stack_push(*fn);
+    const std::array<Byte, 2> bc1{{IFN, 0}};
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_REFS(*fn, stack[0]);
+    stack.clear();
+
+    Root consts1{array(10, 20, 30, 40, 50, 60)};
+    Root consts2{array(50, 60, 70, 80, 90, 100)};
+    std::array<vm::Byte, 1> bytes{{vm::CNIL}};
+    Roots rbodies(2);
+    rbodies.set(0, create_bytecode_fn_body(*consts1, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(1, create_bytecode_fn_body(*consts2, nil, 0, bytes.data(), bytes.size()));
+    std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
+    std::array<Int64, 2> arities{{2, 3}};
+
+    fn = create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
+    stack_push(*fn);
+    stack_push(i64(17));
+    stack_push(i64(19));
+    std::array<Byte, 2> bc2{{IFN, 2}};
+    eval_bytecode(nil, nil, 0, bc2);
+
+    ASSERT_EQ(1u, stack.size());
+    auto mfn = stack[0];
+    Root mconsts1{array(10, 20, 30, 40, 17, 19)};
+    Root mconsts2{array(50, 60, 70, 80, 17, 19)};
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(mfn));
+    EXPECT_EQ(2, get_bytecode_fn_size(mfn));
+    EXPECT_EQ_VALS(name, get_bytecode_fn_name(mfn));
+    EXPECT_EQ_VALS(*mconsts1, get_bytecode_fn_body_consts(get_bytecode_fn_body(mfn, 0)));
+    EXPECT_EQ_VALS(*mconsts2, get_bytecode_fn_body_consts(get_bytecode_fn_body(mfn, 1)));
 }
 
 }

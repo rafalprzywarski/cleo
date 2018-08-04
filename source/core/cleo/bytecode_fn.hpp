@@ -17,5 +17,6 @@ Value get_bytecode_fn_name(Value fn);
 std::uint8_t get_bytecode_fn_size(Value fn);
 Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i);
 Value get_bytecode_fn_body(Value fn, std::uint8_t i);
+Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n);
 
 }

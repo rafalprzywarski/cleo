@@ -1,8 +1,27 @@
 #include "bytecode_fn.hpp"
 #include "global.hpp"
+#include "array.hpp"
 
 namespace cleo
 {
+
+namespace
+{
+
+Force bytecode_fn_body_replace_consts(Value b, const Value *consts, Int64 n)
+{
+    auto old_consts = get_bytecode_fn_body_consts(b);
+    auto csize = get_array_size(old_consts);
+    std::vector<Value> mconsts(csize);
+    for (decltype(csize) j = 0; (j + n) < csize; ++j)
+        mconsts[j] = get_array_elem(old_consts, j);
+    for (decltype(csize) j = 0; j < n; ++j)
+        mconsts[csize - n + j] = consts[j];
+    Root mrconsts{create_array(mconsts.data(), mconsts.size())};
+    return create_bytecode_fn_body(*mrconsts, get_bytecode_fn_body_vars(b), get_bytecode_fn_body_locals_size(b), get_bytecode_fn_body_bytes(b), get_bytecode_fn_body_bytes_size(b));
+}
+
+}
 
 Force create_bytecode_fn_body(Value consts, Value vars, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)
 {
@@ -66,6 +85,24 @@ Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i)
 Value get_bytecode_fn_body(Value fn, std::uint8_t i)
 {
     return get_object_element(fn, i + 1);
+}
+
+Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)
+{
+    if (n == 0)
+        return fn;
+    auto size = get_bytecode_fn_size(fn);
+    std::vector<Value> bodies(size);
+    std::vector<Int64> arities(size);
+    Roots rbodies(size);
+    for (Int64 i = 0; i < size; ++i)
+    {
+        rbodies.set(i, bytecode_fn_body_replace_consts(get_bytecode_fn_body(fn, i), consts, n));
+        bodies[i] = rbodies[i];
+        arities[i] = get_bytecode_fn_arity(fn, i);
+    }
+
+    return create_bytecode_fn(get_bytecode_fn_name(fn), arities.data(), bodies.data(), bodies.size());
 }
 
 }

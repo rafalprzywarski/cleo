@@ -236,5 +236,51 @@ TEST_F(bytecode_fn_test, should_pass_the_varargs_as_a_sequence_or_nil)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
+{
+    auto name = create_symbol("abc");
+    Root fn{create_bytecode_fn(name, nullptr, nullptr, 0)};
+    Root mfn{bytecode_fn_replace_consts(*fn, nullptr, 0)};
+    EXPECT_EQ_REFS(*fn, *mfn);
+
+    Root consts1{array(10, 20, 30, 40, 50, 60)};
+    Root consts2{array(50, 60, 70, 80, 90, 100)};
+    Root vars1{array()};
+    Root vars2{array()};
+    Int64 locals_size1 = 7;
+    Int64 locals_size2 = 9;
+    std::array<vm::Byte, 1> bytes1{{vm::CNIL}};
+    std::array<vm::Byte, 3> bytes2{{vm::CNIL, vm::CNIL, vm::POP}};
+    Roots rbodies(2);
+    rbodies.set(0, create_bytecode_fn_body(*consts1, *vars1, locals_size1, bytes1.data(), bytes1.size()));
+    rbodies.set(1, create_bytecode_fn_body(*consts2, *vars2, locals_size2, bytes2.data(), bytes2.size()));
+    std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
+    std::array<Int64, 2> arities{{2, 3}};
+
+    fn = create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
+    Root aconsts{array(17, 19)};
+    std::array<Value, 2> nconsts{{get_array_elem(*aconsts, 0), get_array_elem(*aconsts, 1)}};
+    mfn = bytecode_fn_replace_consts(*fn, nconsts.data(), nconsts.size());
+
+    Root mconsts1{array(10, 20, 30, 40, 17, 19)};
+    Root mconsts2{array(50, 60, 70, 80, 17, 19)};
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(*mfn));
+    EXPECT_EQ(2, get_bytecode_fn_size(*mfn));
+    EXPECT_EQ_VALS(name, get_bytecode_fn_name(*mfn));
+    EXPECT_EQ(arities[0], get_bytecode_fn_arity(*mfn, 0));
+    EXPECT_EQ(arities[1], get_bytecode_fn_arity(*mfn, 1));
+    EXPECT_EQ_VALS(*mconsts1, get_bytecode_fn_body_consts(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ_VALS(*mconsts2, get_bytecode_fn_body_consts(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ_REFS(*vars1, get_bytecode_fn_body_vars(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ_REFS(*vars2, get_bytecode_fn_body_vars(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ(locals_size1, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ(locals_size2, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ(bytes1.size(), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ(bytes2.size(), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_TRUE(std::equal(begin(bytes1), end(bytes1), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 0))));
+    EXPECT_TRUE(std::equal(begin(bytes2), end(bytes2), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 1))));
+
+}
+
 }
 }

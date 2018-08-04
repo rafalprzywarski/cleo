@@ -23,6 +23,7 @@ constexpr Byte CALL = 9;
 constexpr Byte APPLY = 10;
 constexpr Byte THROW = 11;
 constexpr Byte CNIL = 12;
+constexpr Byte IFN = 14;
 
 void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, const Byte *bytecode, std::uint32_t size);
 

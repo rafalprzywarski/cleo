@@ -3,6 +3,7 @@
 #include "var.hpp"
 #include "global.hpp"
 #include "eval.hpp"
+#include "bytecode_fn.hpp"
 
 namespace cleo
 {
@@ -110,6 +111,18 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             stack_push(nil);
             ++p;
             break;
+        case IFN:
+        {
+            if (auto n = p[1])
+            {
+                auto fn = stack[stack.size() - n - 1];
+                auto consts = &stack[stack.size() - n];
+                stack[stack.size() - n - 1] = bytecode_fn_replace_consts(fn, consts, n).value();
+                stack.resize(stack.size() - n);
+            }
+            p += 2;
+            break;
+        }
         }
     }
 }
