@@ -992,6 +992,25 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
     expect_body_with_consts_vars_and_bytecode(inner_fn, 0, arrayv(nil), arrayv(a_var), b(vm::LDC, 0, 0, vm::LDV, 0, 0, vm::CALL, 1));
 }
 
+TEST_F(compile_test, should_use_constants_from_env)
+{
+    Root fn{compile_fn("(fn* [] x)", phmapv(create_symbol("x"), 7))};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(7), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [] x)", phmapv(create_symbol("x"), nil));
+    expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
+
+    fn = compile_fn("(fn* [] (fn* [] x))", phmapv(create_symbol("x"), 7));
+    auto inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(7), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [x] (fn* [y] (x y a-var)))", phmapv(create_symbol("a-var"), 9, create_symbol("x"), 11, create_symbol("y"), 13));
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(9, nil), b(vm::LDC, 1, 0, vm::LDL, -1, -1, vm::LDC, 0, 0, vm::CALL, 2));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");

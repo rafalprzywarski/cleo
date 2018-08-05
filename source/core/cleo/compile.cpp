@@ -21,6 +21,7 @@ struct Compiler
 {
     struct Scope
     {
+        Value env;
         Value parent_locals;
         Value locals;
         std::uint16_t recur_arity{};
@@ -161,6 +162,8 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
     }
     if (persistent_hash_map_contains(scope.parent_locals, sym))
         return compile_local_ref(sym);
+    if (scope.env && persistent_hash_map_contains(scope.env, sym))
+        return compile_const(persistent_hash_map_get(scope.env, sym));
 
     auto v = maybe_resolve_var(sym);
     if (!v)
@@ -171,6 +174,8 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
 
 void Compiler::compile_const(Value c)
 {
+    if (c.is_nil())
+        return append(code, vm::CNIL);
     auto ci = add_const(consts, c);
     append(code, vm::LDC, ci, 0);
 }
@@ -472,7 +477,7 @@ void Compiler::compile_fn(Scope scope, Value form)
 {
     Root used_locals;
     Root parent_locals{map_merge(scope.parent_locals, scope.locals)};
-    Root fn{compile_ifn(form, nil, *parent_locals, used_locals)};
+    Root fn{compile_ifn(form, scope.env, *parent_locals, used_locals)};
     compile_const(*fn);
     if (*used_locals)
     {
@@ -488,8 +493,6 @@ void Compiler::compile_value(Scope scope, Value val)
     Root xval{macroexpand(val)};
     val = *xval;
 
-    if (val.is_nil())
-        return append(code, vm::CNIL);
     if (get_value_tag(val) == tag::SYMBOL)
         return compile_symbol(scope, val);
 
@@ -529,18 +532,18 @@ void Compiler::compile_value(Scope scope, Value val)
     compile_const(val);
 }
 
-Compiler::Scope create_fn_body_scope(Value form, Value locals, Value parent_locals)
+Compiler::Scope create_fn_body_scope(Value form, Value env, Value locals, Value parent_locals)
 {
     auto recur_arity = std::uint16_t(std::abs(get_arity(get_list_first(form))));
-    return {parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
+    return {env, parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
 }
 
-Force compile_fn_body(Value form, Value parent_locals, Root& used_locals)
+Force compile_fn_body(Value form, Value env, Value parent_locals, Root& used_locals)
 {
     Compiler c(*used_locals);
     Value val = get_list_first(get_list_next(form));
     Root locals{create_locals(get_list_first(form))};
-    auto scope = create_fn_body_scope(form, *locals, parent_locals);
+    auto scope = create_fn_body_scope(form, env, *locals, parent_locals);
     c.compile_value(scope, val);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
@@ -606,7 +609,7 @@ Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
     for (Int64 i = 0; i < count; ++i)
     {
         auto form = get_list_first(*forms);
-        rbodies.set(i, compile_fn_body(form, parent_locals, used_locals));
+        rbodies.set(i, compile_fn_body(form, env, parent_locals, used_locals));
         arities_and_bodies.emplace_back(get_arity(get_list_first(form)), rbodies[i]);
         forms = get_list_next(*forms);
     }
