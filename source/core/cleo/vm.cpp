@@ -4,6 +4,7 @@
 #include "global.hpp"
 #include "eval.hpp"
 #include "bytecode_fn.hpp"
+#include "error.hpp"
 
 namespace cleo
 {
@@ -121,6 +122,13 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
                 stack.resize(stack.size() - n);
             }
             p += 2;
+            break;
+        }
+        case THROW:
+        {
+            auto ex = stack.back();
+            stack_pop();
+            throw_exception(ex);
             break;
         }
         }

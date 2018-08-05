@@ -1,5 +1,6 @@
 #include <cleo/vm.hpp>
 #include <cleo/bytecode_fn.hpp>
+#include <cleo/error.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -499,6 +500,28 @@ TEST_F(vm_test, ifn)
     EXPECT_EQ_VALS(name, get_bytecode_fn_name(mfn));
     EXPECT_EQ_VALS(*mconsts1, get_bytecode_fn_body_consts(get_bytecode_fn_body(mfn, 0)));
     EXPECT_EQ_VALS(*mconsts2, get_bytecode_fn_body_consts(get_bytecode_fn_body(mfn, 1)));
+}
+
+TEST_F(vm_test, throw_)
+{
+    Root ex{new_index_out_of_bounds()};
+    stack_push(i64(10));
+    stack_push(i64(12));
+    stack_push(*ex);
+
+    const std::array<Byte, 1> bc1{{vm::THROW}};
+    try
+    {
+        eval_bytecode(nil, nil, 0, bc1);
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& )
+    {
+        Root actual{catch_exception()};
+        EXPECT_EQ_REFS(*ex, *actual);
+    }
+
+    EXPECT_EQ(2u, stack.size());
 }
 
 }
