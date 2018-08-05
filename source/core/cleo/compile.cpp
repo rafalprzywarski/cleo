@@ -469,7 +469,8 @@ void Compiler::compile_def(Scope scope, Value form)
 void Compiler::compile_fn(Scope scope, Value form)
 {
     Root used_locals;
-    Root fn{compile_ifn(form, nil, scope.locals, used_locals)};
+    Root parent_locals{map_merge(scope.parent_locals, scope.locals)};
+    Root fn{compile_ifn(form, nil, *parent_locals, used_locals)};
     compile_const(*fn);
     if (*used_locals)
     {

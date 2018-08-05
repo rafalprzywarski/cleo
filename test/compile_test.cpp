@@ -965,6 +965,20 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
                                                   vm::LDL, 0, 0,
                                                   vm::LDC, 1, 0,
                                                   vm::CALL, 2));
+
+    fn = compile_fn("(fn* [x] (fn* [y] (fn* [] (x y))))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    auto inner_inner_fn = get_fn_const(inner_fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(inner_inner_fn, nil), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDL, -1, -1, vm::IFN, 2));
+    expect_body_with_consts_and_bytecode(inner_inner_fn, 0, arrayv(nil, nil), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::CALL, 1));
+
+    fn = compile_fn("(fn* [x] (fn* [x] (fn* [] x)))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    inner_inner_fn = get_fn_const(inner_fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(inner_inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
+    expect_body_with_consts_and_bytecode(inner_inner_fn, 0, arrayv(nil), b(vm::LDC, 0, 0));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
