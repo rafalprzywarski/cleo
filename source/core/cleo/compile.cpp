@@ -33,8 +33,10 @@ struct Compiler
     std::int16_t locals_size = 0;
     Root consts{transient_array(*EMPTY_VECTOR)};
     Root vars{transient_array(*EMPTY_VECTOR)};
-    Root local_refs{transient_array(*EMPTY_VECTOR)};
+    Root local_refs;
     std::vector<std::uint32_t> local_ref_offsets;
+
+    Compiler(Value local_refs) : local_refs(transient_array(local_refs ? local_refs : *EMPTY_VECTOR)) { }
 
     void compile_symbol(const Scope& scope, Value sym);
     void compile_const(Value c);
@@ -535,7 +537,7 @@ Compiler::Scope create_fn_body_scope(Value form, Value locals, Value parent_loca
 
 Force compile_fn_body(Value form, Value parent_locals, Root& used_locals)
 {
-    Compiler c;
+    Compiler c(*used_locals);
     Value val = get_list_first(get_list_next(form));
     Root locals{create_locals(get_list_first(form))};
     auto scope = create_fn_body_scope(form, *locals, parent_locals);
@@ -544,9 +546,6 @@ Force compile_fn_body(Value form, Value parent_locals, Root& used_locals)
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
     for (auto off : c.local_ref_offsets)
         c.code[off] += consts_size;
-    for (Int64 i = 0; i < used_locals_size; ++i)
-        c.consts = transient_array_conj(*c.consts, nil);
-    consts_size += used_locals_size;
     Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
     Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.local_refs) : nil;
@@ -570,6 +569,19 @@ Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bod
     return create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
 }
 
+Force reserve_fn_body_consts(Value body, Int64 n)
+{
+    if (n == 0)
+        return body;
+    Root consts{get_bytecode_fn_body_consts(body)};
+    consts = transient_array(*consts ? *consts : *EMPTY_VECTOR);
+    for (Int64 i = 0; i < n; ++i)
+        consts = transient_array_conj(*consts, nil);
+    consts = get_int64_value(get_transient_array_size(*consts)) > 0 ? transient_array_persistent(*consts) : nil;
+
+    return create_bytecode_fn_body(*consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
+}
+
 Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
 {
     if (!get_value_type(form).is(*type::List))
@@ -590,12 +602,18 @@ Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
     Roots rbodies(count);
     std::vector<std::pair<Int64, Value>> arities_and_bodies;
     arities_and_bodies.reserve(count);
+    used_locals = nil;
     for (Int64 i = 0; i < count; ++i)
     {
         auto form = get_list_first(*forms);
         rbodies.set(i, compile_fn_body(form, parent_locals, used_locals));
         arities_and_bodies.emplace_back(get_arity(get_list_first(form)), rbodies[i]);
         forms = get_list_next(*forms);
+    }
+    for (Int64 i = 0; i < count; ++i)
+    {
+        rbodies.set(i, reserve_fn_body_consts(arities_and_bodies[i].second, get_array_size(*used_locals)));
+        arities_and_bodies[i].second = rbodies[i];
     }
     return create_fn(name, std::move(arities_and_bodies));
 }

@@ -979,6 +979,17 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0));
     expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(inner_inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
     expect_body_with_consts_and_bytecode(inner_inner_fn, 0, arrayv(nil), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [x y] (fn* ([] (x 10)) ([a] (a x y)) ([a & b] (b y))))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -2, -1, vm::LDL, -1, -1, vm::IFN, 2));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(10, nil, nil), b(vm::LDC, 1, 0, vm::LDC, 0, 0, vm::CALL, 1));
+    expect_body_with_consts_and_bytecode(inner_fn, 1, arrayv(nil, nil), b(vm::LDL, -1, -1, vm::LDC, 0, 0, vm::LDC, 1, 0, vm::CALL, 2));
+    expect_body_with_consts_and_bytecode(inner_fn, 2, arrayv(nil, nil), b(vm::LDL, -1, -1, vm::LDC, 1, 0, vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f] (fn* [] (f a-var)))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_vars_and_bytecode(inner_fn, 0, arrayv(nil), arrayv(a_var), b(vm::LDC, 0, 0, vm::LDV, 0, 0, vm::CALL, 1));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
