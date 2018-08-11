@@ -279,7 +279,44 @@ TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
     EXPECT_EQ(bytes2.size(), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 1)));
     EXPECT_TRUE(std::equal(begin(bytes1), end(bytes1), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 0))));
     EXPECT_TRUE(std::equal(begin(bytes2), end(bytes2), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 1))));
+}
 
+TEST_F(bytecode_fn_test, should_find_exception_handlers_based_on_range_and_type_in_order_order_of_declaration)
+{
+    Root et{create_bytecode_fn_exception_table(nullptr, nullptr, 0)};
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 0, *type::IllegalArgument));
+
+    std::array<Int64, 3> entries1{{3, 5, 17}};
+    std::array<Value, 1> types1{{nil}};
+    et = create_bytecode_fn_exception_table(entries1.data(), types1.data(), types1.size());
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 2, *type::IllegalArgument));
+    EXPECT_EQ(17, bytecode_fn_find_exception_handler(*et, 3, *type::IllegalArgument));
+    EXPECT_EQ(17, bytecode_fn_find_exception_handler(*et, 4, *type::IllegalArgument));
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 5, *type::IllegalArgument));
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 6, *type::IllegalArgument));
+
+    std::array<Int64, 6> entries2{{3, 6, 11, 4, 8, 22}};
+    std::array<Value, 2> types2{{nil, nil}};
+    et = create_bytecode_fn_exception_table(entries2.data(), types2.data(), types2.size());
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 2, *type::IllegalArgument));
+    EXPECT_EQ(11, bytecode_fn_find_exception_handler(*et, 3, *type::IllegalArgument));
+    EXPECT_EQ(11, bytecode_fn_find_exception_handler(*et, 4, *type::IllegalArgument));
+    EXPECT_EQ(11, bytecode_fn_find_exception_handler(*et, 5, *type::IllegalArgument));
+    EXPECT_EQ(22, bytecode_fn_find_exception_handler(*et, 6, *type::IllegalArgument));
+    EXPECT_EQ(22, bytecode_fn_find_exception_handler(*et, 7, *type::IllegalArgument));
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 8, *type::IllegalArgument));
+    EXPECT_EQ(-1, bytecode_fn_find_exception_handler(*et, 9, *type::IllegalArgument));
+
+    std::array<Int64, 6> entries3{{5, 7, 11, 3, 9, 22}};
+    std::array<Value, 2> types3{{*type::IndexOutOfBounds, *type::IllegalArgument}};
+    et = create_bytecode_fn_exception_table(entries3.data(), types3.data(), types3.size());
+    EXPECT_EQ(22, bytecode_fn_find_exception_handler(*et, 3, *type::IllegalArgument));
+    EXPECT_EQ(22, bytecode_fn_find_exception_handler(*et, 5, *type::IllegalArgument));
+
+    std::array<Int64, 6> entries4{{5, 7, 55}};
+    std::array<Value, 2> types4{{*type::Exception}};
+    et = create_bytecode_fn_exception_table(entries4.data(), types4.data(), types4.size());
+    EXPECT_EQ(55, bytecode_fn_find_exception_handler(*et, 5, *type::IllegalArgument));
 }
 
 }

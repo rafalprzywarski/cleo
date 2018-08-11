@@ -1,6 +1,7 @@
 #include "bytecode_fn.hpp"
 #include "global.hpp"
 #include "array.hpp"
+#include "multimethod.hpp"
 
 namespace cleo
 {
@@ -21,6 +22,50 @@ Force bytecode_fn_body_replace_consts(Value b, const Value *consts, Int64 n)
     return create_bytecode_fn_body(*mrconsts, get_bytecode_fn_body_vars(b), get_bytecode_fn_body_locals_size(b), get_bytecode_fn_body_bytes(b), get_bytecode_fn_body_bytes_size(b));
 }
 
+}
+
+Force create_bytecode_fn_exception_table(const Int64 *entries, const Value *types, std::uint32_t size)
+{
+    return create_object(*type::BytecodeFnExceptionTable, entries, size * 3, types, size);
+}
+
+std::uint32_t get_bytecode_fn_exception_table_size(Value et)
+{
+    return get_object_size(et);
+}
+
+Int64 get_bytecode_fn_exception_table_start_offset(Value et, std::uint32_t i)
+{
+    return get_object_int(et, i * 3);
+}
+
+Int64 get_bytecode_fn_exception_table_end_offset(Value et, std::uint32_t i)
+{
+    return get_object_int(et, i * 3 + 1);
+}
+
+Int64 get_bytecode_fn_exception_table_handler_offset(Value et, std::uint32_t i)
+{
+    return get_object_int(et, i * 3 + 2);
+}
+
+Value get_bytecode_fn_exception_table_type(Value et, std::uint32_t i)
+{
+    return get_object_element(et, i);
+}
+
+Int64 bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type)
+{
+    auto size = get_bytecode_fn_exception_table_size(et);
+    for (decltype(size) i = 0; i < size; ++i)
+    {
+        auto et_type = get_bytecode_fn_exception_table_type(et, i);
+        if (offset >= get_bytecode_fn_exception_table_start_offset(et, i) &&
+            offset < get_bytecode_fn_exception_table_end_offset(et, i) &&
+            (isa(type, et_type) || et_type.is_nil()))
+            return get_bytecode_fn_exception_table_handler_offset(et, i);
+    }
+    return -1;
 }
 
 Force create_bytecode_fn_body(Value consts, Value vars, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)

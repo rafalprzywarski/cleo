@@ -224,6 +224,7 @@ extern const Root Callable;
 extern const Root Fn;
 extern const Root BytecodeFn;
 extern const Root BytecodeFnBody;
+extern const Root BytecodeFnExceptionTable;
 extern const Root Recur;
 extern const Root Atom;
 extern const Root PersistentMap;

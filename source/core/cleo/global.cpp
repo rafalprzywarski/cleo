@@ -196,6 +196,7 @@ const Root Callable{create_type("cleo.core", "Callable")};
 const Root Fn{create_type("cleo.core", "Fn")};
 const Root BytecodeFn{create_type("cleo.core", "BytecodeFn")};
 const Root BytecodeFnBody{create_type("cleo.core", "BytecodeFnBody")};
+const Root BytecodeFnExceptionTable{create_type("cleo.core", "BytecodeFnExceptionTable")};
 const Root Recur{create_type("cleo.core", "Recur")};
 const Root Atom{create_type("cleo.core", "Atom")};
 const Root PersistentMap{create_type("cleo.core", "PersistentMap")};
@@ -939,6 +940,7 @@ struct Initialize
         define_type(*type::Fn);
         define_type(*type::BytecodeFn);
         define_type(*type::BytecodeFnBody);
+        define_type(*type::BytecodeFnExceptionTable);
         define_type(*type::Recur);
         define_type(*type::Atom);
         define_type(*type::PersistentMap);
