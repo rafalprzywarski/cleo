@@ -19,9 +19,15 @@ struct vm_test : Test
     template <std::size_t N>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Byte, N>& bc)
     {
-        vm::eval_bytecode(stack, constants, vars, locals_size, bc.data(), bc.size());
+        vm::eval_bytecode(stack, constants, vars, locals_size, nil, bc.data(), bc.size());
     }
 
+    template <std::size_t N, std::size_t K>
+    void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Int64, K * 3>& et_entries, const std::array<Value, K>& et_types, const std::array<Byte, N>& bc)
+    {
+        Root etv{create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size())};
+        vm::eval_bytecode(stack, constants, vars, locals_size, *etv, bc.data(), bc.size());
+    }
     static Force create_constants(std::vector<std::pair<std::uint32_t, Int64>> vals)
     {
         std::uint32_t size = 65536;
@@ -509,7 +515,7 @@ TEST_F(vm_test, throw_)
     stack_push(i64(12));
     stack_push(*ex);
 
-    const std::array<Byte, 1> bc1{{vm::THROW}};
+    const std::array<Byte, 1> bc1{{THROW}};
     try
     {
         eval_bytecode(nil, nil, 0, bc1);
@@ -522,6 +528,35 @@ TEST_F(vm_test, throw_)
     }
 
     EXPECT_EQ(2u, stack.size());
+}
+
+TEST_F(vm_test, catching_exceptions_from_throw)
+{
+    Root ex{new_index_out_of_bounds()};
+
+    const std::array<Byte, 7> bc1{{BR, 0, 0, THROW, CNIL, CNIL, CNIL}};
+    std::array<Int64, 3> et{{3, 4, 6}};
+    std::array<Value, 1> types{{*type::IndexOutOfBounds}};
+    stack_push(*ex);
+    eval_bytecode(nil, nil, 0, et, types, bc1);
+
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[1]);
+    EXPECT_EQ_REFS(*ex, stack[0]);
+    stack.clear();
+
+    std::array<Value, 1> other_types{{*type::IllegalArgument}};
+    stack_push(*ex);
+    try
+    {
+        eval_bytecode(nil, nil, 0, et, other_types, bc1);
+        FAIL() << "expected an exception";
+    }
+    catch (const Exception& )
+    {
+        Root actual{catch_exception()};
+        EXPECT_EQ_REFS(*ex, *actual);
+    }
 }
 
 }

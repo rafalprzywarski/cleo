@@ -33,7 +33,7 @@ const Byte *br(const Byte *p)
 
 }
 
-void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, const Byte *bytecode, std::uint32_t size)
+void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size)
 {
     auto p = bytecode;
     auto endp = p + size;
@@ -127,8 +127,15 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         case THROW:
         {
             auto ex = stack.back();
-            stack_pop();
-            throw_exception(ex);
+            auto handler_offset = exception_table ?
+                bytecode_fn_find_exception_handler(exception_table, p - bytecode, get_value_type(ex)) :
+                -1;
+            if (handler_offset < 0)
+            {
+                stack_pop();
+                throw_exception(ex);
+            }
+            p = bytecode + handler_offset;
             break;
         }
         }

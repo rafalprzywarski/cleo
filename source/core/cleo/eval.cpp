@@ -640,7 +640,7 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     else
         stack.insert(stack.end(), elems + 1, elems + elems_size);
     stack.resize(stack.size() + locals_size, nil);
-    vm::eval_bytecode(stack, consts, vars, locals_size, bytes, bytes_size);
+    vm::eval_bytecode(stack, consts, vars, locals_size, nil, bytes, bytes_size);
     auto result = stack.back();
     stack.resize(stack_size);
     return result;
