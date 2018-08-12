@@ -108,11 +108,11 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             }
             catch (cleo::Exception const& )
             {
-                Root ex{catch_exception()};
-                stack.resize(stack.size() - n);
-                auto handler_offset = find_exception_handler(p, *ex);
+                auto handler_offset = find_exception_handler(p, *current_exception);
                 if (handler_offset < 0)
-                    throw_exception(*ex);
+                    throw;
+                Root ex{catch_exception()};
+                stack.resize(stack_base + locals_size);
                 p = bytecode + handler_offset;
                 stack_push(*ex);
             }
@@ -148,10 +148,9 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             auto ex = stack.back();
             auto handler_offset = find_exception_handler(p, ex);
             if (handler_offset < 0)
-            {
-                stack_pop();
                 throw_exception(ex);
-            }
+            stack[stack_base + locals_size] = ex;
+            stack.resize(stack_base + locals_size + 1);
             p = bytecode + handler_offset;
             break;
         }

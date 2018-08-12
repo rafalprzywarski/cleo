@@ -515,10 +515,10 @@ TEST_F(vm_test, throw_)
     stack_push(i64(12));
     stack_push(*ex);
 
-    const std::array<Byte, 1> bc1{{THROW}};
+    const std::array<Byte, 6> bc1{{CNIL, CNIL, LDL, 0, 0, THROW}};
     try
     {
-        eval_bytecode(nil, nil, 0, bc1);
+        eval_bytecode(nil, nil, 1, bc1);
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -527,29 +527,38 @@ TEST_F(vm_test, throw_)
         EXPECT_EQ_REFS(*ex, *actual);
     }
 
-    EXPECT_EQ(2u, stack.size());
+    EXPECT_EQ(6u, stack.size());
+    EXPECT_EQ_REFS(*ex, stack[5]);
+    EXPECT_EQ_VALS(nil, stack[4]);
+    EXPECT_EQ_VALS(nil, stack[3]);
+    EXPECT_EQ_REFS(*ex, stack[2]);
 }
 
 TEST_F(vm_test, catching_exceptions_from_throw)
 {
     Root ex{new_index_out_of_bounds()};
 
-    const std::array<Byte, 7> bc1{{BR, 0, 0, THROW, CNIL, CNIL, CNIL}};
-    std::array<Int64, 3> et{{3, 4, 6}};
+    const std::array<Byte, 9> bc1{{CNIL, CNIL, LDL, 0, 0, THROW, CNIL, CNIL, CNIL}};
+    std::array<Int64, 3> et{{5, 6, 8}};
     std::array<Value, 1> types{{*type::IndexOutOfBounds}};
+    stack_push(*THREE);
+    stack_push(*TWO);
     stack_push(*ex);
-    eval_bytecode(nil, nil, 0, et, types, bc1);
+    eval_bytecode(nil, nil, 1, et, types, bc1);
 
-    ASSERT_EQ(2u, stack.size());
-    EXPECT_EQ_VALS(nil, stack[1]);
-    EXPECT_EQ_REFS(*ex, stack[0]);
+    ASSERT_EQ(5u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[4]);
+    EXPECT_EQ_REFS(*ex, stack[3]);
+    EXPECT_EQ_REFS(*ex, stack[2]);
+    EXPECT_EQ_REFS(*TWO, stack[1]);
+    EXPECT_EQ_REFS(*THREE, stack[0]);
     stack.clear();
 
     std::array<Value, 1> other_types{{*type::IllegalArgument}};
     stack_push(*ex);
     try
     {
-        eval_bytecode(nil, nil, 0, et, other_types, bc1);
+        eval_bytecode(nil, nil, 1, et, other_types, bc1);
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -562,29 +571,36 @@ TEST_F(vm_test, catching_exceptions_from_throw)
 TEST_F(vm_test, catching_exceptions_from_call)
 {
     Root constants{array(8, *rt::first)};
-    const std::array<Byte, 10> bc1{{LDC, 1, 0, LDC, 0, 0, CALL, 1, CNIL, CNIL}};
-    const std::array<Int64, 3> et{{6, 7, 9}};
+    const std::array<Byte, 12> bc1{{CNIL, CNIL, LDC, 1, 0, LDC, 0, 0, CALL, 1, CNIL, CNIL}};
+    const std::array<Int64, 3> et{{8, 9, 11}};
     const std::array<Value, 1> types{{*type::IllegalArgument}};
     stack_push(*TWO);
-    eval_bytecode(*constants, nil, 0, et, types, bc1);
+    stack_push(*THREE);
+    eval_bytecode(*constants, nil, 1, et, types, bc1);
 
-    ASSERT_EQ(3u, stack.size());
-    EXPECT_EQ_VALS(nil, stack[2]);
-    EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(stack[1]));
+    ASSERT_EQ(4u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[3]);
+    EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(stack[2]));
+    EXPECT_EQ_VALS(*THREE, stack[1]);
     EXPECT_EQ_VALS(*TWO, stack[0]);
     stack.clear();
 
     const std::array<Value, 1> other_types{{*type::IndexOutOfBounds}};
     stack_push(*TWO);
+    stack_push(*THREE);
     try
     {
-        eval_bytecode(*constants, nil, 0, et, other_types, bc1);
+        eval_bytecode(*constants, nil, 1, et, other_types, bc1);
     }
     catch (const Exception& )
     {
         Root actual{catch_exception()};
         EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(*actual));
-        ASSERT_EQ(1u, stack.size());
+        ASSERT_EQ(6u, stack.size());
+        EXPECT_EQ_REFS(*rt::first, stack[4]);
+        EXPECT_EQ_VALS(nil, stack[3]);
+        EXPECT_EQ_VALS(nil, stack[2]);
+        EXPECT_EQ_VALS(*THREE, stack[1]);
         EXPECT_EQ_VALS(*TWO, stack[0]);
     }
 }
