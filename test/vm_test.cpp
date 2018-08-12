@@ -559,6 +559,36 @@ TEST_F(vm_test, catching_exceptions_from_throw)
     }
 }
 
+TEST_F(vm_test, catching_exceptions_from_call)
+{
+    Root constants{array(8, *rt::first)};
+    const std::array<Byte, 10> bc1{{LDC, 1, 0, LDC, 0, 0, CALL, 1, CNIL, CNIL}};
+    const std::array<Int64, 3> et{{6, 7, 9}};
+    const std::array<Value, 1> types{{*type::IllegalArgument}};
+    stack_push(*TWO);
+    eval_bytecode(*constants, nil, 0, et, types, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[2]);
+    EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(stack[1]));
+    EXPECT_EQ_VALS(*TWO, stack[0]);
+    stack.clear();
+
+    const std::array<Value, 1> other_types{{*type::IndexOutOfBounds}};
+    stack_push(*TWO);
+    try
+    {
+        eval_bytecode(*constants, nil, 0, et, other_types, bc1);
+    }
+    catch (const Exception& )
+    {
+        Root actual{catch_exception()};
+        EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(*actual));
+        ASSERT_EQ(1u, stack.size());
+        EXPECT_EQ_VALS(*TWO, stack[0]);
+    }
+}
+
 }
 }
 }

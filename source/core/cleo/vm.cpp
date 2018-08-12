@@ -38,6 +38,12 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
     auto p = bytecode;
     auto endp = p + size;
     auto stack_base = stack.size() - locals_size;
+    auto find_exception_handler = [=](const Byte *p, Value ex)
+        {
+            return exception_table ?
+            bytecode_fn_find_exception_handler(exception_table, p - bytecode, get_value_type(ex)) :
+            -1;
+        };
     while (p != endp)
     {
         switch (*p)
@@ -94,9 +100,22 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         {
             auto n = std::uint8_t(p[1]) + 1;
             auto& first = stack[stack.size() - n];
-            first = call(&first, n).value();
-            stack.resize(stack.size() - (n - 1));
-            p += 2;
+            try
+            {
+                first = call(&first, n).value();
+                stack.resize(stack.size() - (n - 1));
+                p += 2;
+            }
+            catch (cleo::Exception const& )
+            {
+                Root ex{catch_exception()};
+                stack.resize(stack.size() - n);
+                auto handler_offset = find_exception_handler(p, *ex);
+                if (handler_offset < 0)
+                    throw_exception(*ex);
+                p = bytecode + handler_offset;
+                stack_push(*ex);
+            }
             break;
         }
         case APPLY:
@@ -127,9 +146,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         case THROW:
         {
             auto ex = stack.back();
-            auto handler_offset = exception_table ?
-                bytecode_fn_find_exception_handler(exception_table, p - bytecode, get_value_type(ex)) :
-                -1;
+            auto handler_offset = find_exception_handler(p, ex);
             if (handler_offset < 0)
             {
                 stack_pop();
