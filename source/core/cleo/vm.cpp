@@ -122,9 +122,22 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
         {
             auto n = std::uint8_t(p[1]) + 2;
             auto& first = stack[stack.size() - n];
-            first = apply(&first, n).value();
-            stack.resize(stack.size() - (n - 1));
-            p += 2;
+            try
+            {
+                first = apply(&first, n).value();
+                stack.resize(stack.size() - (n - 1));
+                p += 2;
+            }
+            catch (cleo::Exception const& )
+            {
+                auto handler_offset = find_exception_handler(p, *current_exception);
+                if (handler_offset < 0)
+                    throw;
+                Root ex{catch_exception()};
+                stack.resize(stack_base + locals_size);
+                p = bytecode + handler_offset;
+                stack_push(*ex);
+            }
             break;
         }
         case CNIL:
