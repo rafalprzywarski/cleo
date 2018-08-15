@@ -536,7 +536,7 @@ void Compiler::compile_try(Scope scope, Value form)
         auto type = maybe_resolve_var(type_sym);
         if (!type)
             throw_compilation_error("unable to resolve symbol: " + to_string(type_sym));
-        add_exception_handler(0, br_offset, code.size(), get_var_value(type));
+        add_exception_handler(start_offset, br_offset, code.size(), get_var_value(type));
         append_STL(code, index);
         compile_value(scope, expr);
         code[br_offset + 1] = code.size() - (br_offset + 3);

@@ -1104,6 +1104,20 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::LDL, -1, -1,
                                                            vm::LDL, 0, 0,
                                                            vm::CALL, 1));
+
+    fn = compile_fn("(fn* [a b] (let* [f a g b] (try* (f) (catch* Exception e (g e)))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 20}, {*type::Exception}, 3,
+                                                         b(vm::LDL, -2, -1,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::STL, 1, 0,
+                                                           vm::LDL, 0, 0,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 11, 0,
+                                                           vm::STL, 2, 0,
+                                                           vm::LDL, 1, 0,
+                                                           vm::LDL, 2, 0,
+                                                           vm::CALL, 1));
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_finally)
