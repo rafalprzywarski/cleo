@@ -485,8 +485,8 @@ TEST_F(vm_test, ifn)
     Root consts2{array(50, 60, 70, 80, 90, 100)};
     std::array<vm::Byte, 1> bytes{{vm::CNIL}};
     Roots rbodies(2);
-    rbodies.set(0, create_bytecode_fn_body(*consts1, nil, 0, bytes.data(), bytes.size()));
-    rbodies.set(1, create_bytecode_fn_body(*consts2, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(0, create_bytecode_fn_body(*consts1, nil, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(1, create_bytecode_fn_body(*consts2, nil, nil, 0, bytes.data(), bytes.size()));
     std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
     std::array<Int64, 2> arities{{2, 3}};
 

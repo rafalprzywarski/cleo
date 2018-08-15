@@ -36,6 +36,8 @@ struct Compiler
     Root vars{transient_array(*EMPTY_VECTOR)};
     Root local_refs;
     std::vector<std::uint32_t> local_ref_offsets;
+    std::vector<Int64> et_entries;
+    std::vector<Value> et_types;
 
     Compiler(Value local_refs) : local_refs(transient_array(local_refs ? local_refs : *EMPTY_VECTOR)) { }
 
@@ -58,6 +60,8 @@ struct Compiler
     void compile_hash_map(Scope scope, Value val);
     void compile_def(Scope scope, Value form);
     void compile_fn(Scope scope, Value form);
+    void add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type);
+    void compile_try(Scope scope, Value form);
     void compile_value(Scope scope, Value val);
 };
 
@@ -488,6 +492,52 @@ void Compiler::compile_fn(Scope scope, Value form)
     }
 }
 
+void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type)
+{
+    et_entries.push_back(start);
+    et_entries.push_back(end);
+    et_entries.push_back(handler);
+    et_types.push_back(type);
+}
+
+void Compiler::compile_try(Scope scope, Value form)
+{
+    form = get_list_next(form);
+    compile_value(scope, form ? get_list_first(form) : nil);
+    auto catch_ = form ? get_list_next(form) : nil;
+    catch_ = catch_ ? get_list_first(catch_) : nil;
+    if (catch_ && (!get_value_type(catch_).is(*type::List) || get_list_first(catch_) != CATCH))
+        throw_compilation_error("expected " + to_string(CATCH) + " or " + to_string(FINALLY) + " block in " + to_string(TRY));
+    if (catch_)
+    {
+        catch_ = get_list_next(catch_);
+        if (!catch_)
+            throw_compilation_error("missing exception type in " + to_string(CATCH));
+        auto type_sym = get_list_first(catch_);
+        catch_ = get_list_next(catch_);
+        if (!catch_)
+            throw_compilation_error("missing exception binding in " + to_string(CATCH));
+        auto local = get_list_first(catch_);
+        catch_ = get_list_next(catch_);
+        if (!catch_)
+            throw_compilation_error("missing catch* body");
+        auto expr = get_list_first(catch_);
+        Root rlocal;
+        Int64 index{};
+        std::tie(scope, index) = add_local(scope, local, rlocal);
+        update_locals_size(scope);
+        auto br_offset = code.size();
+        append_BR(code, 0);
+        auto type = maybe_resolve_var(type_sym);
+        if (!type)
+            throw_compilation_error("unable to resolve symbol: " + to_string(type_sym));
+        add_exception_handler(0, br_offset, code.size(), get_var_value(type));
+        append_STL(code, index);
+        compile_value(scope, expr);
+        code[br_offset + 1] = code.size() - (br_offset + 3);
+    }
+}
+
 void Compiler::compile_value(Scope scope, Value val)
 {
     Root xval{macroexpand(val)};
@@ -518,6 +568,8 @@ void Compiler::compile_value(Scope scope, Value val)
             return compile_apply(scope, val);
         if (first == FN)
             return compile_fn(scope, val);
+        if (first == TRY)
+            return compile_try(scope, val);
 
         return compile_call(scope, val);
     }
@@ -552,7 +604,8 @@ Force compile_fn_body(Value form, Value env, Value parent_locals, Root& used_loc
     Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
     Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.local_refs) : nil;
-    return create_bytecode_fn_body(*consts, *vars, c.locals_size, c.code.data(), c.code.size());
+    Root exception_table{!c.et_types.empty() ? create_bytecode_fn_exception_table(c.et_entries.data(), c.et_types.data(), c.et_types.size()) : nil};
+    return create_bytecode_fn_body(*consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
 }
 
 Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bodies)
@@ -582,7 +635,7 @@ Force reserve_fn_body_consts(Value body, Int64 n)
         consts = transient_array_conj(*consts, nil);
     consts = get_int64_value(get_transient_array_size(*consts)) > 0 ? transient_array_persistent(*consts) : nil;
 
-    return create_bytecode_fn_body(*consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
+    return create_bytecode_fn_body(*consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_exception_table(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
 }
 
 Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)

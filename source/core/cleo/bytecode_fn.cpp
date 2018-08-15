@@ -19,7 +19,7 @@ Force bytecode_fn_body_replace_consts(Value b, const Value *consts, Int64 n)
     for (decltype(csize) j = 0; j < n; ++j)
         mconsts[csize - n + j] = consts[j];
     Root mrconsts{create_array(mconsts.data(), mconsts.size())};
-    return create_bytecode_fn_body(*mrconsts, get_bytecode_fn_body_vars(b), get_bytecode_fn_body_locals_size(b), get_bytecode_fn_body_bytes(b), get_bytecode_fn_body_bytes_size(b));
+    return create_bytecode_fn_body(*mrconsts, get_bytecode_fn_body_vars(b), get_bytecode_fn_body_exception_table(b), get_bytecode_fn_body_locals_size(b), get_bytecode_fn_body_bytes(b), get_bytecode_fn_body_bytes_size(b));
 }
 
 }
@@ -68,14 +68,14 @@ Int64 bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type)
     return -1;
 }
 
-Force create_bytecode_fn_body(Value consts, Value vars, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)
+Force create_bytecode_fn_body(Value consts, Value vars, Value exception_table, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)
 {
     auto bytes_int_size = (bytes_size + sizeof(Int64) - 1) / sizeof(Int64);
     std::vector<Int64> ints(2 + bytes_int_size, 0);
     ints[0] = locals_size;
     ints[1] = bytes_size;
     std::memcpy(&ints[2], bytes, bytes_size);
-    std::array<Value, 2> elems{{consts, vars}};
+    std::array<Value, 3> elems{{consts, vars, exception_table}};
     return create_object(*type::BytecodeFnBody, ints.data(), ints.size(), elems.data(), elems.size());
 }
 
@@ -87,6 +87,11 @@ Value get_bytecode_fn_body_consts(Value body)
 Value get_bytecode_fn_body_vars(Value body)
 {
     return get_object_element(body, 1);
+}
+
+Value get_bytecode_fn_body_exception_table(Value body)
+{
+    return get_object_element(body, 2);
 }
 
 Int64 get_bytecode_fn_body_locals_size(Value body)

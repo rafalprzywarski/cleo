@@ -82,7 +82,52 @@ struct compile_test : Test
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
+
+    void expect_body_with_exception_table_locals_and_bytecode(Value fn, std::uint8_t index, std::vector<Int64> et_offsets, std::vector<Value> et_types, std::uint32_t locals_size, std::vector<vm::Byte> code)
+    {
+        ASSERT_EQ(et_offsets.size(), et_types.size() * 3) << "mismatched offsets and types in the test";
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        auto et = get_bytecode_fn_body_exception_table(body);
+        EXPECT_EQ_VALS(*type::BytecodeFnExceptionTable, get_value_type(et));
+        ASSERT_EQ(et_types.size(), get_bytecode_fn_exception_table_size(et));
+        for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
+        {
+            EXPECT_EQ(et_offsets[i * 3 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 3 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 3 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ_REFS(et_types[i], get_bytecode_fn_exception_table_type(et, i)) << "entry #" << i;
+        }
+        EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
+        EXPECT_EQ(code, bc(body));
+    }
+
+    template <typename Consts>
+    void expect_body_with_consts_exception_table_locals_and_bytecode(Value fn, std::uint8_t index, Consts constsv, std::vector<Int64> et_offsets, std::vector<Value> et_types, std::uint32_t locals_size, std::vector<vm::Byte> code)
+    {
+        ASSERT_EQ(et_offsets.size(), et_types.size() * 3) << "mismatched offsets and types in the test";
+        auto body = get_bytecode_fn_body(fn, index);
+        ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
+        Root consts{to_value(constsv)};
+        EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        auto et = get_bytecode_fn_body_exception_table(body);
+        EXPECT_EQ_VALS(*type::BytecodeFnExceptionTable, get_value_type(et));
+        ASSERT_EQ(et_types.size(), get_bytecode_fn_exception_table_size(et));
+        for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
+        {
+            EXPECT_EQ(et_offsets[i * 3 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 3 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 3 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ_REFS(et_types[i], get_bytecode_fn_exception_table_type(et, i)) << "entry #" << i;
+        }
+        EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
 
@@ -95,6 +140,7 @@ struct compile_test : Test
         EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
@@ -108,6 +154,7 @@ struct compile_test : Test
         EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
@@ -129,6 +176,7 @@ struct compile_test : Test
         Root vars{to_value(varsv)};
         EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
@@ -144,6 +192,7 @@ struct compile_test : Test
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
@@ -159,6 +208,7 @@ struct compile_test : Test
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
@@ -169,6 +219,7 @@ struct compile_test : Test
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
     }
@@ -990,6 +1041,15 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
     fn = compile_fn("(fn* [f] (fn* [] (f a-var)))");
     inner_fn = get_fn_const(*fn, 0, 0);
     expect_body_with_consts_vars_and_bytecode(inner_fn, 0, arrayv(nil), arrayv(a_var), b(vm::LDC, 0, 0, vm::LDV, 0, 0, vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f] (fn* [] (try* (f) (catch* cleo.core/Exception e e))))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_exception_table_locals_and_bytecode(inner_fn, 0, arrayv(nil), {0, 5, 8}, {*type::Exception}, 1,
+                                                                b(vm::LDC, 0, 0,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0));
 }
 
 TEST_F(compile_test, should_use_constants_from_env)
@@ -1009,6 +1069,40 @@ TEST_F(compile_test, should_use_constants_from_env)
     inner_fn = get_fn_const(*fn, 0, 0);
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
     expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(9, nil), b(vm::LDC, 1, 0, vm::LDL, -1, -1, vm::LDC, 0, 0, vm::CALL, 2));
+}
+
+TEST_F(compile_test, should_compile_functions_with_try)
+{
+    refer(create_symbol("cleo.core"));
+    Root fn{compile_fn("(fn* [] (try*))")};
+    expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
+
+    fn = compile_fn("(fn* [f x] (try* (f x)))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -2, -1, vm::LDL, -1, -1, vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f g] (try* (f) (catch* Exception e (g e))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1, b(vm::LDL, -2, -1,
+                                                                                                     vm::CALL, 0,
+                                                                                                     vm::BR, 11, 0,
+                                                                                                     vm::STL, 0, 0,
+                                                                                                     vm::LDL, -1, -1,
+                                                                                                     vm::LDL, 0, 0,
+                                                                                                     vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f g h] (try* (try* (f) (catch* Exception e (g e))) (catch* IllegalArgument e (h e))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0, 19, 22}, {*type::Exception, *type::IllegalArgument}, 1,
+                                                         b(vm::LDL, -3, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 11, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::LDL, 0, 0,
+                                                           vm::CALL, 1,
+                                                           vm::BR, 11, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, 0, 0,
+                                                           vm::CALL, 1));
 }
 
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
@@ -1053,6 +1147,12 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 
     expect_compilation_error("(fn* [] (apply*))", "Wrong number of args (0) passed to apply*, form: (apply*)");
     expect_compilation_error("(fn* [f] (apply* f))", "Wrong number of args (1) passed to apply*, form: (apply* f)");
+
+    expect_compilation_error("(fn* [] (try* 10 20))", "expected catch* or finally* block in try*");
+    expect_compilation_error("(fn* [] (try* 10 (something)))", "expected catch* or finally* block in try*");
+    expect_compilation_error("(fn* [] (try* 10 (catch*)))", "missing exception type in catch*");
+    expect_compilation_error("(fn* [] (try* 10 (catch* Exception)))", "missing exception binding in catch*");
+    expect_compilation_error("(fn* [] (try* 10 (catch* Exception x)))", "missing catch* body");
 }
 
 }
