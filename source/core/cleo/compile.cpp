@@ -502,15 +502,20 @@ void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Valu
 
 void Compiler::compile_try(Scope scope, Value form)
 {
+    auto start_offset = code.size();
     form = get_list_next(form);
     compile_value(scope, form ? get_list_first(form) : nil);
-    auto catch_ = form ? get_list_next(form) : nil;
-    catch_ = catch_ ? get_list_first(catch_) : nil;
-    if (catch_ && (!get_value_type(catch_).is(*type::List) || get_list_first(catch_) != CATCH))
+    auto handler_ = form ? get_list_next(form) : nil;
+    handler_ = handler_ ? get_list_first(handler_) : nil;
+    if (!handler_)
+        return;
+    if (!get_value_type(handler_).is(*type::List) ||
+        (get_list_first(handler_) != CATCH && get_list_first(handler_) != FINALLY))
         throw_compilation_error("expected " + to_string(CATCH) + " or " + to_string(FINALLY) + " block in " + to_string(TRY));
-    if (catch_)
+    auto tag = get_list_first(handler_);
+    if (tag == CATCH)
     {
-        catch_ = get_list_next(catch_);
+        auto catch_ = get_list_next(handler_);
         if (!catch_)
             throw_compilation_error("missing exception type in " + to_string(CATCH));
         auto type_sym = get_list_first(catch_);
@@ -534,6 +539,26 @@ void Compiler::compile_try(Scope scope, Value form)
         add_exception_handler(0, br_offset, code.size(), get_var_value(type));
         append_STL(code, index);
         compile_value(scope, expr);
+        code[br_offset + 1] = code.size() - (br_offset + 3);
+    }
+    else if (tag == FINALLY)
+    {
+        auto br_offset = code.size();
+        append_BR(code, 0);
+        add_exception_handler(start_offset, br_offset, code.size(), nil);
+        Root rlocal;
+        Int64 index{};
+        std::tie(scope, index) = add_local(scope, nil, rlocal);
+        update_locals_size(scope);
+        append_STL(code, index);
+        handler_ = get_list_next(handler_);
+        if (!handler_)
+            throw_compilation_error("missing " + to_string(FINALLY) + " body");
+        auto expr = get_list_first(handler_);
+        compile_value(scope, expr);
+        append(code, vm::POP);
+        append(code, vm::LDL, index, 0);
+        append(code, vm::THROW);
         code[br_offset + 1] = code.size() - (br_offset + 3);
     }
 }
