@@ -1071,7 +1071,7 @@ TEST_F(compile_test, should_use_constants_from_env)
     expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(9, nil), b(vm::LDC, 1, 0, vm::LDL, -1, -1, vm::LDC, 0, 0, vm::CALL, 2));
 }
 
-TEST_F(compile_test, should_compile_functions_with_try)
+TEST_F(compile_test, should_compile_functions_with_try_catch)
 {
     refer(create_symbol("cleo.core"));
     Root fn{compile_fn("(fn* [] (try*))")};
@@ -1081,13 +1081,14 @@ TEST_F(compile_test, should_compile_functions_with_try)
     expect_body_with_bytecode(*fn, 0, b(vm::LDL, -2, -1, vm::LDL, -1, -1, vm::CALL, 1));
 
     fn = compile_fn("(fn* [f g] (try* (f) (catch* Exception e (g e))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1, b(vm::LDL, -2, -1,
-                                                                                                     vm::CALL, 0,
-                                                                                                     vm::BR, 11, 0,
-                                                                                                     vm::STL, 0, 0,
-                                                                                                     vm::LDL, -1, -1,
-                                                                                                     vm::LDL, 0, 0,
-                                                                                                     vm::CALL, 1));
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 11, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, 0, 0,
+                                                           vm::CALL, 1));
 
     fn = compile_fn("(fn* [f g h] (try* (try* (f) (catch* Exception e (g e))) (catch* IllegalArgument e (h e))))");
     expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0, 19, 22}, {*type::Exception, *type::IllegalArgument}, 1,
