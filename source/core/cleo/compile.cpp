@@ -47,7 +47,7 @@ struct Compiler
     void compile_local_ref(Value sym);
     void compile_call(Scope scope, Value val);
     void compile_apply(Scope scope, Value form);
-    void compile_if(Scope scope, Value val);
+    void compile_if(Scope scope, Value val, bool wrap_try);
     void compile_do(Scope scope, Value val, bool wrap_try);
     void compile_quote(Value form);
     void update_locals_size(Scope scope);
@@ -210,19 +210,19 @@ void Compiler::compile_apply(Scope scope, Value form)
 }
 
 
-void Compiler::compile_if(Scope scope, Value val)
+void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
 {
     auto cond = get_list_next(val);
     compile_value(scope, get_list_first(cond));
     auto bnil_offset = code.size();
     append(code, vm::BNIL, 0, 0);
     auto then = get_list_next(cond);
-    compile_value(scope, get_list_first(then));
+    compile_value(scope, get_list_first(then), wrap_try);
     auto br_offset = code.size();
     append_BR(code, 0);
     code[bnil_offset + 1] = code.size() - bnil_offset - 3;
     auto else_ = get_list_next(then);
-    compile_value(scope, else_ ? get_list_first(else_) : nil);
+    compile_value(scope, else_ ? get_list_first(else_) : nil, wrap_try);
     code[br_offset + 1] = code.size() - br_offset - 3;
 }
 
@@ -586,7 +586,7 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
     {
         auto first = get_list_first(val);
         if (first == IF)
-            return compile_if(scope, val);
+            return compile_if(scope, val, wrap_try);
         if (first == DO)
             return compile_do(scope, val, wrap_try);
         if (first == QUOTE)

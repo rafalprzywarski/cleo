@@ -1174,6 +1174,15 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
 
     fn = compile_fn("(fn* [f] (f (do (try* (f) (catch* Exception e nil)) (f))))");
     EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+
+    fn = compile_fn("(fn* [f] (if (try* (f) (catch* Exception e nil)) 1 2))");
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+
+    fn = compile_fn("(fn* [f x] (if x (try* (f) (catch* Exception e nil)) (try* (f) (catch* Exception e nil))))");
+    EXPECT_EQ_REFS(nil, get_bytecode_fn_body_consts(get_bytecode_fn_body(*fn, 0)));
+
+    fn = compile_fn("(fn* [f x] (f (if x (try* (f) (catch* Exception e nil)) (try* (f) (catch* Exception e nil)))))");
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_finally)
