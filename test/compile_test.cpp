@@ -1147,6 +1147,33 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
 
     fn = compile_fn("(fn* [f] (f (let* [x f] (try* (f) (catch* Exception e nil)))))");
     EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+
+    fn = compile_fn("(fn* [f g] (do (try* (f) (catch* Exception e (g e)))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 11, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, 0, 0,
+                                                           vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f] (do (try* (f) (catch* Exception e nil)) (f)))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 4, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::CNIL,
+                                                           vm::POP,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0));
+
+    fn = compile_fn("(fn* [f] (f (do (try* (f) (catch* Exception e nil)))))");
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+
+    fn = compile_fn("(fn* [f] (f (do (try* (f) (catch* Exception e nil)) (f))))");
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_finally)

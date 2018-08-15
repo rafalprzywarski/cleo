@@ -48,7 +48,7 @@ struct Compiler
     void compile_call(Scope scope, Value val);
     void compile_apply(Scope scope, Value form);
     void compile_if(Scope scope, Value val);
-    void compile_do(Scope scope, Value val);
+    void compile_do(Scope scope, Value val, bool wrap_try);
     void compile_quote(Value form);
     void update_locals_size(Scope scope);
     Scope compile_let_bindings(Scope scope, Value bindings, Root& llocals);
@@ -226,17 +226,17 @@ void Compiler::compile_if(Scope scope, Value val)
     code[br_offset + 1] = code.size() - br_offset - 3;
 }
 
-void Compiler::compile_do(Scope scope, Value val)
+void Compiler::compile_do(Scope scope, Value val, bool wrap_try)
 {
     if (get_list_size(val) == 1)
         return append(code, vm::CNIL);
 
     for (val = get_list_next(val); get_list_next(val); val = get_list_next(val))
     {
-        compile_value(scope, get_list_first(val));
+        compile_value(scope, get_list_first(val), wrap_try);
         append(code, vm::POP);
     }
-    compile_value(scope, get_list_first(val));
+    compile_value(scope, get_list_first(val), wrap_try);
 }
 
 void Compiler::compile_quote(Value form)
@@ -588,7 +588,7 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
         if (first == IF)
             return compile_if(scope, val);
         if (first == DO)
-            return compile_do(scope, val);
+            return compile_do(scope, val, wrap_try);
         if (first == QUOTE)
             return compile_quote(val);
         if (first == LET)
