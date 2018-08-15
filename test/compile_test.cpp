@@ -78,6 +78,7 @@ struct compile_test : Test
 
     void expect_body_with_bytecode(Value fn, std::uint8_t index, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
@@ -89,6 +90,7 @@ struct compile_test : Test
 
     void expect_body_with_exception_table_locals_and_bytecode(Value fn, std::uint8_t index, std::vector<Int64> et_offsets, std::vector<Value> et_types, std::uint32_t locals_size, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         ASSERT_EQ(et_offsets.size(), et_types.size() * 3) << "mismatched offsets and types in the test";
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
@@ -111,6 +113,7 @@ struct compile_test : Test
     template <typename Consts>
     void expect_body_with_consts_exception_table_locals_and_bytecode(Value fn, std::uint8_t index, Consts constsv, std::vector<Int64> et_offsets, std::vector<Value> et_types, std::uint32_t locals_size, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         ASSERT_EQ(et_offsets.size(), et_types.size() * 3) << "mismatched offsets and types in the test";
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
@@ -134,6 +137,7 @@ struct compile_test : Test
     template <typename Consts>
     void expect_body_with_consts_and_bytecode(Value fn, std::uint8_t index, Consts constsv, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         Root consts{to_value(constsv)};
@@ -148,6 +152,7 @@ struct compile_test : Test
     template <typename Consts>
     void expect_body_with_locals_consts_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size, Consts constsv, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         Root consts{to_value(constsv)};
@@ -170,6 +175,7 @@ struct compile_test : Test
     template <typename Vars>
     void expect_body_with_vars_and_bytecode(Value fn, std::uint8_t index, Vars varsv, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
@@ -184,6 +190,7 @@ struct compile_test : Test
     template <typename Consts, typename Vars>
     void expect_body_with_consts_vars_and_bytecode(Value fn, std::uint8_t index, Consts constsv, Vars varsv, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         Root consts{to_value(constsv)};
@@ -200,6 +207,7 @@ struct compile_test : Test
     template <typename Consts, typename Vars>
     void expect_body_with_locals_consts_vars_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size, Consts constsv, Vars varsv, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         Root consts{to_value(constsv)};
@@ -215,6 +223,7 @@ struct compile_test : Test
 
     void expect_body_with_locals_and_bytecode(Value fn, std::uint8_t index, std::uint32_t locals_size, std::vector<vm::Byte> code)
     {
+        ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
@@ -1118,6 +1127,26 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::LDL, 1, 0,
                                                            vm::LDL, 2, 0,
                                                            vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f g x] (f (try* (x) (catch* Exception e (g)))))");
+    auto try_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(try_fn), b(vm::LDL, -3, -1,
+                                                                   vm::LDC, 0, 0,
+                                                                   vm::LDL, -1, -1,
+                                                                   vm::LDL, -2, -1,
+                                                                   vm::IFN, 2,
+                                                                   vm::CALL, 0,
+                                                                   vm::CALL, 1));
+    expect_body_with_consts_exception_table_locals_and_bytecode(try_fn, 0, arrayv(nil, nil), {0, 5, 8}, {*type::Exception}, 1,
+                                                                b(vm::LDC, 0, 0,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 8, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDC, 1, 0,
+                                                                  vm::CALL, 0));
+
+    fn = compile_fn("(fn* [f] (f (let* [x f] (try* (f) (catch* Exception e nil)))))");
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_finally)

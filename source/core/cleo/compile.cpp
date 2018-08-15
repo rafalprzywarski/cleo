@@ -52,7 +52,7 @@ struct Compiler
     void compile_quote(Value form);
     void update_locals_size(Scope scope);
     Scope compile_let_bindings(Scope scope, Value bindings, Root& llocals);
-    void compile_let(Scope scope, Value form);
+    void compile_let(Scope scope, Value form, bool wrap_try);
     void compile_loop(Scope scope, Value form);
     void compile_recur(Scope scope, Value form);
     void compile_vector(Scope scope, Value val);
@@ -62,7 +62,8 @@ struct Compiler
     void compile_fn(Scope scope, Value form);
     void add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type);
     void compile_try(Scope scope, Value form);
-    void compile_value(Scope scope, Value val);
+    void compile_try_wrapped(Scope scope, Value form);
+    void compile_value(Scope scope, Value val, bool wrap_try = true);
 };
 
 void throw_compiletime_arity_error(Value name, Value form, std::uint8_t actual_num_args)
@@ -282,14 +283,14 @@ Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root
     return scope;
 }
 
-void Compiler::compile_let(Scope scope, Value form)
+void Compiler::compile_let(Scope scope, Value form, bool wrap_try)
 {
     auto bindings = check_let_bindings(LET, form);
     Root llocals;
     scope = compile_let_bindings(scope, bindings, llocals);
 
     auto expr = get_list_first(get_list_next(get_list_next(form)));
-    compile_value(scope, expr);
+    compile_value(scope, expr, wrap_try);
 }
 
 void Compiler::compile_loop(Scope scope, Value form)
@@ -504,7 +505,7 @@ void Compiler::compile_try(Scope scope, Value form)
 {
     auto start_offset = code.size();
     form = get_list_next(form);
-    compile_value(scope, form ? get_list_first(form) : nil);
+    compile_value(scope, form ? get_list_first(form) : nil, false);
     auto handler_ = form ? get_list_next(form) : nil;
     handler_ = handler_ ? get_list_first(handler_) : nil;
     if (!handler_)
@@ -563,7 +564,16 @@ void Compiler::compile_try(Scope scope, Value form)
     }
 }
 
-void Compiler::compile_value(Scope scope, Value val)
+void Compiler::compile_try_wrapped(Scope scope, Value form)
+{
+    std::array<Value, 3> fn_elems{{FN, *EMPTY_VECTOR, form}};
+    Root rfn{create_list(fn_elems.data(), fn_elems.size())};
+    auto fn = *rfn;
+    Root call{create_list(&fn, 1)};
+    compile_value(scope, *call);
+}
+
+void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
 {
     Root xval{macroexpand(val)};
     val = *xval;
@@ -582,7 +592,7 @@ void Compiler::compile_value(Scope scope, Value val)
         if (first == QUOTE)
             return compile_quote(val);
         if (first == LET)
-            return compile_let(scope, val);
+            return compile_let(scope, val, wrap_try);
         if (first == RECUR)
             return compile_recur(scope, val);
         if (first == LOOP)
@@ -594,7 +604,7 @@ void Compiler::compile_value(Scope scope, Value val)
         if (first == FN)
             return compile_fn(scope, val);
         if (first == TRY)
-            return compile_try(scope, val);
+            return wrap_try ? compile_try_wrapped(scope, val) : compile_try(scope, val);
 
         return compile_call(scope, val);
     }
@@ -621,7 +631,7 @@ Force compile_fn_body(Value form, Value env, Value parent_locals, Root& used_loc
     Value val = get_list_first(get_list_next(form));
     Root locals{create_locals(get_list_first(form))};
     auto scope = create_fn_body_scope(form, env, *locals, parent_locals);
-    c.compile_value(scope, val);
+    c.compile_value(scope, val, false);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
     for (auto off : c.local_ref_offsets)
