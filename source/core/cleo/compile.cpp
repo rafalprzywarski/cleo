@@ -628,7 +628,8 @@ Compiler::Scope create_fn_body_scope(Value form, Value env, Value locals, Value 
 Force compile_fn_body(Value form, Value env, Value parent_locals, Root& used_locals)
 {
     Compiler c(*used_locals);
-    Value val = get_list_first(get_list_next(form));
+    Value val = get_list_next(form);
+    val = val ? get_list_first(val) : nil;
     Root locals{create_locals(get_list_first(form))};
     auto scope = create_fn_body_scope(form, env, *locals, parent_locals);
     c.compile_value(scope, val, false);

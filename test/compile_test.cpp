@@ -239,6 +239,13 @@ struct compile_test : Test
     }
 };
 
+TEST_F(compile_test, should_compile_functions_with_no_body)
+{
+    Root fn{compile_fn("(fn* [])")};
+    ASSERT_NO_FATAL_FAILURE(expect_fn_with_arities(*fn, {0}));
+    expect_body_with_bytecode(*fn, 0, b(vm::CNIL));
+}
+
 TEST_F(compile_test, should_compile_functions_returning_constants)
 {
     Root fn{compile_fn("(fn* [] 27)")};
