@@ -627,10 +627,11 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     auto arity = body_and_arity.second;
     auto consts = get_bytecode_fn_body_consts(body);
     auto vars = get_bytecode_fn_body_vars(body);
+    auto exception_table = get_bytecode_fn_body_exception_table(body);
     auto locals_size = get_bytecode_fn_body_locals_size(body);
     auto bytes = get_bytecode_fn_body_bytes(body);
     auto bytes_size = get_bytecode_fn_body_bytes_size(body);
-    auto stack_size = stack.size();
+    StackGuard guard;
     if (arity < 0)
     {
         auto rest = ~arity + 1;
@@ -640,10 +641,8 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     else
         stack.insert(stack.end(), elems + 1, elems + elems_size);
     stack.resize(stack.size() + locals_size, nil);
-    vm::eval_bytecode(stack, consts, vars, locals_size, nil, bytes, bytes_size);
-    auto result = stack.back();
-    stack.resize(stack_size);
-    return result;
+    vm::eval_bytecode(stack, consts, vars, locals_size, exception_table, bytes, bytes_size);
+    return stack.back();
 }
 
 Force call_fn(Value type, const Value *elems, std::uint32_t elems_size, std::uint8_t public_n)

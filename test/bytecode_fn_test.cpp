@@ -12,19 +12,30 @@ namespace test
 
 struct bytecode_fn_test : Test
 {
-    bytecode_fn_test() : Test("cleo.bytecode-fn.test") { }
+    bytecode_fn_test() : Test("cleo.bytecode-fn.test")
+    {
+        stack_push(FN);
+        stack_push(CONJ);
+    }
 };
 
 TEST_F(bytecode_fn_test, should_eval_the_body)
 {
-    Root consts{array(2)};
+    Root x{new_index_out_of_bounds()};
+    Root consts{array(2, *x)};
     Root vars{array(get_var(PLUS))};
-    std::array<vm::Byte, 11> bc{{
+    std::array<Int64, 3> entries{{0, 4, 4}};
+    std::array<Value, 1> types{{*type::IndexOutOfBounds}};
+    Root et{create_bytecode_fn_exception_table(entries.data(), types.data(), types.size())};
+    std::array<vm::Byte, 16> bc{{
+        vm::LDC, 1, 0,
+        vm::THROW,
+        vm::POP,
         vm::LDV, 0, 0,
         vm::LDC, 0, 0,
         vm::LDC, 0, 0,
         vm::CALL, 2}};
-    Root body{create_bytecode_fn_body(*consts, *vars, nil, 0, bc.data(), bc.size())};
+    Root body{create_bytecode_fn_body(*consts, *vars, *et, 0, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
     std::array<Int64, 1> arities{{0}};
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
@@ -234,6 +245,31 @@ TEST_F(bytecode_fn_test, should_pass_the_varargs_as_a_sequence_or_nil)
     ex = array(13, 14);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
+}
+
+TEST_F(bytecode_fn_test, should_restore_stack_when_an_exception_is_thrown)
+{
+    Root ex{new_index_out_of_bounds()};
+    Root consts{array(*ex)};
+    std::array<vm::Byte, 4> bc{{vm::LDC, 0, 0, vm::THROW}};
+    Root body{create_bytecode_fn_body(*consts, nil, nil, 10, bc.data(), bc.size())};
+    std::array<Value, 1> bodies{{*body}};
+    std::array<Int64, 1> arities{{0}};
+    Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
+    Root call{fn_call(*fn)};
+
+    auto old_stack = stack;
+    try
+    {
+        eval(*call);
+        FAIL() << "expected an exception";
+    }
+    catch (Exception const & )
+    {
+        Root actual{catch_exception()};
+        EXPECT_EQ_REFS(*ex, *actual);
+        EXPECT_TRUE(old_stack == stack);
+    }
 }
 
 TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)

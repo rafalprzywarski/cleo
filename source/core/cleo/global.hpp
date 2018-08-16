@@ -36,6 +36,16 @@ inline void stack_pop()
         stack.pop_back();
 }
 
+class StackGuard
+{
+public:
+    StackGuard() : stack_size(stack.size()) {}
+    StackGuard(const StackGuard& ) = delete;
+    ~StackGuard() { assert(stack.size() >= stack_size); stack.resize(stack_size); }
+private:
+    const std::size_t stack_size;
+};
+
 class Root
 {
 public:
