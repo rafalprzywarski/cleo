@@ -1280,12 +1280,14 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [] (let* () nil))", "Bad binding form, expected vector");
     expect_compilation_error("(fn* [] (let* [a 10 b] nil))", "Bad binding form, expected matched symbol expression pairs");
     expect_compilation_error("(fn* [] (let* [10 20] nil))", "Unsupported binding form: 10");
+    expect_compilation_error("(fn* [] (let* [x/a 20] nil))", "Can't let qualified name: x/a");
     expect_compilation_error("(fn* [] (let* [x x] nil))", "unable to resolve symbol: x");
 
     expect_compilation_error("(fn* [] (loop*))", "Wrong number of args (0) passed to loop*, form: (loop*)");
     expect_compilation_error("(fn* [] (loop* () nil))", "Bad binding form, expected vector");
     expect_compilation_error("(fn* [] (loop* [a 10 b] nil))", "Bad binding form, expected matched symbol expression pairs");
     expect_compilation_error("(fn* [] (loop* [10 20] nil))", "Unsupported binding form: 10");
+    expect_compilation_error("(fn* [] (loop* [x/a 20] nil))", "Can't let qualified name: x/a");
     expect_compilation_error("(fn* [] (loop* [x x] nil))", "unable to resolve symbol: x");
     expect_compilation_error("(fn* [x] (loop* [] (recur 1)))", "Mismatched argument count to recur, expected: 0 args, got: 1");
     expect_compilation_error("(fn* [] (loop* [x 5 y 6] (recur)))", "Mismatched argument count to recur, expected: 2 args, got: 0");
