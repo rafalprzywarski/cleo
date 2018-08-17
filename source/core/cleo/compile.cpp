@@ -540,6 +540,8 @@ void Compiler::compile_try(Scope scope, Value form)
     form = get_list_next(form);
     compile_value(scope, form ? get_list_first(form) : nil, false);
     auto handler_ = form ? get_list_next(form) : nil;
+    if (handler_ && get_list_next(handler_))
+        throw_compilation_error("Too many expressions in " + to_string(TRY));
     handler_ = handler_ ? get_list_first(handler_) : nil;
     if (!handler_)
         return;
@@ -561,6 +563,8 @@ void Compiler::compile_try(Scope scope, Value form)
         if (!catch_)
             throw_compilation_error("missing catch* body");
         auto expr = get_list_first(catch_);
+        if (get_list_next(catch_))
+            throw_compilation_error("Too many expressions in " + to_string(CATCH) + ", expected one");
         Root rlocal;
         Int64 index{};
         std::tie(scope, index) = add_local(scope, local, rlocal);
@@ -581,6 +585,8 @@ void Compiler::compile_try(Scope scope, Value form)
         if (!handler_)
             throw_compilation_error("missing " + to_string(FINALLY) + " body");
         auto expr = get_list_first(handler_);
+        if (get_list_next(handler_))
+            throw_compilation_error("Too many expressions in " + to_string(FINALLY) + ", expected one");
         auto end_offset = code.size();
         compile_value(scope, expr);
         append(code, vm::POP);

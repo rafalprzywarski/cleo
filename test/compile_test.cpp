@@ -1335,6 +1335,9 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [] (try* 10 (catch* Exception)))", "missing exception binding in catch*");
     expect_compilation_error("(fn* [] (try* 10 (catch* Exception x)))", "missing catch* body");
     expect_compilation_error("(fn* [] (try* 10 (finally*)))", "missing finally* body");
+    expect_compilation_error("(fn* [] (try* 10 (finally* 20 30)))", "Too many expressions in finally*, expected one");
+    expect_compilation_error("(fn* [] (try* 10 (catch* Exception x 20 30)))", "Too many expressions in catch*, expected one");
+    expect_compilation_error("(fn* [] (try* 10 (catch* Exception x nil) (finally* nil)))", "Too many expressions in try*");
 }
 
 }
