@@ -1,3 +1,4 @@
+
 #include <cleo/compile.hpp>
 #include "util.hpp"
 #include <cleo/eval.hpp>
@@ -1252,30 +1253,30 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
     expect_compilation_error("(bad [] 10)");
-    expect_compilation_error("(fn* [] xyz)");
+    expect_compilation_error("(fn* [] xyz)", "unable to resolve symbol: xyz");
 
-    expect_compilation_error("(fn* [] (quote))");
-    expect_compilation_error("(fn* [] (quote 10 20))");
+    expect_compilation_error("(fn* [] (quote))", "Wrong number of args (0) passed to quote, form: (quote)");
+    expect_compilation_error("(fn* [] (quote 10 20))", "Wrong number of args (2) passed to quote, form: (quote 10 20)");
 
-    expect_compilation_error("(fn* [] (let*))");
-    expect_compilation_error("(fn* [] (let* () nil))");
-    expect_compilation_error("(fn* [] (let* [a 10 b] nil))");
-    expect_compilation_error("(fn* [] (let* [x x] nil))");
+    expect_compilation_error("(fn* [] (let*))", "Wrong number of args (0) passed to let*, form: (let*)");
+    expect_compilation_error("(fn* [] (let* () nil))", "Bad binding form, expected vector");
+    expect_compilation_error("(fn* [] (let* [a 10 b] nil))", "Bad binding form, expected matched symbol expression pairs");
+    expect_compilation_error("(fn* [] (let* [x x] nil))", "unable to resolve symbol: x");
 
-    expect_compilation_error("(fn* [] (loop*))");
-    expect_compilation_error("(fn* [] (loop* () nil))");
-    expect_compilation_error("(fn* [] (loop* [a 10 b] nil))");
-    expect_compilation_error("(fn* [] (loop* [x x] nil))");
-    expect_compilation_error("(fn* [x] (loop* [] (recur 1)))");
-    expect_compilation_error("(fn* [] (loop* [x y] (recur)))");
-    expect_compilation_error("(fn* [] (loop* [x y] (recur 1)))");
-    expect_compilation_error("(fn* [] (loop* [x y] (recur 1 2 3)))");
+    expect_compilation_error("(fn* [] (loop*))", "Wrong number of args (0) passed to loop*, form: (loop*)");
+    expect_compilation_error("(fn* [] (loop* () nil))", "Bad binding form, expected vector");
+    expect_compilation_error("(fn* [] (loop* [a 10 b] nil))", "Bad binding form, expected matched symbol expression pairs");
+    expect_compilation_error("(fn* [] (loop* [x x] nil))", "unable to resolve symbol: x");
+    expect_compilation_error("(fn* [x] (loop* [] (recur 1)))", "Mismatched argument count to recur, expected: 0 args, got: 1");
+    expect_compilation_error("(fn* [] (loop* [x 5 y 6] (recur)))", "Mismatched argument count to recur, expected: 2 args, got: 0");
+    expect_compilation_error("(fn* [] (loop* [x 5 y 6] (recur 1)))", "Mismatched argument count to recur, expected: 2 args, got: 1");
+    expect_compilation_error("(fn* [] (loop* [x 5 y 6] (recur 1 2 3)))", "Mismatched argument count to recur, expected: 2 args, got: 3");
 
-    expect_compilation_error("(fn* [] (recur 1))");
-    expect_compilation_error("(fn* [x y] (recur 1))");
-    expect_compilation_error("(fn* [x y] (recur 1 2 3))");
-    expect_compilation_error("(fn* [x & y] (recur 1))");
-    expect_compilation_error("(fn* [x & y] (recur 1 2 3))");
+    expect_compilation_error("(fn* [] (recur 1))", "Mismatched argument count to recur, expected: 0 args, got: 1");
+    expect_compilation_error("(fn* [x y] (recur 1))", "Mismatched argument count to recur, expected: 2 args, got: 1");
+    expect_compilation_error("(fn* [x y] (recur 1 2 3))", "Mismatched argument count to recur, expected: 2 args, got: 3");
+    expect_compilation_error("(fn* [x & y] (recur 1))", "Mismatched argument count to recur, expected: 2 args, got: 1");
+    expect_compilation_error("(fn* [x & y] (recur 1 2 3))", "Mismatched argument count to recur, expected: 2 args, got: 3");
 
     expect_compilation_error("(fn* [] (def))", "Too few arguments to def");
     expect_compilation_error("(fn* [] (def {2 3}))", "Too few arguments to def");
