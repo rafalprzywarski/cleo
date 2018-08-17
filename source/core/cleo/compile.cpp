@@ -175,8 +175,8 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
     }
     if (persistent_hash_map_contains(scope.parent_locals, sym))
         return compile_local_ref(sym);
-    if (scope.env && persistent_hash_map_contains(scope.env, sym))
-        return compile_const(persistent_hash_map_get(scope.env, sym));
+    if (scope.env && map_contains(scope.env, sym))
+        return compile_const(map_get(scope.env, sym));
 
     auto v = maybe_resolve_var(sym);
     if (!v)
@@ -577,18 +577,21 @@ void Compiler::compile_try(Scope scope, Value form)
     }
     else if (tag == FINALLY)
     {
+        handler_ = get_list_next(handler_);
+        if (!handler_)
+            throw_compilation_error("missing " + to_string(FINALLY) + " body");
+        auto expr = get_list_first(handler_);
+        auto end_offset = code.size();
+        compile_value(scope, expr);
+        append(code, vm::POP);
         auto br_offset = code.size();
         append_BR(code, 0);
-        add_exception_handler(start_offset, br_offset, code.size(), nil);
+        add_exception_handler(start_offset, end_offset, code.size(), nil);
         Root rlocal;
         Int64 index{};
         std::tie(scope, index) = add_local(scope, nil, rlocal);
         update_locals_size(scope);
         append_STL(code, index);
-        handler_ = get_list_next(handler_);
-        if (!handler_)
-            throw_compilation_error("missing " + to_string(FINALLY) + " body");
-        auto expr = get_list_first(handler_);
         compile_value(scope, expr);
         append(code, vm::POP);
         append(code, vm::LDL, index, 0);

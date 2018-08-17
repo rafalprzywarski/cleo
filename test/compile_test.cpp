@@ -1204,9 +1204,12 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
 TEST_F(compile_test, should_compile_functions_with_try_finally)
 {
     Root fn{compile_fn("(fn* [f g] (try* (f) (finally* (g))))")};
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {nil}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14}, {nil}, 1,
                                                          b(vm::LDL, -2, -1,
                                                            vm::CALL, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
                                                            vm::BR, 13, 0,
                                                            vm::STL, 0, 0,
                                                            vm::LDL, -1, -1,
@@ -1216,13 +1219,16 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::THROW));
 
     fn = compile_fn("(fn* [a b] (let* [f a g b] (try* (f) (finally* (g)))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 20}, {nil}, 3,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 26}, {nil}, 3,
                                                          b(vm::LDL, -2, -1,
                                                            vm::STL, 0, 0,
                                                            vm::LDL, -1, -1,
                                                            vm::STL, 1, 0,
                                                            vm::LDL, 0, 0,
                                                            vm::CALL, 0,
+                                                           vm::LDL, 1, 0,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
                                                            vm::BR, 13, 0,
                                                            vm::STL, 2, 0,
                                                            vm::LDL, 1, 0,
@@ -1232,9 +1238,12 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::THROW));
 
     fn = compile_fn("(fn* [f g h] (try* (try* (f) (finally* (g))) (finally* (h))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0, 21, 24}, {nil, nil}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14, 0, 27, 36}, {nil, nil}, 1,
                                                          b(vm::LDL, -3, -1,
                                                            vm::CALL, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
                                                            vm::BR, 13, 0,
                                                            vm::STL, 0, 0,
                                                            vm::LDL, -2, -1,
@@ -1242,6 +1251,9 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::POP,
                                                            vm::LDL, 0, 0,
                                                            vm::THROW,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
                                                            vm::BR, 13, 0,
                                                            vm::STL, 0, 0,
                                                            vm::LDL, -1, -1,
