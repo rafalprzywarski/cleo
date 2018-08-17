@@ -283,8 +283,11 @@ Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root
     std::int16_t index{};
     for (Int64 i = 0; i < get_array_size(bindings); i += 2)
     {
+        auto sym = get_array_elem(bindings, i);
+        if (!get_value_type(sym).is(*type::Symbol))
+            throw_compilation_error("Unsupported binding form: " + to_string(sym));
         compile_value(scope, get_array_elem(bindings, i + 1));
-        std::tie(scope, index) = add_local(scope, get_array_elem(bindings, i), llocals);
+        std::tie(scope, index) = add_local(scope, sym, llocals);
         append_STL(code, index);
     }
     update_locals_size(scope);
