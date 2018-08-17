@@ -154,4 +154,14 @@ Force compilation_error_message(Value e)
     return get_object_element(e, 0);
 }
 
+Force new_stack_overflow()
+{
+    return create_object0(*type::StackOverflow);
+}
+
+Force stack_overflow_message(Value e)
+{
+    return nil;
+}
+
 }

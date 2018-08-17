@@ -50,4 +50,7 @@ Force index_out_of_bounds_message(Value e);
 Force new_compilation_error(Value msg);
 Force compilation_error_message(Value e);
 
+Force new_stack_overflow();
+Force stack_overflow_message(Value e);
+
 }

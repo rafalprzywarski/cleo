@@ -635,13 +635,13 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     if (arity < 0)
     {
         auto rest = ~arity + 1;
-        stack.insert(stack.end(), elems + 1, elems + rest);
+        stack_push(elems + 1, elems + rest);
         stack_push(rest < elems_size ?  create_array(elems + rest, elems_size - rest) : nil);
     }
     else
-        stack.insert(stack.end(), elems + 1, elems + elems_size);
-    stack.resize(stack.size() + locals_size, nil);
-    vm::eval_bytecode(stack, consts, vars, locals_size, exception_table, bytes, bytes_size);
+        stack_push(elems + 1, elems + elems_size);
+    stack_reserve(locals_size);
+    vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
     return stack.back();
 }
 

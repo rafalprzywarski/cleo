@@ -19,14 +19,14 @@ struct vm_test : Test
     template <std::size_t N>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Byte, N>& bc)
     {
-        vm::eval_bytecode(stack, constants, vars, locals_size, nil, bc.data(), bc.size());
+        vm::eval_bytecode(constants, vars, locals_size, nil, bc.data(), bc.size());
     }
 
     template <std::size_t N, std::size_t K>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Int64, K * 3>& et_entries, const std::array<Value, K>& et_types, const std::array<Byte, N>& bc)
     {
         Root etv{create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size())};
-        vm::eval_bytecode(stack, constants, vars, locals_size, *etv, bc.data(), bc.size());
+        vm::eval_bytecode(constants, vars, locals_size, *etv, bc.data(), bc.size());
     }
     static Force create_constants(std::vector<std::pair<std::uint32_t, Int64>> vals)
     {
@@ -105,7 +105,7 @@ TEST_F(vm_test, ldl)
     stack.clear();
     stack_push(*b);
     stack_push(*a);
-    stack.resize(stack.size() + 1024, *x);
+    stack_push(*x, 1024);
     stack_push(*y);
     const std::array<Byte, 12> bc2{{
         LDL, Byte(-1), 3,
@@ -142,7 +142,7 @@ TEST_F(vm_test, stl)
     stack.clear();
     stack_push(*b);
     stack_push(*a);
-    stack.resize(stack.size() + 1024, *x);
+    stack_push(*x, 1024);
     stack_push(*y);
     const std::array<Byte, 30> bc2{{
         LDL, Byte(-1), Byte(-1), STL, 0, 0,

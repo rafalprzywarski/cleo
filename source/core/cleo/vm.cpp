@@ -33,7 +33,7 @@ const Byte *br(const Byte *p)
 
 }
 
-void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size)
+void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size)
 {
     auto p = bytecode;
     auto endp = p + size;
@@ -53,7 +53,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             p += 3;
             break;
         case LDL:
-            stack_push(Value{stack[stack_base + read_i16(p + 1)]});
+            stack_push(stack[stack_base + read_i16(p + 1)]);
             p += 3;
             break;
         case LDV:
@@ -103,7 +103,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             try
             {
                 first = call(&first, n).value();
-                stack.resize(stack.size() - (n - 1));
+                stack_pop(n - 1);
                 p += 2;
             }
             catch (cleo::Exception const& )
@@ -112,7 +112,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
                 if (handler_offset < 0)
                     throw;
                 Root ex{catch_exception()};
-                stack.resize(stack_base + locals_size);
+                stack_pop(stack.size() - stack_base - locals_size);
                 p = bytecode + handler_offset;
                 stack_push(*ex);
             }
@@ -125,7 +125,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             try
             {
                 first = apply(&first, n).value();
-                stack.resize(stack.size() - (n - 1));
+                stack_pop(n - 1);
                 p += 2;
             }
             catch (cleo::Exception const& )
@@ -134,7 +134,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
                 if (handler_offset < 0)
                     throw;
                 Root ex{catch_exception()};
-                stack.resize(stack_base + locals_size);
+                stack_pop(stack.size() - stack_base - locals_size);
                 p = bytecode + handler_offset;
                 stack_push(*ex);
             }
@@ -151,7 +151,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
                 auto fn = stack[stack.size() - n - 1];
                 auto consts = &stack[stack.size() - n];
                 stack[stack.size() - n - 1] = bytecode_fn_replace_consts(fn, consts, n).value();
-                stack.resize(stack.size() - n);
+                stack_pop(n);
             }
             p += 2;
             break;
@@ -163,7 +163,7 @@ void eval_bytecode(Stack& stack, Value constants, Value vars, std::uint32_t loca
             if (handler_offset < 0)
                 throw_exception(ex);
             stack[stack_base + locals_size] = ex;
-            stack.resize(stack_base + locals_size + 1);
+            stack_pop(stack.size() - stack_base - locals_size - 1);
             p = bytecode + handler_offset;
             break;
         }

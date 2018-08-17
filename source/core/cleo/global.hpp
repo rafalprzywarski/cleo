@@ -5,6 +5,7 @@
 #include "var.hpp"
 #include "memory.hpp"
 #include "vm.hpp"
+#include "error.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -27,13 +28,43 @@ extern vm::Stack stack;
 
 inline void stack_push(Force val)
 {
+    if (stack.size() == stack.capacity())
+        throw_exception(new_stack_overflow());
     stack.push_back(val.value());
+}
+
+template <typename FwdIt>
+inline void stack_push(FwdIt first, FwdIt last)
+{
+    if (stack.size() + std::distance(first, last) > stack.capacity())
+        throw_exception(new_stack_overflow());
+    stack.insert(stack.end(), first, last);
+}
+
+inline void stack_push(Force val, std::size_t n)
+{
+    if (stack.size() + n > stack.capacity())
+        throw_exception(new_stack_overflow());
+    stack.resize(stack.size() + n, val.value());
 }
 
 inline void stack_pop()
 {
     if (!stack.empty())
         stack.pop_back();
+}
+
+inline void stack_pop(std::size_t n)
+{
+    if (stack.size() <= n)
+        stack.clear();
+    else
+        stack.resize(stack.size() - n);
+}
+
+inline auto stack_reserve(std::size_t n)
+{
+    stack_push(nil, n);
 }
 
 class StackGuard
@@ -254,6 +285,7 @@ extern const Root FileNotFound;
 extern const Root ArithmeticException;
 extern const Root IndexOutOfBounds;
 extern const Root CompilationError;
+extern const Root StackOverflow;
 extern const Root Namespace;
 
 extern const Root VarValueRef;
