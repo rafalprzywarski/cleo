@@ -60,6 +60,7 @@ struct Compiler
     void compile_hash_map(Scope scope, Value val);
     void compile_def(Scope scope, Value form);
     void compile_fn(Scope scope, Value form);
+    void compile_throw(Scope scope, Value form);
     void add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type);
     void compile_try(Scope scope, Value form);
     void compile_try_wrapped(Scope scope, Value form);
@@ -493,6 +494,17 @@ void Compiler::compile_fn(Scope scope, Value form)
     }
 }
 
+void Compiler::compile_throw(Scope scope, Value form)
+{
+    form = get_list_next(form);
+    if (!form)
+        throw_compilation_error("Too few arguments to throw, expected a single value");
+    compile_value(scope, get_list_first(form));
+    if (get_list_next(form))
+        throw_compilation_error("Too many arguments to throw, expected a single value");
+    append(code, vm::THROW);
+}
+
 void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type)
 {
     et_entries.push_back(start);
@@ -603,6 +615,8 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
             return compile_apply(scope, val);
         if (first == FN)
             return compile_fn(scope, val);
+        if (first == THROW)
+            return compile_throw(scope, val);
         if (first == TRY)
             return wrap_try ? compile_try_wrapped(scope, val) : compile_try(scope, val);
 

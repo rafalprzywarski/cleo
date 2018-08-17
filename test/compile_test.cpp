@@ -1087,6 +1087,12 @@ TEST_F(compile_test, should_use_constants_from_env)
     expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(9, nil), b(vm::LDC, 1, 0, vm::LDL, -1, -1, vm::LDC, 0, 0, vm::CALL, 2));
 }
 
+TEST_F(compile_test, should_compile_functions_with_throw)
+{
+    Root fn{compile_fn("(fn* [x] (throw x))")};
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1, vm::THROW));
+}
+
 TEST_F(compile_test, should_compile_functions_with_try_catch)
 {
     refer(create_symbol("cleo.core"));
@@ -1284,6 +1290,9 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 
     expect_compilation_error("(fn* [] (apply*))", "Wrong number of args (0) passed to apply*, form: (apply*)");
     expect_compilation_error("(fn* [f] (apply* f))", "Wrong number of args (1) passed to apply*, form: (apply* f)");
+
+    expect_compilation_error("(fn* [] (throw))", "Too few arguments to throw, expected a single value");
+    expect_compilation_error("(fn* [] (throw 10 20))", "Too many arguments to throw, expected a single value");
 
     expect_compilation_error("(fn* [] (try* 10 20))", "expected catch* or finally* block in try*");
     expect_compilation_error("(fn* [] (try* 10 (something)))", "expected catch* or finally* block in try*");
