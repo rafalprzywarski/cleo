@@ -902,34 +902,34 @@ TEST_F(compile_test, should_compile_def)
     Root fn{compile_fn("(fn* [] (def x 10))")};
     auto v = get_var(create_symbol("cleo.compile.def.test", "x"));
     EXPECT_EQ_REFS(v, resolve_var(create_symbol("x")));
-    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(10), arrayv(v), b(vm::LDV, 0, 0, vm::LDC, 0, 0, vm::CNIL, vm::SETV));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 10), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::CNIL, vm::SETV));
 
     fn = compile_fn("(fn* [f z] (def y (f z)))");
-    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(get_var(create_symbol("cleo.compile.def.test", "y"))),
-                                       b(vm::LDV, 0, 0,
-                                         vm::LDL, -2, -1,
-                                         vm::LDL, -1, -1,
-                                         vm::CALL, 1,
-                                         vm::CNIL,
-                                         vm::SETV));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(get_var(create_symbol("cleo.compile.def.test", "y"))),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDL, -2, -1,
+                                           vm::LDL, -1, -1,
+                                           vm::CALL, 1,
+                                           vm::CNIL,
+                                           vm::SETV));
 
     fn = compile_fn("(fn* [] (def {10 20} z 13))");
     Root meta{phmap(10, 20)};
     v = get_var(create_symbol("cleo.compile.def.test", "z"));
     EXPECT_EQ_VALS(*meta, get_var_meta(v));
-    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(13, *meta), arrayv(v), b(vm::LDV, 0, 0, vm::LDC, 0, 0, vm::LDC, 1, 0, vm::SETV));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 13, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDC, 2, 0, vm::SETV));
 
     fn = compile_fn("(fn* [] (def w))");
     v = get_var(create_symbol("cleo.compile.def.test", "w"));
-    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
 
     v = define(create_symbol("cleo.compile.def.test", "ex"), nil, nil);
     fn = compile_fn("(fn* [] (def ex))");
-    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
 
     fn = compile_fn("(fn* [] (def cleo.compile.def.test/nv))");
     v = get_var(create_symbol("cleo.compile.def.test", "nv"));
-    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(v), b(vm::LDV, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
 }
 
 TEST_F(compile_test, should_compile_functions_applying_functions)

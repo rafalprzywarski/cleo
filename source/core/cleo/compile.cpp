@@ -491,8 +491,8 @@ void Compiler::compile_def(Scope scope, Value form)
     name = create_symbol(
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
         {get_string_ptr(sym_name), get_string_len(sym_name)});
-    define(name, nil, meta);
-    compile_symbol(scope, name);
+    auto var = define(name, nil, meta);
+    compile_const(var);
     compile_value(scope, val);
     compile_value(scope, meta);
     append(code, vm::SETV);
