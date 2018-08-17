@@ -16,10 +16,12 @@ using testing::AnyOf;
 
 struct compile_test : Test
 {
-    Value a_var;
+    Value a_var, macro_var;
     compile_test() : Test("cleo.compile.test")
     {
         a_var = define(create_symbol("cleo.compile.test", "a-var"), nil);
+        Root meta{persistent_hash_map_assoc(*EMPTY_MAP, MACRO_KEY, TRUE)};
+        macro_var = define(create_symbol("cleo.compile.test", "macro-var"), nil, *meta);
     }
     Force read_str(const std::string& s)
     {
@@ -1254,6 +1256,8 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("10");
     expect_compilation_error("(bad [] 10)");
     expect_compilation_error("(fn* [] xyz)", "unable to resolve symbol: xyz");
+    expect_compilation_error("(fn* [] macro-var)", "Can't take value of a macro: #'cleo.compile.test/macro-var");
+    expect_compilation_error("(fn* [f] (f macro-var))", "Can't take value of a macro: #'cleo.compile.test/macro-var");
 
     expect_compilation_error("(fn* 10 nil)", "Bad fn* param list, expected vector");
     expect_compilation_error("(fn* some 10 nil)", "Bad fn* param list, expected vector");

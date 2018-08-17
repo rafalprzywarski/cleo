@@ -181,6 +181,8 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
     auto v = maybe_resolve_var(sym);
     if (!v)
         throw_compilation_error("unable to resolve symbol: " + to_string(sym));
+    if (is_var_macro(v))
+        throw_compilation_error("Can't take value of a macro: " + to_string(v));
     auto vi = add_var(vars, v);
     append(code, vm::LDV, vi, 0);
 }
