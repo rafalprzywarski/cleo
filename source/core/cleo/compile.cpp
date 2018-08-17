@@ -214,15 +214,22 @@ void Compiler::compile_apply(Scope scope, Value form)
 void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
 {
     auto cond = get_list_next(val);
+    if (!cond)
+        throw_compilation_error("Too few arguments to if");
+    auto then = get_list_next(cond);
+    if (!then)
+        throw_compilation_error("Too few arguments to if");
+    auto else_ = get_list_next(then);
+    if (else_ && get_list_next(else_))
+        throw_compilation_error("Too many arguments to if");
+
     compile_value(scope, get_list_first(cond));
     auto bnil_offset = code.size();
     append(code, vm::BNIL, 0, 0);
-    auto then = get_list_next(cond);
     compile_value(scope, get_list_first(then), wrap_try);
     auto br_offset = code.size();
     append_BR(code, 0);
     code[bnil_offset + 1] = code.size() - bnil_offset - 3;
-    auto else_ = get_list_next(then);
     compile_value(scope, else_ ? get_list_first(else_) : nil, wrap_try);
     code[br_offset + 1] = code.size() - br_offset - 3;
 }

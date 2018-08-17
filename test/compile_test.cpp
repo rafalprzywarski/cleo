@@ -1258,6 +1258,10 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [] (quote))", "Wrong number of args (0) passed to quote, form: (quote)");
     expect_compilation_error("(fn* [] (quote 10 20))", "Wrong number of args (2) passed to quote, form: (quote 10 20)");
 
+    expect_compilation_error("(fn* [] (if))", "Too few arguments to if");
+    expect_compilation_error("(fn* [] (if 1))", "Too few arguments to if");
+    expect_compilation_error("(fn* [] (if 1 2 3 4))", "Too many arguments to if");
+
     expect_compilation_error("(fn* [] (let*))", "Wrong number of args (0) passed to let*, form: (let*)");
     expect_compilation_error("(fn* [] (let* () nil))", "Bad binding form, expected vector");
     expect_compilation_error("(fn* [] (let* [a 10 b] nil))", "Bad binding form, expected matched symbol expression pairs");
