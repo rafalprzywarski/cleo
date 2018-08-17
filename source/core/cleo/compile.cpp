@@ -145,14 +145,21 @@ Int64 Compiler::add_local_ref(Value sym)
 
 Force create_locals(Value params)
 {
+    if (!get_value_type(params).is(*type::Array))
+        throw_compilation_error("Bad " + to_string(FN) + " param list, expected vector");
     Root locals{*EMPTY_MAP}, index;
     auto arity = get_arity(params);
     auto fixed_arity = arity < 0 ? ~arity : arity;
     auto total_arity = arity < 0 ? ~arity + 1 : arity;
     for (Int64 i = 0; i < fixed_arity; ++i)
     {
+        auto sym = get_array_elem(params, i);
+        if (!get_value_type(sym).is(*type::Symbol))
+            throw_compilation_error(to_string(FN) + " params must be symbols");
+        if (get_symbol_namespace(sym))
+            throw_compilation_error("Can't use qualified name as parameter: " + to_string(sym));
         index = create_int64(i - total_arity);
-        locals = persistent_hash_map_assoc(*locals, get_array_elem(params, i), *index);
+        locals = persistent_hash_map_assoc(*locals, sym, *index);
     }
     if (arity < 0)
         locals = persistent_hash_map_assoc(*locals, get_array_elem(params, total_arity), *NEG_ONE);
@@ -653,6 +660,8 @@ Force compile_fn_body(Value form, Value env, Value parent_locals, Root& used_loc
 {
     Compiler c(*used_locals);
     Value val = get_list_next(form);
+    if (val && get_list_next(val))
+        throw_compilation_error("Too many forms passed to " + to_string(FN));
     val = val ? get_list_first(val) : nil;
     Root locals{create_locals(get_list_first(form))};
     auto scope = create_fn_body_scope(form, env, *locals, parent_locals);

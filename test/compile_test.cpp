@@ -1255,6 +1255,16 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(bad [] 10)");
     expect_compilation_error("(fn* [] xyz)", "unable to resolve symbol: xyz");
 
+    expect_compilation_error("(fn* 10 nil)", "Bad fn* param list, expected vector");
+    expect_compilation_error("(fn* some 10 nil)", "Bad fn* param list, expected vector");
+    expect_compilation_error("(fn* (10 nil))", "Bad fn* param list, expected vector");
+    expect_compilation_error("(fn* some (10 nil))", "Bad fn* param list, expected vector");
+    expect_compilation_error("(fn* [10] nil)", "fn* params must be symbols");
+    expect_compilation_error("(fn* [x y 20] nil)", "fn* params must be symbols");
+    expect_compilation_error("(fn* [a/x y] nil)", "Can't use qualified name as parameter: a/x");
+    expect_compilation_error("(fn* [x b/y] nil)", "Can't use qualified name as parameter: b/y");
+    expect_compilation_error("(fn* [] 10 20)", "Too many forms passed to fn*");
+
     expect_compilation_error("(fn* [] (quote))", "Wrong number of args (0) passed to quote, form: (quote)");
     expect_compilation_error("(fn* [] (quote 10 20))", "Wrong number of args (2) passed to quote, form: (quote 10 20)");
 
