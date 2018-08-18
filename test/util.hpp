@@ -10,7 +10,6 @@
 #include <cleo/namespace.hpp>
 #include <cleo/var.hpp>
 #include <cleo/util.hpp>
-#include <cleo/fn_call.hpp>
 #include <gtest/gtest.h>
 
 #define ASSERT_EQ_VALS(ex, val) \
@@ -148,22 +147,6 @@ void push_args(Roots& rs, std::vector<Value>& es, const T& elem, const Ts&... el
     rs.set(es.size(), to_value(elem));
     es.push_back(rs[es.size()]);
     push_args(rs, es, elems...);
-}
-
-template <typename... Ts>
-auto fn_call(Value fn, const Ts&... elems)
-{
-    Roots rs(1 + sizeof...(elems));
-    std::vector<Value> es;
-    es.reserve(1 + sizeof...(elems));
-    push_args(rs, es, fn, elems...);
-    return create_fn_call(es.data(), es.size());
-}
-
-template <typename... Ts>
-auto fn_callv(Value fn, const Ts&... elems)
-{
-    return delayed([=] { return fn_call(fn, elems...); });
 }
 
 inline Force sset_conj(Value s)

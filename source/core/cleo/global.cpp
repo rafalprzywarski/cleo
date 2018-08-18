@@ -17,7 +17,6 @@
 #include "atom.hpp"
 #include "util.hpp"
 #include "clib.hpp"
-#include "fn_call.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -193,7 +192,6 @@ const Root Multimethod{create_type("cleo.core", "Multimethod")};
 const Root Seqable{create_type("cleo.core", "Seqable")};
 const Root Sequence{create_type("cleo.core", "Sequence")};
 const Root Callable{create_type("cleo.core", "Callable")};
-const Root Fn{create_type("cleo.core", "Fn")};
 const Root BytecodeFn{create_type("cleo.core", "BytecodeFn")};
 const Root BytecodeFnBody{create_type("cleo.core", "BytecodeFnBody")};
 const Root BytecodeFnExceptionTable{create_type("cleo.core", "BytecodeFnExceptionTable")};
@@ -218,9 +216,6 @@ const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
 const Root CompilationError{create_type("cleo.core", "CompilationError")};
 const Root StackOverflow{create_type("cleo.core", "StackOverflow")};
 const Root Namespace{create_type("cleo.core", "Namespace")};
-
-const Root VarValueRef{create_type("cleo.core.internal", "VarValueRef")};
-const Root FnCall{create_type("cleo.core.internal", "FnCall")};
 }
 
 namespace clib
@@ -940,7 +935,6 @@ struct Initialize
         define_type(*type::Seqable);
         define_type(*type::Sequence);
         define_type(*type::Callable);
-        define_type(*type::Fn);
         define_type(*type::BytecodeFn);
         define_type(*type::BytecodeFnBody);
         define_type(*type::BytecodeFnExceptionTable);
@@ -1280,26 +1274,12 @@ struct Initialize
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        std::array<Value, 2> two_var_refs{{*type::VarValueRef, *type::VarValueRef}};
-        v = create_array(two_var_refs.data(), two_var_refs.size());
-        f = create_native_function2<var_value_ref_equals>();
-        define_method(OBJ_EQ, *v, *f);
-
-        std::array<Value, 2> two_fn_calls{{*type::FnCall, *type::FnCall}};
-        v = create_array(two_fn_calls.data(), two_fn_calls.size());
-        f = create_native_function2<fn_call_equals>();
-        define_method(OBJ_EQ, *v, *f);
-
         define(PRINT_READABLY, TRUE);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
         f = create_native_function1<pr_str_type>();
         define_method(PR_STR_OBJ, *type::MetaType, *f);
 
-        f = create_native_function1<var_value_ref_pr_str>();
-        define_method(PR_STR_OBJ, *type::VarValueRef, *f);
-        f = create_native_function1<fn_call_pr_str>();
-        define_method(PR_STR_OBJ, *type::FnCall, *f);
         f = create_native_function1<pr_str_array>();
         define_method(PR_STR_OBJ, *type::Array, *f);
         f = create_native_function1<pr_str_array_set>();

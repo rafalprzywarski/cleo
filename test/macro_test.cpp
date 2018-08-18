@@ -1,4 +1,3 @@
-#include <cleo/fn.hpp>
 #include <cleo/eval.hpp>
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
@@ -15,6 +14,13 @@ namespace test
 struct macro_test : Test
 {
     macro_test() : Test("cleo.macro.test") {}
+
+    Force eval_str(std::string source)
+    {
+        Root s{create_string(source)};
+        s = read(*s);
+        return eval(*s);
+    }
 };
 
 TEST_F(macro_test, macroexpand1_should_return_the_given_form_if_its_not_a_list_with_a_macro)
@@ -36,47 +42,18 @@ TEST_F(macro_test, macroexpand1_should_return_the_given_form_if_its_not_a_list_w
 
 TEST_F(macro_test, macroexpand1_should_eval_the_body)
 {
-    Root v{array(5, 6, 7)};
-    Root seq{list(SEQ, *v)};
-    Root first{list(FIRST, *seq)};
-    Root body{list(QUOTE, *first)};
-    Root params{array(FORM, ENV)};
-    Root m{create_fn(nil, nil, *params, *body)};
+    eval_str("(def {:macro :true} mex1 (fn* [&form &env] (quote (cleo.core/first (cleo.core/seq [5 6 7])))))");
     auto name = create_symbol("cleo.macro.test", "mex1");
-    Root meta{amap(MACRO_KEY, TRUE)};
-    define(name, *m, *meta);
     Root call{list(name)};
     Root val{macroexpand1(*call)};
-    EXPECT_EQ_VALS(*first, *val);
+    Root ex{list(FIRST, listv(SEQ, arrayv(5, 6, 7)))};
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
 {
-    auto a = create_symbol("a");
-    auto b = create_symbol("b");
-    auto c = create_symbol("c");
-    Root body{array(b, c, a)};
-    Root params{array(FORM, ENV, a, b, c)};
-    Root m{create_fn(nil, nil, *params, *body)};
+    eval_str("(def {:macro :true} mex1 (fn* [&form &env a b c] [b c a]))");
     auto name = create_symbol("cleo.macro.test", "mex1");
-    Root meta{amap(MACRO_KEY, TRUE)};
-    define(name, *m, *meta);
-    Root v{array(5, 6, 7)};
-    Root call{list(name, SEQ, FIRST, *v)};
-    Root val{macroexpand1(*call)};
-    Root ex{array(FIRST, *v, SEQ)};
-    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
-    EXPECT_EQ_VALS(*ex, *val);
-}
-
-TEST_F(macro_test, macroexpand1_should_evaluate_bytecode_fns)
-{
-    Root m{create_string("(fn* [&form &env a b c] [b c a])")};
-    m = read(*m);
-    m = compile_fn(*m, nil);
-    auto name = create_symbol("cleo.macro.test", "bcmex1");
-    Root meta{amap(MACRO_KEY, TRUE)};
-    define(name, *m, *meta);
     Root v{array(5, 6, 7)};
     Root call{list(name, SEQ, FIRST, *v)};
     Root val{macroexpand1(*call)};
@@ -87,15 +64,8 @@ TEST_F(macro_test, macroexpand1_should_evaluate_bytecode_fns)
 
 TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symbol)
 {
-    auto a = create_symbol("a");
-    auto b = create_symbol("b");
-    auto c = create_symbol("c");
+    eval_str("(def {:macro :true} ms2e (fn* [&form &env a b c] [b c a]))");
     auto name = create_symbol("cleo.macro.test", "ms2e");
-    Root body{array(b, c, a)};
-    Root params{array(FORM, ENV, a, b, c)};
-    Root m{create_fn(nil, nil, *params, *body)};
-    Root meta{amap(MACRO_KEY, TRUE)};
-    define(name, *m, *meta);
     Root v{array(5, 6, 7)};
     Root call{list(name, SEQ, FIRST, *v)};
     Root val{macroexpand1(*call)};
@@ -105,14 +75,8 @@ TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symb
 
 TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
 {
-    auto a = create_symbol("a");
-    auto b = create_symbol("b");
-    auto c = create_symbol("c");
-    Root params{array(FORM, ENV, a, b, c)};
-    Root m{create_fn(nil, nil, *params, nil)};
-    Root meta{amap(MACRO_KEY, TRUE)};
+    eval_str("(def {:macro :true} mex3 (fn* [&form &env a b c] nil))");
     auto name = create_symbol("cleo.macro.test", "mex3");
-    define(name, *m, *meta);
     Root call{list(name, SEQ, FIRST)};
     try
     {
@@ -142,28 +106,21 @@ TEST_F(macro_test, macroexpand_should_return_the_given_form_if_its_not_a_list_wi
 
 TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 {
-    Root params{array(FORM, ENV)};
-    Root meta{amap(MACRO_KEY, TRUE)};
     auto x = create_keyword("x");
-    Root m{create_fn(nil, nil, *params, x)};
+    eval_str("(def {:macro :true} mex3 (fn* [&form &env] :x))");
     auto name = create_symbol("cleo.macro.test", "mex3");
-    define(name, *m, *meta);
     Root call{list(name)};
     Root val{macroexpand(*call)};
     EXPECT_EQ_VALS(x, *val);
 
-    Root q{list(QUOTE, *call)};
-    m = create_fn(nil, nil, *params, *q);
+    eval_str("(def {:macro :true} mex4 (fn* [&form &env] (quote (cleo.macro.test/mex3))))");
     name = create_symbol("cleo.macro.test", "mex4");
-    define(name, *m, *meta);
     call = list(name);
     val = macroexpand(*call);
     EXPECT_EQ_VALS(x, *val);
 
-    q = list(QUOTE, *call);
-    m = create_fn(nil, nil, *params, *q);
+    eval_str("(def {:macro :true} mex5 (fn* [&form &env] (quote (cleo.macro.test/mex4))))");
     name = create_symbol("cleo.macro.test", "mex5");
-    define(name, *m, *meta);
     call = list(name);
     val = macroexpand(*call);
     EXPECT_EQ_VALS(x, *val);
@@ -173,27 +130,18 @@ TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 {
     auto s = create_symbol("s");
     Root env{amap(s, *rt::seq)};
-    Root v{array(5, 6, 7)};
-    Root seq{list(s, *v)};
-    Root body{list(FIRST, *seq)};
-    body = list(QUOTE, *body);
-    Root params{array(FORM, ENV)};
-    Root m{create_fn(nil, nil, *params, *body)};
-    Root meta{amap(MACRO_KEY, TRUE)};
+    eval_str("(def {:macro :true} mex6 (fn* [&form &env] (quote (cleo.core/first (s [5 6 7])))))");
     auto name = create_symbol("cleo.macro.test", "mex6");
-    define(name, *m, *meta);
     Root call{list(name)};
     Root val{eval(*call, *env)};
-    EXPECT_EQ_REFS(get_array_elem(*v, 0), *val);
+    Root ex{create_int64(5)};
+    EXPECT_EQ_VALS(*ex, *val);
 }
 
 TEST_F(macro_test, eval_should_fail_when_evaluating_a_macro_symbol)
 {
-    Root params{array(FORM, ENV)};
-    Root m{create_fn(nil, nil, *params, nil)};
-    Root meta{amap(MACRO_KEY, TRUE)};
+    eval_str("(def {:macro :true} mex7 (fn* [&form &env] nil))");
     auto name = create_symbol("cleo.macro.test", "mex7");
-    define(name, *m, *meta);
 
     try
     {

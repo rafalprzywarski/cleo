@@ -262,7 +262,6 @@ extern const Root Multimethod;
 extern const Root Seqable;
 extern const Root Sequence;
 extern const Root Callable;
-extern const Root Fn;
 extern const Root BytecodeFn;
 extern const Root BytecodeFnBody;
 extern const Root BytecodeFnExceptionTable;
@@ -287,9 +286,6 @@ extern const Root IndexOutOfBounds;
 extern const Root CompilationError;
 extern const Root StackOverflow;
 extern const Root Namespace;
-
-extern const Root VarValueRef;
-extern const Root FnCall;
 }
 
 namespace clib

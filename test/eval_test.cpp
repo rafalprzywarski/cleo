@@ -4,7 +4,6 @@
 #include <cleo/equality.hpp>
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
-#include <cleo/fn.hpp>
 #include <cleo/bytecode_fn.hpp>
 #include <cleo/reader.hpp>
 #include <cleo/array_map.hpp>
@@ -44,54 +43,6 @@ struct eval_test : Test
             Root e{catch_exception()};
             ASSERT_EQ_REFS(*type::CompilationError, get_value_type(*e));
         }
-    }
-
-    void expect_resolve_illegal_state(std::string source)
-    {
-        Root body{create_string(source)};
-        body = read(*body);
-        try
-        {
-            resolve_value(*body, *EMPTY_MAP);
-            FAIL() << "expected IllegalState for: " << source;
-        }
-        catch (const Exception& )
-        {
-            Root e{catch_exception()};
-            ASSERT_EQ_REFS(*type::IllegalState, get_value_type(*e)) << "exception: " << to_string(*e);
-        }
-    }
-
-    void expect_symbol_resolved(std::string expected_source, std::string body_source, std::string env_source)
-    {
-        Root ex{create_string(expected_source)};
-        ex = read(*ex);
-        expect_symbol_resolved(*ex, body_source, env_source);
-    }
-
-    void expect_symbol_resolved(Force expected, std::string body_source, std::string env_source)
-    {
-        Root ex{expected};
-        expect_symbol_resolved(*ex, body_source, env_source);
-    }
-
-    void expect_symbol_resolved(Value expected, std::string body_source, std::string env_source)
-    {
-        Root env{create_string(env_source)};
-        env = read(*env);
-        Root body{create_string(body_source)};
-        body = read(*body);
-
-        try
-        {
-            body = resolve_value(*body, *env);
-        }
-        catch (const Exception& )
-        {
-            Root e{catch_exception()};
-            FAIL() << "exception: " << to_string(*e) << " body: " << body_source << " env: " << env_source;
-        }
-        ASSERT_EQ_VALS(expected, *body) << "body: " << body_source << " env: " << env_source;
     }
 };
 
@@ -344,135 +295,6 @@ TEST_F(eval_test, fn_should_fail_when_a_var_does_not_exist)
 
     expect_symbol_not_found("(fn* [] (let* [x a] a))");
     expect_symbol_not_found("(fn* [] (let* [x 10] a))");
-}
-
-TEST_F(eval_test, should_resolve_variables)
-{
-    in_ns(create_symbol("cleo.fn.resolved2.test"));
-    auto yvar = define(create_symbol("cleo.fn.resolved2.test", "y"), nil);
-    in_ns(create_symbol("cleo.fn.resolved.test"));
-    auto xvar = define(create_symbol("cleo.fn.resolved.test", "x"), nil);
-    refer(create_symbol("cleo.fn.resolved2.test"));
-    Root xref{create_var_value_ref(xvar)};
-    Root yref{create_var_value_ref(yvar)};
-    auto xsym = create_symbol("x");
-    auto ysym = create_symbol("y");
-    auto asym = create_symbol("a");
-    auto bsym = create_symbol("b");
-    auto ffsym = create_symbol("ff");
-
-    expect_symbol_resolved(*xref, "x", "{}");
-    expect_symbol_resolved(*yref, "y", "{x nil}");
-    expect_symbol_resolved("x", "x", "{x nil}");
-    expect_symbol_resolved("y", "y", "{y nil}");
-
-    expect_symbol_resolved("[]", "[]", "{}");
-    expect_symbol_resolved(array(*xref, *yref), "[x y]", "{}");
-    expect_symbol_resolved(array(xsym, *yref), "[x y]", "{x nil}");
-
-    expect_symbol_resolved("#{}", "#{}", "{}");
-    expect_symbol_resolved(aset(*xref, *yref), "#{x y}", "{}");
-    expect_symbol_resolved(aset(xsym, *yref), "#{x y}", "{x nil}");
-
-    expect_symbol_resolved("{}", "{}", "{}");
-    expect_symbol_resolved(phmap(*xref, 10, 20, *yref), "{x 10 20 y}", "{}");
-    expect_symbol_resolved(phmap(xsym, 10, 20, *yref), "{x 10 20 y}", "{x nil}");
-    expect_symbol_resolved(phmap(*xref, 10, 20, ysym), "{x 10 20 y}", "{y nil}");
-
-    expect_symbol_resolved("()", "()", "{}");
-    expect_symbol_resolved(fn_call(*xref, *yref), "(x y)", "{}");
-    expect_symbol_resolved(fn_call(xsym, *yref), "(x y)", "{x nil}");
-
-    expect_symbol_resolved("(quote a x y)", "(quote a x y)", "{}");
-
-    expect_symbol_resolved(list(DEF, xsym, arrayv(xsym, *yref)), "(def x [x y])", "{}");
-    expect_symbol_resolved(list(DEF, xsym, arrayv(xsym, ysym)), "(def x [x y])", "{y nil}");
-    expect_symbol_resolved(list(DEF, phmapv(create_keyword("some"), 10), xsym, arrayv(xsym, *yref)), "(def {:some 10} x [x y])", "{}");
-
-    expect_symbol_resolved(list(DO, *xref, *yref), "(do x y)", "{}");
-    expect_symbol_resolved(list(DO, *xref, ysym), "(do x y)", "{y nil}");
-
-    expect_symbol_resolved(list(IF, *xref, *yref), "(if x y)", "{}");
-    expect_symbol_resolved(list(IF, *xref, ysym), "(if x y)", "{y nil}");
-
-    expect_symbol_resolved(fn_call(*recur, *xref, *yref), "(recur x y)", "{}");
-    expect_symbol_resolved(fn_call(*recur, *xref, ysym), "(recur x y)", "{y nil}");
-
-    expect_symbol_resolved(list(THROW, *xref, *yref), "(throw x y)", "{}");
-    expect_symbol_resolved(list(THROW, *xref, ysym), "(throw x y)", "{y nil}");
-
-    expect_symbol_resolved(list(TRY, *xref, *yref), "(try* x y)", "{}");
-    expect_symbol_resolved(list(TRY, *xref, ysym), "(try* x y)", "{y nil}");
-
-    expect_symbol_resolved(list(FINALLY, *xref, *yref), "(finally* x y)", "{}");
-    expect_symbol_resolved(list(FINALLY, *xref, ysym), "(finally* x y)", "{y nil}");
-
-    expect_symbol_resolved(list(LET, arrayv(), *xref, *yref), "(let* [] x y)", "{}");
-    expect_symbol_resolved(list(LET, arrayv(asym, *xref, bsym, *yref), asym, bsym), "(let* [a x b y] a b)", "{}");
-    expect_symbol_resolved(list(LET, arrayv(xsym, *xref, xsym, xsym), xsym), "(let* [x x x x] x)", "{}");
-    expect_symbol_resolved(list(LET, arrayv(xsym, 10), xsym, *yref), "(let* [x 10] x y)", "{}");
-    expect_symbol_resolved(list(LET, arrayv(ysym, 10), *xref, ysym), "(let* [y 10] x y)", "{}");
-    expect_symbol_resolved(list(LET, arrayv(xsym, 10), xsym, ysym), "(let* [x 10] x y)", "{y nil}");
-
-    expect_symbol_resolved(list(LOOP, arrayv(), *xref, *yref), "(loop* [] x y)", "{}");
-    expect_symbol_resolved(list(LOOP, arrayv(asym, *xref, bsym, *yref), asym, bsym), "(loop* [a x b y] a b)", "{}");
-    expect_symbol_resolved(list(LOOP, arrayv(xsym, *xref, xsym, xsym), xsym), "(loop* [x x x x] x)", "{}");
-    expect_symbol_resolved(list(LOOP, arrayv(xsym, 10), xsym, *yref), "(loop* [x 10] x y)", "{}");
-    expect_symbol_resolved(list(LOOP, arrayv(ysym, 10), *xref, ysym), "(loop* [y 10] x y)", "{}");
-    expect_symbol_resolved(list(LOOP, arrayv(xsym, 10), xsym, ysym), "(loop* [x 10] x y)", "{y nil}");
-
-    expect_symbol_resolved(list(CATCH, *xref, asym, asym, *yref), "(catch* x a a y)", "{}");
-    expect_symbol_resolved(list(CATCH, *xref, ysym, ysym), "(catch* x y y)", "{}");
-    expect_symbol_resolved(list(CATCH, xsym, ysym, ysym), "(catch* x y y)", "{x nil}");
-    expect_symbol_resolved(list(CATCH, *xref, asym, ysym), "(catch* x a y)", "{y nil}");
-
-    expect_symbol_resolved(list(FN, arrayv()), "(fn* [])", "{}");
-    expect_symbol_resolved(list(FN, ffsym, arrayv(), ffsym), "(fn* ff [] ff)", "{}");
-    expect_symbol_resolved(list(FN, ffsym, listv(arrayv(), ffsym), listv(arrayv(xsym), ffsym)), "(fn* ff ([] ff) ([x] ff))", "{}");
-    expect_symbol_resolved(list(FN, arrayv(), *xref, *yref), "(fn* [] x y)", "{}");
-    expect_symbol_resolved(list(FN, arrayv(xsym), xsym, *yref), "(fn* [x] x y)", "{}");
-    expect_symbol_resolved(list(FN, arrayv(xsym, ysym), arrayv(xsym, ysym)), "(fn* [x y] [x y])", "{}");
-    expect_symbol_resolved(list(FN, arrayv(xsym), xsym, ysym), "(fn* [x] x y)", "{y nil}");
-    expect_symbol_resolved(list(FN, listv(arrayv())), "(fn* ([]))", "{}");
-    expect_symbol_resolved(list(FN, listv(arrayv(xsym), xsym, *yref), listv(arrayv(ysym), *xref, ysym), listv(arrayv(), *xref, *yref), listv(arrayv(xsym, ysym), xsym, ysym)), "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{}");
-    expect_symbol_resolved(list(FN, listv(arrayv(xsym), xsym, ysym), listv(arrayv(ysym), *xref, ysym), listv(arrayv(), *xref, ysym), listv(arrayv(xsym, ysym), xsym, ysym)), "(fn* ([x] x y) ([y] x y) ([] x y) ([x y] x y))", "{y nil}");
-}
-
-TEST_F(eval_test, resolving_should_expand_macros)
-{
-    in_ns(create_symbol("cleo.fn.resolving-macros.test"));
-    auto avar = define(create_symbol("cleo.fn.resolving-macros.test", "a"), nil);
-    auto bvar = define(create_symbol("cleo.fn.resolving-macros.test", "b"), nil);
-    Root aref{create_var_value_ref(avar)};
-    Root bref{create_var_value_ref(bvar)};
-    Root plusref{create_var_value_ref(get_var(PLUS))};
-    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
-    add = read(*add);
-    add = eval(*add);
-    Root meta{amap(MACRO_KEY, TRUE)};
-    define(create_symbol("cleo.fn.resolving-macros.test", "add"), *add, *meta);
-
-    auto b = create_symbol("b");
-    auto c = create_symbol("c");
-    auto d = create_symbol("d");
-    auto addsym = create_symbol("add");
-
-    expect_symbol_resolved(list(FN, arrayv(c, d), fn_callv(*plusref, fn_callv(*plusref, *aref, *bref), fn_callv(*plusref, c, d))), "(fn* [c d] (add (add a b) (add c d)))", "{}");
-    expect_symbol_resolved(list(FN, arrayv(addsym), fn_callv(addsym, *aref, *bref)), "(fn* [add] (add a b))", "{}");
-    expect_symbol_resolved(list(FN, arrayv(addsym), fn_callv(addsym, *aref, b)), "(fn* [add] (add a b))", "{b nil}");
-}
-
-TEST_F(eval_test, resolving_should_fail_when_passing_macros_as_arguments)
-{
-    in_ns(create_symbol("cleo.fn.failing-macro-args.test"));
-    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
-    add = read(*add);
-    add = eval(*add);
-    Root meta{amap(MACRO_KEY, TRUE)};
-    define(create_symbol("cleo.fn.failing-macro-args.test", "add"), *add, *meta);
-
-    expect_resolve_illegal_state("(if 10 add nil)");
-    expect_resolve_illegal_state("(let* [x add] nil)");
 }
 
 TEST_F(eval_test, should_expand_all_macros)

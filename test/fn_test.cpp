@@ -1,4 +1,3 @@
-#include <cleo/fn.hpp>
 #include <cleo/eval.hpp>
 #include <cleo/var.hpp>
 #include <cleo/reader.hpp>
@@ -14,51 +13,6 @@ struct fn_test : Test
 {
     fn_test() : Test("cleo.fn.test") { }
 };
-
-TEST_F(fn_test, should_eval_the_body)
-{
-    Root v{array(5, 6, 7)};
-    Root seqv{resolve_value(SEQ, nil)};
-    Root seq{fn_call(*seqv, *v)};
-    Root firstv{resolve_value(FIRST, nil)};
-    Root body{fn_call(*firstv, *seq)};
-    Root params{array()};
-    Root fn{create_fn(nil, nil, *params, *body)};
-    Root call{list(*fn)};
-    Root val{eval(*call)};
-    ASSERT_TRUE(get_array_elem(*v, 0).is(*val));
-}
-
-TEST_F(fn_test, should_pass_the_arguments)
-{
-    auto s = create_symbol("s");
-    auto x = create_symbol("x");
-    Root seq{fn_call(s, x)};
-    Root firstv{resolve_value(FIRST, nil)};
-    Root body{fn_call(*firstv, *seq)};
-    Root params{array(s, x)};
-    Root fn{create_fn(nil, nil, *params, *body)};
-    Root v{array(5, 6, 7)};
-    Root call{list(*fn, SEQ, *v)};
-    Root val{eval(*call)};
-    ASSERT_TRUE(get_array_elem(*v, 0).is(*val));
-}
-
-TEST_F(fn_test, should_use_values_from_the_env)
-{
-    auto s = create_symbol("s");
-    auto x = create_symbol("x");
-    Root v{array(5, 6, 7)};
-    Root env{amap(s, *rt::seq, x, *v)};
-    Root seq{fn_call(s, x)};
-    Root firstv{resolve_value(FIRST, nil)};
-    Root body{fn_call(*firstv, *seq)};
-    Root params{array()};
-    Root fn{create_fn(*env, nil, *params, *body)};
-    Root call{list(*fn)};
-    Root val{eval(*call)};
-    ASSERT_TRUE(get_array_elem(*v, 0).is(*val));
-}
 
 TEST_F(fn_test, should_fail_when_arity_cannot_be_matched)
 {
