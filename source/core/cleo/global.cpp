@@ -1157,6 +1157,9 @@ struct Initialize
         f = create_native_function2<array_conj>();
         define_method(CONJ, *type::Array, *f);
 
+        f = create_native_function2<cons_conj>();
+        define_method(CONJ, *type::ArraySeq, *f);
+
         define_method(CONJ, *type::ArraySet, *rt::array_set_conj);
 
         f = create_native_function2<list_conj>();
