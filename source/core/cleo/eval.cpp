@@ -12,6 +12,7 @@
 #include "util.hpp"
 #include "fn_call.hpp"
 #include "bytecode_fn.hpp"
+#include "compile.hpp"
 #include <vector>
 
 namespace cleo
@@ -635,11 +636,17 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     if (arity < 0)
     {
         auto rest = ~arity + 1;
-        stack_push(elems + 1, elems + rest);
-        stack_push(rest < elems_size ?  create_array(elems + rest, elems_size - rest) : nil);
+        stack_push(elems, elems + rest);
+        if (rest < elems_size)
+        {
+            stack_push(create_array(elems + rest, elems_size - rest));
+            stack.back() = array_seq(stack.back()).value();
+        }
+        else
+            stack_push(nil);
     }
     else
-        stack_push(elems + 1, elems + elems_size);
+        stack_push(elems, elems + elems_size);
     stack_reserve(locals_size);
     vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
     return stack.back();
@@ -674,7 +681,7 @@ Force eval_list(Value list, Value env)
     if (first.is(QUOTE))
         return eval_quote(list);
     if (first.is(FN))
-        return eval_fn(list, env);
+        return compile_fn(list, env);
     if (first.is(DEF))
         return eval_def(list, env);
     if (first.is(LET))
@@ -850,8 +857,14 @@ Force call(const Value *vals, std::uint32_t size)
 
 Force eval(Value val, Value env)
 {
-    Root rval{resolve_value(val, env)};
-    return eval_resolved(*rval, env);
+    if (get_value_type(val).is(*type::List) && get_list_first(val) == FN)
+        return compile_fn(val, env);
+    std::array<Value, 3> awrap{{FN, *EMPTY_VECTOR, val}};
+    Root rwrap{create_list(awrap.data(), awrap.size())};
+    rwrap = compile_fn(*rwrap, env);
+    auto wrap = *rwrap;
+    Root call{create_fn_call(&wrap, 1)};
+    return eval_resolved(*call, env);
 }
 
 Force load(Value source)

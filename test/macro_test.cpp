@@ -203,7 +203,7 @@ TEST_F(macro_test, eval_should_fail_when_evaluating_a_macro_symbol)
     catch (Exception const& )
     {
         cleo::Root e{cleo::catch_exception()};
-        EXPECT_EQ_REFS(*type::IllegalState, get_value_type(*e));
+        EXPECT_EQ_REFS(*type::CompilationError, get_value_type(*e));
     }
 
 }
@@ -235,19 +235,6 @@ TEST_F(macro_test, should_pass_the_form_as_a_hidden_parameter)
     form = read(*form);
     Root val{eval(*form)};
     EXPECT_EQ_VALS(*form, *val);
-}
-
-TEST_F(macro_test, should_pass_the_env_as_a_hidden_parameter)
-{
-    in_ns(create_symbol("cleo.macro.env.test"));
-    Root decl{create_string("(def {:macro :true} ff (fn* [&form &env & args] `(quote ~&env)))")};
-    decl = read(*decl);
-    eval(*decl);
-    Root form{create_string("(ff 1)")};
-    form = read(*form);
-    Root env{amap(create_symbol("x"), 7, create_symbol("y"), 8)};
-    Root val{eval(*form, *env)};
-    EXPECT_EQ_VALS(*env, *val);
 }
 
 }

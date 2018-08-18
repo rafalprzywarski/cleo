@@ -39,7 +39,7 @@ TEST_F(bytecode_fn_test, should_eval_the_body)
     std::array<Value, 1> bodies{{*body}};
     std::array<Int64, 1> arities{{0}};
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
-    Root call{fn_call(*fn)};
+    Root call{list(*fn)};
     Root ex{i64(4)};
 
     auto old_stack = stack;
@@ -60,7 +60,7 @@ TEST_F(bytecode_fn_test, should_pass_the_arguments)
     std::array<Value, 1> bodies{{*body}};
     std::array<Int64, 1> arities{{3}};
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
-    Root call{fn_call(*fn, get_var_value(get_var(MINUS)), 5, 7)};
+    Root call{list(*fn, get_var_value(get_var(MINUS)), 5, 7)};
     Root ex{i64(-2)};
 
     auto old_stack = stack;
@@ -89,7 +89,7 @@ TEST_F(bytecode_fn_test, should_reserve_stack_space_for_local_variables)
     std::array<Value, 1> bodies{{*body}};
     std::array<Int64, 1> arities{{0}};
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
-    Root call{fn_call(*fn)};
+    Root call{list(*fn)};
     Root ex{i64(-6)};
 
     auto old_stack = stack;
@@ -108,7 +108,7 @@ TEST_F(bytecode_fn_test, should_fail_when_arity_cannot_be_matched)
     std::array<Int64, 3> arities{{0, 1, 2}};
     auto name = create_symbol("fn012");
     Root fn{create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size())};
-    Root call{fn_call(*fn, nil, nil, nil)};
+    Root call{list(*fn, nil, nil, nil)};
 
     try
     {
@@ -122,7 +122,7 @@ TEST_F(bytecode_fn_test, should_fail_when_arity_cannot_be_matched)
     }
 
     fn = create_bytecode_fn(nil, nullptr, nullptr, 0);
-    call = fn_call(*fn);
+    call = list(*fn);
     ASSERT_THROW(eval(*call), Exception);
 }
 
@@ -142,17 +142,17 @@ TEST_F(bytecode_fn_test, should_dispatch_to_the_right_arity)
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
     Root call, ex, val;
 
-    call = fn_call(*fn);
+    call = list(*fn);
     ex = i64(10);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn, nil);
+    call = list(*fn, nil);
     ex = i64(11);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn, nil, nil);
+    call = list(*fn, nil, nil);
     ex = i64(12);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
@@ -174,17 +174,17 @@ TEST_F(bytecode_fn_test, should_dispatch_to_vararg)
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
     Root call, ex, val;
 
-    call = fn_call(*fn);
+    call = list(*fn);
     ex = i64(10);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn, nil);
+    call = list(*fn, nil);
     ex = i64(11);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn, nil, nil);
+    call = list(*fn, nil, nil);
     ex = i64(12);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
@@ -192,7 +192,7 @@ TEST_F(bytecode_fn_test, should_dispatch_to_vararg)
     arities[2] = ~Int64(3); // test passing the params!
     fn = create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size());
 
-    call = fn_call(*fn, nil, nil, nil);
+    call = list(*fn, nil, nil, nil);
     ex = i64(12);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
@@ -212,36 +212,36 @@ TEST_F(bytecode_fn_test, should_pass_the_varargs_as_a_sequence_or_nil)
     Root fn_c{create_fn2va({vm::LDL, vm::Byte(-1), vm::Byte(-1)})};
     Root call, ex, val;
 
-    call = fn_call(*fn_a, 11, 12);
+    call = list(*fn_a, 11, 12);
     ex = i64(11);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn_a, 11, 12, 13, 14);
+    call = list(*fn_a, 11, 12, 13, 14);
     ex = i64(11);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn_b, 11, 12);
+    call = list(*fn_b, 11, 12);
     ex = i64(12);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn_b, 11, 12, 13, 14);
+    call = list(*fn_b, 11, 12, 13, 14);
     ex = i64(12);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn_c, 11, 12);
+    call = list(*fn_c, 11, 12);
     val = eval(*call);
     EXPECT_EQ_VALS(nil, *val);
 
-    call = fn_call(*fn_c, 11, 12, 13);
+    call = list(*fn_c, 11, 12, 13);
     ex = array(13);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    call = fn_call(*fn_c, 11, 12, 13, 14);
+    call = list(*fn_c, 11, 12, 13, 14);
     ex = array(13, 14);
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
@@ -256,7 +256,7 @@ TEST_F(bytecode_fn_test, should_restore_stack_when_an_exception_is_thrown)
     std::array<Value, 1> bodies{{*body}};
     std::array<Int64, 1> arities{{0}};
     Root fn{create_bytecode_fn(nil, arities.data(), bodies.data(), bodies.size())};
-    Root call{fn_call(*fn)};
+    Root call{list(*fn)};
 
     auto old_stack = stack;
     try

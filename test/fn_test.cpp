@@ -137,6 +137,7 @@ TEST_F(fn_test, should_dispatch_to_vararg)
     ex = list(x, y);
     ex = array(y, x, *ex);
     EXPECT_EQ_VALS(*ex, *val);
+    EXPECT_EQ_REFS(*type::ArraySeq, get_value_type(get_array_elem(*val, 2)));
 
     fn = create_string("(fn* xyz ([a b & c] [a b c]))");
     fn = read(*fn);
@@ -159,7 +160,7 @@ TEST_F(fn_test, should_not_bind_the_ampersand)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ_VALS(*type::SymbolNotFound, get_value_type(*e));
+        ASSERT_EQ_VALS(*type::CompilationError, get_value_type(*e));
     }
 }
 

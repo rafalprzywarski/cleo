@@ -5,6 +5,7 @@
 #include <cleo/global.hpp>
 #include <cleo/error.hpp>
 #include <cleo/fn.hpp>
+#include <cleo/bytecode_fn.hpp>
 #include <cleo/reader.hpp>
 #include <cleo/array_map.hpp>
 #include <cleo/memory.hpp>
@@ -41,7 +42,7 @@ struct eval_test : Test
         catch (const Exception& )
         {
             Root e{catch_exception()};
-            ASSERT_EQ_REFS(*type::SymbolNotFound, get_value_type(*e));
+            ASSERT_EQ_REFS(*type::CompilationError, get_value_type(*e));
         }
     }
 
@@ -147,7 +148,7 @@ TEST_F(eval_test, should_fail_when_a_symbol_cannot_be_resolved)
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ_REFS(*type::SymbolNotFound, get_value_type(*e));
+        ASSERT_EQ_REFS(*type::CompilationError, get_value_type(*e));
     }
 }
 
@@ -233,39 +234,6 @@ TEST_F(eval_test, quote_should_fail_when_not_given_one_argument)
     ASSERT_ANY_THROW(eval(*val));
 }
 
-TEST_F(eval_test, fn_should_return_a_new_function)
-{
-    auto s = create_symbol("s");
-    auto x = create_symbol("x");
-    Root body{list(s, x)};
-    Root resolved_body{fn_call(s, x)};
-    Root params{array(s, x)};
-    Root call{list(FN, *params, *body)};
-    Root val{eval(*call)};
-    ASSERT_TRUE(type::Fn->is(get_value_type(*val)));
-    ASSERT_TRUE(!get_fn_name(*val));
-    ASSERT_EQ(1u, get_fn_size(*val));
-    ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
-    ASSERT_TRUE(*resolved_body == get_fn_body(*val, 0));
-}
-
-TEST_F(eval_test, fn_should_return_a_new_function_with_a_name)
-{
-    auto s = create_symbol("s");
-    auto x = create_symbol("x");
-    auto name = create_symbol("fname");
-    Root body{list(s, x)};
-    Root resolved_body{fn_call(s, x)};
-    Root params{array(s, x)};
-    Root call{list(FN, name, *params, *body)};
-    Root val{eval(*call)};
-    ASSERT_TRUE(type::Fn->is(get_value_type(*val)));
-    ASSERT_TRUE(name.is(get_fn_name(*val)));
-    ASSERT_EQ(1u, get_fn_size(*val));
-    ASSERT_TRUE(params->is(get_fn_params(*val, 0)));
-    ASSERT_TRUE(*resolved_body == get_fn_body(*val, 0));
-}
-
 TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
 {
     auto x = create_symbol("x");
@@ -275,50 +243,9 @@ TEST_F(eval_test, fn_should_return_a_new_function_with_multiple_arities)
     Root params3{array(x, y)};
     Root call{read_str("(fn* xyz ([] :a) ([x] :b) ([x y] :c))")};
     Root val{eval(*call)};
-    ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
-    EXPECT_EQ_VALS(create_symbol("xyz"), get_fn_name(*val));
-    ASSERT_EQ(3u, get_fn_size(*val));
-    EXPECT_EQ_VALS(*params1, get_fn_params(*val, 0));
-    EXPECT_EQ_VALS(*params2, get_fn_params(*val, 1));
-    EXPECT_EQ_VALS(*params3, get_fn_params(*val, 2));
-    EXPECT_EQ_VALS(create_keyword("a"), get_fn_body(*val, 0));
-    EXPECT_EQ_VALS(create_keyword("b"), get_fn_body(*val, 1));
-    EXPECT_EQ_VALS(create_keyword("c"), get_fn_body(*val, 2));
-}
-
-TEST_F(eval_test, fn_should_return_a_new_function_with_no_arities)
-{
-    Root call{read_str("(fn*)")};
-    Root val{eval(*call)};
-    ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
-    ASSERT_EQ_VALS(nil, get_fn_name(*val));
-    ASSERT_EQ(0u, get_fn_size(*val));
-
-    call = read_str("(fn* some)");
-    val = eval(*call);
-    ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
-    ASSERT_EQ_VALS(create_symbol("some"), get_fn_name(*val));
-    ASSERT_EQ(0u, get_fn_size(*val));
-}
-
-TEST_F(eval_test, fn_should_return_a_new_function_with_no_body)
-{
-    Root params{array()};
-    Root call{read_str("(fn* [])")};
-    Root val{eval(*call)};
-    ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
-    ASSERT_EQ_VALS(nil, get_fn_name(*val));
-    ASSERT_EQ(1u, get_fn_size(*val));
-    EXPECT_EQ_VALS(*params, get_fn_params(*val, 0));
-    EXPECT_EQ_VALS(nil, get_fn_body(*val, 0));
-
-    call = read_str("(fn* some [])");
-    val = eval(*call);
-    ASSERT_EQ_VALS(*type::Fn, get_value_type(*val));
-    ASSERT_EQ_VALS(create_symbol("some"), get_fn_name(*val));
-    ASSERT_EQ(1u, get_fn_size(*val));
-    EXPECT_EQ_VALS(*params, get_fn_params(*val, 0));
-    EXPECT_EQ_VALS(nil, get_fn_body(*val, 0));
+    ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(*val));
+    EXPECT_EQ_VALS(create_symbol("xyz"), get_bytecode_fn_name(*val));
+    ASSERT_EQ(3u, get_bytecode_fn_size(*val));
 }
 
 TEST_F(eval_test, fn_should_fail_when_param_list_is_not_a_vector)
@@ -627,12 +554,12 @@ TEST_F(eval_test, def_should_fail_when_ns_is_specified)
     try
     {
         eval(*val, *env);
-        FAIL() << "expected IllegalArgument";
+        FAIL() << "expected CompilationError";
     }
     catch (const Exception& )
     {
         Root e{catch_exception()};
-        ASSERT_EQ_VALS(*type::IllegalArgument, get_value_type(*e));
+        ASSERT_EQ_VALS(*type::CompilationError, get_value_type(*e));
     }
     ASSERT_THROW(lookup(create_symbol("clue.eval.test.other", "var2")), Exception);
 }
@@ -721,8 +648,8 @@ TEST_F(eval_test, should_eval_maps)
     Root y{create_int64(77)};
     auto xs = create_symbol("x");
     auto ys = create_symbol("y");
-    Root ex{amap(*rt::seq, *rt::first, *x, *y)};
-    Root val{amap(SEQ, FIRST, xs, ys)};
+    Root ex{phmap(*rt::seq, *rt::first, *x, *y)};
+    Root val{phmap(SEQ, FIRST, xs, ys)};
     Root env{amap(xs, *x, ys, *y)};
     val = eval(*val, *env);
     EXPECT_EQ_VALS(*ex, *val);
@@ -990,17 +917,6 @@ TEST_F(eval_test, should_eval_try_catch)
     EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 }
 
-TEST_F(eval_test, should_eval_catch_with_a_var_ref_as_type)
-{
-    Root val{read_str("(try* (throw x) (catch* cleo.core/Int64 e (cleo.core/+ e a)))")};
-    Root env{amap(create_symbol("x"), 107, create_symbol("a"), 2)};
-    Root ex{create_int64(109)};
-    val = resolve_value(*val, *env);
-    val = eval(*val, *env);
-    EXPECT_EQ_VALS(*ex, *val);
-    EXPECT_EQ_VALS(nil, *Root(catch_exception()));
-}
-
 TEST_F(eval_test, should_eval_do)
 {
     Root env{amap(create_symbol("a"), create_keyword("z"))};
@@ -1069,15 +985,9 @@ TEST_F(eval_test, should_eval_try_finally)
     EXPECT_FALSE(finally_called_too_early);
 }
 
-TEST_F(eval_test, try_should_fail_when_given_too_few_or_too_many_expressions)
+TEST_F(eval_test, try_should_fail_when_given_too_many_expressions)
 {
-    Root val{read_str("(try*)")};
-    ASSERT_THROW(eval(*val), Exception);
-
-    val = read_str("(try* 10)");
-    ASSERT_THROW(eval(*val), Exception);
-
-    val = read_str("(try* 10 (catch* cleo.core/Int64 e e) (finally* nil))");
+    Root val{read_str("(try* 10 (catch* cleo.core/Int64 e e) (finally* nil))")};
     ASSERT_THROW(eval(*val), Exception);
 }
 
