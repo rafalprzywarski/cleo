@@ -170,7 +170,7 @@ TEST_F(vm_test, setv)
     stack_push(var);
     stack_push(*TWO);
     stack_push(*meta);
-    const std::array<Byte, 10> bc1{{LDL, -3, -1, LDL, -2, -1, LDL, -1, -1, SETV}};
+    const std::array<Byte, 10> bc1{{LDL, Byte(-3), Byte(-1), LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), SETV}};
     eval_bytecode(nil, nil, 0, bc1);
 
     ASSERT_EQ(4u, stack.size());

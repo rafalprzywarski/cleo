@@ -2,6 +2,8 @@
 #include "global.hpp"
 #include "array.hpp"
 #include "multimethod.hpp"
+#include <cstring>
+#include <algorithm>
 
 namespace cleo
 {

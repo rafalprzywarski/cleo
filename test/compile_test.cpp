@@ -877,9 +877,9 @@ TEST_F(compile_test, should_compile_hash_maps)
                                                           vm::LDC, 0, 0,
                                                           vm::LDC, 1, 0,
                                                           vm::LDL, -1, -1,
-                                                          vm::LDC, 3, 0,
-                                                          vm::CALL, 3,
                                                           vm::LDC, 2, 0,
+                                                          vm::CALL, 3,
+                                                          vm::LDC, 3, 0,
                                                           vm::LDL, -2, -1,
                                                           vm::CALL, 3)));
 }

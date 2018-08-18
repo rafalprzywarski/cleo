@@ -8,6 +8,7 @@
 #include "namespace.hpp"
 #include "persistent_hash_map.hpp"
 #include "eval.hpp"
+#include <algorithm>
 
 namespace cleo
 {

@@ -38,8 +38,8 @@
       eparams
       (if (next body)
         (if (nnext body)
-          (list (first body) (conj* (next body) 'do))
-          body)
+          (list (first body) (conj* (apply* list (next body)) 'do))
+          (apply* list  body))
         (list (first body))))))
 
 
@@ -269,8 +269,8 @@
         eparams
         (if (next body)
           (if (nnext body)
-            (list (first body) (conj* (next body) 'do))
-            body)
+            (list (first body) (conj* (apply* list (next body)) 'do))
+            (apply* list body))
           (list (first body)))))))
 
 
