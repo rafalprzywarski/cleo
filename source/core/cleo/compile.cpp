@@ -125,8 +125,11 @@ Int64 add_const(Root& consts, Value c)
 {
     auto n = get_int64_value(get_transient_array_size(*consts));
     for (Int64 i = 0; i < n; ++i)
-        if (get_transient_array_elem(*consts, i) == c)
+    {
+        auto e = get_transient_array_elem(*consts, i);
+        if (get_value_type(e).is(get_value_type(c)) && e == c)
             return i;
+    }
 
     consts = transient_array_conj(*consts, c);
     return n;

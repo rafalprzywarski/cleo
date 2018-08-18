@@ -405,6 +405,22 @@ TEST_F(compile_test, should_compile_empty_lists_to_empty_list_constants)
                                                                         vm::CALL, 1));
 }
 
+TEST_F(compile_test, should_check_type_when_deduplicating_consts)
+{
+    Root fn{compile_fn("(fn* [f] (f 1 1.0 [] () #{} {}))")};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(1, 1.0, *EMPTY_VECTOR, *EMPTY_LIST, *EMPTY_SET, *EMPTY_MAP),
+                                         b(vm::LDL, -1, -1,
+                                           vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDC, 2, 0,
+                                           vm::LDC, 3, 0,
+                                           vm::LDC, 4, 0,
+                                           vm::LDC, 5, 0,
+                                           vm::CALL, 6));
+    EXPECT_EQ_REFS(*type::Array, get_value_type(get_fn_const(*fn, 0, 2)));
+    EXPECT_EQ_REFS(*type::List, get_value_type(get_fn_const(*fn, 0, 3)));
+}
+
 TEST_F(compile_test, should_compile_functions_with_nil_body)
 {
     Root fn(compile_fn("(fn* [] nil)"));
