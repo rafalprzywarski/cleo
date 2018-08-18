@@ -357,7 +357,7 @@ TEST_F(eval_test, fn_should_fail_when_given_too_many_expressions)
     EXPECT_ANY_THROW(eval(*call));
 }
 
-TEST_F(eval_test, should_store_the_environment_in_created_fns)
+TEST_F(eval_test, should_pass_used_local_variables_to_created_fns)
 {
     Root ex{array(3, 4, 5)};
     Root val{read_str("(((fn* [x y z] (fn* [] [x y z])) 3 4 5))")};
@@ -369,7 +369,7 @@ TEST_F(eval_test, should_store_the_environment_in_created_fns)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
-TEST_F(eval_test, should_store_the_fn_name_in_the_environment)
+TEST_F(eval_test, should_use_the_fn_name_to_let_it_call_itself)
 {
     Root ex{i64(17)};
     Root val{read_str("((fn* abc ([] 10) ([x] (cleo.core/+ x (abc)))) 7)")};
@@ -382,7 +382,7 @@ TEST_F(eval_test, should_store_the_fn_name_in_the_environment)
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = i64(13);
-    val = read_str("((fn* cn [x] (if (cleo.core/= x 0) 10 (cleo.core/+ x (cn 0)))) 3)");
+    val = read_str("((fn* cn [x & xs] (if xs (cleo.core/+ x (cn 0)) 10)) 3 1 1)");
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 }
