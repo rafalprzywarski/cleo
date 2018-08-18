@@ -904,6 +904,10 @@ TEST_F(compile_test, should_compile_def)
     EXPECT_EQ_REFS(v, resolve_var(create_symbol("x")));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 10), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::CNIL, vm::SETV));
 
+    fn = compile_fn("(fn* [] (def xr xr))");
+    v = get_var(create_symbol("cleo.compile.def.test", "xr"));
+    expect_body_with_consts_vars_and_bytecode(*fn, 0, arrayv(v), arrayv(v), b(vm::LDC, 0, 0, vm::LDV, 0, 0, vm::CNIL, vm::SETV));
+
     fn = compile_fn("(fn* [f z] (def y (f z)))");
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(get_var(create_symbol("cleo.compile.def.test", "y"))),
                                          b(vm::LDC, 0, 0,
