@@ -1073,6 +1073,17 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
                                                                   vm::BR, 6, 0,
                                                                   vm::STL, 0, 0,
                                                                   vm::LDL, 0, 0));
+
+    fn = compile_fn("(fn* f1 [x y] (f1 y x))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1, vm::LDL, -1, -1, vm::LDL, -2, -1, vm::CALL, 2));
+
+    fn = compile_fn("(fn* f1 [f1] (f1))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1, vm::CALL, 0));
+
+    fn = compile_fn("(fn* f1 [x] (fn* [] (f1 x 20)))");
+    inner_fn = get_fn_const(*fn, 0, 0);
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(20, nil, nil), b(vm::LDC, 1, 0, vm::LDC, 2, 0, vm::LDC, 0, 0, vm::CALL, 2));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -2, -1, vm::LDL, -1, -1, vm::IFN, 2));
 }
 
 TEST_F(compile_test, should_use_constants_from_env)

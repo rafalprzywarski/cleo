@@ -143,7 +143,7 @@ Int64 Compiler::add_local_ref(Value sym)
     return n;
 }
 
-Force create_locals(Value params)
+Force create_locals(Value name, Value params)
 {
     if (!get_value_type(params).is(*type::Array))
         throw_compilation_error("Bad " + to_string(FN) + " param list, expected vector");
@@ -151,6 +151,11 @@ Force create_locals(Value params)
     auto arity = get_arity(params);
     auto fixed_arity = arity < 0 ? ~arity : arity;
     auto total_arity = arity < 0 ? ~arity + 1 : arity;
+    if (name)
+    {
+        index = create_int64(-(total_arity + 1));
+        locals = persistent_hash_map_assoc(*locals, name, *index);
+    }
     for (Int64 i = 0; i < fixed_arity; ++i)
     {
         auto sym = get_array_elem(params, i);
@@ -669,14 +674,14 @@ Compiler::Scope create_fn_body_scope(Value form, Value env, Value locals, Value 
     return {env, parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
 }
 
-Force compile_fn_body(Value form, Value env, Value parent_locals, Root& used_locals)
+Force compile_fn_body(Value name, Value form, Value env, Value parent_locals, Root& used_locals)
 {
     Compiler c(*used_locals);
     Value val = get_list_next(form);
     if (val && get_list_next(val))
         throw_compilation_error("Too many forms passed to " + to_string(FN));
     val = val ? get_list_first(val) : nil;
-    Root locals{create_locals(get_list_first(form))};
+    Root locals{create_locals(name, get_list_first(form))};
     auto scope = create_fn_body_scope(form, env, *locals, parent_locals);
     c.compile_value(scope, val, false);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
@@ -744,7 +749,7 @@ Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
     for (Int64 i = 0; i < count; ++i)
     {
         auto form = get_list_first(*forms);
-        rbodies.set(i, compile_fn_body(form, env, parent_locals, used_locals));
+        rbodies.set(i, compile_fn_body(name, form, env, parent_locals, used_locals));
         arities_and_bodies.emplace_back(get_arity(get_list_first(form)), rbodies[i]);
         forms = get_list_next(*forms);
     }
