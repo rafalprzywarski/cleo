@@ -858,31 +858,13 @@ TEST_F(eval_test, load_should_read_and_eval_all_forms_in_the_source_code)
     EXPECT_EQ_VALS(create_symbol("cleo.eval.load.test"), ns_name(*rt::current_ns));
 }
 
-TEST_F(eval_test, apply_should_call_functions)
-{
-    Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return create_list(args, num_args); })};
-    Root args{array(4, 3, 2, 1)};
-    Root val{apply(*fn, *args)};
-    Root ex{list(4, 3, 2, 1)};
-    ASSERT_EQ_VALS(*ex, *val);
-
-    args = list(4);
-    val = apply(*fn, *args);
-    ex = list(4);
-    ASSERT_EQ_VALS(*ex, *val);
-
-    args = array();
-    val = apply(*fn, *args);
-    ex = list();
-    ASSERT_EQ_VALS(*ex, *val);
-}
-
 TEST_F(eval_test, apply_should_not_reevaluate_params)
 {
     Root fn{create_native_function([](const Value *args, std::uint8_t num_args) { return create_list(args, num_args); })};
     Root l{list(3, 2)};
-    Root args{array(*l, 3, 2, 1)};
-    Root val{apply(*fn, *args)};
+    Root s{list(3, 2, 1)};
+    std::array<Value, 3> args{{*fn, *l, *s}};
+    Root val{apply(args.data(), args.size())};
     Root ex{list(*l, 3, 2, 1)};
     ASSERT_EQ_VALS(*ex, *val);
 }

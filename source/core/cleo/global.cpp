@@ -73,7 +73,6 @@ const Value DO = create_symbol("do");
 const Value IF = create_symbol("if");
 const Value LOOP = create_symbol("loop*");
 const Value RECUR = create_symbol("recur");
-const Value APPLY_SPECIAL = create_symbol("apply*");
 const Value PLUS = create_symbol("cleo.core", "+");
 const Value MINUS = create_symbol("cleo.core", "-");
 const Value ASTERISK = create_symbol("cleo.core", "*");
@@ -97,7 +96,7 @@ const Value ATOM = create_symbol("cleo.core", "atom");
 const Value DEREF = create_symbol("cleo.core", "deref");
 const Value RESET = create_symbol("cleo.core", "reset!");
 const Value SWAP = create_symbol("cleo.core", "swap!");
-const Value APPLY = create_symbol("cleo.core", "apply*");
+const Value APPLY = create_symbol("cleo.core", "apply");
 const Value FORM = create_symbol("&form");
 const Value ENV = create_symbol("&env");
 const Value CLEO_CORE = create_symbol("cleo.core");
@@ -130,7 +129,6 @@ const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     IF,
     LOOP,
     RECUR,
-    APPLY_SPECIAL,
     THROW,
     TRY,
     CATCH,
@@ -666,6 +664,13 @@ Force concati(const Value *args, std::uint8_t n)
             v = array_conj(*v, *val);
         }
     return *v;
+}
+
+Force apply_wrapped(const Value *args, std::uint8_t n)
+{
+    if (n < 2)
+        throw_arity_error(APPLY, n);
+    return apply(args, n);
 }
 
 Force gensym(const Value *args, std::uint8_t n)
@@ -1410,7 +1415,7 @@ struct Initialize
         f = create_swap_fn();
         define(SWAP, *f);
 
-        f = create_native_function2<apply, &APPLY>();
+        f = create_native_function(apply_wrapped);
         define(APPLY, *f);
 
         f = create_native_function1<pr_str, &PR_STR>();

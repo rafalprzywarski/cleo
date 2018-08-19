@@ -222,7 +222,7 @@ void Compiler::compile_apply(Scope scope, Value form)
 {
     auto size = get_list_size(form);
     if (size < 3)
-        throw_compiletime_arity_error(APPLY_SPECIAL, form, size - 1);
+        throw_compiletime_arity_error(APPLY, form, size - 1);
     for (auto e = get_list_next(form); e; e = get_list_next(e))
         compile_value(scope, get_list_first(e));
     append(code, vm::APPLY, size - 3);
@@ -624,6 +624,14 @@ void Compiler::compile_try_wrapped(Scope scope, Value form)
     compile_value(scope, *call);
 }
 
+Value maybe_resolved_var_name(Value sym)
+{
+    if (get_value_tag(sym) != tag::SYMBOL)
+        return nil;
+    auto v = maybe_resolve_var(sym);
+    return v ? get_var_name(v) : nil;
+}
+
 void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
 {
     Root xval{macroexpand(val)};
@@ -650,7 +658,7 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
             return compile_loop(scope, val);
         if (first == DEF)
             return compile_def(scope, val);
-        if (first == APPLY_SPECIAL)
+        if (maybe_resolved_var_name(first) == APPLY)
             return compile_apply(scope, val);
         if (first == FN)
             return compile_fn(scope, val);

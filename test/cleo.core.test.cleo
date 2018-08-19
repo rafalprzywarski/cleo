@@ -15,7 +15,7 @@
   (fn* [& msg]
     (do
       (swap! failed-tests conj* @current-test)
-      (println @current-test (apply* str msg)))))
+      (println @current-test (apply str msg)))))
 
 
 (def {:macro :true} fail-unless

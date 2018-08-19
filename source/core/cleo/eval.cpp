@@ -130,12 +130,6 @@ Force macroexpand(Value form, Value env)
     return *exp;
 }
 
-Force apply(Value fn, Value args)
-{
-    std::array<Value, 2> vals{{fn, args}};
-    return apply(vals.data(), vals.size());
-}
-
 Force apply(const Value *vals, std::uint32_t size)
 {
     assert(size >= 2);

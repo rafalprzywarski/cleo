@@ -658,19 +658,19 @@ TEST_F(reader_test, syntax_quote_should_generate_non_namespace_qualified_symbols
     val = read_str("`abc/some#");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__38__auto__)) (cleo.core/list (quote y__39__auto__)) (cleo.core/list (quote z__40__auto__))))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__38__auto__)) (cleo.core/list (quote y__39__auto__)) (cleo.core/list (quote z__40__auto__))))");
     val = read_str("`[x# y# z#]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__41__auto__)) (cleo.core/list (quote y__42__auto__)) (cleo.core/list (quote x__41__auto__)) (cleo.core/list (quote y__42__auto__))))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__41__auto__)) (cleo.core/list (quote y__42__auto__)) (cleo.core/list (quote x__41__auto__)) (cleo.core/list (quote y__42__auto__))))");
     val = read_str("`[x# y# x# y#]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (cleo.core/apply* cleo.core/list (cleo.core/concati (cleo.core/list (cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__43__auto__))))) (cleo.core/list (cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote x__43__auto__)) (cleo.core/list (quote x__43__auto__))))) (cleo.core/list (cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list (quote x__43__auto__)))))))) (cleo.core/list (quote x__43__auto__))))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list (cleo.core/apply cleo.core/list (cleo.core/concati (cleo.core/list (cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__43__auto__))))) (cleo.core/list (cleo.core/apply cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote x__43__auto__)) (cleo.core/list (quote x__43__auto__))))) (cleo.core/list (cleo.core/apply cleo.core/hash-set (cleo.core/concati (cleo.core/list (quote x__43__auto__)))))))) (cleo.core/list (quote x__43__auto__))))");
     val = read_str("`[([x#] {x# x#} #{x#}) x#]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__45__auto__)) (cleo.core/list (quote x__44__auto__))))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list (quote x__45__auto__)) (cleo.core/list (quote x__44__auto__))))");
     val = read_str("`[x# ~`x#]");
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -679,15 +679,15 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_vectors)
 {
     in_ns(create_symbol("cleo.reader.syntax-quote.test"));
     Root val, ex;
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati))");
     val = read_str("`[]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list 7)))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list 7)))");
     val = read_str("`[7]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
     val = read_str("`[7 x y 20]");
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -696,15 +696,15 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_lists)
 {
     in_ns(create_symbol("cleo.reader.syntax-quote.test"));
     Root val, ex;
-    ex = read_str("(cleo.core/apply* cleo.core/list (cleo.core/concati))");
+    ex = read_str("(cleo.core/apply cleo.core/list (cleo.core/concati))");
     val = read_str("`()");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/list (cleo.core/concati (cleo.core/list 7)))");
+    ex = read_str("(cleo.core/apply cleo.core/list (cleo.core/concati (cleo.core/list 7)))");
     val = read_str("`(7)");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/list (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
+    ex = read_str("(cleo.core/apply cleo.core/list (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))");
     val = read_str("`(7 x y 20)");
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -713,16 +713,16 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_sets)
 {
     in_ns(create_symbol("cleo.reader.syntax-quote.test"));
     Root val, ex;
-    ex = read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati))");
+    ex = read_str("(cleo.core/apply cleo.core/hash-set (cleo.core/concati))");
     val = read_str("`#{}");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7)))");
+    ex = read_str("(cleo.core/apply cleo.core/hash-set (cleo.core/concati (cleo.core/list 7)))");
     val = read_str("`#{7}");
     EXPECT_EQ_VALS(*ex, *val);
 
-    Root ex1{read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
-    Root ex2{read_str("(cleo.core/apply* cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
+    Root ex1{read_str("(cleo.core/apply cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
+    Root ex2{read_str("(cleo.core/apply cleo.core/hash-set (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
     val = read_str("`#{7 x}");
     EXPECT_EQ_VALS_ALT2(*ex1, *ex2, *val);
 }
@@ -731,16 +731,16 @@ TEST_F(reader_test, syntax_quote_should_resolve_symbols_in_maps)
 {
     in_ns(create_symbol("cleo.reader.syntax-quote.test"));
     Root val, ex;
-    ex = read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati))");
+    ex = read_str("(cleo.core/apply cleo.core/hash-map (cleo.core/concati))");
     val = read_str("`{}");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list 7) (cleo.core/list 9)))");
+    ex = read_str("(cleo.core/apply cleo.core/hash-map (cleo.core/concati (cleo.core/list 7) (cleo.core/list 9)))");
     val = read_str("`{7 9}");
     EXPECT_EQ_VALS(*ex, *val);
 
-    Root ex1{read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))")};
-    Root ex2{read_str("(cleo.core/apply* cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20) (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
+    Root ex1{read_str("(cleo.core/apply cleo.core/hash-map (cleo.core/concati (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x)) (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20)))")};
+    Root ex2{read_str("(cleo.core/apply cleo.core/hash-map (cleo.core/concati (cleo.core/list (quote cleo.reader.syntax-quote.test/y)) (cleo.core/list 20) (cleo.core/list 7) (cleo.core/list (quote cleo.reader.syntax-quote.test/x))))")};
     val = read_str("`{7 x y 20}");
     EXPECT_EQ_VALS_ALT2(*ex1, *ex2, *val);
 }
@@ -752,7 +752,7 @@ TEST_F(reader_test, syntax_quote_should_not_quote_unquoted_expressions)
     val = read_str("`~x");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list x)))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list x)))");
     val = read_str("`[~x]");
     EXPECT_EQ_VALS(*ex, *val);
 
@@ -764,11 +764,11 @@ TEST_F(reader_test, syntax_quote_should_not_quote_unquoted_expressions)
 TEST_F(reader_test, unquote_splicing_should_splice_a_sequence_into_another_sequence)
 {
     Root val, ex;
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati (cleo.core/list 1) x (cleo.core/list 2)))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati (cleo.core/list 1) x (cleo.core/list 2)))");
     val = read_str("`[1 ~@x 2]");
     EXPECT_EQ_VALS(*ex, *val);
 
-    ex = read_str("(cleo.core/apply* cleo.core/vector (cleo.core/concati nil))");
+    ex = read_str("(cleo.core/apply cleo.core/vector (cleo.core/concati nil))");
     val = read_str("`[(cleo.core/unquote-splicing)]");
     EXPECT_EQ_VALS(*ex, *val);
 }
