@@ -171,7 +171,7 @@ Force eval(Value val, Value env)
     Root rwrap{create_list(awrap.data(), awrap.size())};
     rwrap = compile_fn(*rwrap, env);
     auto wrap = *rwrap;
-    return call_fn(get_value_type(wrap), &wrap, 1);
+    return call_bytecode_fn(&wrap, 1, 0);
 }
 
 Force load(Value source)
