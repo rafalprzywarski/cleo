@@ -1,5 +1,7 @@
 #include <cleo/vm.hpp>
 #include <cleo/bytecode_fn.hpp>
+#include <cleo/compile.hpp>
+#include <cleo/reader.hpp>
 #include <cleo/error.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
@@ -48,6 +50,13 @@ struct vm_test : Test
         for (auto& v : vals)
             vs[v.first] = v.second;
         return create_array(vs.data(), vs.size());
+    }
+
+    Force compile_fn(const std::string& s)
+    {
+        Root ss{create_string(s)};
+        Root form{read(*ss)};
+        return cleo::compile_fn(*form, nil);
     }
 };
 
@@ -362,6 +371,66 @@ TEST_F(vm_test, call)
     ex = i64(129);
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(*ex, stack[0]);
+}
+
+TEST_F(vm_test, bytecode_fn_call)
+{
+    Root fn{compile_fn("(fn* f ([] 1) ([x] x) ([x y] [f x y]) ([x y z & xs] [f x y z xs]))")};
+
+    stack_push(*fn);
+    std::array<Byte, 2> bc1{{CALL, 0}};
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ONE, stack[0]);
+    stack.clear();
+
+    stack_push(*fn);
+    stack_push(i64(10));
+    std::array<Byte, 2> bc2{{CALL, 1}};
+    eval_bytecode(nil, nil, 0, bc2);
+
+    Root ex{i64(10)};
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+    stack.clear();
+
+    stack_push(*fn);
+    stack_push(i64(10));
+    stack_push(i64(20));
+    std::array<Byte, 2> bc3{{CALL, 2}};
+    eval_bytecode(nil, nil, 0, bc3);
+
+    ex = array(*fn, 10, 20);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+    stack.clear();
+
+    stack_push(*fn);
+    stack_push(i64(10));
+    stack_push(i64(20));
+    stack_push(i64(30));
+    std::array<Byte, 2> bc4{{CALL, 3}};
+    eval_bytecode(nil, nil, 0, bc4);
+
+    ex = array(*fn, 10, 20, 30, nil);
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+    stack.clear();
+
+    stack_push(*fn);
+    stack_push(i64(10));
+    stack_push(i64(20));
+    stack_push(i64(30));
+    stack_push(i64(40));
+    stack_push(i64(50));
+    std::array<Byte, 2> bc5{{CALL, 5}};
+    eval_bytecode(nil, nil, 0, bc5);
+
+    ex = array(*fn, 10, 20, 30, arrayv(40, 50));
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(*ex, stack[0]);
+    EXPECT_EQ_REFS(*type::ArraySeq, get_value_type(get_array_elem(stack[0], 4)));
 }
 
 TEST_F(vm_test, apply)

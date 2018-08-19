@@ -70,7 +70,7 @@ inline auto stack_reserve(std::size_t n)
 class StackGuard
 {
 public:
-    StackGuard() : stack_size(stack.size()) {}
+    StackGuard(std::size_t n = 0) : stack_size(stack.size() - n) {}
     StackGuard(const StackGuard& ) = delete;
     ~StackGuard() { assert(stack.size() >= stack_size); stack.resize(stack_size); }
 private:

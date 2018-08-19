@@ -5,6 +5,7 @@
 #include "eval.hpp"
 #include "bytecode_fn.hpp"
 #include "error.hpp"
+#include "util.hpp"
 
 namespace cleo
 {
@@ -29,6 +30,52 @@ std::int16_t read_i16(const Byte *p)
 const Byte *br(const Byte *p)
 {
     return p + (3 + read_i16(p + 1));
+}
+
+std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity)
+{
+    auto n = get_bytecode_fn_size(fn);
+    for (decltype(n) i = 0; i < n; ++i)
+        if (get_bytecode_fn_arity(fn, i) == arity)
+            return {get_bytecode_fn_body(fn, i), arity};
+    if (n > 0)
+    {
+        auto va_arity = get_bytecode_fn_arity(fn, n - 1);
+        if (va_arity < 0 && ~va_arity <= arity)
+            return {get_bytecode_fn_body(fn, n - 1), va_arity};
+    }
+    throw_arity_error(get_bytecode_fn_name(fn), arity);
+}
+
+void call_bytecode_fn(std::uint32_t n)
+{
+    auto elems = &stack[stack.size() - n];
+    auto fn = elems[0];
+    auto body_and_arity = find_bytecode_fn_body(fn, n - 1);
+    auto body = body_and_arity.first;
+    auto arity = body_and_arity.second;
+    auto consts = get_bytecode_fn_body_consts(body);
+    auto vars = get_bytecode_fn_body_vars(body);
+    auto exception_table = get_bytecode_fn_body_exception_table(body);
+    auto locals_size = get_bytecode_fn_body_locals_size(body);
+    auto bytes = get_bytecode_fn_body_bytes(body);
+    auto bytes_size = get_bytecode_fn_body_bytes_size(body);
+    StackGuard guard(n - 1);
+    if (arity < 0)
+    {
+        auto rest = ~arity + 1;
+        if (rest < n)
+        {
+            elems[rest] = create_array(elems + rest, n - rest).value();
+            stack_pop(n - rest - 1);
+            stack.back() = array_seq(stack.back()).value();
+        }
+        else
+            stack_push(nil);
+    }
+    stack_reserve(locals_size);
+    vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
+    elems[0] = stack.back();
 }
 
 }
@@ -102,8 +149,13 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             auto& first = stack[stack.size() - n];
             try
             {
-                first = call(&first, n).value();
-                stack_pop(n - 1);
+                if (get_value_type(first).is(*type::BytecodeFn))
+                    call_bytecode_fn(n);
+                else
+                {
+                    first = call(&first, n).value();
+                    stack_pop(n - 1);
+                }
                 p += 2;
             }
             catch (cleo::Exception const& )
