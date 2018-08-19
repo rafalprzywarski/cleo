@@ -93,16 +93,52 @@ void append_i16(std::vector<vm::Byte>& v, std::int16_t n)
     append(v, n & 0xff, (n >> 8) & 0xff);
 }
 
+void append_u16(std::vector<vm::Byte>& v, std::uint16_t n)
+{
+    append_i16(v, std::int16_t(n));
+}
+
+void set_i16(std::vector<vm::Byte>& v, std::size_t off, std::int16_t n)
+{
+    v[off] = n & 0xff;
+    v[off + 1] = (n >> 8) & 0xff;
+}
+
+std::int16_t get_i16(const std::vector<vm::Byte>& v, std::size_t off)
+{
+    return std::int16_t(std::uint8_t(v[off]) | (std::uint16_t(std::uint8_t(v[off + 1])) << 8));
+}
+
 void append_STL(std::vector<vm::Byte>& v, std::int16_t n)
 {
     append(v, vm::STL);
     append_i16(v, n);
 }
 
-void append_BR(std::vector<vm::Byte>& v, std::int16_t n)
+void append_LDL(std::vector<vm::Byte>& v, std::int16_t n)
 {
-    append(v, vm::BR);
+    append(v, vm::LDL);
     append_i16(v, n);
+}
+
+void append_LDC(std::vector<vm::Byte>& v, std::int16_t n)
+{
+    append(v, vm::LDC);
+    append_u16(v, n);
+}
+
+auto append_branch(std::vector<vm::Byte>& v, vm::Byte b, std::int16_t n)
+{
+    auto off = v.size();
+    append(v, b);
+    append_i16(v, n);
+    return off;
+}
+
+void set_branch_target(std::vector<vm::Byte>& v, std::size_t off, std::size_t target)
+{
+    std::int16_t br_off = std::ptrdiff_t(target) - std::ptrdiff_t(off) - 3;
+    set_i16(v, off + 1, br_off);
 }
 
 Int64 get_arity(Value params)
@@ -178,10 +214,7 @@ Force create_locals(Value name, Value params)
 void Compiler::compile_symbol(const Scope& scope, Value sym)
 {
     if (auto index = persistent_hash_map_get(scope.locals, sym))
-    {
-        append(code, vm::LDL);
-        return append_i16(code, get_int64_value(index));
-    }
+        return append_LDL(code, get_int64_value(index));
     if (persistent_hash_map_contains(scope.parent_locals, sym))
         return compile_local_ref(sym);
     if (scope.env && map_contains(scope.env, sym))
@@ -193,7 +226,8 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
     if (is_var_macro(v))
         throw_compilation_error("Can't take value of a macro: " + to_string(v));
     auto vi = add_var(vars, v);
-    append(code, vm::LDV, vi, 0);
+    append(code, vm::LDV);
+    append_u16(code, vi);
 }
 
 void Compiler::compile_const(Value c)
@@ -201,14 +235,14 @@ void Compiler::compile_const(Value c)
     if (c.is_nil())
         return append(code, vm::CNIL);
     auto ci = add_const(consts, c);
-    append(code, vm::LDC, ci, 0);
+    append_LDC(code, ci);
 }
 
 void Compiler::compile_local_ref(Value sym)
 {
     auto ri = add_local_ref(sym);
     local_ref_offsets.push_back(code.size() + 1);
-    append(code, vm::LDC, ri, 0);
+    append_LDC(code, ri);
 }
 
 void Compiler::compile_call(Scope scope, Value val)
@@ -242,14 +276,12 @@ void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
         throw_compilation_error("Too many arguments to if");
 
     compile_value(scope, get_list_first(cond));
-    auto bnil_offset = code.size();
-    append(code, vm::BNIL, 0, 0);
+    auto bnil_offset = append_branch(code, vm::BNIL, 0);
     compile_value(scope, get_list_first(then), wrap_try);
-    auto br_offset = code.size();
-    append_BR(code, 0);
-    code[bnil_offset + 1] = code.size() - bnil_offset - 3;
+    auto br_offset = append_branch(code, vm::BR, 0);
+    set_branch_target(code, bnil_offset, code.size());
     compile_value(scope, else_ ? get_list_first(else_) : nil, wrap_try);
-    code[br_offset + 1] = code.size() - br_offset - 3;
+    set_branch_target(code, br_offset, code.size());
 }
 
 void Compiler::compile_do(Scope scope, Value val, bool wrap_try)
@@ -350,7 +382,7 @@ void Compiler::compile_recur(Scope scope, Value form)
         compile_value(scope, get_list_first(form));
     for (Int64 i = 0; i < size; ++i)
         append_STL(code, scope.recur_locals_index + (size - i - 1));
-    append_BR(code, scope.recur_start_offset - 3 - Int64(code.size()));
+    append_branch(code, vm::BR, scope.recur_start_offset - 3 - Int64(code.size()));
 }
 
 bool is_const(Value val)
@@ -578,15 +610,14 @@ void Compiler::compile_try(Scope scope, Value form)
         Int64 index{};
         std::tie(scope, index) = add_local(scope, local, rlocal);
         update_locals_size(scope);
-        auto br_offset = code.size();
-        append_BR(code, 0);
+        auto br_offset = append_branch(code, vm::BR, 0);
         auto type = maybe_resolve_var(type_sym);
         if (!type)
             throw_compilation_error("unable to resolve symbol: " + to_string(type_sym));
         add_exception_handler(start_offset, br_offset, code.size(), get_var_value(type));
         append_STL(code, index);
         compile_value(scope, expr);
-        code[br_offset + 1] = code.size() - (br_offset + 3);
+        set_branch_target(code, br_offset, code.size());
     }
     else if (tag == FINALLY)
     {
@@ -599,8 +630,7 @@ void Compiler::compile_try(Scope scope, Value form)
         auto end_offset = code.size();
         compile_value(scope, expr);
         append(code, vm::POP);
-        auto br_offset = code.size();
-        append_BR(code, 0);
+        auto br_offset = append_branch(code, vm::BR, 0);
         add_exception_handler(start_offset, end_offset, code.size(), nil);
         Root rlocal;
         Int64 index{};
@@ -609,9 +639,9 @@ void Compiler::compile_try(Scope scope, Value form)
         append_STL(code, index);
         compile_value(scope, expr);
         append(code, vm::POP);
-        append(code, vm::LDL, index, 0);
+        append_LDL(code, index);
         append(code, vm::THROW);
-        code[br_offset + 1] = code.size() - (br_offset + 3);
+        set_branch_target(code, br_offset, code.size());
     }
 }
 
@@ -699,7 +729,7 @@ Force compile_fn_body(Value name, Value form, Value env, Value parent_locals, Ro
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
     for (auto off : c.local_ref_offsets)
-        c.code[off] += consts_size;
+        set_i16(c.code, off, get_i16(c.code, off) + consts_size);
     Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
     Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.local_refs) : nil;
