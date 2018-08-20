@@ -52,23 +52,21 @@ Force array_set_seq(Value s)
 {
     if (get_array_set_size(s) == 0)
         return nil;
-    Root index{create_int64(0)};
-    return create_object2(*type::ArraySetSeq, s, *index);
+    return create_object1_1(*type::ArraySetSeq, 0, s);
 }
 
 Value get_array_set_seq_first(Value s)
 {
-    return get_array_set_elem(get_object_element(s, 0), get_int64_value(get_object_element(s, 1)));
+    return get_array_set_elem(get_object_element(s, 0), get_object_int(s, 0));
 }
 
 Force get_array_set_seq_next(Value s)
 {
     auto set = get_object_element(s, 0);
-    auto i = get_int64_value(get_object_element(s, 1)) + 1;
+    auto i = get_object_int(s, 0) + 1;
     if (get_array_set_size(set) == i)
         return nil;
-    Root index{create_int64(i)};
-    return create_object2(*type::ArraySetSeq, set, *index);
+    return create_object1_1(*type::ArraySetSeq, i, set);
 }
 
 }
