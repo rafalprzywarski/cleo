@@ -23,23 +23,21 @@ Force array_seq(Value v)
 {
     if (get_array_size(v) == 0)
         return nil;
-    Root index{create_int64(0)};
-    return create_object2(*type::ArraySeq, v, *index);
+    return create_object1_1(*type::ArraySeq, 0, v);
 }
 
 Value get_array_seq_first(Value s)
 {
-    return get_array_elem(get_object_element(s, 0), get_int64_value(get_object_element(s, 1)));
+    return get_array_elem(get_object_element(s, 0), get_object_int(s, 0));
 }
 
 Force get_array_seq_next(Value s)
 {
     auto v = get_object_element(s, 0);
-    auto i = get_int64_value(get_object_element(s, 1)) + 1;
+    auto i = get_object_int(s, 0) + 1;
     if (get_array_size(v) == i)
         return nil;
-    Root index{create_int64(i)};
-    return create_object2(*type::ArraySeq, v, *index);
+    return create_object1_1(*type::ArraySeq, i, v);
 }
 
 Force array_conj(Value v, Value e)
