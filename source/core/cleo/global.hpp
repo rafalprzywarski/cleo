@@ -93,6 +93,19 @@ private:
     decltype(extra_roots)::size_type index;
 };
 
+class ConstRoot
+{
+public:
+    ConstRoot(Force f) : val(f.value()) { extra_roots.push_back(val); }
+    ConstRoot(const ConstRoot& ) = delete;
+    ConstRoot& operator=(const ConstRoot& ) = delete;
+    ~ConstRoot() { extra_roots.pop_back(); }
+    Value operator*() const { return val; }
+    const Value *operator->() const { return &val; }
+private:
+    const Value val;
+};
+
 class Roots
 {
 public:
@@ -238,53 +251,53 @@ Force create_type(const std::string& ns, const std::string& name);
 
 namespace type
 {
-extern const Root MetaType;
-extern const Root Int64;
-extern const Root Float64;
-extern const Root String;
-extern const Root NativeFunction;
-extern const Root CFunction;
-extern const Root Symbol;
-extern const Root Keyword;
-extern const Root Var;
-extern const Root List;
-extern const Root Cons;
-extern const Root LazySeq;
-extern const Root Array;
-extern const Root TransientArray;
-extern const Root ArraySeq;
-extern const Root ArrayMap;
-extern const Root ArrayMapSeq;
-extern const Root ArraySet;
-extern const Root ArraySetSeq;
-extern const Root Multimethod;
-extern const Root Seqable;
-extern const Root Sequence;
-extern const Root Callable;
-extern const Root BytecodeFn;
-extern const Root BytecodeFnBody;
-extern const Root BytecodeFnExceptionTable;
-extern const Root Recur;
-extern const Root Atom;
-extern const Root PersistentMap;
-extern const Root PersistentHashMap;
-extern const Root PersistentHashMapSeq;
-extern const Root PersistentHashMapSeqParent;
-extern const Root PersistentHashMapCollisionNode;
-extern const Root PersistentHashMapArrayNode;
-extern const Root Exception;
-extern const Root ReadError;
-extern const Root CallError;
-extern const Root SymbolNotFound;
-extern const Root IllegalArgument;
-extern const Root IllegalState;
-extern const Root UnexpectedEndOfInput;
-extern const Root FileNotFound;
-extern const Root ArithmeticException;
-extern const Root IndexOutOfBounds;
-extern const Root CompilationError;
-extern const Root StackOverflow;
-extern const Root Namespace;
+extern const ConstRoot MetaType;
+extern const ConstRoot Int64;
+extern const ConstRoot Float64;
+extern const ConstRoot String;
+extern const ConstRoot NativeFunction;
+extern const ConstRoot CFunction;
+extern const ConstRoot Symbol;
+extern const ConstRoot Keyword;
+extern const ConstRoot Var;
+extern const ConstRoot List;
+extern const ConstRoot Cons;
+extern const ConstRoot LazySeq;
+extern const ConstRoot Array;
+extern const ConstRoot TransientArray;
+extern const ConstRoot ArraySeq;
+extern const ConstRoot ArrayMap;
+extern const ConstRoot ArrayMapSeq;
+extern const ConstRoot ArraySet;
+extern const ConstRoot ArraySetSeq;
+extern const ConstRoot Multimethod;
+extern const ConstRoot Seqable;
+extern const ConstRoot Sequence;
+extern const ConstRoot Callable;
+extern const ConstRoot BytecodeFn;
+extern const ConstRoot BytecodeFnBody;
+extern const ConstRoot BytecodeFnExceptionTable;
+extern const ConstRoot Recur;
+extern const ConstRoot Atom;
+extern const ConstRoot PersistentMap;
+extern const ConstRoot PersistentHashMap;
+extern const ConstRoot PersistentHashMapSeq;
+extern const ConstRoot PersistentHashMapSeqParent;
+extern const ConstRoot PersistentHashMapCollisionNode;
+extern const ConstRoot PersistentHashMapArrayNode;
+extern const ConstRoot Exception;
+extern const ConstRoot ReadError;
+extern const ConstRoot CallError;
+extern const ConstRoot SymbolNotFound;
+extern const ConstRoot IllegalArgument;
+extern const ConstRoot IllegalState;
+extern const ConstRoot UnexpectedEndOfInput;
+extern const ConstRoot FileNotFound;
+extern const ConstRoot ArithmeticException;
+extern const ConstRoot IndexOutOfBounds;
+extern const ConstRoot CompilationError;
+extern const ConstRoot StackOverflow;
+extern const ConstRoot Namespace;
 }
 
 namespace clib
@@ -295,10 +308,10 @@ extern const Value string;
 
 extern const std::array<Value, 7> type_by_tag;
 
-extern const Root EMPTY_LIST;
-extern const Root EMPTY_VECTOR;
-extern const Root EMPTY_SET;
-extern const Root EMPTY_MAP;
+extern const ConstRoot EMPTY_LIST;
+extern const ConstRoot EMPTY_VECTOR;
+extern const ConstRoot EMPTY_SET;
+extern const ConstRoot EMPTY_MAP;
 extern const Root recur;
 
 extern Root namespaces;

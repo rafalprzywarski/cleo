@@ -157,7 +157,7 @@ Value get_type_name(Value type)
 
 namespace type
 {
-const Root MetaType{create_meta_type()};
+const ConstRoot MetaType{create_meta_type()};
 }
 
 Force create_type(const std::string& ns, const std::string& name)
@@ -168,52 +168,52 @@ Force create_type(const std::string& ns, const std::string& name)
 
 namespace type
 {
-const Root Int64{create_type("cleo.core", "Int64")};
-const Root Float64{create_type("cleo.core", "Float64")};
-const Root String{create_type("cleo.core", "String")};
-const Root NativeFunction{create_type("cleo.core", "NativeFunction")};
-const Root CFunction{create_type("cleo.core", "CFunction")};
-const Root Symbol{create_type("cleo.core", "Symbol")};
-const Root Keyword{create_type("cleo.core", "Keyword")};
-const Root Var{create_type("cleo.core", "Var")};
-const Root List{create_type("cleo.core", "List")};
-const Root Cons{create_type("cleo.core", "Cons")};
-const Root LazySeq{create_type("cleo.core", "LazySeq")};
-const Root Array{create_type("cleo.core", "Array")};
-const Root TransientArray{create_type("cleo.core", "TransientArray")};
-const Root ArraySeq{create_type("cleo.core", "ArraySeq")};
-const Root ArrayMap{create_type("cleo.core", "ArrayMap")};
-const Root ArrayMapSeq{create_type("cleo.core", "ArrayMapSeq")};
-const Root ArraySet{create_type("cleo.core", "ArraySet")};
-const Root ArraySetSeq{create_type("cleo.core", "ArraySetSeq")};
-const Root Multimethod{create_type("cleo.core", "Multimethod")};
-const Root Seqable{create_type("cleo.core", "Seqable")};
-const Root Sequence{create_type("cleo.core", "Sequence")};
-const Root Callable{create_type("cleo.core", "Callable")};
-const Root BytecodeFn{create_type("cleo.core", "BytecodeFn")};
-const Root BytecodeFnBody{create_type("cleo.core", "BytecodeFnBody")};
-const Root BytecodeFnExceptionTable{create_type("cleo.core", "BytecodeFnExceptionTable")};
-const Root Recur{create_type("cleo.core", "Recur")};
-const Root Atom{create_type("cleo.core", "Atom")};
-const Root PersistentMap{create_type("cleo.core", "PersistentMap")};
-const Root PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
-const Root PersistentHashMapSeq{create_type("cleo.core", "PersistentHashMapSeq")};
-const Root PersistentHashMapSeqParent{create_type("cleo.core", "PersistentHashMapSeqParent")};
-const Root PersistentHashMapCollisionNode(create_type("cleo.core", "PersistentHashMapCollisionNode"));
-const Root PersistentHashMapArrayNode(create_type("cleo.core", "PersistentHashMapArrayNode"));
-const Root Exception{create_type("cleo.core", "Exception")};
-const Root ReadError{create_type("cleo.core", "ReadError")};
-const Root CallError{create_type("cleo.core", "CallError")};
-const Root SymbolNotFound{create_type("cleo.core", "SymbolNotFound")};
-const Root IllegalArgument{create_type("cleo.core", "IllegalArgument")};
-const Root IllegalState{create_type("cleo.core", "IllegalState")};
-const Root UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")};
-const Root FileNotFound{create_type("cleo.core", "FileNotFound")};
-const Root ArithmeticException{create_type("cleo.core", "ArithmeticException")};
-const Root IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
-const Root CompilationError{create_type("cleo.core", "CompilationError")};
-const Root StackOverflow{create_type("cleo.core", "StackOverflow")};
-const Root Namespace{create_type("cleo.core", "Namespace")};
+const ConstRoot Int64{create_type("cleo.core", "Int64")};
+const ConstRoot Float64{create_type("cleo.core", "Float64")};
+const ConstRoot String{create_type("cleo.core", "String")};
+const ConstRoot NativeFunction{create_type("cleo.core", "NativeFunction")};
+const ConstRoot CFunction{create_type("cleo.core", "CFunction")};
+const ConstRoot Symbol{create_type("cleo.core", "Symbol")};
+const ConstRoot Keyword{create_type("cleo.core", "Keyword")};
+const ConstRoot Var{create_type("cleo.core", "Var")};
+const ConstRoot List{create_type("cleo.core", "List")};
+const ConstRoot Cons{create_type("cleo.core", "Cons")};
+const ConstRoot LazySeq{create_type("cleo.core", "LazySeq")};
+const ConstRoot Array{create_type("cleo.core", "Array")};
+const ConstRoot TransientArray{create_type("cleo.core", "TransientArray")};
+const ConstRoot ArraySeq{create_type("cleo.core", "ArraySeq")};
+const ConstRoot ArrayMap{create_type("cleo.core", "ArrayMap")};
+const ConstRoot ArrayMapSeq{create_type("cleo.core", "ArrayMapSeq")};
+const ConstRoot ArraySet{create_type("cleo.core", "ArraySet")};
+const ConstRoot ArraySetSeq{create_type("cleo.core", "ArraySetSeq")};
+const ConstRoot Multimethod{create_type("cleo.core", "Multimethod")};
+const ConstRoot Seqable{create_type("cleo.core", "Seqable")};
+const ConstRoot Sequence{create_type("cleo.core", "Sequence")};
+const ConstRoot Callable{create_type("cleo.core", "Callable")};
+const ConstRoot BytecodeFn{create_type("cleo.core", "BytecodeFn")};
+const ConstRoot BytecodeFnBody{create_type("cleo.core", "BytecodeFnBody")};
+const ConstRoot BytecodeFnExceptionTable{create_type("cleo.core", "BytecodeFnExceptionTable")};
+const ConstRoot Recur{create_type("cleo.core", "Recur")};
+const ConstRoot Atom{create_type("cleo.core", "Atom")};
+const ConstRoot PersistentMap{create_type("cleo.core", "PersistentMap")};
+const ConstRoot PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
+const ConstRoot PersistentHashMapSeq{create_type("cleo.core", "PersistentHashMapSeq")};
+const ConstRoot PersistentHashMapSeqParent{create_type("cleo.core", "PersistentHashMapSeqParent")};
+const ConstRoot PersistentHashMapCollisionNode(create_type("cleo.core", "PersistentHashMapCollisionNode"));
+const ConstRoot PersistentHashMapArrayNode(create_type("cleo.core", "PersistentHashMapArrayNode"));
+const ConstRoot Exception{create_type("cleo.core", "Exception")};
+const ConstRoot ReadError{create_type("cleo.core", "ReadError")};
+const ConstRoot CallError{create_type("cleo.core", "CallError")};
+const ConstRoot SymbolNotFound{create_type("cleo.core", "SymbolNotFound")};
+const ConstRoot IllegalArgument{create_type("cleo.core", "IllegalArgument")};
+const ConstRoot IllegalState{create_type("cleo.core", "IllegalState")};
+const ConstRoot UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")};
+const ConstRoot FileNotFound{create_type("cleo.core", "FileNotFound")};
+const ConstRoot ArithmeticException{create_type("cleo.core", "ArithmeticException")};
+const ConstRoot IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
+const ConstRoot CompilationError{create_type("cleo.core", "CompilationError")};
+const ConstRoot StackOverflow{create_type("cleo.core", "StackOverflow")};
+const ConstRoot Namespace{create_type("cleo.core", "Namespace")};
 }
 
 namespace clib
@@ -232,10 +232,10 @@ const std::array<Value, 7> type_by_tag{{
     *type::String
 }};
 
-const Root EMPTY_LIST{create_list(nullptr, 0)};
-const Root EMPTY_VECTOR{create_array(nullptr, 0)};
-const Root EMPTY_SET{create_array_set()};
-const Root EMPTY_MAP{create_persistent_hash_map()};
+const ConstRoot EMPTY_LIST{create_list(nullptr, 0)};
+const ConstRoot EMPTY_VECTOR{create_array(nullptr, 0)};
+const ConstRoot EMPTY_SET{create_array_set()};
+const ConstRoot EMPTY_MAP{create_persistent_hash_map()};
 
 Root namespaces{*EMPTY_MAP};
 Root bindings;
