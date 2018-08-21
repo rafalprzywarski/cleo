@@ -277,7 +277,6 @@ extern const ConstRoot Callable;
 extern const ConstRoot BytecodeFn;
 extern const ConstRoot BytecodeFnBody;
 extern const ConstRoot BytecodeFnExceptionTable;
-extern const ConstRoot Recur;
 extern const ConstRoot Atom;
 extern const ConstRoot PersistentMap;
 extern const ConstRoot PersistentHashMap;
@@ -312,7 +311,6 @@ extern const ConstRoot EMPTY_LIST;
 extern const ConstRoot EMPTY_VECTOR;
 extern const ConstRoot EMPTY_SET;
 extern const ConstRoot EMPTY_MAP;
-extern const Root recur;
 
 extern Root namespaces;
 extern Root bindings;

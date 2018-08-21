@@ -247,11 +247,6 @@ Int64 gen_id()
     return next_id++;
 }
 
-const Root recur{create_native_function([](const Value *args, std::uint8_t n)
-{
-    return create_object(*type::Recur, args, n);
-})};
-
 namespace rt
 {
 
@@ -943,7 +938,6 @@ struct Initialize
         define_type(*type::BytecodeFn);
         define_type(*type::BytecodeFnBody);
         define_type(*type::BytecodeFnExceptionTable);
-        define_type(*type::Recur);
         define_type(*type::Atom);
         define_type(*type::PersistentMap);
         define_type(*type::PersistentHashMap);
