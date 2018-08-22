@@ -6,6 +6,9 @@
 #include "bytecode_fn.hpp"
 #include "error.hpp"
 #include "util.hpp"
+#include "multimethod.hpp"
+#include "cons.hpp"
+#include "util.hpp"
 
 namespace cleo
 {
@@ -47,6 +50,26 @@ std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity)
     throw_arity_error(get_bytecode_fn_name(fn), arity);
 }
 
+Int64 get_max_arity(Value fn)
+{
+    auto n = get_bytecode_fn_size(fn);
+    if (n == 0)
+        return 0;
+    return get_bytecode_fn_arity(fn, n - 1);
+}
+
+void invoke_body(Value body)
+{
+    auto consts = get_bytecode_fn_body_consts(body);
+    auto vars = get_bytecode_fn_body_vars(body);
+    auto exception_table = get_bytecode_fn_body_exception_table(body);
+    auto locals_size = get_bytecode_fn_body_locals_size(body);
+    auto bytes = get_bytecode_fn_body_bytes(body);
+    auto bytes_size = get_bytecode_fn_body_bytes_size(body);
+    stack_reserve(locals_size);
+    vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
+}
+
 void call_bytecode_fn(std::uint32_t n)
 {
     auto elems = &stack[stack.size() - n];
@@ -54,12 +77,6 @@ void call_bytecode_fn(std::uint32_t n)
     auto body_and_arity = find_bytecode_fn_body(fn, n - 1);
     auto body = body_and_arity.first;
     auto arity = body_and_arity.second;
-    auto consts = get_bytecode_fn_body_consts(body);
-    auto vars = get_bytecode_fn_body_vars(body);
-    auto exception_table = get_bytecode_fn_body_exception_table(body);
-    auto locals_size = get_bytecode_fn_body_locals_size(body);
-    auto bytes = get_bytecode_fn_body_bytes(body);
-    auto bytes_size = get_bytecode_fn_body_bytes_size(body);
     StackGuard guard(n - 1);
     if (arity < 0)
     {
@@ -73,9 +90,79 @@ void call_bytecode_fn(std::uint32_t n)
         else
             stack_push(nil);
     }
-    stack_reserve(locals_size);
-    vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
+    invoke_body(body);
     elems[0] = stack.back();
+}
+
+void apply_bytecode_fn(std::uint32_t n)
+{
+    StackGuard guard(n - 1);
+    auto& first = stack[stack.size() - n];
+    auto fn = first;
+    auto fixed_len = n - 2;
+    auto max_arity = get_max_arity(fn);
+
+    Root s{stack.back()};
+    s = call_multimethod1(*rt::seq, *s);
+    stack_pop();
+
+    if (max_arity < 0)
+    {
+        auto va_arity = ~max_arity;
+
+        if (fixed_len > va_arity)
+        {
+            if (*s)
+                while (fixed_len > va_arity)
+                {
+                    s = cons_conj(*s, stack.back());
+                    stack_pop();
+                    --fixed_len;
+                }
+            else
+            {
+                s = create_array(&first + 1 + va_arity, fixed_len - va_arity);
+                s = array_seq(*s);
+                stack_pop(fixed_len - va_arity);
+                fixed_len = va_arity;
+            }
+        }
+
+        auto len = fixed_len;
+        for (; len < va_arity && *s; s = call_multimethod1(*rt::next, *s))
+        {
+            stack_push(call_multimethod1(*rt::first, *s));
+            ++len;
+        }
+        if (len == va_arity && *s)
+        {
+            stack_push(*s);
+            invoke_body(get_bytecode_fn_body(fn, get_bytecode_fn_size(fn) - 1));
+        }
+        else
+        {
+            auto body_and_arity = find_bytecode_fn_body(fn, len);
+            if (body_and_arity.second < 0)
+                stack_push(*s);
+            invoke_body(body_and_arity.first);
+        }
+    }
+    else
+    {
+        auto len = fixed_len;
+        for (; len < max_arity && *s; s = call_multimethod1(*rt::next, *s))
+        {
+            stack_push(call_multimethod1(*rt::first, *s));
+            ++len;
+        }
+        if (*s)
+            throw_call_error("Too many args (" + std::to_string(len + 1) + " or more) passed to: " + to_string(get_bytecode_fn_name(fn)));
+
+        auto body_and_arity = find_bytecode_fn_body(fn, len);
+        invoke_body(body_and_arity.first);
+    }
+
+    first = stack.back();
 }
 
 }
@@ -176,8 +263,13 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             auto& first = stack[stack.size() - n];
             try
             {
-                first = apply(&first, n).value();
-                stack_pop(n - 1);
+                if (get_value_type(first).is(*type::BytecodeFn))
+                    apply_bytecode_fn(n);
+                else
+                {
+                    first = apply(&first, n).value();
+                    stack_pop(n - 1);
+                }
                 p += 2;
             }
             catch (cleo::Exception const& )

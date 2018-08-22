@@ -16,7 +16,10 @@ using namespace cleo::test;
 
 struct vm_test : Test
 {
-    vm_test() : Test("cleo.vm.test") { }
+    vm_test() : Test("cleo.vm.test")
+    {
+        refer(CLEO_CORE);
+    }
 
     template <std::size_t N>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Byte, N>& bc)
@@ -57,6 +60,42 @@ struct vm_test : Test
         Root ss{create_string(s)};
         Root form{read(*ss)};
         return cleo::compile_fn(*form, nil);
+    }
+
+    template <typename Args, typename Result>
+    void test_apply(Args argsv, Result resultv)
+    {
+        Root args{to_value(argsv)}, result{to_value(resultv)};
+        std::array<Byte, 2> bc{{APPLY, Byte(get_array_size(*args) - 2)}};
+        stack.clear();
+        for (std::uint32_t i = 0; i < get_array_size(*args); ++i)
+            stack_push(get_array_elem(*args, i));
+        eval_bytecode(nil, nil, 0, bc);
+        ASSERT_EQ(1u, stack.size());
+        ASSERT_EQ_VALS(*result, stack[0]);
+    }
+
+    template <typename Args>
+    void expect_apply_call_error(Args argsv, std::string msgv)
+    {
+        Root args{to_value(argsv)};
+        std::array<Byte, 2> bc{{APPLY, Byte(get_array_size(*args) - 2)}};
+        stack.clear();
+        for (std::uint32_t i = 0; i < get_array_size(*args); ++i)
+            stack_push(get_array_elem(*args, i));
+        try
+        {
+            eval_bytecode(nil, nil, 0, bc);
+            FAIL() << "expected a CallError for: " << to_string(*args);
+        }
+        catch (Exception const& )
+        {
+            Root e{catch_exception()};
+            ASSERT_EQ_REFS(*type::CallError, get_value_type(*e)) << " args: " << to_string(*args);
+            Root msg{create_string(msgv)};
+            Root actual{call_error_message(*e)};
+            ASSERT_EQ_VALS(*msg, *actual) << " args: " << to_string(*args);
+        }
     }
 };
 
@@ -517,6 +556,56 @@ TEST_F(vm_test, apply)
     ex = array(129 + 50, *x, *x, 1, 50);
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(*ex, stack[0]);
+}
+
+TEST_F(vm_test, bytecode_fn_apply)
+{
+    using type::ArraySeq;
+    using type::Cons;
+
+    Root fnva{compile_fn("(fn* f [& xs] [f xs (type xs) (type (next xs)) (type (next (next xs)))])")};
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnva, arrayv(10, 20, 30)), arrayv(*fnva, arrayv(10, 20, 30), *ArraySeq, *ArraySeq, *ArraySeq)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnva, 10, 20, nil), arrayv(*fnva, arrayv(10, 20), *ArraySeq, *ArraySeq, nil)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnva, 10, 20, *EMPTY_LIST), arrayv(*fnva, arrayv(10, 20), *ArraySeq, *ArraySeq, nil)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnva, 10, 20, arrayv(30, 40)), arrayv(*fnva, arrayv(10, 20, 30, 40), *Cons, *Cons, *ArraySeq)));
+
+    Root fn{compile_fn("(fn* f ([] [f 1]) ([x y] [f x y]) ([x y & xs] [f x y xs]))")};
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, nil), arrayv(*fn, 1)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, *EMPTY_VECTOR), arrayv(*fn, 1)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, arrayv(10, 20, 30)), arrayv(*fn, 10, 20, arrayv(30))));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, 10, 20, arrayv(30, 40)), arrayv(*fn, 10, 20, arrayv(30, 40))));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, 10, 20, 30, nil), arrayv(*fn, 10, 20, arrayv(30))));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, 10, 20, 30, arrayv(40, 50)), arrayv(*fn, 10, 20, arrayv(30, 40, 50))));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, 10, 20, nil), arrayv(*fn, 10, 20)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, 10, 20, *EMPTY_SET), arrayv(*fn, 10, 20)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, 10, arrayv(20)), arrayv(*fn, 10, 20)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fn, arrayv(10, 20)), arrayv(*fn, 10, 20)));
+    expect_apply_call_error(arrayv(*fn, arrayv(10)), "Wrong number of args (1) passed to: f");
+
+    Root fnf{compile_fn("(fn* f ([] [f 1]) ([x] [f x]) ([x y] [f x y]))")};
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, nil), arrayv(*fnf, 1)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, arrayv(10)), arrayv(*fnf, 10)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, 10, nil), arrayv(*fnf, 10)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, 10, *EMPTY_VECTOR), arrayv(*fnf, 10)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, arrayv(10, 20)), arrayv(*fnf, 10, 20)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, 10, arrayv(20)), arrayv(*fnf, 10, 20)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, 10, 20, nil), arrayv(*fnf, 10, 20)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnf, 10, 20, *EMPTY_SET), arrayv(*fnf, 10, 20)));
+    expect_apply_call_error(arrayv(*fnf, arrayv(10, 20, 30, 40, 50, 60, 70, 80, 90)), "Too many args (3 or more) passed to: f");
+
+    Root fnvas{compile_fn("(fn* f ([x] [f x]) ([x y & xs] [f x y xs]))")};
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, 10, nil), arrayv(*fnvas, 10)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, 10, *EMPTY_SET), arrayv(*fnvas, 10)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, arrayv(10)), arrayv(*fnvas, 10)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, 10, 20, nil), arrayv(*fnvas, 10, 20, nil)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, 10, 20, *EMPTY_SET), arrayv(*fnvas, 10, 20, nil)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, 10, arrayv(20)), arrayv(*fnvas, 10, 20, nil)));
+    EXPECT_NO_FATAL_FAILURE(test_apply(arrayv(*fnvas, arrayv(10, 20)), arrayv(*fnvas, 10, 20, nil)));
+    expect_apply_call_error(arrayv(*fnvas, nil), "Wrong number of args (0) passed to: f");
+
+    Root fn0{compile_fn("(fn* no)")};
+    expect_apply_call_error(arrayv(*fn0, nil), "Wrong number of args (0) passed to: no");
+    expect_apply_call_error(arrayv(*fn0, arrayv(10)), "Too many args (1 or more) passed to: no");
 }
 
 TEST_F(vm_test, cnil)
