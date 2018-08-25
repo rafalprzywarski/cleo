@@ -491,11 +491,11 @@ void Compiler::compile_hash_set(Scope scope, Value val)
 Force get_hash_map_const_submap(Value val)
 {
     Root sm{*EMPTY_MAP};
-    for (Root s{persistent_hash_map_seq(val)}; *s; s = get_persistent_hash_map_seq_next(*s))
+    for (Root s{seq(val)}; *s; s = seq_next(*s))
     {
-        auto kv = get_persistent_hash_map_seq_first(*s);
-        auto k = get_array_elem(kv, 0);
-        auto v = get_array_elem(kv, 1);
+        Root kv{seq_first(*s)};
+        auto k = get_array_elem(*kv, 0);
+        auto v = get_array_elem(*kv, 1);
         if (is_const(k) && is_const(v))
             sm = persistent_hash_map_assoc(*sm, k, v);
     }
@@ -505,18 +505,18 @@ Force get_hash_map_const_submap(Value val)
 void Compiler::compile_hash_map(Scope scope, Value val)
 {
     Root submap{get_hash_map_const_submap(val)};
-    auto size = get_persistent_hash_map_size(val);
+    auto size = count(val);
     auto submap_size = get_persistent_hash_map_size(*submap);
     if (submap_size == size)
         return compile_const(val);
     for (Int64 i = submap_size; i < size; ++i)
         compile_const(*rt::persistent_hash_map_assoc);
     compile_const(*submap);
-    for (Root s{persistent_hash_map_seq(val)}; *s; s = get_persistent_hash_map_seq_next(*s))
+    for (Root s{seq(val)}; *s; s = seq_next(*s))
     {
-        auto kv = get_persistent_hash_map_seq_first(*s);
-        auto k = get_array_elem(kv, 0);
-        auto v = get_array_elem(kv, 1);
+        Root kv{seq_first(*s)};
+        auto k = get_array_elem(*kv, 0);
+        auto v = get_array_elem(*kv, 1);
         if (!persistent_hash_map_contains(*submap, k))
         {
             compile_value(scope, k);
@@ -534,7 +534,7 @@ void Compiler::compile_def(Scope scope, Value form_)
     Root name{seq_first(*form)};
     form = seq_next(*form);
     Root meta;
-    if (get_value_type(*name).is(*type::PersistentHashMap))
+    if (is_map(*name))
     {
         if (!*form)
             throw_compilation_error("Too few arguments to def");
@@ -728,7 +728,7 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
         return compile_vector(scope, val);
     if (vtype.is(*type::ArraySet))
         return compile_hash_set(scope, val);
-    if (vtype.is(*type::PersistentHashMap))
+    if (is_map(val))
         return compile_hash_map(scope, val);
 
     compile_const(val);

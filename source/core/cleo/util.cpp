@@ -84,6 +84,18 @@ void throw_illegal_state(const std::string& msg)
     throw_exception(new_compilation_error(*s));
 }
 
+Int64 count(Value val)
+{
+    Root n{call_multimethod1(*rt::count, val)};
+    return get_int64_value(*n);
+}
+
+bool is_map(Value val)
+{
+    auto vt = get_value_type(val);
+    return vt == *type::PersistentHashMap || vt == *type::ArrayMap;
+}
+
 bool map_contains(Value m, Value k)
 {
     return !Root(call_multimethod2(*rt::contains, m, k))->is_nil();

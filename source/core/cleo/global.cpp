@@ -617,8 +617,7 @@ Value vector_q(Value x)
 
 Value map_q(Value x)
 {
-    auto vt = get_value_type(x);
-    return vt == *type::PersistentHashMap || vt == *type::ArrayMap ? TRUE : nil;
+    return is_map(x) ? TRUE : nil;
 }
 
 Force list(const Value *args, std::uint8_t n)

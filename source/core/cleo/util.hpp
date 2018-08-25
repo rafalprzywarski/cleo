@@ -169,6 +169,9 @@ Force create_native_function5()
     });
 }
 
+Int64 count(Value val);
+
+bool is_map(Value val);
 bool map_contains(Value m, Value k);
 Force map_assoc(Value m, Value k, Value v);
 Value map_get(Value m, Value k);

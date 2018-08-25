@@ -911,6 +911,19 @@ TEST_F(compile_test, should_compile_hash_maps)
                                            vm::LDL, -1, -1,
                                            vm::CALL, 3));
 
+    Root form{amap(3, 4, 5, 6, create_symbol("x"), create_symbol("y"))};
+    form = list(FN, arrayv(create_symbol("x"), create_symbol("y")), *form);
+    fn = cleo::compile_fn(*form, nil);
+
+    expect_body_with_consts_and_bytecode(*fn, 0,
+                                         arrayv(*rt::persistent_hash_map_assoc,
+                                                phmapv(3, 4, 5, 6)),
+                                         b(vm::LDC, 0, 0,
+                                           vm::LDC, 1, 0,
+                                           vm::LDL, -2, -1,
+                                           vm::LDL, -1, -1,
+                                           vm::CALL, 3));
+
     fn = compile_fn("(fn* [x] {3 4 x 6})");
     expect_body_with_consts_and_bytecode(*fn, 0,
                                          arrayv(*rt::persistent_hash_map_assoc,
@@ -1009,6 +1022,13 @@ TEST_F(compile_test, should_compile_def)
     EXPECT_EQ_VALS(*meta, get_var_meta(v));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 13, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDC, 2, 0, vm::SETV));
 
+    Root form{amap(10, 20)};
+    form = list(FN, *EMPTY_VECTOR, listv(DEF, *form, create_symbol("z"), 13));
+    fn = cleo::compile_fn(*form, nil);
+    v = get_var(create_symbol("cleo.compile.def.test", "z"));
+    EXPECT_EQ_VALS(*meta, get_var_meta(v));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 13, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDC, 2, 0, vm::SETV));
+
     fn = compile_fn("(fn* [] (def w))");
     v = get_var(create_symbol("cleo.compile.def.test", "w"));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
@@ -1021,7 +1041,7 @@ TEST_F(compile_test, should_compile_def)
     v = get_var(create_symbol("cleo.compile.def.test", "nv"));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
 
-    Root form{read_str("[def {10 20} z 13]")};
+    form = read_str("[def {10 20} z 13]");
     form = seq(*form);
     form = list(FN, *EMPTY_VECTOR, *form);
     fn = cleo::compile_fn(*form, nil);
