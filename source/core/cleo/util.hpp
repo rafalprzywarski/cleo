@@ -177,4 +177,10 @@ Force map_merge(Value m1, Value m2);
 Value namespace_symbol(Value sym);
 Value name_symbol(Value sym);
 
+bool is_seq(Value val);
+Force seq(Value val);
+Force seq_first(Value s);
+Force seq_next(Value s);
+std::uint32_t seq_count(Value s);
+
 }

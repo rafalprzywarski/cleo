@@ -298,6 +298,17 @@ TEST_F(compile_test, should_compile_functions_with_multiple_arities)
     ASSERT_NO_FATAL_FAILURE(expect_fn_with_arities(*fn, {1, ~Int64(2)}));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(12), b(vm::LDC, 0, 0));
     expect_body_with_consts_and_bytecode(*fn, 1, arrayv(11), b(vm::LDC, 0, 0));
+
+    Root body0{read_str("[[a b & c] 11]")};
+    body0 = seq(*body0);
+    Root body1{read_str("[[a] 12]")};
+    body1 = seq(*body1);
+    Root form{array(FN, create_symbol("some"), *body0, *body1)};
+    form = seq(*form);
+    fn = cleo::compile_fn(*form, nil);
+    ASSERT_NO_FATAL_FAILURE(expect_fn_with_arities(*fn, {1, ~Int64(2)}));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(12), b(vm::LDC, 0, 0));
+    expect_body_with_consts_and_bytecode(*fn, 1, arrayv(11), b(vm::LDC, 0, 0));
 }
 
 TEST_F(compile_test, should_compile_functions_returning_parameters)
@@ -393,6 +404,15 @@ TEST_F(compile_test, should_compile_functions_calling_functions)
                                                 vm::CALL, 1,
                                                 vm::CALL, 3,
                                                 vm::CALL, 1));
+
+    Root params{read_str("[f a b]")};
+    Root form{seq(*params)};
+    form = list(FN, *params, *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1,
+                                        vm::LDL, -2, -1,
+                                        vm::LDL, -1, -1,
+                                        vm::CALL, 2));
 }
 
 TEST_F(compile_test, should_compile_empty_lists_to_empty_list_constants)
@@ -468,6 +488,17 @@ TEST_F(compile_test, should_compile_functions_with_if_blocks)
                                                                 vm::LDL, -1, -1,
                                                                 vm::BR, 1, 0,
                                                                 vm::CNIL));
+
+    Root form{array(IF, create_symbol("a"), create_symbol("b"), create_symbol("c"))};
+    form = seq(*form);
+    form = array(FN, arrayv(create_symbol("a"), create_symbol("b"), create_symbol("c")), *form);
+    form = seq(*form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1,
+                                        vm::BNIL, 6, 0,
+                                        vm::LDL, -2, -1,
+                                        vm::BR, 3, 0,
+                                        vm::LDL, -1, -1));
 }
 
 TEST_F(compile_test, should_compile_do_blocks)
@@ -491,6 +522,13 @@ TEST_F(compile_test, should_compile_do_blocks)
                                                 vm::POP,
                                                 vm::LDL, -1, -1,
                                                 vm::CALL, 0));
+
+    Root form{read_str("[do (x)]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("x")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::CALL, 0));
 }
 
 TEST_F(compile_test, should_compile_quote)
@@ -498,6 +536,12 @@ TEST_F(compile_test, should_compile_quote)
     Root fn{compile_fn("(fn* [a] (quote (a-var xyz 10)))")};
     auto a_var_sym = create_symbol("a-var");
     auto xyz = create_symbol("xyz");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(listv(a_var_sym, xyz, 10)), b(vm::LDC, 0, 0));
+
+    Root form{read_str("[quote (a-var xyz 10)]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("a")), *form);
+    fn = cleo::compile_fn(*form, nil);
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(listv(a_var_sym, xyz, 10)), b(vm::LDC, 0, 0));
 }
 
@@ -607,6 +651,14 @@ TEST_F(compile_test, should_compile_let_forms)
     auto code = bc(get_bytecode_fn_body(*fn, 0));
     ASSERT_GE(code.size(), 4 * 256);
     EXPECT_EQ(b(vm::LDL, -1, -1, vm::STL, 0, 1, vm::LDL, 0, 1), subvec(code, 4 * 256));
+
+    Root form{read_str("[let* [x a] x]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("a")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_locals_and_bytecode(*fn, 0, 1, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0));
 }
 
 TEST_F(compile_test, should_compile_functions_with_recur)
@@ -652,6 +704,15 @@ TEST_F(compile_test, should_compile_functions_with_recur)
                                            vm::STL, -1, -1,
                                            vm::STL, -2, -1,
                                            vm::BR, -15, -1));
+
+    Root form{read_str("[recur 10]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("x")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(10),
+                                         b(vm::LDC, 0, 0,
+                                           vm::STL, -1, -1,
+                                           vm::BR, -9, -1));
 }
 
 TEST_F(compile_test, should_compile_functions_with_loop)
@@ -714,6 +775,14 @@ TEST_F(compile_test, should_compile_functions_with_loop)
                                                       vm::LDL, 0, 0,
                                                       vm::STL, 1, 0,
                                                       vm::BR, -9, -1));
+
+    Root form{read_str("[loop* [x a] x]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("a")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_locals_and_bytecode(*fn, 0, 1, b(vm::LDL, -1, -1,
+                                                      vm::STL, 0, 0,
+                                                      vm::LDL, 0, 0));
 }
 
 TEST_F(compile_test, should_compile_vectors)
@@ -951,6 +1020,14 @@ TEST_F(compile_test, should_compile_def)
     fn = compile_fn("(fn* [] (def cleo.compile.def.test/nv))");
     v = get_var(create_symbol("cleo.compile.def.test", "nv"));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+
+    Root form{read_str("[def {10 20} z 13]")};
+    form = seq(*form);
+    form = list(FN, *EMPTY_VECTOR, *form);
+    fn = cleo::compile_fn(*form, nil);
+    v = get_var(create_symbol("cleo.compile.def.test", "z"));
+    EXPECT_EQ_VALS(*meta, get_var_meta(v));
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 13, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDC, 2, 0, vm::SETV));
 }
 
 TEST_F(compile_test, should_compile_functions_applying_functions)
@@ -993,6 +1070,14 @@ TEST_F(compile_test, should_compile_functions_applying_functions)
                                                 vm::CALL, 1,
                                                 vm::APPLY, 2,
                                                 vm::APPLY, 0));
+
+    Root form{read_str("[apply f nil]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("f")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::CNIL,
+                                        vm::APPLY, 0));
 }
 
 TEST_F(compile_test, should_compile_functions_creating_functions)
@@ -1132,6 +1217,12 @@ TEST_F(compile_test, should_compile_functions_with_throw)
 {
     Root fn{compile_fn("(fn* [x] (throw x))")};
     expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1, vm::THROW));
+
+    Root form{read_str("[throw x]")};
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("x")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1, vm::THROW));
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_catch)
@@ -1236,6 +1327,21 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
 
     fn = compile_fn("(fn* [f x] (f (if x (try* (f) (catch* Exception e nil)) (try* (f) (catch* Exception e nil)))))");
     EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+
+    Root form{read_str("[catch* Exception e (g e)]")};
+    form = seq(*form);
+    form = array(TRY, listv(create_symbol("f")), *form);
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("f"), create_symbol("g")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 11, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, 0, 0,
+                                                           vm::CALL, 1));
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_finally)
@@ -1288,6 +1394,25 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::POP,
                                                            vm::LDL, 0, 0,
                                                            vm::THROW,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
+                                                           vm::BR, 13, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
+                                                           vm::LDL, 0, 0,
+                                                           vm::THROW));
+    Root form{read_str("[finally* (g)]")};
+    form = seq(*form);
+    form = array(TRY, listv(create_symbol("f")), *form);
+    form = seq(*form);
+    form = list(FN, arrayv(create_symbol("f"), create_symbol("g")), *form);
+    fn = cleo::compile_fn(*form, nil);
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14}, {nil}, 1,
+                                                         b(vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
                                                            vm::LDL, -1, -1,
                                                            vm::CALL, 0,
                                                            vm::POP,

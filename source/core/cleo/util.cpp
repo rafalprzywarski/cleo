@@ -122,4 +122,32 @@ Value name_symbol(Value sym)
     return create_symbol({get_string_ptr(name), get_string_len(name)});
 }
 
+bool is_seq(Value val)
+{
+    return static_cast<bool>(isa(get_value_type(val), *type::Sequence));
+}
+
+Force seq(Value val)
+{
+    return call_multimethod1(*rt::seq, val);
+}
+
+Force seq_first(Value s)
+{
+    return call_multimethod1(*rt::first, s);
+}
+
+Force seq_next(Value s)
+{
+    return call_multimethod1(*rt::next, s);
+}
+
+std::uint32_t seq_count(Value s)
+{
+    std::uint32_t n = 0;
+    for (Root v{seq(s)}; *v; v = seq_next(*v))
+        ++n;
+    return n;
+}
+
 }

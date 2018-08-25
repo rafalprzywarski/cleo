@@ -3,11 +3,12 @@
 #include "global.hpp"
 #include "array.hpp"
 #include "array_set.hpp"
-#include "list.hpp"
 #include "util.hpp"
 #include "namespace.hpp"
 #include "persistent_hash_map.hpp"
 #include "eval.hpp"
+#include "multimethod.hpp"
+#include "cons.hpp"
 #include <algorithm>
 
 namespace cleo
@@ -247,60 +248,74 @@ void Compiler::compile_local_ref(Value sym)
 
 void Compiler::compile_call(Scope scope, Value val)
 {
-    for (auto e = val; e; e = get_list_next(e))
-        compile_value(scope, get_list_first(e));
-    append(code, vm::CALL, get_list_size(val) - 1);
+    std::uint32_t n = 0;
+    for (Root e{val}, v; *e; e = seq_next(*e))
+    {
+        v = seq_first(*e);
+        compile_value(scope, *v);
+        ++n;
+    }
+    append(code, vm::CALL, n - 1);
 }
 
 void Compiler::compile_apply(Scope scope, Value form)
 {
-    auto size = get_list_size(form);
+    auto size = seq_count(form);
     if (size < 3)
         throw_compiletime_arity_error(APPLY, form, size - 1);
-    for (auto e = get_list_next(form); e; e = get_list_next(e))
-        compile_value(scope, get_list_first(e));
+    for (Root e{seq_next(form)}, v; *e; e = seq_next(*e))
+    {
+        v = seq_first(*e);
+        compile_value(scope, *v);
+    }
     append(code, vm::APPLY, size - 3);
 }
 
 
 void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
 {
-    auto cond = get_list_next(val);
-    if (!cond)
+    Root cond{seq_next(val)};
+    if (!*cond)
         throw_compilation_error("Too few arguments to if");
-    auto then = get_list_next(cond);
-    if (!then)
+    Root then{seq_next(*cond)};
+    if (!*then)
         throw_compilation_error("Too few arguments to if");
-    auto else_ = get_list_next(then);
-    if (else_ && get_list_next(else_))
+    Root else_{seq_next(*then)};
+    if (*else_ && seq_next(*else_).value())
         throw_compilation_error("Too many arguments to if");
-
-    compile_value(scope, get_list_first(cond));
+    cond = seq_first(*cond);
+    compile_value(scope, *cond);
     auto bnil_offset = append_branch(code, vm::BNIL, 0);
-    compile_value(scope, get_list_first(then), wrap_try);
+    then = seq_first(*then);
+    compile_value(scope, *then, wrap_try);
     auto br_offset = append_branch(code, vm::BR, 0);
     set_branch_target(code, bnil_offset, code.size());
-    compile_value(scope, else_ ? get_list_first(else_) : nil, wrap_try);
+    else_ = seq_first(*else_);
+    compile_value(scope, *else_, wrap_try);
     set_branch_target(code, br_offset, code.size());
 }
 
 void Compiler::compile_do(Scope scope, Value val, bool wrap_try)
 {
-    if (get_list_size(val) == 1)
+    if (seq_next(val).value().is_nil())
         return append(code, vm::CNIL);
-
-    for (val = get_list_next(val); get_list_next(val); val = get_list_next(val))
+    Root s{val}, e;
+    for (s = seq_next(val); seq_next(*s).value(); s = seq_next(*s))
     {
-        compile_value(scope, get_list_first(val), wrap_try);
+        e = seq_first(*s);
+        compile_value(scope, *e, wrap_try);
         append(code, vm::POP);
     }
-    compile_value(scope, get_list_first(val), wrap_try);
+    e = seq_first(*s);
+    compile_value(scope, *e, wrap_try);
 }
 
 void Compiler::compile_quote(Value form)
 {
-    check_compiletime_arity(QUOTE, form, 1, get_list_size(form) - 1);
-    compile_const(get_list_first(get_list_next(form)));
+    check_compiletime_arity(QUOTE, form, 1, seq_count(form) - 1);
+    Root expr{seq_next(form)};
+    expr = seq_first(*expr);
+    compile_const(*expr);
 }
 
 void Compiler::update_locals_size(Scope scope)
@@ -317,15 +332,16 @@ std::pair<Compiler::Scope, std::int16_t> add_local(Compiler::Scope scope, Value 
     return {scope, scope.locals_size - 1};
 }
 
-Value check_let_bindings(Value tag, Value form)
+Force check_let_bindings(Value tag, Value form)
 {
-    check_compiletime_arity(tag, form, 2, get_list_size(form) - 1);
-    auto bindings = get_list_first(get_list_next(form));
-    if (!get_value_type(bindings).is(*type::Array))
+    check_compiletime_arity(tag, form, 2, seq_count(form) - 1);
+    Root bindings{seq_next(form)};
+    bindings = seq_first(*bindings);
+    if (!get_value_type(*bindings).is(*type::Array))
         throw_compilation_error("Bad binding form, expected vector");
-    if (get_array_size(bindings) % 2)
+    if (get_array_size(*bindings) % 2)
         throw_compilation_error("Bad binding form, expected matched symbol expression pairs");
-    return bindings;
+    return *bindings;
 }
 
 Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root& llocals)
@@ -348,38 +364,45 @@ Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root
 
 void Compiler::compile_let(Scope scope, Value form, bool wrap_try)
 {
-    auto bindings = check_let_bindings(LET, form);
+    Root bindings{check_let_bindings(LET, form)};
     Root llocals;
-    scope = compile_let_bindings(scope, bindings, llocals);
+    scope = compile_let_bindings(scope, *bindings, llocals);
 
-    auto expr = get_list_first(get_list_next(get_list_next(form)));
-    compile_value(scope, expr, wrap_try);
+    Root expr{seq_next(form)};
+    expr = seq_next(*expr);
+    expr = seq_first(*expr);
+    compile_value(scope, *expr, wrap_try);
 }
 
 void Compiler::compile_loop(Scope scope, Value form)
 {
-    auto bindings = check_let_bindings(LOOP, form);
+    Root bindings{check_let_bindings(LOOP, form)};
     Root llocals;
-    scope = compile_let_bindings(scope, bindings, llocals);
+    scope = compile_let_bindings(scope, *bindings, llocals);
 
-    auto loop_locals_size = get_array_size(bindings) / 2;
+    auto loop_locals_size = get_array_size(*bindings) / 2;
     scope.recur_arity = loop_locals_size;
     scope.recur_locals_index = scope.locals_size - loop_locals_size;
     scope.recur_start_offset = code.size();
 
-    auto expr = get_list_first(get_list_next(get_list_next(form)));
-    compile_value(scope, expr);
+    Root expr{seq_next(form)};
+    expr = seq_next(*expr);
+    expr = seq_first(*expr);
+    compile_value(scope, *expr);
 }
 
-void Compiler::compile_recur(Scope scope, Value form)
+void Compiler::compile_recur(Scope scope, Value form_)
 {
-    form = get_list_next(form);
-    auto size = form ? get_list_size(form) : 0;
+    Root form{seq_next(form_)};
+    auto size = *form ? seq_count(*form) : 0;
     if (size != scope.recur_arity)
         throw_compilation_error("Mismatched argument count to recur, expected: " + std::to_string(scope.recur_arity) +
                                 " args, got: " + std::to_string(size));
-    for (; form; form = get_list_next(form))
-        compile_value(scope, get_list_first(form));
+    for (Root e; *form; form = seq_next(*form))
+    {
+        e = seq_first(*form);
+        compile_value(scope, *e);
+    }
     for (Int64 i = 0; i < size; ++i)
         append_STL(code, scope.recur_locals_index + (size - i - 1));
     append_branch(code, vm::BR, scope.recur_start_offset - 3 - Int64(code.size()));
@@ -503,41 +526,41 @@ void Compiler::compile_hash_map(Scope scope, Value val)
     }
 }
 
-void Compiler::compile_def(Scope scope, Value form)
+void Compiler::compile_def(Scope scope, Value form_)
 {
-    form = get_list_next(form);
-    if (!form)
+    Root form{seq_next(form_)};
+    if (!*form)
         throw_compilation_error("Too few arguments to def");
-    auto name = get_list_first(form);
-    form = get_list_next(form);
-    Value meta = nil;
-    if (get_value_type(name).is(*type::PersistentHashMap))
+    Root name{seq_first(*form)};
+    form = seq_next(*form);
+    Root meta;
+    if (get_value_type(*name).is(*type::PersistentHashMap))
     {
-        if (!form)
+        if (!*form)
             throw_compilation_error("Too few arguments to def");
-        meta = name;
-        name = get_list_first(form);
-        form = get_list_next(form);
+        meta = *name;
+        name = seq_first(*form);
+        form = seq_next(*form);
     }
-    if (get_value_tag(name) != tag::SYMBOL)
+    if (get_value_tag(*name) != tag::SYMBOL)
         throw_compilation_error("First argument to def must be a Symbol");
-    auto val = form ? get_list_first(form) : nil;
-    if (form && get_list_next(form))
+    Root val{*form ? seq_first(*form) : nil};
+    if (*form && seq_next(*form).value())
         throw_compilation_error("Too many arguments to def");
     auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
-    auto sym_ns = get_symbol_namespace(name);
+    auto sym_ns = get_symbol_namespace(*name);
     if (sym_ns && sym_ns != current_ns_name)
-        throw_compilation_error(maybe_resolve_var(name) ?
+        throw_compilation_error(maybe_resolve_var(*name) ?
                                 "Can't create defs outside of current ns" :
                                 "Can't refer to qualified var that doesn't exist");
-    auto sym_name = get_symbol_name(name);
+    auto sym_name = get_symbol_name(*name);
     name = create_symbol(
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
         {get_string_ptr(sym_name), get_string_len(sym_name)});
-    auto var = define(name, nil, meta);
+    auto var = define(*name, nil, *meta);
     compile_const(var);
-    compile_value(scope, val);
-    compile_value(scope, meta);
+    compile_value(scope, *val);
+    compile_value(scope, *meta);
     append(code, vm::SETV);
 }
 
@@ -556,13 +579,14 @@ void Compiler::compile_fn(Scope scope, Value form)
     }
 }
 
-void Compiler::compile_throw(Scope scope, Value form)
+void Compiler::compile_throw(Scope scope, Value form_)
 {
-    form = get_list_next(form);
-    if (!form)
+    Root form{seq_next(form_)};
+    if (!*form)
         throw_compilation_error("Too few arguments to throw, expected a single value");
-    compile_value(scope, get_list_first(form));
-    if (get_list_next(form))
+    Root expr{seq_first(*form)};
+    compile_value(scope, *expr);
+    if (seq_next(*form).value())
         throw_compilation_error("Too many arguments to throw, expected a single value");
     append(code, vm::THROW);
 }
@@ -575,60 +599,58 @@ void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Valu
     et_types.push_back(type);
 }
 
-void Compiler::compile_try(Scope scope, Value form)
+void Compiler::compile_try(Scope scope, Value form_)
 {
     auto start_offset = code.size();
-    form = get_list_next(form);
-    compile_value(scope, form ? get_list_first(form) : nil, false);
-    auto handler_ = form ? get_list_next(form) : nil;
-    if (handler_ && get_list_next(handler_))
-        throw_compilation_error("Too many expressions in " + to_string(TRY));
-    handler_ = handler_ ? get_list_first(handler_) : nil;
-    if (!handler_)
+    Root form{seq_next(form_)};
+    Root expr{*form ? seq_first(*form) : nil};
+    compile_value(scope, *expr, false);
+    Root handler_{*form ? seq_next(*form) : nil};
+    if (!*handler_)
         return;
-    if (!get_value_type(handler_).is(*type::List) ||
-        (get_list_first(handler_) != CATCH && get_list_first(handler_) != FINALLY))
-        throw_compilation_error("expected " + to_string(CATCH) + " or " + to_string(FINALLY) + " block in " + to_string(TRY));
-    auto tag = get_list_first(handler_);
-    if (tag == CATCH)
+    if (seq_next(*handler_).value())
+        throw_compilation_error("Too many expressions in " + to_string(TRY));
+    handler_ = *handler_ ? seq_first(*handler_) : nil;
+    Root tag{is_seq(*handler_) ? seq_first(*handler_) : nil};
+    if (*tag == CATCH)
     {
-        auto catch_ = get_list_next(handler_);
-        if (!catch_)
+        Root catch_{seq_next(*handler_)};
+        if (!*catch_)
             throw_compilation_error("missing exception type in " + to_string(CATCH));
-        auto type_sym = get_list_first(catch_);
-        catch_ = get_list_next(catch_);
-        if (!catch_)
+        Root type_sym{seq_first(*catch_)};
+        catch_ = seq_next(*catch_);
+        if (!*catch_)
             throw_compilation_error("missing exception binding in " + to_string(CATCH));
-        auto local = get_list_first(catch_);
-        catch_ = get_list_next(catch_);
-        if (!catch_)
+        Root local{seq_first(*catch_)};
+        catch_ = seq_next(*catch_);
+        if (!*catch_)
             throw_compilation_error("missing catch* body");
-        auto expr = get_list_first(catch_);
-        if (get_list_next(catch_))
+        Root expr{seq_first(*catch_)};
+        if (seq_next(*catch_).value())
             throw_compilation_error("Too many expressions in " + to_string(CATCH) + ", expected one");
         Root rlocal;
         Int64 index{};
-        std::tie(scope, index) = add_local(scope, local, rlocal);
+        std::tie(scope, index) = add_local(scope, *local, rlocal);
         update_locals_size(scope);
         auto br_offset = append_branch(code, vm::BR, 0);
-        auto type = maybe_resolve_var(type_sym);
+        auto type = maybe_resolve_var(*type_sym);
         if (!type)
-            throw_compilation_error("unable to resolve symbol: " + to_string(type_sym));
+            throw_compilation_error("unable to resolve symbol: " + to_string(*type_sym));
         add_exception_handler(start_offset, br_offset, code.size(), get_var_value(type));
         append_STL(code, index);
-        compile_value(scope, expr);
+        compile_value(scope, *expr);
         set_branch_target(code, br_offset, code.size());
     }
-    else if (tag == FINALLY)
+    else if (*tag == FINALLY)
     {
-        handler_ = get_list_next(handler_);
-        if (!handler_)
+        handler_ = seq_next(*handler_);
+        if (!*handler_)
             throw_compilation_error("missing " + to_string(FINALLY) + " body");
-        auto expr = get_list_first(handler_);
-        if (get_list_next(handler_))
+        Root expr{seq_first(*handler_)};
+        if (seq_next(*handler_).value())
             throw_compilation_error("Too many expressions in " + to_string(FINALLY) + ", expected one");
         auto end_offset = code.size();
-        compile_value(scope, expr);
+        compile_value(scope, *expr);
         append(code, vm::POP);
         auto br_offset = append_branch(code, vm::BR, 0);
         add_exception_handler(start_offset, end_offset, code.size(), nil);
@@ -637,20 +659,22 @@ void Compiler::compile_try(Scope scope, Value form)
         std::tie(scope, index) = add_local(scope, nil, rlocal);
         update_locals_size(scope);
         append_STL(code, index);
-        compile_value(scope, expr);
+        compile_value(scope, *expr);
         append(code, vm::POP);
         append_LDL(code, index);
         append(code, vm::THROW);
         set_branch_target(code, br_offset, code.size());
     }
+    else
+        throw_compilation_error("expected " + to_string(CATCH) + " or " + to_string(FINALLY) + " block in " + to_string(TRY));
 }
 
 void Compiler::compile_try_wrapped(Scope scope, Value form)
 {
-    std::array<Value, 3> fn_elems{{FN, *EMPTY_VECTOR, form}};
-    Root rfn{create_list(fn_elems.data(), fn_elems.size())};
-    auto fn = *rfn;
-    Root call{create_list(&fn, 1)};
+    Root call{create_cons(form, nil)};
+    call = create_cons(*EMPTY_VECTOR, *call);
+    call = create_cons(FN, *call);
+    call = create_cons(*call, nil);
     compile_value(scope, *call);
 }
 
@@ -671,30 +695,30 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
         return compile_symbol(scope, val);
 
     auto vtype = get_value_type(val);
-    if (vtype.is(*type::List) && get_list_size(val) > 0)
+    if (isa(vtype, *type::Sequence) && seq(val).value())
     {
-        auto first = get_list_first(val);
-        if (first == IF)
+        Root first{seq_first(val)};
+        if (*first == IF)
             return compile_if(scope, val, wrap_try);
-        if (first == DO)
+        if (*first == DO)
             return compile_do(scope, val, wrap_try);
-        if (first == QUOTE)
+        if (*first == QUOTE)
             return compile_quote(val);
-        if (first == LET)
+        if (*first == LET)
             return compile_let(scope, val, wrap_try);
-        if (first == RECUR)
+        if (*first == RECUR)
             return compile_recur(scope, val);
-        if (first == LOOP)
+        if (*first == LOOP)
             return compile_loop(scope, val);
-        if (first == DEF)
+        if (*first == DEF)
             return compile_def(scope, val);
-        if (maybe_resolved_var_name(first) == APPLY)
+        if (maybe_resolved_var_name(*first) == APPLY)
             return compile_apply(scope, val);
-        if (first == FN)
+        if (*first == FN)
             return compile_fn(scope, val);
-        if (first == THROW)
+        if (*first == THROW)
             return compile_throw(scope, val);
-        if (first == TRY)
+        if (*first == TRY)
             return wrap_try ? compile_try_wrapped(scope, val) : compile_try(scope, val);
 
         return compile_call(scope, val);
@@ -712,20 +736,22 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
 
 Compiler::Scope create_fn_body_scope(Value form, Value env, Value locals, Value parent_locals)
 {
-    auto recur_arity = std::uint16_t(std::abs(get_arity(get_list_first(form))));
+    Root params{seq_first(form)};
+    auto recur_arity = std::uint16_t(std::abs(get_arity(*params)));
     return {env, parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
 }
 
 Force compile_fn_body(Value name, Value form, Value env, Value parent_locals, Root& used_locals)
 {
     Compiler c(*used_locals);
-    Value val = get_list_next(form);
-    if (val && get_list_next(val))
+    Root val{seq_next(form)};
+    if (*val && seq_next(*val).value())
         throw_compilation_error("Too many forms passed to " + to_string(FN));
-    val = val ? get_list_first(val) : nil;
-    Root locals{create_locals(name, get_list_first(form))};
+    val = *val ? seq_first(*val) : nil;
+    Root params{seq_first(form)};
+    Root locals{create_locals(name, *params)};
     auto scope = create_fn_body_scope(form, env, *locals, parent_locals);
-    c.compile_value(scope, val, false);
+    c.compile_value(scope, *val, false);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
     for (auto off : c.local_ref_offsets)
@@ -769,31 +795,35 @@ Force reserve_fn_body_consts(Value body, Int64 n)
 
 Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
 {
-    if (!get_value_type(form).is(*type::List))
-        throw_compilation_error("form must be a list");
-    if (get_list_first(form) != FN)
+    if (!is_seq(form))
+        throw_compilation_error("form must be a sequence");
+    Root first{seq_first(form)};
+    if (*first != FN)
         throw_compilation_error("form must start with fn*");
-    form = get_list_next(form);
+    Root rest{seq_next(form)};
     Value name;
-    if (form && get_value_tag(get_list_first(form)) == tag::SYMBOL)
+    first = seq_first(*rest);
+    if (*rest && get_value_tag(*first) == tag::SYMBOL)
     {
-        name = get_list_first(form);
-        form = get_list_next(form);
+        name = *first;
+        rest = seq_next(*rest);
     }
-    if (form.is_nil())
+    if (rest->is_nil())
         return create_bytecode_fn(name, nullptr, nullptr, 0);
-    Root forms{get_value_type(get_list_first(form)).is(*type::List) ? form : create_list(&form, 1)};
-    auto count = get_list_size(*forms);
+    first = seq_first(*rest);
+    Root forms{is_seq(*first) ? *rest : create_cons(*rest, nil)};
+    auto count = seq_count(*forms);
     Roots rbodies(count);
     std::vector<std::pair<Int64, Value>> arities_and_bodies;
     arities_and_bodies.reserve(count);
     used_locals = nil;
     for (Int64 i = 0; i < count; ++i)
     {
-        auto form = get_list_first(*forms);
-        rbodies.set(i, compile_fn_body(name, form, env, parent_locals, used_locals));
-        arities_and_bodies.emplace_back(get_arity(get_list_first(form)), rbodies[i]);
-        forms = get_list_next(*forms);
+        Root form{seq_first(*forms)};
+        rbodies.set(i, compile_fn_body(name, *form, env, parent_locals, used_locals));
+        Root params{seq_first(*form)};
+        arities_and_bodies.emplace_back(get_arity(*params), rbodies[i]);
+        forms = seq_next(*forms);
     }
     for (Int64 i = 0; i < count; ++i)
     {
