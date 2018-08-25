@@ -19,6 +19,7 @@ namespace
 
 static constexpr Int64 MAX_ARGS = 255;
 static constexpr Int64 MAX_LOCALS = 32767;
+static constexpr Int64 MAX_CONSTS = 65535;
 
 Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals);
 
@@ -165,6 +166,8 @@ Int64 add_var(Root& vars, Value v)
 Int64 add_const(Root& consts, Value c)
 {
     auto n = get_int64_value(get_transient_array_size(*consts));
+    if (n == MAX_CONSTS)
+        throw_compilation_error("Too many constants: " + std::to_string(n + 1));
     for (Int64 i = 0; i < n; ++i)
     {
         auto e = get_transient_array_elem(*consts, i);
@@ -796,7 +799,10 @@ Force reserve_fn_body_consts(Value body, Int64 n)
     consts = transient_array(*consts ? *consts : *EMPTY_VECTOR);
     for (Int64 i = 0; i < n; ++i)
         consts = transient_array_conj(*consts, nil);
-    consts = get_int64_value(get_transient_array_size(*consts)) > 0 ? transient_array_persistent(*consts) : nil;
+    auto size = get_int64_value(get_transient_array_size(*consts));
+    if (size > MAX_CONSTS)
+        throw_compilation_error("Too many constants: " + std::to_string(size));
+    consts = size > 0 ? transient_array_persistent(*consts) : nil;
 
     return create_bytecode_fn_body(*consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_exception_table(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
 }
