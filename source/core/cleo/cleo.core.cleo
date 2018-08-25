@@ -38,8 +38,8 @@
       eparams
       (if (next body)
         (if (nnext body)
-          (list (first body) (conj* (apply list (next body)) 'do))
-          (apply list  body))
+          (list (first body) (conj* (next body) 'do))
+          body)
         (list (first body))))))
 
 
@@ -212,7 +212,7 @@
 
 (defmacro let [bindings & body]
   `(let* ~(destructure bindings) ~(if (next body)
-                                    (conj* (apply list body) 'do)
+                                    (conj* body 'do)
                                     (first body))))
 
 
@@ -234,7 +234,7 @@
         bs (map1 first bvs)]
     (if (every? symbol? bs)
       `(loop* ~bindings ~(if (next body)
-                           (conj* (apply list body) 'do)
+                           (conj* body 'do)
                            (first body)))
       (let [ls (map1 (fn* [p] (if (symbol? p) p (gensym "l__"))) bs)
             lvbls (reduce1 (fn* [out bvl]
@@ -269,8 +269,8 @@
         eparams
         (if (next body)
           (if (nnext body)
-            (list (first body) (conj* (apply list (next body)) 'do))
-            (apply list body))
+            (list (first body) (conj* (next body) 'do))
+            body)
           (list (first body)))))))
 
 
