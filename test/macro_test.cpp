@@ -62,6 +62,19 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
     EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(macro_test, macroexpand1_should_expand_seqs)
+{
+    eval_str("(def {:macro :true} mex1 (fn* [&form &env a b c] [b c a]))");
+    auto name = create_symbol("cleo.macro.test", "mex1");
+    Root v{array(5, 6, 7)};
+    Root call{array(name, SEQ, FIRST, *v)};
+    call = seq(*call);
+    Root val{macroexpand1(*call)};
+    Root ex{array(FIRST, *v, SEQ)};
+    EXPECT_EQ_VALS(*type::Array, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+}
+
 TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symbol)
 {
     eval_str("(def {:macro :true} ms2e (fn* [&form &env a b c] [b c a]))");

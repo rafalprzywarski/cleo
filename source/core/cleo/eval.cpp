@@ -95,10 +95,10 @@ Force call_fn(Value type, const Value *elems, std::uint32_t elems_size)
 
 Force macroexpand1(Value form, Value env)
 {
-    if (!get_value_type(form).is(*type::List) || get_list_size(form) == 0)
+    if (!is_seq(form) || seq_count(form) == 0)
         return form;
 
-    Root m{get_list_first(form)};
+    Root m{seq_first(form)};
     if (get_value_tag(*m) != tag::SYMBOL)
         return form;
     if (SPECIAL_SYMBOLS.count(*m))
@@ -111,13 +111,14 @@ Force macroexpand1(Value form, Value env)
     if (!mtype.is(*type::BytecodeFn))
         return form;
 
+    Roots relems(seq_count(form) - 1);
     std::vector<Value> elems;
-    elems.reserve(get_list_size(form) + 2);
+    elems.reserve(seq_count(form) + 2);
     elems.push_back(*m);
     elems.push_back(form);
     elems.push_back(env);
-    for (Root arg_list{get_list_next(form)}; *arg_list; arg_list = get_list_next(*arg_list))
-        elems.push_back(get_list_first(*arg_list));
+    for (Root arg_list{seq_next(form)}, e; *arg_list; arg_list = seq_next(*arg_list))
+        elems.push_back(*(e = seq_first(*arg_list)));
 
     return call_fn(mtype, elems.data(), elems.size(), elems.size() - 3);
 }
