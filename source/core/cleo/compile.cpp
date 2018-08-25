@@ -255,6 +255,8 @@ void Compiler::compile_call(Scope scope, Value val)
         compile_value(scope, *v);
         ++n;
     }
+    if (n > 256)
+        throw_compilation_error("Too many arguments: " + std::to_string(n - 1));
     append(code, vm::CALL, n - 1);
 }
 
