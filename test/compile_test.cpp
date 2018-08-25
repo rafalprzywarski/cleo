@@ -38,12 +38,14 @@ struct compile_test : Test
     template <typename... Ts>
     std::vector<vm::Byte> b(Ts... bytes) { return {static_cast<vm::Byte>(bytes)...}; }
 
-    void expect_compilation_error(std::string form_str, std::string msg = {})
+    void expect_compilation_error(Value form, std::string msg = {})
     {
-        Root form{read_str(form_str)};
         try
         {
-            cleo::compile_fn(*form, nil);
+            cleo::compile_fn(form, nil);
+            std::string form_str = to_string(form);
+            if (form_str.length() > 1024)
+                form_str = form_str.substr(0, 1024) + "...";
             FAIL() << "expected compilation failure for: " << form_str;
         }
         catch (Exception const& )
@@ -57,6 +59,12 @@ struct compile_test : Test
                 ASSERT_EQ_VALS(*expected_msg, *actual_msg);
             }
         }
+    }
+
+    void expect_compilation_error(std::string form_str, std::string msg = {})
+    {
+        Root form{read_str(form_str)};
+        expect_compilation_error(*form, msg);
     }
 
     template <typename Env>
@@ -683,6 +691,21 @@ TEST_F(compile_test, should_compile_let_forms)
     expect_body_with_locals_and_bytecode(*fn, 0, 1, b(vm::LDL, -1, -1,
                                                       vm::STL, 0, 0,
                                                       vm::LDL, 0, 0));
+}
+
+TEST_F(compile_test, should_when_there_are_too_many_locals)
+{
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 4096};
+    Root bindings{transient_array(*EMPTY_VECTOR)};
+    auto l = create_symbol("l");
+    for (Int64 i = 0; i < 32768; ++i)
+    {
+        bindings = transient_array_conj(*bindings, l);
+        bindings = transient_array_conj(*bindings, nil);
+    }
+    bindings = transient_array_persistent(*bindings);
+    Root form{list(FN, *EMPTY_VECTOR, listv(LET, *bindings, nil))};
+    expect_compilation_error(*form, "Too many locals: 32768");
 }
 
 TEST_F(compile_test, should_compile_functions_with_recur)

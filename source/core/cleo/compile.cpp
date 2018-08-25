@@ -17,6 +17,9 @@ namespace cleo
 namespace
 {
 
+static constexpr Int64 MAX_ARGS = 255;
+static constexpr Int64 MAX_LOCALS = 32767;
+
 Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals);
 
 struct Compiler
@@ -255,9 +258,10 @@ void Compiler::compile_call(Scope scope, Value val)
         compile_value(scope, *v);
         ++n;
     }
-    if (n > 256)
-        throw_compilation_error("Too many arguments: " + std::to_string(n - 1));
-    append(code, vm::CALL, n - 1);
+    --n;
+    if (n > MAX_ARGS)
+        throw_compilation_error("Too many arguments: " + std::to_string(n));
+    append(code, vm::CALL, n);
 }
 
 void Compiler::compile_apply(Scope scope, Value form)
@@ -327,6 +331,8 @@ void Compiler::update_locals_size(Scope scope)
 
 std::pair<Compiler::Scope, std::int16_t> add_local(Compiler::Scope scope, Value sym, Root& holder)
 {
+    if (scope.locals_size == MAX_LOCALS)
+        throw_compilation_error("Too many locals: " + std::to_string(scope.locals_size + 1));
     Root index{create_int64(scope.locals_size)};
     holder = persistent_hash_map_assoc(scope.locals, sym, *index);
     scope.locals = *holder;
