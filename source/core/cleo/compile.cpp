@@ -20,6 +20,7 @@ namespace
 static constexpr Int64 MAX_ARGS = 255;
 static constexpr Int64 MAX_LOCALS = 32767;
 static constexpr Int64 MAX_CONSTS = 65535;
+static constexpr Int64 MAX_VARS = 65535;
 
 Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals);
 
@@ -155,6 +156,8 @@ Int64 get_arity(Value params)
 Int64 add_var(Root& vars, Value v)
 {
     auto n = get_int64_value(get_transient_array_size(*vars));
+    if (n == MAX_VARS)
+        throw_compilation_error("Too many vars: " + std::to_string(n + 1));
     for (Int64 i = 0; i < n; ++i)
         if (get_transient_array_elem(*vars, i).is(v))
             return i;
