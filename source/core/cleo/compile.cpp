@@ -74,6 +74,12 @@ struct Compiler
     void compile_value(Scope scope, Value val, bool wrap_try = true);
 };
 
+Compiler::Scope no_recur(Compiler::Scope s)
+{
+    s.recur_start_offset = -1;
+    return s;
+}
+
 void throw_compiletime_arity_error(Value name, Value form, std::uint8_t actual_num_args)
 {
     throw_compilation_error("Wrong number of args (" + std::to_string(actual_num_args) + ") passed to " + to_string(name) + ", form: " + to_string(form));
@@ -264,6 +270,7 @@ void Compiler::compile_local_ref(Value sym)
 
 void Compiler::compile_call(Scope scope, Value val)
 {
+    scope = no_recur(scope);
     std::uint32_t n = 0;
     for (Root e{val}, v; *e; e = seq_next(*e))
     {
@@ -279,6 +286,7 @@ void Compiler::compile_call(Scope scope, Value val)
 
 void Compiler::compile_apply(Scope scope, Value form)
 {
+    scope = no_recur(scope);
     auto size = seq_count(form);
     if (size < 3)
         throw_compiletime_arity_error(APPLY, form, size - 1);
@@ -303,7 +311,7 @@ void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
     if (*else_ && seq_next(*else_).value())
         throw_compilation_error("Too many arguments to if");
     cond = seq_first(*cond);
-    compile_value(scope, *cond);
+    compile_value(no_recur(scope), *cond);
     auto bnil_offset = append_branch(code, vm::BNIL, 0);
     then = seq_first(*then);
     compile_value(scope, *then, wrap_try);
@@ -319,10 +327,11 @@ void Compiler::compile_do(Scope scope, Value val, bool wrap_try)
     if (seq_next(val).value().is_nil())
         return append(code, vm::CNIL);
     Root s{val}, e;
+    auto no_recur_scope = no_recur(scope);
     for (s = seq_next(val); seq_next(*s).value(); s = seq_next(*s))
     {
         e = seq_first(*s);
-        compile_value(scope, *e, wrap_try);
+        compile_value(no_recur_scope, *e, wrap_try);
         append(code, vm::POP);
     }
     e = seq_first(*s);
@@ -375,7 +384,7 @@ Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root
             throw_compilation_error("Unsupported binding form: " + to_string(sym));
         if (get_symbol_namespace(sym))
             throw_compilation_error("Can't let qualified name: " + to_string(sym));
-        compile_value(scope, get_array_elem(bindings, i + 1));
+        compile_value(no_recur(scope), get_array_elem(bindings, i + 1));
         std::tie(scope, index) = add_local(scope, sym, llocals);
         append_STL(code, index);
     }
@@ -414,6 +423,8 @@ void Compiler::compile_loop(Scope scope, Value form)
 
 void Compiler::compile_recur(Scope scope, Value form_)
 {
+    if (scope.recur_start_offset < 0)
+        throw_compilation_error("Can only recur from tail position");
     Root form{seq_next(form_)};
     auto size = *form ? seq_count(*form) : 0;
     if (size != scope.recur_arity)
@@ -478,6 +489,7 @@ Force get_vector_prefix(Value val, Int64 prefix_len)
 
 void Compiler::compile_vector(Scope scope, Value val)
 {
+    scope = no_recur(scope);
     auto size = get_array_size(val);
     Int64 prefix_len = get_vector_const_prefix_len(val);
     if (prefix_len == size)
@@ -512,6 +524,7 @@ Force get_hash_set_const_subset(Value val)
 
 void Compiler::compile_hash_set(Scope scope, Value val)
 {
+    scope = no_recur(scope);
     Root subset{get_hash_set_const_subset(val)};
     auto size = get_array_set_size(val);
     auto subset_size = get_array_set_size(*subset);
@@ -547,6 +560,7 @@ Force get_hash_map_const_submap(Value val)
 
 void Compiler::compile_hash_map(Scope scope, Value val)
 {
+    scope = no_recur(scope);
     Root submap{get_hash_map_const_submap(val)};
     auto size = count(val);
     auto submap_size = get_persistent_hash_map_size(*submap);
@@ -571,6 +585,7 @@ void Compiler::compile_hash_map(Scope scope, Value val)
 
 void Compiler::compile_def(Scope scope, Value form_)
 {
+    scope = no_recur(scope);
     Root form{seq_next(form_)};
     if (!*form)
         throw_compilation_error("Too few arguments to def");
@@ -644,6 +659,7 @@ void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Valu
 
 void Compiler::compile_try(Scope scope, Value form_)
 {
+    scope.recur_start_offset = -1;
     auto start_offset = code.size();
     Root form{seq_next(form_)};
     Root expr{*form ? seq_first(*form) : nil};

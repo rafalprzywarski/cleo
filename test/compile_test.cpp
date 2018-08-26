@@ -41,12 +41,12 @@ struct compile_test : Test
 
     void expect_compilation_error(Value form, std::string msg = {})
     {
+        std::string form_str = to_string(form);
+        if (form_str.length() > 1024)
+            form_str = form_str.substr(0, 1024) + "...";
         try
         {
             cleo::compile_fn(form, nil);
-            std::string form_str = to_string(form);
-            if (form_str.length() > 1024)
-                form_str = form_str.substr(0, 1024) + "...";
             FAIL() << "expected compilation failure for: " << form_str;
         }
         catch (Exception const& )
@@ -57,7 +57,7 @@ struct compile_test : Test
             {
                 Root expected_msg{create_string(msg)};
                 Root actual_msg{compilation_error_message(*e)};
-                ASSERT_EQ_VALS(*expected_msg, *actual_msg);
+                ASSERT_EQ_VALS(*expected_msg, *actual_msg) << "form: " << form_str;
             }
         }
     }
@@ -774,6 +774,19 @@ TEST_F(compile_test, should_compile_functions_with_recur)
                                         vm::BR, 1, 0,
                                         vm::CNIL));
 
+    fn = compile_fn("(fn* [f x] (if x x (recur f (f x))))");
+    expect_body_with_bytecode(*fn, 0, b(vm::LDL, -1, -1,
+                                        vm::BNIL, 6, 0,
+                                        vm::LDL, -1, -1,
+                                        vm::BR, 20, 0,
+                                        vm::LDL, -2, -1,
+                                        vm::LDL, -2, -1,
+                                        vm::LDL, -1, -1,
+                                        vm::CALL, 1,
+                                        vm::STL, -1, -1,
+                                        vm::STL, -2, -1,
+                                        vm::BR, -32, -1));
+
     fn = compile_fn("(fn* [x & xs] (recur 1 2))");
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(1, 2),
                                          b(vm::LDC, 0, 0,
@@ -781,6 +794,10 @@ TEST_F(compile_test, should_compile_functions_with_recur)
                                            vm::STL, -1, -1,
                                            vm::STL, -2, -1,
                                            vm::BR, -15, -1));
+
+    EXPECT_NO_THROW(compile_fn("(fn* [] (let* [x 10] (recur)))"));
+
+    EXPECT_NO_THROW(compile_fn("(fn* [] (do (recur)))"));
 
     Root form{read_str("[recur 10]")};
     form = seq(*form);
@@ -1606,6 +1623,22 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [x y] (recur 1 2 3))", "Mismatched argument count to recur, expected: 2 args, got: 3");
     expect_compilation_error("(fn* [x & y] (recur 1))", "Mismatched argument count to recur, expected: 2 args, got: 1");
     expect_compilation_error("(fn* [x & y] (recur 1 2 3))", "Mismatched argument count to recur, expected: 2 args, got: 3");
+
+    expect_compilation_error("(fn* [] (do (recur 10) 0))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (let* [x (recur 10)] 0))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (loop* [x (recur 10)] 0))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (try* (recur 10)))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (try* (recur 10) (catch* Exception e e)))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (try* 10 (catch* Exception e (recur e))))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (try* (recur 10) (finally* 10)))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (try* 10 (finally* (recur 10))))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] [(recur)])", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] #{(recur)})", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] {(recur) nil})", "Can only recur from tail position");
+    expect_compilation_error("(fn* [f] (f (recur f)))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [f] (apply f (recur f)))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (def x (recur)))", "Can only recur from tail position");
+    expect_compilation_error("(fn* [] (if (recur) 1 2))", "Can only recur from tail position");
 
     expect_compilation_error("(fn* [] (def))", "Too few arguments to def");
     expect_compilation_error("(fn* [] (def {2 3}))", "Too few arguments to def");
