@@ -37,17 +37,10 @@ const Byte *br(const Byte *p)
 
 std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity)
 {
-    auto n = get_bytecode_fn_size(fn);
-    for (decltype(n) i = 0; i < n; ++i)
-        if (get_bytecode_fn_arity(fn, i) == arity)
-            return {get_bytecode_fn_body(fn, i), arity};
-    if (n > 0)
-    {
-        auto va_arity = get_bytecode_fn_arity(fn, n - 1);
-        if (va_arity < 0 && ~va_arity <= arity)
-            return {get_bytecode_fn_body(fn, n - 1), va_arity};
-    }
-    throw_arity_error(get_bytecode_fn_name(fn), arity);
+    auto body = bytecode_fn_find_body(fn, arity);
+    if (!body.first)
+        throw_arity_error(get_bytecode_fn_name(fn), arity);
+    return body;
 }
 
 Int64 get_max_arity(Value fn)

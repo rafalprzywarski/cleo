@@ -27,17 +27,10 @@ Value symbol_var(Value sym, Value env)
 
 std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity, std::uint8_t public_n)
 {
-    auto n = get_bytecode_fn_size(fn);
-    for (decltype(n) i = 0; i < n; ++i)
-        if (get_bytecode_fn_arity(fn, i) == arity)
-            return {get_bytecode_fn_body(fn, i), arity};
-    if (n > 0)
-    {
-        auto va_arity = get_bytecode_fn_arity(fn, n - 1);
-        if (va_arity < 0 && ~va_arity <= arity)
-            return {get_bytecode_fn_body(fn, n - 1), va_arity};
-    }
-    throw_arity_error(get_bytecode_fn_name(fn), public_n);
+    auto body = bytecode_fn_find_body(fn, arity);
+    if (!body.first)
+        throw_arity_error(get_bytecode_fn_name(fn), public_n);
+    return body;
 }
 
 Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_t public_n)

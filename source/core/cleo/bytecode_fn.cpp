@@ -157,4 +157,19 @@ Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)
     return create_bytecode_fn(get_bytecode_fn_name(fn), arities.data(), bodies.data(), bodies.size());
 }
 
+std::pair<Value, Int64> bytecode_fn_find_body(Value fn, std::uint8_t arity)
+{
+    auto n = get_bytecode_fn_size(fn);
+    for (decltype(n) i = 0; i < n; ++i)
+        if (get_bytecode_fn_arity(fn, i) == arity)
+            return {get_bytecode_fn_body(fn, i), arity};
+    if (n > 0)
+    {
+        auto va_arity = get_bytecode_fn_arity(fn, n - 1);
+        if (va_arity < 0 && ~va_arity <= arity)
+            return {get_bytecode_fn_body(fn, n - 1), va_arity};
+    }
+    return {};
+}
+
 }
