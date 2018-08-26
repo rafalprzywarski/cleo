@@ -429,10 +429,32 @@ void Compiler::compile_recur(Scope scope, Value form_)
     append_branch(code, vm::BR, scope.recur_start_offset - 3 - Int64(code.size()));
 }
 
+Int64 get_vector_const_prefix_len(Value val);
+Force get_hash_set_const_subset(Value val);
+Force get_hash_map_const_submap(Value val);
+
 bool is_const(Value val)
 {
     auto tag = get_value_tag(val);
-    return tag != tag::SYMBOL && tag != tag::OBJECT;
+    if (tag == tag::OBJECT)
+    {
+        auto type = get_value_type(val);
+        if (type.is(*type::Array))
+            return get_vector_const_prefix_len(val) == get_array_size(val);
+        if (type.is(*type::ArraySet))
+        {
+            Root ss{get_hash_set_const_subset(val)};
+            return get_array_set_size(*ss) == get_array_set_size(val);
+        }
+        if (is_map(val))
+        {
+            Root sm{get_hash_map_const_submap(val)};
+            return count(*sm) == count(val);
+        }
+        return false;
+    }
+
+    return tag != tag::SYMBOL;
 }
 
 Int64 get_vector_const_prefix_len(Value val)

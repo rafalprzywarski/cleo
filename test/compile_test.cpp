@@ -936,6 +936,19 @@ TEST_F(compile_test, should_compile_vectors)
                                            vm::CALL, 1));
 }
 
+TEST_F(compile_test, should_compile_constant_nested_data_structures)
+{
+    Root fn;
+    fn = compile_fn("(fn* [] [[10 20] [[30 [40]]]])");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(arrayv(arrayv(10, 20), arrayv(arrayv(30, arrayv(40))))), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [] #{10 20 [30 40] #{50 #{} #{60}}})");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(asetv(10, 20, arrayv(30, 40), asetv(50, asetv(), asetv(60)))), b(vm::LDC, 0, 0));
+
+    fn = compile_fn("(fn* [] {10 {20 {30 40}} #{50} [60]})");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(phmapv(10, phmapv(20, phmapv(30, 40)), asetv(50), arrayv(60))), b(vm::LDC, 0, 0));
+}
+
 TEST_F(compile_test, should_compile_hash_sets)
 {
     Root fn{compile_fn("(fn* [] #{})")};
