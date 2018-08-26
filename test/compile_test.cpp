@@ -5,6 +5,7 @@
 #include <cleo/reader.hpp>
 #include <cleo/global.hpp>
 #include <cleo/bytecode_fn.hpp>
+#include <cleo/cons.hpp>
 #include <gmock/gmock.h>
 
 namespace cleo
@@ -791,6 +792,17 @@ TEST_F(compile_test, should_compile_functions_with_recur)
                                            vm::BR, -9, -1));
 }
 
+TEST_F(compile_test, should_fail_when_recur_branch_is_out_of_range)
+{
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 32768};
+    Root form{list(listv(RECUR))};
+    for (Int64 i = 0; i < 16384; ++i)
+        form = create_cons(nil, *form);
+    form = create_cons(DO, *form);
+    form = list(FN, *EMPTY_VECTOR, *form);
+    expect_compilation_error(*form, "Branch out of range");
+}
+
 TEST_F(compile_test, should_compile_functions_with_loop)
 {
     Root fn{compile_fn("(fn* [a] (loop* [] (a 10 a-var)))")};
@@ -1438,6 +1450,18 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::LDL, -1, -1,
                                                            vm::LDL, 0, 0,
                                                            vm::CALL, 1));
+}
+
+TEST_F(compile_test, should_fail_when_if_branch_is_out_of_range)
+{
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 32768};
+    Root form;
+    for (Int64 i = 0; i < 16384; ++i)
+        form = create_cons(nil, *form);
+    form = create_cons(DO, *form);
+    form = list(IF, nil, *form, *form);
+    form = list(FN, *EMPTY_VECTOR, *form);
+    expect_compilation_error(*form, "Branch out of range");
 }
 
 TEST_F(compile_test, should_compile_functions_with_try_finally)

@@ -133,18 +133,25 @@ void append_LDC(std::vector<vm::Byte>& v, std::int16_t n)
     append_u16(v, n);
 }
 
-auto append_branch(std::vector<vm::Byte>& v, vm::Byte b, std::int16_t n)
+std::int16_t cast_branch_offset(Int64 n)
+{
+    if (n < -32768 || n > 32767)
+        throw_compilation_error("Branch out of range");
+    return std::int64_t(n);
+}
+
+auto append_branch(std::vector<vm::Byte>& v, vm::Byte b, Int64 n)
 {
     auto off = v.size();
     append(v, b);
-    append_i16(v, n);
+    append_i16(v, cast_branch_offset(n));
     return off;
 }
 
 void set_branch_target(std::vector<vm::Byte>& v, std::size_t off, std::size_t target)
 {
-    std::int16_t br_off = std::ptrdiff_t(target) - std::ptrdiff_t(off) - 3;
-    set_i16(v, off + 1, br_off);
+    auto br_off = std::ptrdiff_t(target) - std::ptrdiff_t(off) - 3;
+    set_i16(v, off + 1, cast_branch_offset(br_off));
 }
 
 Int64 get_arity(Value params)
