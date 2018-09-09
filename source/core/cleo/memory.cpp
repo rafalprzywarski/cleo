@@ -33,29 +33,37 @@ bool is_marked(const Allocation& a)
 
 void mark_value(Value val)
 {
-    if (val.is_nil() || is_ptr_marked(get_value_ptr(val)))
-        return;
-    tag_ref(get_value_ptr(val)) = 1;
-
-    switch (get_value_tag(val))
+    static std::vector<Value> vals;
+    assert(vals.empty());
+    vals.push_back(val);
+    while (!vals.empty())
     {
-        case tag::SYMBOL:
-            mark_value(get_symbol_namespace(val));
-            mark_value(get_symbol_name(val));
-            break;
-        case tag::KEYWORD:;
-            mark_value(get_keyword_namespace(val));
-            mark_value(get_keyword_name(val));
-            break;
-        case tag::OBJECT:
-            {
-                mark_value(get_object_type(val));
-                auto size = get_object_size(val);
-                for (decltype(get_object_size(val)) i = 0; i != size; ++i)
-                    mark_value(get_object_element(val, i));
-            }
-            break;
-        default: break;
+        val = vals.back();
+        vals.pop_back();
+        if (val.is_nil() || is_ptr_marked(get_value_ptr(val)))
+            continue;
+        tag_ref(get_value_ptr(val)) = 1;
+
+        switch (get_value_tag(val))
+        {
+            case tag::SYMBOL:
+                vals.push_back(get_symbol_namespace(val));
+                vals.push_back(get_symbol_name(val));
+                break;
+            case tag::KEYWORD:;
+                vals.push_back(get_keyword_namespace(val));
+                vals.push_back(get_keyword_name(val));
+                break;
+            case tag::OBJECT:
+                {
+                    vals.push_back(get_object_type(val));
+                    auto size = get_object_size(val);
+                    for (decltype(get_object_size(val)) i = 0; i != size; ++i)
+                        vals.push_back(get_object_element(val, i));
+                }
+                break;
+            default: break;
+        }
     }
 }
 
