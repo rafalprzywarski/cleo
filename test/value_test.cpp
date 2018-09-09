@@ -248,7 +248,7 @@ TEST_F(value_test, should_modify_objects)
     ASSERT_EQ(8, get_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_object_element(*obj, 0)));
     ASSERT_TRUE(elem0->is(get_object_element(*obj, 1)));
-    
+
     set_object_int(*obj, 0, 10);
     ASSERT_EQ(10, get_object_int(*obj, 0));
     ASSERT_EQ(8, get_object_int(*obj, 1));
@@ -290,6 +290,8 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     ASSERT_TRUE(type::String->is(get_value_type(*val)));
     val = create_object(type, nullptr, 0);
     ASSERT_TRUE(type.is(get_value_type(*val)));
+    val = create_object_type("some", "type");
+    ASSERT_TRUE(type::Type->is(get_value_type(*val)));
 }
 
 }

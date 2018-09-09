@@ -10,7 +10,7 @@ namespace test
 
 struct persistent_hash_map_test : Test
 {
-    Root HashString{create_type("cleo.persistent_hash_map.test", "HashString")};
+    Root HashString{create_object_type("cleo.persistent_hash_map.test", "HashString")};
 
     static Force string_value(Value val)
     {

@@ -247,11 +247,9 @@ extern const Root SENTINEL;
 
 extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 
-Force create_type(const std::string& ns, const std::string& name);
-
 namespace type
 {
-extern const ConstRoot MetaType;
+extern const ConstRoot Type;
 extern const ConstRoot Int64;
 extern const ConstRoot Float64;
 extern const ConstRoot String;
@@ -305,7 +303,7 @@ extern const Value int64;
 extern const Value string;
 }
 
-extern const std::array<Value, 7> type_by_tag;
+extern const std::array<Value, 8> type_by_tag;
 
 extern const ConstRoot EMPTY_LIST;
 extern const ConstRoot EMPTY_VECTOR;

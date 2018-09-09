@@ -114,8 +114,6 @@ Value are_equal(Value left, Value right)
         case tag::OBJECT:
             if (left.is_nil() || right.is_nil())
                 return nil;
-            if (get_object_type(left).is(*type::MetaType) || get_object_type(right).is(*type::MetaType))
-                return nil;
             if (get_object_type(left).is(*type::Array) && get_object_type(right).is(*type::Array))
                 return are_arrays_equal(left, right);
             {

@@ -335,7 +335,7 @@ TEST_F(equality_test, should_compare_types)
     EXPECT_FALSE(bool(are_equal(*type::Seqable, *type::Int64)));
     EXPECT_FALSE(bool(are_equal(*type::Seqable, create_symbol("cleo.core", "Seqable"))));
     EXPECT_FALSE(bool(are_equal(create_symbol("cleo.core", "Seqable"), *type::Seqable)));
-    EXPECT_FALSE(bool(are_equal(*type::Int64, *type::MetaType)));
+    EXPECT_FALSE(bool(are_equal(*type::Int64, *type::Type)));
 }
 
 }

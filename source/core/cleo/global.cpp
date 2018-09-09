@@ -136,34 +136,14 @@ const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     VA
 };
 
-namespace
-{
-
-const Value META_TYPE = create_symbol("cleo.core", "MetaType");
-
-Force create_meta_type()
-{
-    Root obj{create_object1(nil, META_TYPE)};
-    set_object_type(*obj, *obj);
-    return force(*obj);
-}
-
-Value get_type_name(Value type)
-{
-    return get_object_element(type, 0);
-}
-
-}
-
 namespace type
 {
-const ConstRoot MetaType{create_meta_type()};
+const ConstRoot Type{create_object_type("cleo.core", "Type")};
 }
 
 Force create_type(const std::string& ns, const std::string& name)
 {
-    Root obj{create_object1(*type::MetaType, create_symbol(ns, name))};
-    return *obj;
+    return create_object_type(ns, name);
 }
 
 namespace type
@@ -222,14 +202,15 @@ const Value int64 = create_keyword("int64");
 const Value string = create_keyword("string");
 }
 
-const std::array<Value, 7> type_by_tag{{
+const std::array<Value, 8> type_by_tag{{
     nil,
     *type::NativeFunction,
     *type::Symbol,
     *type::Keyword,
     *type::Int64,
     *type::Float64,
-    *type::String
+    *type::String,
+    *type::Type
 }};
 
 const ConstRoot EMPTY_LIST{create_list(nullptr, 0)};
@@ -286,7 +267,7 @@ const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
 const Value REQUIRE = create_symbol("cleo.core", "require");
 const Value ALIAS = create_symbol("cleo.core", "alias");
 const Value TYPE = create_symbol("cleo.core", "type");
-const Value KEYWORD_TYPE = get_type_name(*type::Keyword);
+const Value KEYWORD_TYPE_NAME = get_object_type_name(*type::Keyword);
 const Value GENSYM = create_symbol("cleo.core", "gensym");
 const Value MEMUSED = create_symbol("cleo.core", "mem-used");
 const Value MEMALLOCS = create_symbol("cleo.core", "mem-allocs");
@@ -568,14 +549,9 @@ Force get_seqable_next(Value val)
     return call_multimethod1(*rt::next, *s);
 }
 
-Force pr_str_type(Value type)
-{
-    return pr_str(get_object_element(type, 0));
-}
-
 void define_type(Value type)
 {
-    define(get_type_name(type), type);
+    define(get_object_type_name(type), type);
 }
 
 Force pr_str_var(Value var)
@@ -1217,7 +1193,7 @@ struct Initialize
         define_method(OBJ_CALL, *type::PersistentHashMap, *f);
 
         derive(*type::Keyword, *type::Callable);
-        f = create_native_function2<keyword_get, &KEYWORD_TYPE>();
+        f = create_native_function2<keyword_get, &KEYWORD_TYPE_NAME>();
         define_method(OBJ_CALL, *type::Keyword, *f);
 
         derive(*type::Array, *type::Callable);
@@ -1275,8 +1251,6 @@ struct Initialize
         define(PRINT_READABLY, TRUE);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
-        f = create_native_function1<pr_str_type>();
-        define_method(PR_STR_OBJ, *type::MetaType, *f);
 
         f = create_native_function1<pr_str_array>();
         define_method(PR_STR_OBJ, *type::Array, *f);

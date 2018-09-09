@@ -196,6 +196,11 @@ Force pr_str_seqable(Value v)
     return create_string(str);
 }
 
+Force pr_str_object_type(Value v)
+{
+    return pr_str(get_object_type_name(v));
+}
+
 Force pr_str(Value val)
 {
     switch (get_value_tag(val))
@@ -206,6 +211,7 @@ Force pr_str(Value val)
         case tag::INT64: return create_string(std::to_string(get_int64_value(val)));
         case tag::FLOAT64: return pr_str_float(val);
         case tag::STRING: return pr_str_string(val);
+        case tag::OBJECT_TYPE: return pr_str_object_type(val);
         default: // tag::OBJECT
             if (val.is_nil())
                 return create_string("nil");

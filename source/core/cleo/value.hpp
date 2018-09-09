@@ -75,6 +75,7 @@ constexpr Tag KEYWORD = 3;
 constexpr Tag INT64 = 4;
 constexpr Tag FLOAT64 = 5;
 constexpr Tag STRING = 6;
+constexpr Tag OBJECT_TYPE = 7;
 constexpr Tag MASK = 7;
 }
 
@@ -146,6 +147,9 @@ Value get_object_element(Value obj, std::uint32_t index);
 void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
+
+Force create_object_type(const std::string& ns, const std::string& name);
+Value get_object_type_name(Value type);
 
 Value get_value_type(Value val);
 

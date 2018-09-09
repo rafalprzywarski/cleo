@@ -23,6 +23,11 @@ struct Keyword
     Value ns, name;
 };
 
+struct ObjectType
+{
+    Value name;
+};
+
 struct Object
 {
     Value type;
@@ -281,6 +286,19 @@ void set_object_element(Value obj, std::uint32_t index, Value val)
     assert(index < get_object_size(obj));
     auto ptr = get_ptr<Object>(obj);
     (&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index] = val.bits();
+}
+
+Force create_object_type(const std::string& ns, const std::string& name)
+{
+    auto name_sym = create_symbol(ns, name);
+    auto t = alloc<ObjectType>();
+    t->name = name_sym;
+    return tag_ptr(t, tag::OBJECT_TYPE);
+}
+
+Value get_object_type_name(Value type)
+{
+    return get_ptr<ObjectType>(type)->name;
 }
 
 Value get_value_type(Value val)
