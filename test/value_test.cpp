@@ -167,33 +167,33 @@ TEST_F(value_test, should_create_a_new_instance_for_each_string)
 
 TEST_F(value_test, should_store_object_values)
 {
-    auto type = create_symbol("org.xxx");
+    Root type{create_object_type("org", "xxx")};
     Root elem0, elem1, elem2;
     elem0 = create_int64(10);
     elem1 = create_float64(20);
     elem2 = create_symbol("elem3");
     const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
-    Root obj{create_object(type, elems.data(), elems.size())};
+    Root obj{create_object(*type, elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
     ASSERT_EQ(elems.size(), get_object_size(*obj));
     ASSERT_TRUE(elems[0].is(get_object_element(*obj, 0)));
     ASSERT_TRUE(elems[1].is(get_object_element(*obj, 1)));
     ASSERT_TRUE(elems[2].is(get_object_element(*obj, 2)));
 
-    obj = create_object(type, nullptr, 0);
+    obj = create_object(*type, nullptr, 0);
     ASSERT_EQ(0u, get_object_size(*obj));
 }
 
 TEST_F(value_test, should_store_int_values_in_objects)
 {
-    auto type = create_symbol("org.xxx");
+    Root type{create_object_type("org", "xxx")};
     Root elem0, elem1, elem2;
     elem0 = create_int64(10);
     elem1 = create_float64(20);
     elem2 = create_symbol("elem3");
     const std::array<Int64, 5> ints{{std::numeric_limits<Int64>::max(), std::numeric_limits<Int64>::min(), 0, 654, -1}};
     const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
-    Root obj{create_object(type, ints.data(), ints.size(), elems.data(), elems.size())};
+    Root obj{create_object(*type, ints.data(), ints.size(), elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
     ASSERT_EQ(5, get_object_int_size(*obj));
     ASSERT_EQ(std::numeric_limits<Int64>::max(), get_object_int(*obj, 0));
@@ -206,14 +206,14 @@ TEST_F(value_test, should_store_int_values_in_objects)
     ASSERT_TRUE(elems[1].is(get_object_element(*obj, 1)));
     ASSERT_TRUE(elems[2].is(get_object_element(*obj, 2)));
 
-    obj = create_object(type, nullptr, 0);
+    obj = create_object(*type, nullptr, 0);
     ASSERT_EQ(0u, get_object_size(*obj));
 }
 
 TEST_F(value_test, should_initialize_object_values_to_nil_or_0)
 {
-    auto type = create_symbol("org.xxx");
-    Root obj{create_object(type, nullptr, 2, nullptr, 3)};
+    Root type{create_object_type("org", "xxx")};
+    Root obj{create_object(*type, nullptr, 2, nullptr, 3)};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
     ASSERT_EQ(2u, get_object_int_size(*obj));
     ASSERT_EQ(0, get_object_int(*obj, 0));
@@ -226,14 +226,14 @@ TEST_F(value_test, should_initialize_object_values_to_nil_or_0)
 
 TEST_F(value_test, should_modify_objects)
 {
-    auto type = create_symbol("org.xxx");
+    Root type{create_object_type("org", "xxx")};
     Root elem0, elem1, elem2;
     elem0 = create_int64(10);
     elem1 = create_float64(20);
     elem2 = create_symbol("elem3");
     const std::array<Int64, 2> ints{{7, 8}};
     const std::array<Value, 2> elems{{*elem0, *elem1}};
-    Root obj{create_object(type, ints.data(), ints.size(), elems.data(), elems.size())};
+    Root obj{create_object(*type, ints.data(), ints.size(), elems.data(), elems.size())};
 
     set_object_element(*obj, 0, *elem2);
 
@@ -264,16 +264,16 @@ TEST_F(value_test, should_modify_objects)
 
 TEST_F(value_test, should_create_a_new_instance_for_each_object)
 {
-    auto type = create_symbol("org.xxx");
-    Root val{create_object(type, nullptr, 0)};
-    Root val2{create_object(type, nullptr, 0)};
+    Root type{create_object_type("org", "xxx")};
+    Root val{create_object(*type, nullptr, 0)};
+    Root val2{create_object(*type, nullptr, 0)};
     ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_return_the_type_of_a_value)
 {
     auto f = [](const Value *, std::uint8_t) { return force(nil); };
-    auto type = create_symbol("org.xxx");
+    Root type{create_object_type("org", "xxx")};
     Root val;
     ASSERT_TRUE(get_value_type(nil).is_nil());
     val = create_native_function(f);
@@ -288,8 +288,8 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     ASSERT_TRUE(type::Float64->is(get_value_type(*val)));
     val = create_string("abc");
     ASSERT_TRUE(type::String->is(get_value_type(*val)));
-    val = create_object(type, nullptr, 0);
-    ASSERT_TRUE(type.is(get_value_type(*val)));
+    val = create_object(*type, nullptr, 0);
+    ASSERT_TRUE(type->is(get_value_type(*val)));
     val = create_object_type("some", "type");
     ASSERT_TRUE(type::Type->is(get_value_type(*val)));
 }

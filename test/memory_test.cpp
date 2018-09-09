@@ -98,15 +98,15 @@ TEST_F(memory_test, should_trace_keywords)
 
 TEST_F(memory_test, should_collect_objects)
 {
-    auto name1 = create_symbol("cleo.memory.test", "obj1");
-    auto name2 = create_symbol("cleo.memory.test", "obj2");
-    auto name3 = create_symbol("cleo.memory.test", "obj3");
+    Root type1{create_object_type("cleo.memory.test", "obj1")};
+    Root type2{create_object_type("cleo.memory.test", "obj2")};
+    Root type3{create_object_type("cleo.memory.test", "obj3")};
     auto num_allocations_before = allocations.size();
 
     Root root1, root2, root3;
-    root1 = create_object0(name1);
-    root2 = create_object0(name2);
-    root3 = create_object2(name3, *root1, *root2);
+    root1 = create_object0(*type1);
+    root2 = create_object0(*type2);
+    root3 = create_object2(*type3, *root1, *root2);
 
     auto num_allocations_after = allocations.size();
 
@@ -122,15 +122,15 @@ TEST_F(memory_test, should_collect_objects)
 
 TEST_F(memory_test, should_handle_cycles)
 {
-    auto name1 = create_symbol("cleo.memory.test", "obj1");
-    auto name2 = create_symbol("cleo.memory.test", "obj2");
-    auto name3 = create_symbol("cleo.memory.test", "obj3");
+    Root type1{create_object_type("cleo.memory.test", "obj1")};
+    Root type2{create_object_type("cleo.memory.test", "obj2")};
+    Root type3{create_object_type("cleo.memory.test", "obj3")};
     auto num_allocations_before = allocations.size();
 
     Root root1, root2, root3;
-    root1 = create_object1(name1, nil);
-    root2 = create_object0(name2);
-    root3 = create_object2(name3, *root1, *root2);
+    root1 = create_object1(*type1, nil);
+    root2 = create_object0(*type2);
+    root3 = create_object2(*type3, *root1, *root2);
     set_object_element(*root1, 0, *root3);
     set_object_type(*root2, *root3);
 

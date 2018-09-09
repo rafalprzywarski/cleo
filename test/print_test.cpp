@@ -87,7 +87,8 @@ TEST_F(pr_str_test, should_print_strings)
 
 TEST_F(pr_str_test, should_print_objects)
 {
-    Root obj{create_object0(create_symbol("somewhere", "something"))};
+    Root t{create_object_type("somewhere", "something")};
+    Root obj{create_object0(*t)};
     std::ostringstream os;
     os << std::hex << obj->bits();
     EXPECT_EQ("#somewhere/something[0x" + os.str() + "]", str(pr_str(*obj)));
@@ -268,7 +269,8 @@ TEST_F(print_str_test, should_print_strings)
 
 TEST_F(print_str_test, should_print_objects)
 {
-    Root obj{create_object0(create_symbol("somewhere", "something"))};
+    Root t{create_object_type("somewhere", "something")};
+    Root obj{create_object0(*t)};
     std::ostringstream os;
     os << std::hex << obj->bits();
     EXPECT_EQ("#somewhere/something[0x" + os.str() + "]", str(print_str(*obj)));

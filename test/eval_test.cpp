@@ -64,8 +64,8 @@ TEST_F(eval_test, should_eval_simple_values_to_themselves)
 
 TEST_F(eval_test, should_eval_objects_to_themselves)
 {
-    auto sym = create_symbol("cleo.eval.test", "obj");
-    Root o{create_object0(sym)};
+    Root type{create_object_type("cleo.eval.test", "obj")};
+    Root o{create_object0(*type)};
     ASSERT_TRUE(o->is(*Root(eval(*o))));
 }
 

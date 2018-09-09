@@ -24,7 +24,8 @@ TEST_F(hash_test, should_return_0_for_nil)
 
 TEST_F(hash_test, should_return_0_for_objects)
 {
-    Root val{create_object0(nil)};
+    Root type{create_object_type("some", "type")};
+    Root val{create_object0(*type)};
     ASSERT_EQ(0u, hash(*val));
 }
 

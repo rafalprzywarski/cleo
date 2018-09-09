@@ -118,7 +118,11 @@ const Root ONE{create_int64(1)};
 const Root NEG_ONE{create_int64(-1)};
 const Root TWO{create_int64(2)};
 const Root THREE{create_int64(3)};
-const Root SENTINEL{create_object0(nil)};
+namespace
+{
+const ConstRoot SENTINEL_TYPE{create_object_type("cleo.core", "Sentinel")};
+}
+const Root SENTINEL{create_object0(*SENTINEL_TYPE)};
 
 const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,

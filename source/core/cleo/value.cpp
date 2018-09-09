@@ -154,6 +154,7 @@ std::uint32_t get_string_len(Value val)
 
 Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size)
 {
+    assert(get_value_tag(type) == tag::OBJECT_TYPE);
     auto int_vals_size = int_size * Object::VALS_PER_INT;
     auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstVal) + (int_vals_size + size) * sizeof(Object::firstVal)));
     val->type = type;

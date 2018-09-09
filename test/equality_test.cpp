@@ -17,11 +17,12 @@ TEST_F(equality_test, same_instances_should_be_equal)
 {
     Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
     auto sym = create_symbol("org.xyz", "eqsym");
+    Root t{create_object_type("org.xyz", "eqtype")};
     auto kw = create_keyword("org.xyz", "eqkw");
     Root i{create_int64(7)};
     Root flt{create_float64(3.5)};
     Root s{create_string("abcd")};
-    Root o{create_object0(sym)};
+    Root o{create_object0(*t)};
 
     ASSERT_TRUE(bool(are_equal(nil, nil)));
     ASSERT_FALSE(bool(are_equal(nil, *fn)));
@@ -31,6 +32,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(nil, *flt)));
     ASSERT_FALSE(bool(are_equal(nil, *s)));
     ASSERT_FALSE(bool(are_equal(nil, *o)));
+    ASSERT_FALSE(bool(are_equal(nil, *t)));
 
     ASSERT_FALSE(bool(are_equal(*fn, nil)));
     ASSERT_TRUE(bool(are_equal(*fn, *fn)));
@@ -40,6 +42,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*fn, *flt)));
     ASSERT_FALSE(bool(are_equal(*fn, *s)));
     ASSERT_FALSE(bool(are_equal(*fn, *o)));
+    ASSERT_FALSE(bool(are_equal(*fn, *t)));
 
     ASSERT_FALSE(bool(are_equal(sym, nil)));
     ASSERT_FALSE(bool(are_equal(sym, *fn)));
@@ -49,6 +52,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(sym, *flt)));
     ASSERT_FALSE(bool(are_equal(sym, *s)));
     ASSERT_FALSE(bool(are_equal(sym, *o)));
+    ASSERT_FALSE(bool(are_equal(sym, *t)));
 
     ASSERT_FALSE(bool(are_equal(kw, nil)));
     ASSERT_FALSE(bool(are_equal(kw, *fn)));
@@ -58,6 +62,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(kw, *flt)));
     ASSERT_FALSE(bool(are_equal(kw, *s)));
     ASSERT_FALSE(bool(are_equal(kw, *o)));
+    ASSERT_FALSE(bool(are_equal(kw, *t)));
 
     ASSERT_FALSE(bool(are_equal(*i, nil)));
     ASSERT_FALSE(bool(are_equal(*i, *fn)));
@@ -67,6 +72,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*i, *flt)));
     ASSERT_FALSE(bool(are_equal(*i, *s)));
     ASSERT_FALSE(bool(are_equal(*i, *o)));
+    ASSERT_FALSE(bool(are_equal(*i, *t)));
 
     ASSERT_FALSE(bool(are_equal(*flt, nil)));
     ASSERT_FALSE(bool(are_equal(*flt, *fn)));
@@ -76,6 +82,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(bool(are_equal(*flt, *flt)));
     ASSERT_FALSE(bool(are_equal(*flt, *s)));
     ASSERT_FALSE(bool(are_equal(*flt, *o)));
+    ASSERT_FALSE(bool(are_equal(*flt, *t)));
 
     ASSERT_FALSE(bool(are_equal(*s, nil)));
     ASSERT_FALSE(bool(are_equal(*s, *fn)));
@@ -85,6 +92,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*s, *flt)));
     ASSERT_TRUE(bool(are_equal(*s, *s)));
     ASSERT_FALSE(bool(are_equal(*s, *o)));
+    ASSERT_FALSE(bool(are_equal(*s, *t)));
 
     ASSERT_FALSE(bool(are_equal(*o, nil)));
     ASSERT_FALSE(bool(are_equal(*o, *fn)));
@@ -94,6 +102,17 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*o, *flt)));
     ASSERT_FALSE(bool(are_equal(*o, *s)));
     ASSERT_TRUE(bool(are_equal(*o, *o)));
+    ASSERT_FALSE(bool(are_equal(*o, *t)));
+
+    ASSERT_FALSE(bool(are_equal(*t, nil)));
+    ASSERT_FALSE(bool(are_equal(*t, *fn)));
+    ASSERT_FALSE(bool(are_equal(*t, sym)));
+    ASSERT_FALSE(bool(are_equal(*t, kw)));
+    ASSERT_FALSE(bool(are_equal(*t, *i)));
+    ASSERT_FALSE(bool(are_equal(*t, *flt)));
+    ASSERT_FALSE(bool(are_equal(*t, *s)));
+    ASSERT_FALSE(bool(are_equal(*t, *o)));
+    ASSERT_TRUE(bool(are_equal(*t, *t)));
 }
 
 TEST_F(equality_test, should_compare_integers)
@@ -136,10 +155,10 @@ TEST_F(equality_test, should_compare_strings)
 
 TEST_F(equality_test, objects_should_not_be_equal)
 {
-    auto type = create_symbol("cleo.equality.test", "sometype");
+    Root type{create_object_type("cleo.equality.test", "sometype")};
     Root val1, val2;
-    val1 = create_object0(type);
-    val2 = create_object0(type);
+    val1 = create_object0(*type);
+    val2 = create_object0(*type);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
 }
 
@@ -150,9 +169,9 @@ TEST_F(equality_test, should_compare_arrays)
     n10 = i64(10);
     n11 = i64(11);
     n12 = i64(12);
-    auto type = create_symbol("cleo.equality.test", "not-vector");
+    Root type{create_object_type("cleo.equality.test", "not-vector")};
     val1 = array();
-    val2 = create_object0(type);
+    val2 = create_object0(*type);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
     EXPECT_FALSE(bool(are_equal(*val2, *val1)));
 
