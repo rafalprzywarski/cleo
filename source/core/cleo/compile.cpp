@@ -71,6 +71,7 @@ struct Compiler
     void add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type);
     void compile_try(Scope scope, Value form);
     void compile_try_wrapped(Scope scope, Value form);
+    void compile_dot(Scope scope, Value form);
     void compile_value(Scope scope, Value val, bool wrap_try = true);
 };
 
@@ -737,6 +738,24 @@ void Compiler::compile_try_wrapped(Scope scope, Value form)
     compile_value(scope, *call);
 }
 
+void Compiler::compile_dot(Scope scope, Value form)
+{
+    Root obj{seq_next(form)};
+    Root field{seq_next(*obj)};
+    Root next{seq_next(*field)};
+    obj = seq_first(*obj);
+    field = seq_first(*field);
+    if (*next || get_value_tag(*field) != tag::SYMBOL)
+        throw_compilation_error("Malformed member expression");
+    auto field_name = get_symbol_name(*field);
+    if (get_string_len(field_name) < 2 || get_string_ptr(field_name)[0] != '-')
+        throw_compilation_error("Malformed member expression");
+    field_name = create_symbol(get_string_ptr(field_name) + 1);
+    compile_value(scope, *obj);
+    compile_const(field_name);
+    append(code, vm::LDDF);
+}
+
 Value maybe_resolved_var_name(Value sym)
 {
     if (get_value_tag(sym) != tag::SYMBOL)
@@ -779,6 +798,8 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
             return compile_throw(scope, val);
         if (*first == TRY)
             return wrap_try ? compile_try_wrapped(scope, val) : compile_try(scope, val);
+        if (*first == DOT)
+            return compile_dot(scope, val);
 
         return compile_call(scope, val);
     }

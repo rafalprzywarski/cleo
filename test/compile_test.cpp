@@ -1575,6 +1575,15 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::THROW));
 }
 
+TEST_F(compile_test, should_compile_funcitons_with_field_access)
+{
+    Root fn{compile_fn("(fn* [x] (. x -xf))")};
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(create_symbol("xf")), b(vm::LDL, -1, -1, vm::LDC, 0, 0, vm::LDDF));
+
+    fn = compile_fn("(fn* [f x] (. (f x) -xf))");
+    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(create_symbol("xf")), b(vm::LDL, -2, -1, vm::LDL, -1, -1, vm::CALL, 1, vm::LDC, 0, 0, vm::LDDF));
+}
+
 TEST_F(compile_test, should_fail_when_the_form_is_malformed)
 {
     expect_compilation_error("10");
@@ -1667,6 +1676,13 @@ TEST_F(compile_test, should_fail_when_the_form_is_malformed)
     expect_compilation_error("(fn* [] (try* 10 (finally* 20 30)))", "Too many expressions in finally*, expected one");
     expect_compilation_error("(fn* [] (try* 10 (catch* Exception x 20 30)))", "Too many expressions in catch*, expected one");
     expect_compilation_error("(fn* [] (try* 10 (catch* Exception x nil) (finally* nil)))", "Too many expressions in try*");
+
+    expect_compilation_error("(fn* [x] (. x y))", "Malformed member expression");
+    expect_compilation_error("(fn* [x] (. x 10))", "Malformed member expression");
+    expect_compilation_error("(fn* [x] (. x -))", "Malformed member expression");
+    expect_compilation_error("(fn* [x] (. x))", "Malformed member expression");
+    expect_compilation_error("(fn* [x] (.))", "Malformed member expression");
+    expect_compilation_error("(fn* [x] (. x -y 20))", "Malformed member expression");
 }
 
 }
