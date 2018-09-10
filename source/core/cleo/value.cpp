@@ -26,6 +26,8 @@ struct Keyword
 struct ObjectType
 {
     Value name;
+    std::uint32_t fieldCount;
+    Value firstFieldName;
 };
 
 struct Object
@@ -289,17 +291,30 @@ void set_object_element(Value obj, std::uint32_t index, Value val)
     (&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index] = val.bits();
 }
 
-Force create_object_type(const std::string& ns, const std::string& name)
+Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size)
 {
     auto name_sym = create_symbol(ns, name);
-    auto t = alloc<ObjectType>();
+    auto t = static_cast<ObjectType *>(mem_alloc(offsetof(ObjectType, firstFieldName) + size * sizeof(ObjectType::firstFieldName)));
     t->name = name_sym;
+    t->fieldCount = size;
+    if (size)
+        std::copy_n(fields, size, &t->firstFieldName);
     return tag_ptr(t, tag::OBJECT_TYPE);
 }
 
 Value get_object_type_name(Value type)
 {
     return get_ptr<ObjectType>(type)->name;
+}
+
+Int64 get_object_field_index(Value type, Value name)
+{
+    auto ptr = get_ptr<ObjectType>(type);
+    auto names = &ptr->firstFieldName;
+    for (Int64 i = 0, size = ptr->fieldCount; i < size; ++i)
+        if (names[i] == name)
+            return i;
+    return -1;
 }
 
 Value get_value_type(Value val)

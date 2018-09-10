@@ -294,5 +294,22 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     ASSERT_TRUE(type::Type->is(get_value_type(*val)));
 }
 
+TEST_F(value_test, should_create_types_with_fields)
+{
+    auto x = create_symbol("x");
+    auto y = create_symbol("y");
+    auto z = create_symbol("z");
+    auto o = create_symbol("o");
+    std::array<Value, 3> fields{{x, y, z}};
+    Root type{create_object_type("some", "type", fields.data(), fields.size())};
+    EXPECT_EQ(0, get_object_field_index(*type, x));
+    EXPECT_EQ(1, get_object_field_index(*type, y));
+    EXPECT_EQ(2, get_object_field_index(*type, z));
+    EXPECT_LT(get_object_field_index(*type, o), 0);
+
+    type = create_object_type("some", "type", nullptr, 0);
+    EXPECT_LT(get_object_field_index(*type, x), 0);
+}
+
 }
 }
