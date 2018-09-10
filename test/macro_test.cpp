@@ -103,6 +103,32 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     }
 }
 
+TEST_F(macro_test, macroexpand1_should_expand_suffix_dot_into_new)
+{
+    Root call{list(create_symbol("Something."))};
+    Root ex{list(NEW, create_symbol("Something"))};
+    call = macroexpand1(*call);
+    EXPECT_EQ_VALS(*ex, *call);
+
+    call = list(create_symbol("Something."), 2, 3);
+    ex = list(NEW, create_symbol("Something"), 2, 3);
+    call = macroexpand1(*call);
+    EXPECT_EQ_VALS(*ex, *call);
+}
+
+TEST_F(macro_test, macroexpand1_should_not_expand_single_dots)
+{
+    Root call{list(DOT)};
+    Root ex{*call};
+    call = macroexpand1(*call);
+    EXPECT_EQ_VALS(*ex, *call);
+
+    call = list(create_symbol("xx", "."), 2, 3);
+    ex = *call;
+    call = macroexpand1(*call);
+    EXPECT_EQ_VALS(*ex, *call);
+}
+
 TEST_F(macro_test, macroexpand_should_return_the_given_form_if_its_not_a_list_with_a_macro)
 {
     Root val, exp;

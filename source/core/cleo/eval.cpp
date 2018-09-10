@@ -10,6 +10,7 @@
 #include "util.hpp"
 #include "bytecode_fn.hpp"
 #include "compile.hpp"
+#include "cons.hpp"
 #include <vector>
 
 namespace cleo
@@ -96,6 +97,14 @@ Force macroexpand1(Value form, Value env)
         return form;
     if (SPECIAL_SYMBOLS.count(*m))
         return form;
+    auto sym_name = get_symbol_name(*m);
+    if (get_string_len(sym_name) > 1 && get_string_ptr(sym_name)[get_string_len(sym_name) - 1] == '.')
+    {
+        auto new_name = create_symbol(std::string(get_string_ptr(sym_name), get_string_len(sym_name) - 1));
+        Root expanded{seq_next(form)};
+        expanded = create_cons(new_name, *expanded);
+        return create_cons(NEW, *expanded);
+    }
     auto var = symbol_var(*m, env);
     if (!var || !is_var_macro(var))
         return form;
