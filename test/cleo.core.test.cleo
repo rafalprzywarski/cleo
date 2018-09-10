@@ -89,6 +89,10 @@
       (if (= 0 (count @failed-tests)) 0 1))))
 
 
+(deftest deftype
+  (assert= '(def Xyz (cleo.core/type* 'Xyz '[a b c])) (macroexpand '(deftype Xyz [a b c]))))
+
+
 (deftest defmacro
   (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
   (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))

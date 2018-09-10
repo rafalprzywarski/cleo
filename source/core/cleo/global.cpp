@@ -147,9 +147,12 @@ namespace type
 const ConstRoot Type{create_object_type("cleo.core", "Type")};
 }
 
+namespace
+{
 Force create_type(const std::string& ns, const std::string& name)
 {
     return create_object_type(ns, name);
+}
 }
 
 namespace type
@@ -302,6 +305,7 @@ const Value GET_TIME = create_symbol("cleo.core", "get-time");
 const Value TRANSIENT = create_symbol("cleo.core", "transient");
 const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
 const Value CONJ_E = create_symbol("cleo.core", "conj!");
+const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -864,6 +868,17 @@ Force get_time()
     return create_int64(duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count());
 }
 
+Force create_type(Value name, Value fields)
+{
+    check_type("name", name, *type::Symbol);
+    check_type("fields", fields, *type::Array);
+    auto size = get_array_size(fields);
+    std::vector<Value> field_names(size);
+    for (Int64 i = 0; i < size; ++i)
+        field_names[i] = get_array_elem(fields, i);
+    return create_object_type(name, field_names.data(), field_names.size());
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -937,6 +952,8 @@ struct Initialize
         define_type(*type::IndexOutOfBounds);
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
+
+        define_function(CREATE_TYPE, create_native_function2<create_type>());
 
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);

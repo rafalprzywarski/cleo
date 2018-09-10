@@ -291,15 +291,20 @@ void set_object_element(Value obj, std::uint32_t index, Value val)
     (&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index] = val.bits();
 }
 
-Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size)
+Force create_object_type(Value name, const Value *fields, std::uint32_t size)
 {
-    auto name_sym = create_symbol(ns, name);
+    assert(get_value_type(name).is(*type::Symbol));
     auto t = static_cast<ObjectType *>(mem_alloc(offsetof(ObjectType, firstFieldName) + size * sizeof(ObjectType::firstFieldName)));
-    t->name = name_sym;
+    t->name = name;
     t->fieldCount = size;
     if (size)
         std::copy_n(fields, size, &t->firstFieldName);
     return tag_ptr(t, tag::OBJECT_TYPE);
+}
+
+Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size)
+{
+    return create_object_type(create_symbol(ns, name), fields, size);
 }
 
 Value get_object_type_name(Value type)

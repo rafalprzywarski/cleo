@@ -148,6 +148,7 @@ void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
 
+Force create_object_type(Value name, const Value *fields, std::uint32_t size);
 Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size);
 inline Force create_object_type(const std::string& ns, const std::string& name) { return create_object_type(ns, name, nullptr, 0); }
 Value get_object_type_name(Value type);

@@ -50,6 +50,10 @@
                       `(fn* ~name ~@(map1 (fn* [d] (wrapdo* d '[&form &env])) decl))))))
 
 
+(defmacro deftype [name fields]
+  `(def ~name (cleo.core/type* '~name '~fields)))
+
+
 (defmacro fn [& decl]
   (let* [name (if (symbol? (first decl)) [(first decl)] [])
          decl (if (symbol? (first decl)) (next decl) decl)]
