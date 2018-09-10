@@ -879,6 +879,14 @@ Force create_type(Value name, Value fields)
     return create_object_type(name, field_names.data(), field_names.size());
 }
 
+Force new_instance(const Value *args, std::uint8_t n)
+{
+    if (n < 1)
+        throw_arity_error(NEW, n);
+    check_type("type", args[0], *type::Type);
+    return create_object(args[0], args + 1, n - 1);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -958,7 +966,7 @@ struct Initialize
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);
 
-        define_multimethod(NEW, *first_arg, nil);
+        define_function(NEW, create_native_function(new_instance));
 
         Root f;
 
@@ -1310,56 +1318,38 @@ struct Initialize
         define_multimethod(GET_MESSAGE, *first_type, nil);
 
         derive(*type::ReadError, *type::Exception);
-        f = create_native_new3<new_read_error, &NEW>();
-        define_method(NEW, *type::ReadError, *f);
         f = create_native_function1<read_error_message>();
         define_method(GET_MESSAGE, *type::ReadError, *f);
 
         derive(*type::UnexpectedEndOfInput, *type::ReadError);
-        f = create_native_new2<new_unexpected_end_of_input, &NEW>();
-        define_method(NEW, *type::UnexpectedEndOfInput, *f);
         f = create_native_function1<unexpected_end_of_input_message>();
         define_method(GET_MESSAGE, *type::UnexpectedEndOfInput, *f);
 
         derive(*type::CallError, *type::Exception);
-        f = create_native_new1<new_call_error, &NEW>();
-        define_method(NEW, *type::CallError, *f);
         f = create_native_function1<call_error_message>();
         define_method(GET_MESSAGE, *type::CallError, *f);
 
         derive(*type::SymbolNotFound, *type::Exception);
-        f = create_native_new1<new_symbol_not_found, &NEW>();
-        define_method(NEW, *type::SymbolNotFound, *f);
         f = create_native_function1<symbol_not_found_message>();
         define_method(GET_MESSAGE, *type::SymbolNotFound, *f);
 
         derive(*type::IllegalArgument, *type::Exception);
-        f = create_native_new1<new_illegal_argument, &NEW>();
-        define_method(NEW, *type::IllegalArgument, *f);
         f = create_native_function1<illegal_argument_message>();
         define_method(GET_MESSAGE, *type::IllegalArgument, *f);
 
         derive(*type::IllegalState, *type::Exception);
-        f = create_native_new1<new_illegal_state, &NEW>();
-        define_method(NEW, *type::IllegalState, *f);
         f = create_native_function1<illegal_state_message>();
         define_method(GET_MESSAGE, *type::IllegalState, *f);
 
         derive(*type::FileNotFound, *type::Exception);
-        f = create_native_new1<new_file_not_found, &NEW>();
-        define_method(NEW, *type::FileNotFound, *f);
         f = create_native_function1<file_not_found_message>();
         define_method(GET_MESSAGE, *type::FileNotFound, *f);
 
         derive(*type::ArithmeticException, *type::Exception);
-        f = create_native_new1<new_arithmetic_exception, &NEW>();
-        define_method(NEW, *type::ArithmeticException, *f);
         f = create_native_function1<arithmetic_exception_message>();
         define_method(GET_MESSAGE, *type::ArithmeticException, *f);
 
         derive(*type::IndexOutOfBounds, *type::Exception);
-        f = create_native_new0<new_index_out_of_bounds, &NEW>();
-        define_method(NEW, *type::IndexOutOfBounds, *f);
         f = create_native_function1<index_out_of_bounds_message>();
         define_method(GET_MESSAGE, *type::IndexOutOfBounds, *f);
 
