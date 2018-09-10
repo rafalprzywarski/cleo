@@ -187,6 +187,29 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             stack_push(get_var_value(get_array_elem(vars, read_u16(p + 1))));
             p += 3;
             break;
+        case LDDF:
+        {
+            auto obj = stack[stack.size() - 2];
+            auto type = get_value_type(obj);
+            auto field = stack[stack.size() - 1];
+            auto index = get_object_field_index(type, field);
+            if (index < 0)
+            {
+                Root msg{create_string("No matching field found: " + to_string(field) + " for type: " + to_string(type))};
+                Root ex{new_illegal_argument(*msg)};
+                auto handler_offset = find_exception_handler(p, *ex);
+                if (handler_offset < 0)
+                    throw_exception(*ex);
+                stack[stack_base + locals_size] = *ex;
+                stack_pop(stack.size() - stack_base - locals_size - 1);
+                p = bytecode + handler_offset;
+                break;
+            }
+            stack[stack.size() - 2] = get_object_element(obj, index);
+            stack_pop();
+            ++p;
+            break;
+        }
         case STL:
         {
             stack[stack_base + read_i16(p + 1)] = stack.back();

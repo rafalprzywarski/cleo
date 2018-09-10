@@ -13,6 +13,7 @@ using Byte = char;
 constexpr Byte LDC = 1;
 constexpr Byte LDL = 2;
 constexpr Byte LDV = 3;
+constexpr Byte LDDF = 15;
 constexpr Byte STL = 4;
 constexpr Byte SETV = 13;
 constexpr Byte POP = 5;
