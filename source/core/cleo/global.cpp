@@ -844,11 +844,15 @@ Force mk_keyword(Value val)
 
 Force mk_symbol(Value ns, Value name)
 {
-    check_type("ns", ns, *type::String);
+    if (ns)
+        check_type("ns", ns, *type::String);
     check_type("name", name, *type::String);
-    return create_symbol(
-        std::string(get_string_ptr(ns), get_string_len(ns)),
-        std::string(get_string_ptr(name), get_string_len(name)));
+    if (ns)
+        return create_symbol(
+            std::string(get_string_ptr(ns), get_string_len(ns)),
+            std::string(get_string_ptr(name), get_string_len(name)));
+    else
+        return create_symbol(std::string(get_string_ptr(name), get_string_len(name)));
 }
 
 Force get_name(Value val)

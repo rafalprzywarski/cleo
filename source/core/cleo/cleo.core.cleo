@@ -51,7 +51,10 @@
 
 
 (defmacro deftype [name fields]
-  `(def ~name (cleo.core/type* '~name '~fields)))
+  `(do
+     (def ~name (cleo.core/type* '~name '~fields))
+     (defn ~(symbol nil (str "->" name)) ~fields (new ~name ~@fields))
+     ~name))
 
 
 (defmacro fn [& decl]

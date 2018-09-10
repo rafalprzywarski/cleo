@@ -90,7 +90,7 @@
 
 
 (deftest deftype
-  (assert= '(def Xyz (cleo.core/type* 'Xyz '[a b c])) (macroexpand '(deftype Xyz [a b c]))))
+  (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[a b c])) (cleo.core/defn ->Xyz [a b c] (cleo.core/new Xyz a b c)) Xyz) (macroexpand '(deftype Xyz [a b c]))))
 
 
 (deftest defmacro

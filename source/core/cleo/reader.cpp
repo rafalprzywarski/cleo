@@ -31,7 +31,7 @@ bool is_symbol_char(char c)
 {
     return
         std::isalpha(c) || std::isdigit(c) || c == '-' || c == '+' ||
-        c == '.' || c == '*' || c == '=' || c == '<' || c == '&' ||
+        c == '.' || c == '*' || c == '=' || c == '<' || c == '>' || c == '&' ||
         c == '!' || c == '?' || c == '#' || c == '_';
 }
 
