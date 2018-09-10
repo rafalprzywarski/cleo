@@ -98,12 +98,28 @@ Force macroexpand1(Value form, Value env)
     if (SPECIAL_SYMBOLS.count(*m))
         return form;
     auto sym_name = get_symbol_name(*m);
-    if (get_string_len(sym_name) > 1 && get_string_ptr(sym_name)[get_string_len(sym_name) - 1] == '.')
+    auto sym_name_len = get_string_len(sym_name);
+    if (sym_name_len > 1)
     {
-        auto new_name = create_symbol(std::string(get_string_ptr(sym_name), get_string_len(sym_name) - 1));
-        Root expanded{seq_next(form)};
-        expanded = create_cons(new_name, *expanded);
-        return create_cons(NEW, *expanded);
+        if (get_string_ptr(sym_name)[sym_name_len - 1] == '.')
+        {
+            auto new_name = create_symbol(std::string(get_string_ptr(sym_name), get_string_len(sym_name) - 1));
+            Root expanded{seq_next(form)};
+            expanded = create_cons(new_name, *expanded);
+            return create_cons(NEW, *expanded);
+        }
+        if (get_string_ptr(sym_name)[0] == '.')
+        {
+            auto field = create_symbol(std::string(get_string_ptr(sym_name) + 1, get_string_len(sym_name) - 1));
+            Root expanded{seq_next(form)};
+            if (expanded->is_nil())
+                throw_illegal_argument("Malformed member expression, expecting (.member target ...)");
+            Root obj{seq_first(*expanded)};
+            expanded = seq_next(*expanded);
+            expanded = create_cons(field, *expanded);
+            expanded = create_cons(*obj, *expanded);
+            return create_cons(DOT, *expanded);
+        }
     }
     auto var = symbol_var(*m, env);
     if (!var || !is_var_macro(var))

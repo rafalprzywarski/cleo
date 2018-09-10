@@ -103,6 +103,32 @@ TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
     }
 }
 
+TEST_F(macro_test, macroexpand1_should_expand_prefix_dot_into_dot_form)
+{
+    Root call{list(create_symbol(".some"), create_symbol("thing"))};
+    Root ex{list(DOT, create_symbol("thing"), create_symbol("some"))};
+    call = macroexpand1(*call);
+    EXPECT_EQ_VALS(*ex, *call);
+
+    call = list(create_symbol(".some"), create_symbol("thing"), 2, 3);
+    ex = list(DOT, create_symbol("thing"), create_symbol("some"), 2, 3);
+    call = macroexpand1(*call);
+    EXPECT_EQ_VALS(*ex, *call);
+
+    call = list(create_symbol(".some"));
+    try
+    {
+        macroexpand1(*call);
+        FAIL() << "expected an exception";
+    }
+    catch (Exception const& )
+    {
+        cleo::Root e{cleo::catch_exception()};
+        EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
+    }
+
+}
+
 TEST_F(macro_test, macroexpand1_should_expand_suffix_dot_into_new)
 {
     Root call{list(create_symbol("Something."))};
