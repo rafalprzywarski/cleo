@@ -153,6 +153,15 @@ Force create_type(const std::string& ns, const std::string& name)
 {
     return create_object_type(ns, name);
 }
+
+Force create_type(const std::string& ns, const std::string& name, const std::initializer_list<std::string>& fields)
+{
+    std::vector<Value> field_names;
+    field_names.reserve(fields.size());
+    for (auto& f : fields)
+        field_names.push_back(create_symbol(f));
+    return create_object_type(ns, name, field_names.data(), field_names.size(), true);
+}
 }
 
 namespace type
@@ -194,7 +203,7 @@ const ConstRoot Exception{create_type("cleo.core", "Exception")};
 const ConstRoot ReadError{create_type("cleo.core", "ReadError")};
 const ConstRoot CallError{create_type("cleo.core", "CallError")};
 const ConstRoot SymbolNotFound{create_type("cleo.core", "SymbolNotFound")};
-const ConstRoot IllegalArgument{create_type("cleo.core", "IllegalArgument")};
+const ConstRoot IllegalArgument{create_type("cleo.core", "IllegalArgument", {"msg"})};
 const ConstRoot IllegalState{create_type("cleo.core", "IllegalState")};
 const ConstRoot UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")};
 const ConstRoot FileNotFound{create_type("cleo.core", "FileNotFound")};
@@ -876,15 +885,18 @@ Force create_type(Value name, Value fields)
     std::vector<Value> field_names(size);
     for (Int64 i = 0; i < size; ++i)
         field_names[i] = get_array_elem(fields, i);
-    return create_object_type(name, field_names.data(), field_names.size());
+    return create_object_type(name, field_names.data(), field_names.size(), true);
 }
 
 Force new_instance(const Value *args, std::uint8_t n)
 {
     if (n < 1)
         throw_arity_error(NEW, n);
-    check_type("type", args[0], *type::Type);
-    return create_object(args[0], args + 1, n - 1);
+    auto type = args[0];
+    check_type("type", type, *type::Type);
+    if (!is_object_type_constructible(type))
+        throw_arity_error(NEW, n);
+    return create_object(type, args + 1, n - 1);
 }
 
 template <std::uint32_t f(Value)>
