@@ -898,8 +898,8 @@ Force new_instance(const Value *args, std::uint8_t n)
         throw_arity_error(NEW, n);
     auto type = args[0];
     check_type("type", type, *type::Type);
-    if (!is_object_type_constructible(type))
-        throw_arity_error(NEW, n);
+    if (!is_object_type_constructible(type) || get_object_type_field_count(type) != (n - 1))
+        throw_illegal_argument("No matching constructor found for type " + to_string(type));
     return create_object(type, args + 1, n - 1);
 }
 
