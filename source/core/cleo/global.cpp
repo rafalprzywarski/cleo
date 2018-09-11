@@ -200,17 +200,17 @@ const ConstRoot PersistentHashMapSeqParent{create_type("cleo.core", "PersistentH
 const ConstRoot PersistentHashMapCollisionNode(create_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_type("cleo.core", "PersistentHashMapArrayNode"));
 const ConstRoot Exception{create_type("cleo.core", "Exception")};
-const ConstRoot ReadError{create_type("cleo.core", "ReadError")};
-const ConstRoot CallError{create_type("cleo.core", "CallError")};
-const ConstRoot SymbolNotFound{create_type("cleo.core", "SymbolNotFound")};
+const ConstRoot ReadError{create_type("cleo.core", "ReadError", {"msg", "line", "column"})};
+const ConstRoot CallError{create_type("cleo.core", "CallError", {"msg"})};
+const ConstRoot SymbolNotFound{create_type("cleo.core", "SymbolNotFound", {"msg"})};
 const ConstRoot IllegalArgument{create_type("cleo.core", "IllegalArgument", {"msg"})};
-const ConstRoot IllegalState{create_type("cleo.core", "IllegalState")};
-const ConstRoot UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput")};
-const ConstRoot FileNotFound{create_type("cleo.core", "FileNotFound")};
-const ConstRoot ArithmeticException{create_type("cleo.core", "ArithmeticException")};
-const ConstRoot IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds")};
-const ConstRoot CompilationError{create_type("cleo.core", "CompilationError")};
-const ConstRoot StackOverflow{create_type("cleo.core", "StackOverflow")};
+const ConstRoot IllegalState{create_type("cleo.core", "IllegalState", {"msg"})};
+const ConstRoot UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput", {"line", "column"})};
+const ConstRoot FileNotFound{create_type("cleo.core", "FileNotFound", {"msg"})};
+const ConstRoot ArithmeticException{create_type("cleo.core", "ArithmeticException", {"msg"})};
+const ConstRoot IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds", {})};
+const ConstRoot CompilationError{create_type("cleo.core", "CompilationError", {"msg"})};
+const ConstRoot StackOverflow{create_type("cleo.core", "StackOverflow", {})};
 const ConstRoot Namespace{create_type("cleo.core", "Namespace")};
 }
 
@@ -974,6 +974,8 @@ struct Initialize
         define_type(*type::FileNotFound);
         define_type(*type::ArithmeticException);
         define_type(*type::IndexOutOfBounds);
+        define_type(*type::CompilationError);
+        define_type(*type::StackOverflow);
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
 
