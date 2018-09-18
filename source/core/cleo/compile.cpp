@@ -250,7 +250,7 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
     if (is_var_macro(v))
         throw_compilation_error("Can't take value of a macro: " + to_string(v));
     auto vi = add_var(vars, v);
-    append(code, vm::LDV);
+    append(code, is_var_dynamic(v) ? vm::LDDV : vm::LDV);
     append_u16(code, vi);
 }
 

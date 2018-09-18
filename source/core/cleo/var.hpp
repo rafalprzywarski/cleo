@@ -17,6 +17,7 @@ Value get_var_name(Value var);
 Value get_var_root_value(Value var);
 Value get_var_value(Value var);
 Value is_var_macro(Value var);
+Value is_var_dynamic(Value var);
 Value get_var_meta(Value var);
 
 struct PushBindingsGuard

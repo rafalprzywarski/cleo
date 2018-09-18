@@ -376,6 +376,15 @@ TEST_F(compile_test, should_compile_functions_returning_vars)
     expect_body_with_vars_and_bytecode(*fn, 0, arrayv(x), b(vm::LDV, 0, 0));
 }
 
+TEST_F(compile_test, should_compile_functions_returning_dynamic_vars)
+{
+    in_ns(create_symbol("cleo.compile.vars.test"));
+    Root meta{amap(DYNAMIC_KEY, TRUE)};
+    auto x = define(create_symbol("cleo.compile.vars.test", "x"), create_keyword(":abc"), *meta);
+    Root fn{compile_fn("(fn* [] x)")};
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(x), b(vm::LDDV, 0, 0));
+}
+
 TEST_F(compile_test, should_compile_functions_calling_functions)
 {
     in_ns(create_symbol("cleo.compile.fns.test"));

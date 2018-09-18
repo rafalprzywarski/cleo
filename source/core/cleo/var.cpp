@@ -111,6 +111,12 @@ Value is_var_macro(Value var)
     return meta ? map_get(meta, MACRO_KEY) : nil;
 }
 
+Value is_var_dynamic(Value var)
+{
+    auto meta = get_var_meta(var);
+    return meta ? map_get(meta, DYNAMIC_KEY) : nil;
+}
+
 Value get_var_meta(Value var)
 {
     return get_object_element(var, 2);

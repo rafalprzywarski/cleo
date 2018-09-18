@@ -183,11 +183,11 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             stack_push(stack[stack_base + read_i16(p + 1)]);
             p += 3;
             break;
-        case LDV:
+        case LDDV:
             stack_push(get_var_value(get_array_elem(vars, read_u16(p + 1))));
             p += 3;
             break;
-        case LDVR:
+        case LDV:
             stack_push(get_var_root_value(get_array_elem(vars, read_u16(p + 1))));
             p += 3;
             break;

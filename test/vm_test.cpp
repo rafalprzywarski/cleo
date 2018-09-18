@@ -230,7 +230,7 @@ TEST_F(vm_test, setv)
     EXPECT_EQ_VALS(*meta, get_var_meta(var));
 }
 
-TEST_F(vm_test, ldv)
+TEST_F(vm_test, lddv)
 {
     in_ns(create_symbol("vm.ldv.test"));
     auto v1 = define(create_symbol("vm.ldv.test", "a"), *THREE);
@@ -241,16 +241,16 @@ TEST_F(vm_test, ldv)
     PushBindingsGuard g(*bindings);
     Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
 
-    const std::array<Byte, 3> bc1{{LDV, Byte(-1), 0}};
+    const std::array<Byte, 3> bc1{{LDDV, Byte(-1), 0}};
     eval_bytecode(nil, *vars, 0, bc1);
 
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
 
     const std::array<Byte, 9> bc2{{
-        LDV, 0, 0,
-        LDV, 1, 0,
-        LDV, Byte(-1), Byte(-1)}};
+        LDDV, 0, 0,
+        LDDV, 1, 0,
+        LDDV, Byte(-1), Byte(-1)}};
     eval_bytecode(nil, *vars, 0, bc2);
 
     ASSERT_EQ(4u, stack.size());
@@ -260,7 +260,7 @@ TEST_F(vm_test, ldv)
     EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
 }
 
-TEST_F(vm_test, ldvr)
+TEST_F(vm_test, ldv)
 {
     in_ns(create_symbol("vm.ldvr.test"));
     auto v1 = define(create_symbol("vm.ldvr.test", "a"), *THREE);
@@ -271,16 +271,16 @@ TEST_F(vm_test, ldvr)
     PushBindingsGuard g(*bindings);
     Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
 
-    const std::array<Byte, 3> bc1{{LDVR, Byte(-1), 0}};
+    const std::array<Byte, 3> bc1{{LDV, Byte(-1), 0}};
     eval_bytecode(nil, *vars, 0, bc1);
 
     ASSERT_EQ(1u, stack.size());
     EXPECT_EQ_VALS(get_var_root_value(v1), stack[0]);
 
     const std::array<Byte, 9> bc2{{
-        LDVR, 0, 0,
-        LDVR, 1, 0,
-        LDVR, Byte(-1), Byte(-1)}};
+        LDV, 0, 0,
+        LDV, 1, 0,
+        LDV, Byte(-1), Byte(-1)}};
     eval_bytecode(nil, *vars, 0, bc2);
 
     ASSERT_EQ(4u, stack.size());
