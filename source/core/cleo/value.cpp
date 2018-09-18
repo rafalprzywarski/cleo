@@ -31,14 +31,6 @@ struct ObjectType
     Value firstFieldName;
 };
 
-struct Object
-{
-    Value type;
-    std::uint32_t intCount, valCount;
-    ValueBits firstVal;
-    static constexpr int VALS_PER_INT = sizeof(Int64) / sizeof(ValueBits);
-};
-
 Value tag_ptr(void *ptr, Tag tag)
 {
     return Value{reinterpret_cast<decltype(Value().bits())>(ptr) | tag};
@@ -233,11 +225,6 @@ Force create_object1_4(Value type, Int64 i0, Value elem0, Value elem1, Value ele
 }
 
 
-Value get_object_type(Value obj)
-{
-    return obj ? get_ptr<Object>(obj)->type : nil;
-}
-
 std::uint32_t get_object_int_size(Value obj)
 {
     return obj ? get_ptr<Object>(obj)->intCount : 0;
@@ -265,13 +252,6 @@ Int64 get_object_int(Value obj, std::uint32_t index)
 const void *get_object_int_ptr(Value obj, std::uint32_t index)
 {
     return &get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT;
-}
-
-Value get_object_element(Value obj, std::uint32_t index)
-{
-    assert(index < get_object_size(obj));
-    auto ptr = get_ptr<Object>(obj);
-    return Value{(&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index]};
 }
 
 void set_object_type(Value obj, Value type)
@@ -335,14 +315,6 @@ Int64 get_object_field_index(Value type, Value name)
         if (names[i] == name)
             return i;
     return -1;
-}
-
-Value get_value_type(Value val)
-{
-    auto tag = get_value_tag(val);
-    if (tag == tag::OBJECT)
-        return get_object_type(val);
-    return type_by_tag[tag];
 }
 
 }

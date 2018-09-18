@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <ostream>
+#include <cassert>
 
 #ifdef __ARM_ARCH
 #define CLEO_CDECL
@@ -65,6 +65,14 @@ using NativeFunction = Force(*)(const Value *, std::uint8_t);
 using Int64 = std::int64_t;
 using Float64 = double;
 static_assert(sizeof(Float64) == 8, "Float64 should have 64 bits");
+
+struct Object
+{
+    Value type;
+    std::uint32_t intCount, valCount;
+    ValueBits firstVal;
+    static constexpr int VALS_PER_INT = sizeof(Int64) / sizeof(ValueBits);
+};
 
 namespace tag
 {
@@ -137,13 +145,11 @@ Force create_object1_1(Value type, Int64 i0, Value elem0);
 Force create_object1_2(Value type, Int64 i0, Value elem0, Value elem1);
 Force create_object1_3(Value type, Int64 i0, Value elem0, Value elem1, Value elem2);
 Force create_object1_4(Value type, Int64 i0, Value elem0, Value elem1, Value elem2, Value elem3);
-Value get_object_type(Value obj);
 std::uint32_t get_object_int_size(Value obj);
 std::uint32_t get_object_size(Value obj);
 void set_object_size(Value obj, std::uint32_t size);
 Int64 get_object_int(Value obj, std::uint32_t index);
 const void *get_object_int_ptr(Value obj, std::uint32_t index);
-Value get_object_element(Value obj, std::uint32_t index);
 void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
@@ -156,6 +162,16 @@ Int64 get_object_type_field_count(Value type);
 bool is_object_type_constructible(Value type);
 Int64 get_object_field_index(Value type, Value name);
 
-Value get_value_type(Value val);
+inline Value get_object_type(Value obj)
+{
+    return obj ? get_ptr<Object>(obj)->type : nil;
+}
+
+inline Value get_object_element(Value obj, std::uint32_t index)
+{
+    assert(index < get_object_size(obj));
+    auto ptr = get_ptr<Object>(obj);
+    return Value{(&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index]};
+}
 
 }

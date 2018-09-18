@@ -221,17 +221,6 @@ const Value int64 = create_keyword("int64");
 const Value string = create_keyword("string");
 }
 
-const std::array<Value, 8> type_by_tag{{
-    nil,
-    *type::NativeFunction,
-    *type::Symbol,
-    *type::Keyword,
-    *type::Int64,
-    *type::Float64,
-    *type::String,
-    *type::Type
-}};
-
 const ConstRoot EMPTY_LIST{create_list(nullptr, 0)};
 const ConstRoot EMPTY_VECTOR{create_array(nullptr, 0)};
 const ConstRoot EMPTY_SET{create_array_set()};

@@ -305,8 +305,6 @@ extern const Value int64;
 extern const Value string;
 }
 
-extern const std::array<Value, 8> type_by_tag;
-
 extern const ConstRoot EMPTY_LIST;
 extern const ConstRoot EMPTY_VECTOR;
 extern const ConstRoot EMPTY_SET;
@@ -346,4 +344,21 @@ extern const StaticVar get_message;
 extern const StaticVar hash_obj;
 
 }
+
+inline Value get_value_type(Value val)
+{
+    switch (get_value_tag(val))
+    {
+    case tag::OBJECT: return get_object_type(val);
+    case tag::NATIVE_FUNCTION: return *type::NativeFunction;
+    case tag::SYMBOL: return *type::Symbol;
+    case tag::KEYWORD: return *type::Keyword;
+    case tag::INT64: return *type::Int64;
+    case tag::FLOAT64: return *type::Float64;
+    case tag::STRING: return *type::String;
+    case tag::OBJECT_TYPE: return *type::Type;
+    default: return nil;
+    }
+}
+
 }

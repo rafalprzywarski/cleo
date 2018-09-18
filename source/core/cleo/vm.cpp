@@ -176,7 +176,7 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
         switch (*p)
         {
         case LDC:
-            stack_push(get_array_elem(constants, read_u16(p + 1)));
+            stack_push(get_array_elem_unchecked(constants, read_u16(p + 1)));
             p += 3;
             break;
         case LDL:
@@ -184,11 +184,11 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             p += 3;
             break;
         case LDDV:
-            stack_push(get_var_value(get_array_elem(vars, read_u16(p + 1))));
+            stack_push(get_var_value(get_array_elem_unchecked(vars, read_u16(p + 1))));
             p += 3;
             break;
         case LDV:
-            stack_push(get_var_root_value(get_array_elem(vars, read_u16(p + 1))));
+            stack_push(get_var_root_value(get_array_elem_unchecked(vars, read_u16(p + 1))));
             p += 3;
             break;
         case LDDF:

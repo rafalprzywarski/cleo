@@ -14,7 +14,8 @@ void set_var_root_value(Value var, Value val);
 void set_var_meta(Value var, Value meta);
 void set_var(Value sym, Value val);
 Value get_var_name(Value var);
-Value get_var_root_value(Value var);
+inline Value get_var_root_value(Value var) { return get_object_element(var, 1); }
+
 Value get_var_value(Value var);
 Value is_var_macro(Value var);
 Value is_var_dynamic(Value var);

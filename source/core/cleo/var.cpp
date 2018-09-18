@@ -88,11 +88,6 @@ Value get_var_name(Value var)
     return get_object_element(var, 0);
 }
 
-Value get_var_root_value(Value var)
-{
-    return get_object_element(var, 1);
-}
-
 Value get_var_value(Value var)
 {
     if (*bindings)
