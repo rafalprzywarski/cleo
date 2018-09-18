@@ -237,6 +237,8 @@ TEST_F(vm_test, ldv)
     auto v2 = define(create_symbol("vm.ldv.test", "b"), *TWO);
     auto v3 = define(create_symbol("vm.ldv.test", "c"), *ZERO);
     auto v4 = define(create_symbol("vm.ldv.test", "d"), *ONE);
+    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.ldvr.test", "b"), *EMPTY_VECTOR)};
+    PushBindingsGuard g(*bindings);
     Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
 
     const std::array<Byte, 3> bc1{{LDV, Byte(-1), 0}};
@@ -256,6 +258,36 @@ TEST_F(vm_test, ldv)
     EXPECT_EQ_VALS(get_var_value(v3), stack[2]);
     EXPECT_EQ_VALS(get_var_value(v2), stack[1]);
     EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
+}
+
+TEST_F(vm_test, ldvr)
+{
+    in_ns(create_symbol("vm.ldvr.test"));
+    auto v1 = define(create_symbol("vm.ldvr.test", "a"), *THREE);
+    auto v2 = define(create_symbol("vm.ldvr.test", "b"), *TWO);
+    auto v3 = define(create_symbol("vm.ldvr.test", "c"), *ZERO);
+    auto v4 = define(create_symbol("vm.ldvr.test", "d"), *ONE);
+    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.ldvr.test", "b"), *EMPTY_VECTOR)};
+    PushBindingsGuard g(*bindings);
+    Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
+
+    const std::array<Byte, 3> bc1{{LDVR, Byte(-1), 0}};
+    eval_bytecode(nil, *vars, 0, bc1);
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(get_var_root_value(v1), stack[0]);
+
+    const std::array<Byte, 9> bc2{{
+        LDVR, 0, 0,
+        LDVR, 1, 0,
+        LDVR, Byte(-1), Byte(-1)}};
+    eval_bytecode(nil, *vars, 0, bc2);
+
+    ASSERT_EQ(4u, stack.size());
+    EXPECT_EQ_VALS(get_var_root_value(v4), stack[3]);
+    EXPECT_EQ_VALS(get_var_root_value(v3), stack[2]);
+    EXPECT_EQ_VALS(get_var_root_value(v2), stack[1]);
+    EXPECT_EQ_VALS(get_var_root_value(v1), stack[0]);
 }
 
 TEST_F(vm_test, br)
