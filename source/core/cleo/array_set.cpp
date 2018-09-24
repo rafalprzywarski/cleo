@@ -21,7 +21,12 @@ Value get_array_set_elem(Value s, std::uint32_t index)
 
 Value array_set_get(Value s, Value k)
 {
-    return array_set_contains(s, k) ? k : nil;
+    return array_set_get(s, k, nil);
+}
+
+Value array_set_get(Value s, Value k, Value def_v)
+{
+    return array_set_contains(s, k) ? k : def_v;
 }
 
 Force array_set_conj(Value s, Value k)

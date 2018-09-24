@@ -1139,6 +1139,9 @@ struct Initialize
         f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get, &GET>();
         define_method(GET, *type::PersistentHashMap, *f);
 
+        f = create_native_function2or3<array_set_get, array_set_get, &GET>();
+        define_method(GET, *type::ArraySet, *f);
+
         f = create_native_function2<array_get>();
         define_method(GET, *type::Array, *f);
 
@@ -1220,7 +1223,7 @@ struct Initialize
         define_multimethod(OBJ_CALL, *first_type, nil);
 
         derive(*type::ArraySet, *type::Callable);
-        f = create_native_function2<array_set_get>();
+        f = create_native_function2or3<array_set_get, array_set_get>();
         define_method(OBJ_CALL, *type::ArraySet, *f);
 
         derive(*type::ArrayMap, *type::Callable);

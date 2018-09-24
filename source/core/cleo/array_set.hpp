@@ -8,6 +8,7 @@ Force create_array_set();
 std::uint32_t get_array_set_size(Value s);
 Value get_array_set_elem(Value s, std::uint32_t index);
 Value array_set_get(Value s, Value k);
+Value array_set_get(Value s, Value k, Value def_v);
 Force array_set_conj(Value s, Value k);
 Value array_set_contains(Value s, Value k);
 Force array_set_seq(Value s);
