@@ -298,7 +298,8 @@ const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
 const Value NS_ALIASES = create_symbol("cleo.core", "ns-aliases");
-const Value SLASH = create_symbol("cleo.core", "/");
+const Value QUOT = create_symbol("cleo.core", "quot");
+const Value REM = create_symbol("cleo.core", "rem");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
 const Value GET_TIME = create_symbol("cleo.core", "get-time");
 const Value TRANSIENT = create_symbol("cleo.core", "transient");
@@ -388,7 +389,7 @@ Force mult2(Value l, Value r)
     return create_int64(ret);
 }
 
-Force div2(Value l, Value r)
+Force quot(Value l, Value r)
 {
     check_ints(l, r);
     auto lv = get_int64_value(l), rv = get_int64_value(r);
@@ -398,6 +399,18 @@ Force div2(Value l, Value r)
         throw_exception(new_arithmetic_exception(*s));
     }
     return create_int64(lv / rv);
+}
+
+Force rem(Value l, Value r)
+{
+    check_ints(l, r);
+    auto lv = get_int64_value(l), rv = get_int64_value(r);
+    if (rv == 0)
+    {
+        Root s{create_string("Divide by zero")};
+        throw_exception(new_arithmetic_exception(*s));
+    }
+    return create_int64(lv % rv);
 }
 
 Force lt2(Value l, Value r)
@@ -1316,8 +1329,10 @@ struct Initialize
         define(MINUS, *f);
         f = create_native_function2<mult2, &ASTERISK>();
         define(ASTERISK, *f);
-        f = create_native_function2<div2, &SLASH>();
-        define(SLASH, *f);
+        f = create_native_function2<quot, &QUOT>();
+        define(QUOT, *f);
+        f = create_native_function2<rem, &REM>();
+        define(REM, *f);
         f = create_native_function2<lt2, &LT>();
         define(LT, *f);
         f = create_native_function2<are_equal, &EQ>();
