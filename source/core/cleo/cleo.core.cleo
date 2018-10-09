@@ -194,7 +194,9 @@
                            all (b :as)
                            destructure-locals
                            (fn [out key-fn locals]
-                             (reduce1 (fn* [out sym] (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym))))
+                             (reduce1 (fn* [out sym] (if (symbol? sym)
+                                                       (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym)))
+                                                       (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
                                       out
                                       locals))
                            out (if all (conj out all vsym) out)

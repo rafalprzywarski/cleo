@@ -169,7 +169,8 @@
   (assert= '(10 20) ((fn* [m] (let [{{:keys [b c]} :a} m] [b c])) {:a {:b 10 :c 20}}))
 
   (assert-throws IllegalArgument (macroexpand '(let [[x & y z] v] nil)))
-  (assert-throws IllegalArgument (macroexpand '(let [10 v] nil))))
+  (assert-throws IllegalArgument (macroexpand '(let [10 v] nil)))
+  (assert-throws IllegalArgument (macroexpand '(let [{:keys [10]} x] 0))))
 
 
 (deftest fn
