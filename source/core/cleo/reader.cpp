@@ -71,7 +71,10 @@ Force read_number(Stream& s)
     while (is_symbol_char(s.peek()))
         n += s.next();
     return
-        n.find('.') != std::string::npos || n.find('e') != std::string::npos || n.find('E') != std::string::npos ?
+        n.find('.') != std::string::npos ||
+        (n.find("0x") != 0 &&
+         n.find("0X") != 0 &&
+         (n.find('e') != std::string::npos || n.find('E') != std::string::npos)) ?
         read_float(n, pos) :
         read_integer(n, pos);
 }

@@ -171,6 +171,12 @@ TEST_F(reader_test, should_parse_hexadecimal_integers)
     ex = create_int64(0x12345); val = read_str("0x12345");
     EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
+    ex = create_int64(0xaaee); val = read_str("0xaaEe");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_int64(0xaaee); val = read_str("0XaaEe");
+    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(0x7fffffffffff); val = read_str("0x7fffffffffff");
     EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
@@ -211,6 +217,9 @@ TEST_F(reader_test, should_parse_numbers_in_e_notation)
     EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_float64(3e-3); val = read_str("3e-3");
+    EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
+    EXPECT_EQ_VALS(*ex, *val);
+    ex = create_float64(3e-3); val = read_str("03e-3");
     EXPECT_EQ_REFS(*type::Float64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_float64(2.725E4); val = read_str("2.725E4");
