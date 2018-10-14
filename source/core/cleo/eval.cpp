@@ -172,10 +172,10 @@ Force call(const Value *vals, std::uint32_t size)
 Force eval(Value val)
 {
     if (get_value_type(val).is(*type::List) && get_list_first(val) == FN)
-        return compile_fn(val, nil);
+        return compile_fn(val);
     std::array<Value, 3> awrap{{FN, *EMPTY_VECTOR, val}};
     Root rwrap{create_list(awrap.data(), awrap.size())};
-    rwrap = compile_fn(*rwrap, nil);
+    rwrap = compile_fn(*rwrap);
     auto wrap = *rwrap;
     return call_bytecode_fn(&wrap, 1, 0);
 }

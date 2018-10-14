@@ -22,13 +22,12 @@ static constexpr Int64 MAX_LOCALS = 32767;
 static constexpr Int64 MAX_CONSTS = 65535;
 static constexpr Int64 MAX_VARS = 65535;
 
-Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals);
+Force compile_ifn(Value form, Value parent_locals, Root& used_locals);
 
 struct Compiler
 {
     struct Scope
     {
-        Value env;
         Value parent_locals;
         Value locals;
         std::uint16_t recur_arity{};
@@ -241,8 +240,6 @@ void Compiler::compile_symbol(const Scope& scope, Value sym)
         return append_LDL(code, get_int64_value(index));
     if (persistent_hash_map_contains(scope.parent_locals, sym))
         return compile_local_ref(sym);
-    if (scope.env && map_contains(scope.env, sym))
-        return compile_const(map_get(scope.env, sym));
 
     auto v = maybe_resolve_var(sym);
     if (!v)
@@ -627,7 +624,7 @@ void Compiler::compile_fn(Scope scope, Value form)
 {
     Root used_locals;
     Root parent_locals{map_merge(scope.parent_locals, scope.locals)};
-    Root fn{compile_ifn(form, scope.env, *parent_locals, used_locals)};
+    Root fn{compile_ifn(form, *parent_locals, used_locals)};
     compile_const(*fn);
     if (*used_locals)
     {
@@ -814,14 +811,14 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
     compile_const(val);
 }
 
-Compiler::Scope create_fn_body_scope(Value form, Value env, Value locals, Value parent_locals)
+Compiler::Scope create_fn_body_scope(Value form, Value locals, Value parent_locals)
 {
     Root params{seq_first(form)};
     auto recur_arity = std::uint16_t(std::abs(get_arity(*params)));
-    return {env, parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
+    return {parent_locals, locals, recur_arity, std::int16_t(-recur_arity)};
 }
 
-Force compile_fn_body(Value name, Value form, Value env, Value parent_locals, Root& used_locals)
+Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_locals)
 {
     Compiler c(*used_locals);
     Root val{seq_next(form)};
@@ -830,7 +827,7 @@ Force compile_fn_body(Value name, Value form, Value env, Value parent_locals, Ro
     val = *val ? seq_first(*val) : nil;
     Root params{seq_first(form)};
     Root locals{create_locals(name, *params)};
-    auto scope = create_fn_body_scope(form, env, *locals, parent_locals);
+    auto scope = create_fn_body_scope(form, *locals, parent_locals);
     c.compile_value(scope, *val, false);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
@@ -876,7 +873,7 @@ Force reserve_fn_body_consts(Value body, Int64 n)
     return create_bytecode_fn_body(*consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_exception_table(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
 }
 
-Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
+Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
 {
     if (!is_seq(form))
         throw_compilation_error("form must be a sequence");
@@ -903,7 +900,7 @@ Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
     for (Int64 i = 0; i < count; ++i)
     {
         Root form{seq_first(*forms)};
-        rbodies.set(i, compile_fn_body(name, *form, env, parent_locals, used_locals));
+        rbodies.set(i, compile_fn_body(name, *form, parent_locals, used_locals));
         Root params{seq_first(*form)};
         arities_and_bodies.emplace_back(get_arity(*params), rbodies[i]);
         forms = seq_next(*forms);
@@ -918,10 +915,10 @@ Force compile_ifn(Value form, Value env, Value parent_locals, Root& used_locals)
 
 }
 
-Force compile_fn(Value form, Value env)
+Force compile_fn(Value form)
 {
     Root used_locals;
-    return compile_ifn(form, env, *EMPTY_MAP, used_locals);
+    return compile_ifn(form, *EMPTY_MAP, used_locals);
 }
 
 }

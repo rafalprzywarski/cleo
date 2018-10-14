@@ -59,7 +59,7 @@ struct vm_test : Test
     {
         Root ss{create_string(s)};
         Root form{read(*ss)};
-        return cleo::compile_fn(*form, nil);
+        return cleo::compile_fn(*form);
     }
 
     template <typename Args, typename Result>

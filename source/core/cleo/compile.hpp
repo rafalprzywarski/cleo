@@ -4,6 +4,6 @@
 namespace cleo
 {
 
-Force compile_fn(Value form, Value env);
+Force compile_fn(Value form);
 
 }
