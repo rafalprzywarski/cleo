@@ -40,12 +40,12 @@ struct Compiler
     std::int16_t locals_size = 0;
     Root consts{transient_array(*EMPTY_VECTOR)};
     Root vars{transient_array(*EMPTY_VECTOR)};
-    Root local_refs;
-    std::vector<std::uint32_t> local_ref_offsets;
+    Root parent_local_refs;
+    std::vector<std::uint32_t> parent_local_ref_offsets;
     std::vector<Int64> et_entries;
     std::vector<Value> et_types;
 
-    Compiler(Value local_refs) : local_refs(transient_array(local_refs ? local_refs : *EMPTY_VECTOR)) { }
+    Compiler(Value parent_local_refs) : parent_local_refs(transient_array(parent_local_refs ? parent_local_refs : *EMPTY_VECTOR)) { }
 
     void compile_symbol(const Scope& scope, Value sym);
     void compile_const(Value c);
@@ -197,12 +197,12 @@ Int64 add_const(Root& consts, Value c)
 
 Int64 Compiler::add_local_ref(Value sym)
 {
-    auto n = get_int64_value(get_transient_array_size(*local_refs));
+    auto n = get_int64_value(get_transient_array_size(*parent_local_refs));
     for (Int64 i = 0; i < n; ++i)
-        if (get_transient_array_elem(*local_refs, i) == sym)
+        if (get_transient_array_elem(*parent_local_refs, i) == sym)
             return i;
 
-    local_refs = transient_array_conj(*local_refs, sym);
+    parent_local_refs = transient_array_conj(*parent_local_refs, sym);
     return n;
 }
 
@@ -262,7 +262,7 @@ void Compiler::compile_const(Value c)
 void Compiler::compile_local_ref(Value sym)
 {
     auto ri = add_local_ref(sym);
-    local_ref_offsets.push_back(code.size() + 1);
+    parent_local_ref_offsets.push_back(code.size() + 1);
     append_LDC(code, ri);
 }
 
@@ -829,13 +829,13 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     Root locals{create_locals(name, *params)};
     auto scope = create_fn_body_scope(form, *locals, parent_locals);
     c.compile_value(scope, *val, false);
-    auto used_locals_size = get_int64_value(get_transient_array_size(*c.local_refs));
+    auto used_locals_size = get_int64_value(get_transient_array_size(*c.parent_local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
-    for (auto off : c.local_ref_offsets)
+    for (auto off : c.parent_local_ref_offsets)
         set_i16(c.code, off, get_i16(c.code, off) + consts_size);
     Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
     Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
-    used_locals = used_locals_size > 0 ? transient_array_persistent(*c.local_refs) : nil;
+    used_locals = used_locals_size > 0 ? transient_array_persistent(*c.parent_local_refs) : nil;
     Root exception_table{!c.et_types.empty() ? create_bytecode_fn_exception_table(c.et_entries.data(), c.et_types.data(), c.et_types.size()) : nil};
     return create_bytecode_fn_body(*consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
 }
