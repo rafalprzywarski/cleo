@@ -19,13 +19,6 @@ namespace cleo
 namespace
 {
 
-Value symbol_var(Value sym, Value env)
-{
-    if (env && map_contains(env, sym))
-        return nil;
-    return maybe_resolve_var(sym);
-}
-
 std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity, std::uint8_t public_n)
 {
     auto body = bytecode_fn_find_body(fn, arity);
@@ -121,7 +114,7 @@ Force macroexpand1(Value form, Value env)
             return create_cons(DOT, *expanded);
         }
     }
-    auto var = symbol_var(*m, env);
+    auto var = maybe_resolve_var(*m);
     if (!var || !is_var_macro(var))
         return form;
     m = get_var_value(var);
