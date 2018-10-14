@@ -37,8 +37,8 @@ Force lazy_seq_next(Value ls)
 
 Force lazy_seq_conj(Value ls, Value elem)
 {
-    auto s = lazy_seq_seq(elem);
-    return cons_conj(ls, s);
+    auto s = lazy_seq_seq(ls);
+    return cons_conj(s, elem);
 }
 
 }
