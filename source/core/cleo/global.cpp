@@ -819,13 +819,14 @@ Force seq_count(Value s)
 
 Force cons_size(Value c)
 {
-    Root nc{call_multimethod1(*rt::count, cons_next(c))};
+    Root next{cons_next(c)};
+    Root nc{call_multimethod1(*rt::count, *next)};
     return create_int64(1 + get_int64_value(*nc));
 }
 
 Force cons(Value elem, Value next)
 {
-    Root s{call_multimethod1(*rt::seq, next)};
+    Root s{is_seq(next) ? next : call_multimethod1(*rt::seq, next)};
     return create_cons(elem, *s);
 }
 
