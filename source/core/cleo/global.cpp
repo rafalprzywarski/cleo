@@ -236,6 +236,13 @@ Int64 gen_id()
     return next_id++;
 }
 
+namespace
+{
+
+const ConstRoot DYNAMIC_META{persistent_hash_map_assoc(*EMPTY_MAP, DYNAMIC_KEY, TRUE)};
+
+}
+
 namespace rt
 {
 
@@ -245,11 +252,11 @@ const Root transient_array_persistent{create_native_function1<cleo::transient_ar
 const Root array_set_conj{create_native_function2<cleo::array_set_conj>()};
 const Root persistent_hash_map_assoc{create_native_function3<cleo::persistent_hash_map_assoc>()};
 
-const DynamicVar current_ns = define_var(CURRENT_NS, nil);
-const DynamicVar lib_paths = define_var(LIB_PATHS, nil);
+const DynamicVar current_ns = define_var(CURRENT_NS, nil, *DYNAMIC_META);
+const DynamicVar lib_paths = define_var(LIB_PATHS, nil, *DYNAMIC_META);
 const StaticVar obj_eq = define_var(OBJ_EQ, nil);
 const StaticVar obj_call = define_var(OBJ_CALL, nil);
-const DynamicVar print_readably = define_var(PRINT_READABLY, nil);
+const DynamicVar print_readably = define_var(PRINT_READABLY, nil, *DYNAMIC_META);
 const StaticVar pr_str_obj = define_var(PR_STR_OBJ, nil);
 const StaticVar first = define_var(FIRST, nil);
 const StaticVar next = define_var(NEXT, nil);
@@ -294,6 +301,7 @@ const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shi
 const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
+const Value NAMESPACE = create_symbol("cleo.core", "name");
 const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
@@ -306,6 +314,8 @@ const Value TRANSIENT = create_symbol("cleo.core", "transient");
 const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
 const Value CONJ_E = create_symbol("cleo.core", "conj!");
 const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
+const Value MULTI = create_symbol("cleo.core", "multi*");
+const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -907,6 +917,19 @@ Force new_instance(const Value *args, std::uint8_t n)
     return create_object(type, args + 1, n - 1);
 }
 
+Value multi(Value name, Value dispatchFn, Value defaultDispatchVal)
+{
+    check_type("name", name, *type::Symbol);
+    return define_multimethod(name, dispatchFn, defaultDispatchVal);
+}
+
+Value defmethod(Value mm, Value dispatchValue, Value fn)
+{
+    check_type("multifn", mm, *type::Multimethod);
+    define_method(get_multimethod_name(mm), dispatchValue, fn);
+    return nil;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -992,11 +1015,11 @@ struct Initialize
 
         Root f;
 
-        define(CURRENT_NS, get_ns(CLEO_CORE));
+        define(CURRENT_NS, get_ns(CLEO_CORE), *DYNAMIC_META);
         f = create_native_function1<in_ns, &IN_NS>();
         define(IN_NS, *f);
 
-        define(LIB_PATHS, nil);
+        define(LIB_PATHS, nil, *DYNAMIC_META);
 
         define(COMMAND_LINE_ARGS, nil);
 
@@ -1304,7 +1327,7 @@ struct Initialize
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        define(PRINT_READABLY, TRUE);
+        define(PRINT_READABLY, TRUE, *DYNAMIC_META);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
 
@@ -1495,6 +1518,8 @@ struct Initialize
 
         define_method(PERSISTENT, *type::TransientArray, *rt::transient_array_persistent);
 
+        define_function(MULTI, create_native_function3<multi, &MULTI>());
+        define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());
     }
 } initialize;
 

@@ -123,6 +123,17 @@ Force create_native_function3()
     });
 }
 
+template <Value f(Value, Value, Value), const Value *name = nullptr>
+Force create_native_function3()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
+    {
+        if (num_args != 3)
+            throw_arity_error(deref_name<name>(), num_args);
+        return f(args[0], args[1], args[2]);
+    });
+}
+
 template <Value f2(Value, Value), Value f3(Value, Value, Value), const Value *name = nullptr>
 Force create_native_function2or3()
 {

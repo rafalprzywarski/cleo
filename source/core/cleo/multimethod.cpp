@@ -7,6 +7,7 @@
 #include "error.hpp"
 #include "util.hpp"
 #include "var.hpp"
+#include "eval.hpp"
 
 namespace cleo
 {
@@ -99,9 +100,14 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
 
 Value get_method(Value multi, Value dispatchVal)
 {
-    auto name = get_object_element(multi, 0);
+    auto name = get_multimethod_name(multi);
     auto& multimethod = multimethods.find(name)->second;
     return get_method(multimethod, dispatchVal);
+}
+
+Value get_multimethod_name(Value multi)
+{
+    return get_object_element(multi, 0);
 }
 
 Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
@@ -109,7 +115,11 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
     check_type("multimethod", multi, *type::Multimethod);
     auto name = get_object_element(multi, 0);
     auto& multimethod = multimethods.find(name)->second;
-    Root dispatchVal{get_native_function_ptr(multimethod.dispatchFn)(args, numArgs)};
+    std::vector<Value> fcall;
+    fcall.reserve(numArgs + 1);
+    fcall.push_back(multimethod.dispatchFn);
+    fcall.insert(fcall.end(), args, args + numArgs);
+    Root dispatchVal{call(fcall.data(), fcall.size())};
     auto fn = get_method(multimethod, *dispatchVal);
     if (!fn)
     {
@@ -125,7 +135,8 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
         Root msg{create_string("multimethod not matched: " + sname)};
         throw_exception(new_illegal_argument(*msg));
     }
-    return get_native_function_ptr(fn)(args, numArgs);
+    fcall[0] = fn;
+    return call(fcall.data(), fcall.size());
 }
 
 Force call_multimethod1(Value multi, Value arg)

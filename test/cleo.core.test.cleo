@@ -93,6 +93,16 @@
   (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[a b c])) (cleo.core/defn ->Xyz [a b c] (cleo.core/new Xyz a b c)) Xyz) (macroexpand '(deftype Xyz [a b c]))))
 
 
+(deftest defmulti
+  (assert= '(def abc (cleo.core/multi* 'cleo.core.run/abc (fn* [x] x) :default)) (macroexpand '(defmulti abc (fn* [x] x))))
+  (assert= '(def abc (cleo.core/multi* 'cleo.core.run/abc (fn* [x] x) 7)) (macroexpand '(defmulti abc (fn* [x] x) :default 7))))
+
+
+(deftest defmethod
+  (assert= '(cleo.core/defmethod* abc 10 (cleo.core/fn [x y] (x y))) (macroexpand '(defmethod abc 10 [x y] (x y))))
+  (assert= '(cleo.core/defmethod* abc 10 (cleo.core/fn ([x] x) ([x y] (x y)))) (macroexpand '(defmethod abc 10 ([x] x) ([x y] (x y))))))
+
+
 (deftest defmacro
   (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
   (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))
