@@ -602,6 +602,14 @@ Force pr_str_bytecode_fn(Value fn)
     return create_string(os.str());
 }
 
+Force pr_str_multimethod(Value m)
+{
+    check_type("m", m, *type::Multimethod);
+    std::ostringstream os;
+    os << "#" << to_string(get_object_type_name(*type::Multimethod)) << "[" << to_string(get_multimethod_name(m)) << " 0x" << std::hex << m.bits() << "]";
+    return create_string(os.str());
+}
+
 Force merge_maps(Value m1, Value m2)
 {
     Root m{m1}, kv;
@@ -1520,6 +1528,9 @@ struct Initialize
 
         f = create_native_function1<pr_str_bytecode_fn>();
         define_method(PR_STR_OBJ, *type::BytecodeFn, *f);
+
+        f = create_native_function1<pr_str_multimethod>();
+        define_method(PR_STR_OBJ, *type::Multimethod, *f);
 
         f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);
