@@ -66,10 +66,18 @@ TEST_F(pr_str_test, should_print_symbols)
 
 TEST_F(pr_str_test, should_print_native_functions)
 {
-    Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
-    std::ostringstream os;
-    os << std::hex << fn->bits();
-    EXPECT_EQ("#cleo.core/NativeFunction[0x" + os.str() + "]", str(pr_str(*fn)));
+    {
+        Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
+        std::ostringstream os;
+        os << std::hex << fn->bits();
+        EXPECT_EQ("#cleo.core/NativeFunction[nil 0x" + os.str() + "]", str(pr_str(*fn)));
+    }
+    {
+        Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); }, create_symbol("abc"))};
+        std::ostringstream os;
+        os << std::hex << fn->bits();
+        EXPECT_EQ("#cleo.core/NativeFunction[abc 0x" + os.str() + "]", str(pr_str(*fn)));
+    }
 }
 
 TEST_F(pr_str_test, should_print_strings)
@@ -248,10 +256,18 @@ TEST_F(print_str_test, should_print_symbols)
 
 TEST_F(print_str_test, should_print_native_functions)
 {
-    Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
-    std::ostringstream os;
-    os << std::hex << fn->bits();
-    EXPECT_EQ("#cleo.core/NativeFunction[0x" + os.str() + "]", str(print_str(*fn)));
+    {
+        Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
+        std::ostringstream os;
+        os << std::hex << fn->bits();
+        EXPECT_EQ("#cleo.core/NativeFunction[nil 0x" + os.str() + "]", str(print_str(*fn)));
+    }
+    {
+        Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); }, create_symbol("abc"))};
+        std::ostringstream os;
+        os << std::hex << fn->bits();
+        EXPECT_EQ("#cleo.core/NativeFunction[abc 0x" + os.str() + "]", str(print_str(*fn)));
+    }
 }
 
 TEST_F(print_str_test, should_print_strings)
