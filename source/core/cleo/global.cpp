@@ -594,6 +594,14 @@ Force pr_str_var(Value var)
     return create_string("#'" + to_string(get_var_name(var)));
 }
 
+Force pr_str_bytecode_fn(Value fn)
+{
+    check_type("fn", fn, *type::BytecodeFn);
+    std::ostringstream os;
+    os << "#" << to_string(get_object_type_name(*type::BytecodeFn)) << "[" << to_string(get_bytecode_fn_name(fn)) << " 0x" << std::hex << fn.bits() << "]";
+    return create_string(os.str());
+}
+
 Force merge_maps(Value m1, Value m2)
 {
     Root m{m1}, kv;
@@ -1509,6 +1517,9 @@ struct Initialize
 
         f = create_native_function1<pr_str_var>();
         define_method(PR_STR_OBJ, *type::Var, *f);
+
+        f = create_native_function1<pr_str_bytecode_fn>();
+        define_method(PR_STR_OBJ, *type::BytecodeFn, *f);
 
         f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);
