@@ -22,6 +22,7 @@
 #include <fstream>
 #include <limits>
 #include <chrono>
+#include "bytecode_fn.hpp"
 
 namespace cleo
 {
@@ -316,6 +317,7 @@ const Value CONJ_E = create_symbol("cleo.core", "conj!");
 const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
 const Value MULTI = create_symbol("cleo.core", "multi*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
+const Value DISASM = create_symbol("cleo.core", "disasm*");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -930,6 +932,167 @@ Value defmethod(Value mm, Value dispatchValue, Value fn)
     return nil;
 }
 
+Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
+{
+    Root dbs{transient_array(*EMPTY_VECTOR)};
+    auto p = bytes;
+    auto endp = p + size;
+    auto read_u16 = [](const vm::Byte *p) { return std::uint8_t(p[0]) | std::uint16_t(std::uint8_t(p[1])) << 8; };
+    auto read_i16 = [=](const vm::Byte *p) { return std::int16_t(read_u16(p)); };
+    auto mk = [&p, bytes](const std::string& oc, Value arg0 = *SENTINEL)
+    {
+        Root offset{create_int64(p - bytes)};
+        std::array<Value, 3> s{*offset, create_symbol(oc), arg0};
+        std::uint32_t n = 3;
+        if (arg0 == *SENTINEL)
+            n = 2;
+        return create_array(s.data(), n);
+    };
+    Root oc, x;
+    while (p != endp)
+    {
+        switch (*p)
+        {
+        case vm::LDC:
+            oc = mk("LDC", get_array_elem(consts, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDL:
+            x = create_int64(read_i16(p + 1));
+            oc = mk("LDL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDDV:
+            oc = mk("LDDV", get_array_elem(vars, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDV:
+            oc = mk("LDV", get_array_elem(vars, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDDF:
+            oc = mk("LDDF");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::STL:
+            x = create_int64(read_i16(p + 1));
+            oc = mk("STL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::SETV:
+            oc = mk("SETV", get_array_elem(vars, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::POP:
+            oc = mk("POP");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::BNIL:
+            x = create_int64((p - bytes) + 3 + read_i16(p + 1));
+            oc = mk("BNIL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::BNNIL:
+            x = create_int64((p - bytes) + 3 + read_i16(p + 1));
+            oc = mk("BNNIL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::BR:
+            x = create_int64((p - bytes) + 3 + read_i16(p + 1));
+            oc = mk("BR", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::CALL:
+            x = create_int64(std::uint8_t(p[1]));
+            oc = mk("CALL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 2;
+            break;
+        case vm::APPLY:
+            x = create_int64(std::uint8_t(p[1]));
+            oc = mk("APPLY", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 2;
+            break;
+        case vm::CNIL:
+            oc = mk("CNIL");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::IFN:
+            x = create_int64(std::uint8_t(p[1]));
+            oc = mk("IFN", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 2;
+            break;
+        case vm::THROW:
+            oc = mk("THROW");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        default:
+            throw_illegal_argument("Invalid opcode");
+        }
+    }
+    return transient_array_persistent(*dbs);
+}
+
+Force disasm_exception_table(Value et)
+{
+    if (!et)
+        return nil;
+    Root det{transient_array(*EMPTY_VECTOR)};
+    for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
+    {
+        Root soff{create_int64(get_bytecode_fn_exception_table_start_offset(et, i))};
+        Root eoff{create_int64(get_bytecode_fn_exception_table_end_offset(et, i))};
+        Root hoff{create_int64(get_bytecode_fn_exception_table_handler_offset(et, i))};
+        Root entry{*EMPTY_MAP};
+        entry = map_assoc(*entry, create_keyword("start-offset"), *soff);
+        entry = map_assoc(*entry, create_keyword("end-offset"), *eoff);
+        entry = map_assoc(*entry, create_keyword("handler-offset"), *hoff);
+        entry = map_assoc(*entry, create_keyword("type"), get_bytecode_fn_exception_table_type(et, i));
+        det = transient_array_conj(*det, *entry);
+    }
+    return transient_array_persistent(*det);
+}
+
+Force disasm(Value fn)
+{
+    check_type("fn", fn, *type::BytecodeFn);
+    Root dfn{*EMPTY_MAP};
+    dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
+    Root bodies{*EMPTY_VECTOR};
+    for (Int64 i = 0; i < get_bytecode_fn_size(fn); ++i)
+    {
+        Root arity{create_int64(get_bytecode_fn_arity(fn, i))};
+        Root dbody{*EMPTY_MAP};
+        auto body = get_bytecode_fn_body(fn, i);
+        Root locals_size{create_int64(get_bytecode_fn_body_locals_size(body))};
+        dbody = map_assoc(*dbody, create_keyword("arity"), *arity);
+        dbody = map_assoc(*dbody, create_keyword("locals-size"), *locals_size);
+        Root dbs{disasm_bytes(get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body), get_bytecode_fn_body_consts(body), get_bytecode_fn_body_vars(body))};
+        dbody = map_assoc(*dbody, create_keyword("bytecode"), *dbs);
+        Root det{disasm_exception_table(get_bytecode_fn_body_exception_table(body))};
+        if (*det)
+            dbody = map_assoc(*dbody, create_keyword("exception-table"), *det);
+        bodies = array_conj(*bodies, *dbody);
+    }
+    dfn = map_assoc(*dfn, create_keyword("bodies"), *bodies);
+    return *dfn;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1520,6 +1683,8 @@ struct Initialize
 
         define_function(MULTI, create_native_function3<multi, &MULTI>());
         define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());
+
+        define_function(DISASM, create_native_function1<disasm, &DISASM>());
     }
 } initialize;
 

@@ -403,3 +403,29 @@
 
 (defn update [m k f]
   (assoc m k (f (get m k))))
+
+
+(defn disasm [fn]
+  (let [{:keys [name bodies]} (disasm* fn)
+        right (fn [w n]
+                (loop [n (str n)]
+                  (if (< (count n) w)
+                    (recur (str " " n))
+                    n)))
+        left (fn [w n]
+               (loop [n (str n)]
+                 (if (< (count n) w)
+                   (recur (str n " "))
+                   n)))]
+    (println "fn:" name)
+    (doseq [{:keys [arity locals-size bytecode exception-table]} bodies]
+      (println "arity:" arity)
+      (println "locals size:" locals-size)
+      (println "bytecode:")
+      (doseq [[offset oc & args] bytecode]
+        (println (right 6 offset) (left 5 oc) (if args (pr-str (first args)) "")))
+      (when exception-table
+        (println "exception table:")
+        (println "  start     end handler type")
+        (doseq [{:keys [start-offset end-offset handler-offset type]} exception-table]
+          (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) type))))))
