@@ -275,10 +275,12 @@
       (loop* [s (seq params)
               dparams []
               locals []]
-        (if s
-          (let* [p (gensym "p__")]
-            (recur (next s) (conj dparams p) (conj locals (first s) p)))
-          `(~dparams (let ~locals ~@(next body))))))))
+             (if s
+               (if (symbol? (first s))
+                 (recur (next s) (conj dparams (first s)) locals)
+                 (let* [p (gensym "p__")]
+                   (recur (next s) (conj dparams p) (conj locals (first s) p))))
+               `(~dparams (let ~locals ~@(next body))))))))
 
 
 (def wrapdo*

@@ -200,7 +200,8 @@
 (deftest fn-destructuring
   (assert= [:a :b] ((fn [[x y]] [y x]) [:b :a]))
   (assert= [:a :b] ((fn [[x] [y]] [y x]) [:b] [:a]))
-  (assert= [:a :b] ((fn [{:keys [x y]}] [y x]) {:x :b :y :a})))
+  (assert= [:a :b] ((fn [{:keys [x y]}] [y x]) {:x :b :y :a}))
+  (assert= [:a :b] ((fn [x & [y]] [y x]) :b :a)))
 
 
 (deftest loop
