@@ -186,7 +186,7 @@
                               expect-as? nil]
                              (if s
                                (cond
-                                 (= '& (first s)) (recur (conj out (second s) ssym)
+                                 (= '& (first s)) (recur (destructure-binding out (second s) ssym)
                                                          (nnext s)
                                                          :true)
                                  (= :as (first s)) (destructure-binding out (second s) vsym)

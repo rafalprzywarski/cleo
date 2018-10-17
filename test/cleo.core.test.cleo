@@ -126,6 +126,8 @@
   (assert= '(:a nil nil (:a)) ((fn* [v] (let [[x y z :as vn] v] (list x y z vn))) [:a]))
   (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b :c]))
   (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) '(:a :b :c)))
+  (assert= '(:a :b :c :d) ((fn* [v] (let [[x y & [z w]] v] (list x y z w))) [:a :b :c :d]))
+  (assert= '(:a :b :c :d) ((fn* [v] (let [[x y & [z w]] v] (list x y z w))) '(:a :b :c :d)))
   (assert= '(:a [:b :c] [:a :b :c]) ((fn* [v] (let [[x & y :as vn] v] (list x y vn))) '(:a :b :c)))
   (assert= '(:a [:b]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b]))
   (assert= '(:a nil) ((fn* [v] (let [[x & y] v] (list x y))) [:a]))
