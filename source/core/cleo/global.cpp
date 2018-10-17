@@ -958,7 +958,7 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
     auto mk = [&p, bytes](const std::string& oc, Value arg0 = *SENTINEL)
     {
         Root offset{create_int64(p - bytes)};
-        std::array<Value, 3> s{*offset, create_symbol(oc), arg0};
+        std::array<Value, 3> s{{*offset, create_symbol(oc), arg0}};
         std::uint32_t n = 3;
         if (arg0 == *SENTINEL)
             n = 2;
