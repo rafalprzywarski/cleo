@@ -1182,7 +1182,7 @@ struct Initialize
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);
 
-        define_function(NEW, create_native_function(new_instance));
+        define_function(NEW, create_native_function(new_instance, NEW));
 
         Root f;
 
@@ -1212,19 +1212,19 @@ struct Initialize
         f = create_native_function1<map_q, &MAP_Q>();
         define(MAP_Q, *f);
 
-        f = create_native_function(list);
+        f = create_native_function(list, LIST);
         define(LIST, *f);
 
-        f = create_native_function(vector);
+        f = create_native_function(vector, VECTOR);
         define(VECTOR, *f);
 
-        f = create_native_function(hash_map);
+        f = create_native_function(hash_map, HASH_MAP);
         define(HASH_MAP, *f);
 
-        f = create_native_function(hash_set);
+        f = create_native_function(hash_set, HASH_SET);
         define(HASH_SET, *f);
 
-        f = create_native_function(concati);
+        f = create_native_function(concati, CONCATI);
         define(CONCATI, *f);
 
         f = create_native_function1<mk_keyword, &KEYWORD>();
@@ -1523,7 +1523,7 @@ struct Initialize
 
         f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);
-        f = create_native_function(sub);
+        f = create_native_function(sub, MINUS);
         define(MINUS, *f);
         f = create_native_function2<mult2, &ASTERISK>();
         define(ASTERISK, *f);
@@ -1619,25 +1619,25 @@ struct Initialize
         f = create_swap_fn();
         define(SWAP, *f);
 
-        f = create_native_function(apply_wrapped);
+        f = create_native_function(apply_wrapped, APPLY);
         define(APPLY, *f);
 
         f = create_native_function1<pr_str, &PR_STR>();
         define(PR_STR, *f);
 
-        f = create_native_function(pr);
+        f = create_native_function(pr, create_symbol("cleo.core", "pr"));
         define(create_symbol("cleo.core", "pr"), *f);
 
-        f = create_native_function(prn);
+        f = create_native_function(prn, create_symbol("cleo.core", "prn"));
         define(create_symbol("cleo.core", "prn"), *f);
 
-        f = create_native_function(print);
+        f = create_native_function(print, create_symbol("cleo.core", "print"));
         define(create_symbol("cleo.core", "print"), *f);
 
-        f = create_native_function(println);
+        f = create_native_function(println, create_symbol("cleo.core", "println"));
         define(create_symbol("cleo.core", "println"), *f);
 
-        define_function(STR, create_native_function(str));
+        define_function(STR, create_native_function(str, STR));
 
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);
@@ -1650,7 +1650,7 @@ struct Initialize
         f = create_native_function4<import_c_fn, &IMPORT_C_FN>();
         define(IMPORT_C_FN, *f);
 
-        f = create_native_function(gensym);
+        f = create_native_function(gensym, GENSYM);
         define(GENSYM, *f);
 
         f = create_native_function0<mem_used, &MEMUSED>();

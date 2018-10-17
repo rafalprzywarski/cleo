@@ -7,6 +7,12 @@
 namespace cleo
 {
 
+struct NativeFunctionWithName
+{
+    Value name;
+    NativeFunction ptr;
+};
+
 struct String
 {
     std::uint32_t len;
@@ -36,16 +42,23 @@ Value tag_ptr(void *ptr, Tag tag)
     return Value{reinterpret_cast<decltype(Value().bits())>(ptr) | tag};
 }
 
-Force create_native_function(NativeFunction f)
+Force create_native_function(NativeFunction f, Value name)
 {
-    auto val = alloc<NativeFunction>();
-    *val = f;
+    assert(get_value_tag(name) == tag::SYMBOL);
+    auto val = alloc<NativeFunctionWithName>();
+    val->name = name;
+    val->ptr = f;
     return tag_ptr(val, tag::NATIVE_FUNCTION);
 }
 
-NativeFunction get_native_function_ptr(Value val)
+NativeFunction get_native_function_ptr(Value fn)
 {
-    return *get_ptr<NativeFunction>(val);
+    return get_ptr<NativeFunctionWithName>(fn)->ptr;
+}
+
+Value get_native_function_name(Value fn)
+{
+    return get_ptr<NativeFunctionWithName>(fn)->name;
 }
 
 Value create_symbol(const std::string& ns, const std::string& name)
