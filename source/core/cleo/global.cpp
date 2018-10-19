@@ -1086,6 +1086,8 @@ Force disasm_exception_table(Value et)
 
 Force disasm(Value fn)
 {
+    if (get_value_type(fn).is(*type::Var))
+        fn = get_var_value(fn);
     check_type("fn", fn, *type::BytecodeFn);
     Root dfn{*EMPTY_MAP};
     dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
