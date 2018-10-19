@@ -1,0 +1,18 @@
+sudo: false
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      language: c++
+      env: CMAKE_COMPILER=clang++
+    - os: linux
+      language: c++
+      env: CMAKE_COMPILER=g++
+    - os: osx
+      language: objective-c
+      env: CMAKE_COMPILER=clang++
+
+install:
+
+script: CXX=${CMAKE_COMPILER} ./build_and_test.sh
