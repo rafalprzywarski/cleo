@@ -5,10 +5,18 @@ matrix:
   include:
     - os: linux
       language: c++
-      env: CMAKE_COMPILER=clang++
+      env: CMAKE_COMPILER=clang++-3.8
+      addons:
+        apt:
+          packages:
+            - clang-3.8
     - os: linux
       language: c++
-      env: CMAKE_COMPILER=g++
+      env: CMAKE_COMPILER=g++-6
+      addons:
+        apt:
+          packages:
+            - g++-5
     - os: osx
       language: objective-c
       env: CMAKE_COMPILER=clang++
