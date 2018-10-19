@@ -3,20 +3,6 @@ sudo: false
 matrix:
   fast_finish: true
   include:
-    - os: linux
-      language: c++
-      env: CMAKE_COMPILER=clang++-7
-      addons:
-        apt:
-          packages:
-            - clang-7
-    - os: linux
-      language: c++
-      env: CMAKE_COMPILER=g++-7
-      addons:
-        apt:
-          packages:
-            - g++-7
     - os: osx
       language: objective-c
       env: CMAKE_COMPILER=clang++
