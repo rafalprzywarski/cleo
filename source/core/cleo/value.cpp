@@ -44,7 +44,7 @@ Value tag_ptr(void *ptr, Tag tag)
 
 Force create_native_function(NativeFunction f, Value name)
 {
-    assert(get_value_tag(name) == tag::SYMBOL);
+    assert(!name || get_value_tag(name) == tag::SYMBOL);
     auto val = alloc<NativeFunctionWithName>();
     val->name = name;
     val->ptr = f;
