@@ -45,9 +45,14 @@
 
 (def {:macro :true} defmacro
   (fn* defmacro [&form &env name & decl]
-    (list 'def {:macro :true} name (if (vector? (first decl))
-                      `(fn* ~name ~@(wrapdo* decl '[&form &env]))
-                      `(fn* ~name ~@(map1 (fn* [d] (wrapdo* d '[&form &env])) decl))))))
+       (let* [m (if (string? (first decl)) {:doc (first decl)} {})
+              decl (if (string? (first decl)) (next decl) decl)
+              m (if (map? (first decl)) (merge m (first decl)) m)
+              decl (if (map? (first decl)) (next decl) decl)
+              m (assoc* m :macro :true)]
+         (list 'def m name (if (vector? (first decl))
+                             `(fn* ~name ~@(wrapdo* decl '[&form &env]))
+                             `(fn* ~name ~@(map1 (fn* [d] (wrapdo* d '[&form &env])) decl)))))))
 
 
 (defmacro deftype [name fields]
