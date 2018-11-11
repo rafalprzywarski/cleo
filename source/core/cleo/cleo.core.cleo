@@ -406,7 +406,9 @@
 (defmacro ns [name & references]
   (let [gen-reference
         (fn [[kind & args]]
-          `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))]
+          `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))
+        references (if (string? (first references)) (next references) references)
+        references (if (map? (first references)) (next references) references)]
     `(do
        (cleo.core/in-ns '~name)
        (cleo.core/refer '~'cleo.core)

@@ -483,7 +483,13 @@
   (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
            (macroexpand '(ns abc (:require [xyz] [rst]))))
   (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]) (cleo.core/require '[zzz] '[nnn]))
-           (macroexpand '(ns abc (:require [xyz] [rst]) (:require [zzz] [nnn])))))
+           (macroexpand '(ns abc (:require [xyz] [rst]) (:require [zzz] [nnn]))))
+  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+           (macroexpand '(ns abc "some" (:require [xyz] [rst]))))
+  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+           (macroexpand '(ns abc {:x :y} (:require [xyz] [rst]))))
+  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+           (macroexpand '(ns abc "some" {:x :y} (:require [xyz] [rst])))))
 
 
 (deftest update
