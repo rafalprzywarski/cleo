@@ -82,6 +82,7 @@ const Value ISA = create_symbol("cleo.core", "isa?");
 const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
 const Value KEYWORD_Q = create_symbol("cleo.core", "keyword?");
 const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
+const Value STRING_Q = create_symbol("cleo.core", "string?");
 const Value LT = create_symbol("cleo.core", "<");
 const Value EQ = create_symbol("cleo.core", "=");
 const Value THROW = create_symbol("throw");
@@ -318,6 +319,7 @@ const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
 const Value MULTI = create_symbol("cleo.core", "multi*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 const Value DISASM = create_symbol("cleo.core", "disasm*");
+const Value META = create_symbol("cleo.core", "meta");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -639,6 +641,11 @@ Value keyword_q(Value x)
 Value vector_q(Value x)
 {
     return get_value_type(x) == *type::Array ? TRUE : nil;
+}
+
+Value string_q(Value x)
+{
+    return get_value_tag(x) == tag::STRING ? TRUE : nil;
 }
 
 Value map_q(Value x)
@@ -1111,6 +1118,13 @@ Force disasm(Value fn)
     return *dfn;
 }
 
+Value meta(Value x)
+{
+    if (get_value_type(x).is(*type::Var))
+        return get_var_meta(x);
+    return nil;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1194,6 +1208,8 @@ struct Initialize
 
         define_function(NEW, create_native_function(new_instance, NEW));
 
+        define_function(META, create_native_function1<meta, &META>());
+
         Root f;
 
         define(CURRENT_NS, get_ns(CLEO_CORE), *DYNAMIC_META);
@@ -1218,6 +1234,9 @@ struct Initialize
 
         f = create_native_function1<vector_q, &VECTOR_Q>();
         define(VECTOR_Q, *f);
+
+        f = create_native_function1<string_q, &STRING_Q>();
+        define(STRING_Q, *f);
 
         f = create_native_function1<map_q, &MAP_Q>();
         define(MAP_Q, *f);

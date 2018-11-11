@@ -32,11 +32,11 @@
          (let* [actual-val# ~actual]
            (fail-unless (= expected-val# actual-val#)
                         "assertion failed: " ~(pr-str actual)
-                        " expected to equal: " expected-val#
-                        " actual: " actual-val#))
+                        " expected to equal: " (pr-str expected-val#)
+                        " actual: " (pr-str actual-val#)))
          (catch* Exception ~'e
            (fail "assertion failed: " ~(pr-str actual)
-                 " expected to equal: " expected-val#
+                 " expected to equal: " (pr-str expected-val#)
                  " actual exception: " ~'e))))))
 
 
@@ -221,7 +221,11 @@
 
 
 (deftest defn
-  (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y)))))
+  (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y))))
+  (assert= '(def {:doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" [x] y)))
+  (assert= '(def {:const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc {:const :true} [x] y)))
+  (assert= '(def {:const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true} [x] y)))
+  (assert= '(def {:const :true, :doc "better doc"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y))))
 
 
 (defn df-example1 [[x y]] [y x])

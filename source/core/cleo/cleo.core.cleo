@@ -75,7 +75,12 @@
       `(fn* ~@name ~@(map1 (fn* [d] (wrapdo* d [])) decl)))))
 
 
-(defmacro defn [name & decl] (list 'def name `(fn ~name ~@decl)))
+(defmacro defn [name & decl]
+  (let* [m (if (string? (first decl)) {:doc (first decl)} {})
+         decl (if (string? (first decl)) (next decl) decl)
+         m (if (map? (first decl)) (merge m (first decl)) m)
+         decl (if (map? (first decl)) (next decl) decl)]
+    `(def ~@(if (seq m) (list m) nil) ~name (fn ~name ~@decl))))
 
 
 (defmacro not [x] `(if ~x nil :true))
