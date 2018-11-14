@@ -443,3 +443,27 @@
         (println "  start     end handler type")
         (doseq [{:keys [start-offset end-offset handler-offset type]} exception-table]
           (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) type))))))
+
+
+(defmacro -> [x & forms]
+  (loop [forms forms
+         out x]
+    (if forms
+      (let [form (first forms)
+            form (if (seq? form)
+                   `(~(first form) ~out ~@(next form))
+                   (list form out))]
+        (recur (next forms) form))
+      out)))
+
+
+(defmacro ->> [x & forms]
+  (loop [forms forms
+         out x]
+    (if forms
+      (let [form (first forms)
+            form (if (seq? form)
+                   `(~@form ~out)
+                   (list form out))]
+        (recur (next forms) form))
+      out)))

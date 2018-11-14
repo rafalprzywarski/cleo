@@ -494,3 +494,19 @@
 
 (deftest update
   (assert= {:abc 31 :xyz 12} (update {:abc 30 :xyz 12} :abc inc)))
+
+
+(deftest ->
+  (assert= 'x (macroexpand '(-> x)))
+  (assert= '(f0 x) (macroexpand '(-> x f0)))
+  (assert= '(f0 x a b) (macroexpand '(-> x (f0 a b))))
+  (assert= '(f2 (f1 (f0 x))) (macroexpand '(-> x f0 f1 f2)))
+  (assert= '(f1 (f0 x a) b c) (macroexpand '(-> x (f0 a) (f1 b c)))))
+
+
+(deftest ->>
+  (assert= 'x (macroexpand '(->> x)))
+  (assert= '(f0 x) (macroexpand '(->> x f0)))
+  (assert= '(f0 a b x) (macroexpand '(->> x (f0 a b))))
+  (assert= '(f2 (f1 (f0 x))) (macroexpand '(->> x f0 f1 f2)))
+  (assert= '(f1 b c (f0 a x)) (macroexpand '(->> x (f0 a) (f1 b c)))))
