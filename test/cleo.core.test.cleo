@@ -479,16 +479,16 @@
 
 
 (deftest ns
-  (assert= '(do (cleo.core/in-ns 'some.thing) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+  (assert= '(do (cleo.core/in-ns 'some.thing nil) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
+  (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
            (macroexpand '(ns abc (:require [xyz] [rst]))))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]) (cleo.core/require '[zzz] '[nnn]))
+  (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]) (cleo.core/require '[zzz] '[nnn]))
            (macroexpand '(ns abc (:require [xyz] [rst]) (:require [zzz] [nnn]))))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+  (assert= '(do (cleo.core/in-ns 'abc {:doc "some"}) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
            (macroexpand '(ns abc "some" (:require [xyz] [rst]))))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+  (assert= '(do (cleo.core/in-ns 'abc {:x :y}) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
            (macroexpand '(ns abc {:x :y} (:require [xyz] [rst]))))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+  (assert= '(do (cleo.core/in-ns 'abc {:x :y :doc "some"}) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
            (macroexpand '(ns abc "some" {:x :y} (:require [xyz] [rst])))))
 
 

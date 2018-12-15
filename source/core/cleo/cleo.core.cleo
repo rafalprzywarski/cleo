@@ -407,10 +407,13 @@
   (let [gen-reference
         (fn [[kind & args]]
           `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))
-        references (if (string? (first references)) (next references) references)
-        references (if (map? (first references)) (next references) references)]
+        docstring (if (string? (first references)) (first references))
+        references (if docstring (next references) references)
+        metadata (if (map? (first references)) (first references))
+        references (if metadata (next references) references)
+        metadata (if docstring (assoc metadata :doc docstring) metadata)]
     `(do
-       (cleo.core/in-ns '~name)
+       (cleo.core/in-ns '~name ~metadata)
        (cleo.core/refer '~'cleo.core)
        ~@(map gen-reference references))))
 
