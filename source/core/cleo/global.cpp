@@ -320,6 +320,7 @@ const Value MULTI = create_symbol("cleo.core", "multi*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 const Value DISASM = create_symbol("cleo.core", "disasm*");
 const Value META = create_symbol("cleo.core", "meta");
+const Value THE_NS = create_symbol("cleo.core", "the-ns");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1120,9 +1121,19 @@ Force disasm(Value fn)
 
 Value meta(Value x)
 {
-    if (get_value_type(x).is(*type::Var))
+    auto type = get_value_type(x);
+    if (type.is(*type::Var))
         return get_var_meta(x);
+    if (type.is(*type::Namespace))
+        return get_ns_meta(x);
     return nil;
+}
+
+Value the_ns(Value ns)
+{
+    if (get_value_type(ns).is(*type::Namespace))
+        return ns;
+    return get_ns(ns);
 }
 
 template <std::uint32_t f(Value)>
@@ -1210,10 +1221,12 @@ struct Initialize
 
         define_function(META, create_native_function1<meta, &META>());
 
+        define_function(THE_NS, create_native_function1<the_ns, &THE_NS>());
+
         Root f;
 
         define(CURRENT_NS, get_ns(CLEO_CORE), *DYNAMIC_META);
-        f = create_native_function1<in_ns, &IN_NS>();
+        f = create_native_function1or2<in_ns, in_ns, &IN_NS>();
         define(IN_NS, *f);
 
         define(LIB_PATHS, nil, *DYNAMIC_META);

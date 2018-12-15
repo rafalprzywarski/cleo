@@ -68,6 +68,19 @@ Force create_native_function1()
     }, deref_name<name>());
 }
 
+template <Value f1(Value), Value f2(Value, Value), const Value *name = nullptr>
+Force create_native_function1or2()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
+    {
+        if (num_args == 1)
+            return f1(args[0]);
+        if (num_args == 2)
+            return f2(args[0], args[1]);
+        throw_arity_error(deref_name<name>(), num_args);
+    }, deref_name<name>());
+}
+
 template <Force f(Value), const Value *name = nullptr>
 Force create_native_new1()
 {
