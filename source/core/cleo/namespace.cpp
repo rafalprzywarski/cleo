@@ -78,10 +78,15 @@ Value ns_name(Value ns)
     return get_object_element(ns, 0);
 }
 
+Value find_ns(Value name)
+{
+    return persistent_hash_map_get(*namespaces, name);
+}
+
 Value get_ns(Value name)
 {
     check_type("ns", name, *type::Symbol);
-    auto found = persistent_hash_map_get(*namespaces, name);
+    auto found = find_ns(name);
     if (!found)
         throw_illegal_argument("Namespace not found: " + to_string(name));
     return found;

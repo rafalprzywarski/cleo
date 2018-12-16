@@ -321,6 +321,7 @@ const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 const Value DISASM = create_symbol("cleo.core", "disasm*");
 const Value META = create_symbol("cleo.core", "meta");
 const Value THE_NS = create_symbol("cleo.core", "the-ns");
+const Value FIND_NS = create_symbol("cleo.core", "find-ns");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1223,6 +1224,7 @@ struct Initialize
         define_function(META, create_native_function1<meta, &META>());
 
         define_function(THE_NS, create_native_function1<the_ns, &THE_NS>());
+        define_function(FIND_NS, create_native_function1<find_ns, &FIND_NS>());
 
         Root f;
 
