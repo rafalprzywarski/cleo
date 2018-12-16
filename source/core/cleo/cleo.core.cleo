@@ -55,7 +55,7 @@
 
 (def {:macro :true
       :arglists '([name doc-string? attr-map? [params*] body]
-                  [name doc-string? attr-map? ([params*] body)+ attr-map?])}
+                  [name doc-string? attr-map? ([params*] body)+])}
   defmacro
   (fn* defmacro [&form &env name & decl]
        (let* [m (if (string? (first decl)) {:doc (first decl)} {})
@@ -98,7 +98,10 @@
       `(fn* ~@name ~@(map1 (fn* [d] (wrapdo* d [])) decl)))))
 
 
-(defmacro defn [name & decl]
+(defmacro defn
+  {:arglists '([name doc-string? attr-map? [params*] body]
+               [name doc-string? attr-map? ([params*] body)+])}
+  [name & decl]
   (let* [m (if (string? (first decl)) {:doc (first decl)} {})
          decl (if (string? (first decl)) (next decl) decl)
          m (if (map? (first decl)) (merge m (first decl)) m)
@@ -431,7 +434,9 @@
           (filter pred n))))))
 
 
-(defmacro ns [name & references]
+(defmacro ns
+  {:arglists '([name docstring? attr-map? references*])}
+  [name & references]
   (let [gen-reference
         (fn [[kind & args]]
           `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))
