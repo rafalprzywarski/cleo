@@ -3,6 +3,8 @@
 #include "print.hpp"
 #include "error.hpp"
 #include "multimethod.hpp"
+#include "persistent_hash_map.hpp"
+#include "array_map.hpp"
 
 namespace cleo
 {
@@ -98,17 +100,38 @@ bool is_map(Value val)
 
 bool map_contains(Value m, Value k)
 {
-    return !Root(call_multimethod2(*rt::contains, m, k))->is_nil();
+    if (!m)
+        return false;
+    auto type = get_value_type(m);
+    if (type.is(*type::PersistentHashMap))
+        return static_cast<bool>(persistent_hash_map_contains(m, k));
+    if (type.is(*type::ArrayMap))
+        return static_cast<bool>(array_map_contains(m, k));
+    throw_illegal_argument("invalid map type: " + to_string(type));
 }
-
+    
 Force map_assoc(Value m, Value k, Value v)
 {
-    return call_multimethod3(*rt::assoc, m, k, v);
+    if (!m)
+        return nil;
+    auto type = get_value_type(m);
+    if (type.is(*type::PersistentHashMap))
+        return persistent_hash_map_assoc(m, k, v);
+    if (type.is(*type::ArrayMap))
+        return array_map_assoc(m, k, v);
+    throw_illegal_argument("invalid map type: " + to_string(type));
 }
 
 Value map_get(Value m, Value k)
 {
-    return *Root(call_multimethod2(*rt::get, m, k));
+    if (!m)
+        return nil;
+    auto type = get_value_type(m);
+    if (type.is(*type::PersistentHashMap))
+        return persistent_hash_map_get(m, k);
+    if (type.is(*type::ArrayMap))
+        return array_map_get(m, k);
+    throw_illegal_argument("invalid map type: " + to_string(type));
 }
 
 Force map_merge(Value m1, Value m2)

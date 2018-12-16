@@ -127,10 +127,13 @@ Value define(Value sym, Value val, Value meta)
     assert(get_value_tag(sym) == tag::SYMBOL);
     auto ns_name = namespace_symbol(sym);
     auto ns = get_or_create_ns(ns_name, nil);
-    auto var = define_var(sym, val, meta);
     auto var_name = name_symbol(sym);
+    Root nmeta;
+    nmeta = map_assoc(meta ? meta : *EMPTY_MAP, NAME_KEY, var_name);
+    nmeta = map_assoc(*nmeta, NS_KEY, ns);
+    auto var = define_var(sym, val, *nmeta);
     Root mapping{get_ns_mapping(ns)};
-    mapping = persistent_hash_map_assoc(*mapping, var_name, var);
+    mapping = map_assoc(*mapping, var_name, var);
     set_ns_mapping(ns, *mapping);
     return var;
 }

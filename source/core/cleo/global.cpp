@@ -115,6 +115,8 @@ const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value CONCATI = create_symbol("cleo.core", "concati");
 const Value MACRO_KEY = create_keyword("macro");
 const Value DYNAMIC_KEY = create_keyword("dynamic");
+const Value NAME_KEY = create_keyword("name");
+const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 
 const Root ZERO{create_int64(0)};
@@ -1177,7 +1179,6 @@ struct Initialize
         define_type(*type::Keyword);
         define_type(*type::Symbol);
         define_type(*type::Var);
-        define_type(*type::Seqable);
         define_type(*type::List);
         define_type(*type::Cons);
         define_type(*type::LazySeq);

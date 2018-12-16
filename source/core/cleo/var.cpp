@@ -67,7 +67,15 @@ void set_var_root_value(Value var, Value val)
 
 void set_var_meta(Value var, Value meta)
 {
-    set_object_element(var, 2, meta);
+    auto vmeta = get_var_meta(var);
+    if (!vmeta)
+        vmeta = *EMPTY_MAP;
+    Root nmeta{meta ? meta : *EMPTY_MAP};
+    if (!map_get(*nmeta, NAME_KEY))
+        nmeta = map_assoc(*nmeta, NAME_KEY, map_get(vmeta, NAME_KEY));
+    if (!map_get(*nmeta, NS_KEY))
+        nmeta = map_assoc(*nmeta, NS_KEY, map_get(vmeta, NS_KEY));
+    set_object_element(var, 2, *nmeta);
 }
 
 void set_var(Value sym, Value val)

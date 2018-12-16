@@ -239,6 +239,8 @@ extern const Value HASH_SET;
 extern const Value CONCATI;
 extern const Value MACRO_KEY;
 extern const Value DYNAMIC_KEY;
+extern const Value NAME_KEY;
+extern const Value NS_KEY;
 extern const Value DOT;
 extern const Root ZERO;
 extern const Root ONE;

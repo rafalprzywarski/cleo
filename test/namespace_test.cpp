@@ -114,5 +114,26 @@ TEST_F(namespace_test, alias_should_alias_another_namespace_in_the_current_names
     EXPECT_ANY_THROW(lookup(create_symbol("a1", "s1")));
 }
 
+TEST_F(namespace_test, define_should_add_name_and_ns_to_meta)
+{
+    auto ns = create_symbol("cleo.namespace.define.test");
+    auto sym1 = create_symbol("cleo.namespace.define.test", "abc");
+    auto sym2 = create_symbol("cleo.namespace.define.test", "xyz");
+    in_ns(ns);
+    ns = get_ns(ns);
+
+    auto var = define(sym1, nil);
+    auto meta = get_var_meta(var);
+    EXPECT_EQ_VALS(name_symbol(sym1), map_get(meta, NAME_KEY));
+    EXPECT_EQ_REFS(ns, map_get(meta, NS_KEY));
+
+    Root vmeta{phmap(MACRO_KEY, TRUE, NAME_KEY, sym1)};
+    var = define(sym2, nil, *vmeta);
+    meta = get_var_meta(var);
+    EXPECT_EQ_VALS(name_symbol(sym2), map_get(meta, NAME_KEY));
+    EXPECT_EQ_VALS(TRUE, map_get(meta, MACRO_KEY));
+    EXPECT_EQ_REFS(ns, map_get(meta, NS_KEY));
+}
+
 }
 }

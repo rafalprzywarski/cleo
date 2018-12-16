@@ -213,8 +213,10 @@ TEST_F(vm_test, stl)
 TEST_F(vm_test, setv)
 {
     in_ns(create_symbol("vm.setv.test"));
+    auto ns = get_ns(create_symbol("vm.setv.test"));
     auto var = define(create_symbol("vm.setv.test", "a"), *THREE);
     Root meta{phmap(10, 20)};
+    Root var_meta{phmap(10, 20, NS_KEY, ns, NAME_KEY, create_symbol("a"))};
     stack_push(var);
     stack_push(*TWO);
     stack_push(*meta);
@@ -227,7 +229,7 @@ TEST_F(vm_test, setv)
     EXPECT_EQ_VALS(*TWO, stack[1]);
     EXPECT_EQ_VALS(var, stack[0]);
     EXPECT_EQ_VALS(*TWO, get_var_root_value(var));
-    EXPECT_EQ_VALS(*meta, get_var_meta(var));
+    EXPECT_EQ_VALS(*var_meta, get_var_meta(var));
 }
 
 TEST_F(vm_test, lddv)
