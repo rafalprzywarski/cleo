@@ -86,7 +86,9 @@
   `(defmethod* ~multi ~dispatch-val (fn ~@fn-tail)))
 
 
-(defmacro fn [& decl]
+(defmacro fn
+  {:special-form :true}
+  [& decl]
   (let* [name (if (symbol? (first decl)) [(first decl)] [])
          decl (if (symbol? (first decl)) (next decl) decl)]
     (if (vector? (first decl))
@@ -257,7 +259,9 @@
     (reduce1 destructure-binding-pair [] pairs)))
 
 
-(defmacro let [bindings & body]
+(defmacro let
+  {:special-form :true}
+  [bindings & body]
   `(let* ~(destructure bindings) ~(if (next body)
                                     (conj* body 'do)
                                     (first body))))
@@ -276,7 +280,9 @@
       out)))
 
 
-(defmacro loop [bindings & body]
+(defmacro loop
+  {:special-form :true}
+  [bindings & body]
   (let [bvs (partition-kv bindings)
         bs (map1 first bvs)]
     (if (every? symbol? bs)
@@ -490,13 +496,14 @@
       out)))
 
 
-(defn print-doc [name {:keys [ns macro doc arglists]}]
+(defn print-doc [name {:keys [ns macro doc arglists special-form]}]
   (println "--------------------------------")
   (println (str (when ns (str (ns-name ns) "/")) name))
   (when arglists
     (println arglists))
-  (when macro
-    (println "Macro"))
+  (cond
+    special-form (println "Special Form")
+    macro (println "Macro"))
   (println " " doc))
 
 
