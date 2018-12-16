@@ -104,14 +104,15 @@
 
 
 (deftest defmacro
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia [x])))
-  (assert= '(def {:doc "some", :macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" [x])))
-  (assert= '(def {:const :true, :macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:const :true} [x])))
-  (assert= '(def {:const :true, :doc "some", :macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true} [x])))
-  (assert= '(def {:const :true, :doc "better", :macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true, :doc "better"} [x])))
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:macro false} [x]))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
+  (assert= '(def {:macro :true, :arglists '([] [x] [a b])} sonia (fn* sonia ([&form &env] 1) ([&form &env x] 2) ([&form &env a b] 3))) (macroexpand '(defmacro sonia ([] 1) ([x] 2) ([a b] 3))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia [x])))
+  (assert= '(def {:doc "some", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" [x])))
+  (assert= '(def {:const :true, :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:const :true} [x])))
+  (assert= '(def {:const :true, :doc "some", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true} [x])))
+  (assert= '(def {:const :true, :doc "better", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true, :doc "better"} [x])))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:macro false} [x]))))
 
 
 (deftest let
