@@ -470,3 +470,19 @@
                    (list form out))]
         (recur (next forms) form))
       out)))
+
+
+(defn print-doc [name {:keys [ns macro doc]}]
+  (println "--------------------------------")
+  (println (str (when ns (str (ns-name ns) "/")) name))
+  (when macro
+    (println "Macro"))
+  (println " " doc))
+
+
+(defmacro doc
+  "Prints documentation for a var or a namespace"
+  [name]
+  (cond
+    (resolve name) `(print-doc (:name (meta (resolve '~name))) (meta (resolve '~name)))
+    (find-ns name) `(print-doc (ns-name (find-ns '~name)) (meta (find-ns '~name)))))
