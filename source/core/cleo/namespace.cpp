@@ -51,9 +51,7 @@ Value get_or_create_ns(Value name, Value meta)
             throw_illegal_argument("in-ns cannot change meta of an existing namespace: " + to_string(name));
         return ns;
     }
-    Root new_ns{create_namespace(name, meta)};
-    namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
-    return *new_ns;
+    return define_ns(name, meta);
 }
 
 std::string locate_source(const std::string& ns_name)
@@ -70,6 +68,14 @@ std::string locate_source(const std::string& ns_name)
     return ns_name + ".cleo";
 }
 
+}
+
+Value define_ns(Value name, Value meta)
+{
+    check_type("name", name, *type::Symbol);
+    Root new_ns{create_namespace(name, meta)};
+    namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
+    return *new_ns;
 }
 
 Value ns_name(Value ns)

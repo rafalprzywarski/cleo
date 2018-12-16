@@ -4,6 +4,7 @@
 namespace cleo
 {
 
+Value define_ns(Value name, Value meta);
 Value ns_name(Value ns);
 Value find_ns(Value name);
 Value get_ns(Value name);

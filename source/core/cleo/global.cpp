@@ -1170,6 +1170,10 @@ struct Initialize
     Initialize()
     {
         stack.reserve(1048576);
+        Root core_meta{*EMPTY_MAP};
+        Root core_doc{create_string("The core Cleo library")};
+        core_meta = map_assoc(*core_meta, create_keyword("doc"), *core_doc);
+        define_ns(CLEO_CORE, *core_meta);
 
         define_type(*type::Int64);
         define_type(*type::Float64);
