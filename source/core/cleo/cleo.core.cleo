@@ -19,11 +19,13 @@
     (reverse1 (reduce1 (fn* [out x] (conj* out (f x))) () s))))
 
 
-(def nnext
+(def {:arglists '([x])}
+  nnext
   (fn* nnext [x] (next (next x))))
 
 
-(def rest
+(def {:arglists '([coll])}
+  rest
   (fn* [coll]
     (let* [n (next coll)]
       (if n n ()))))
@@ -43,7 +45,10 @@
         (list (first body))))))
 
 
-(def {:macro :true} defmacro
+(def {:macro :true
+      :arglists '([name doc-string? attr-map? [params*] body]
+                  [name doc-string? attr-map? ([params*] body)+ attr-map?])}
+  defmacro
   (fn* defmacro [&form &env name & decl]
        (let* [m (if (string? (first decl)) {:doc (first decl)} {})
               decl (if (string? (first decl)) (next decl) decl)
@@ -472,9 +477,11 @@
       out)))
 
 
-(defn print-doc [name {:keys [ns macro doc]}]
+(defn print-doc [name {:keys [ns macro doc arglists]}]
   (println "--------------------------------")
   (println (str (when ns (str (ns-name ns) "/")) name))
+  (when arglists
+    (println arglists))
   (when macro
     (println "Macro"))
   (println " " doc))
