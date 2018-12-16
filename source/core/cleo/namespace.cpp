@@ -42,9 +42,15 @@ void set_ns_aliseses(Value ns, Value aliases)
 
 Value get_or_create_ns(Value name, Value meta)
 {
+    if (meta)
+        check_type("meta", meta, *type::PersistentHashMap);
     auto ns = persistent_hash_map_get(*namespaces, name);
     if (ns)
+    {
+        if (meta && get_ns_meta(ns) != meta)
+            throw_illegal_argument("in-ns cannot change meta of an existing namespace: " + to_string(name));
         return ns;
+    }
     Root new_ns{create_namespace(name, meta)};
     namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
     return *new_ns;
