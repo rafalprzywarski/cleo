@@ -87,7 +87,9 @@
 
 
 (defmacro fn
-  {:special-form :true}
+  {:special-form :true
+   :forms '[(fn name? [params*] exprs*)
+            (fn name? ([params*] exprs*)+)]}
   [& decl]
   (let* [name (if (symbol? (first decl)) [(first decl)] [])
          decl (if (symbol? (first decl)) (next decl) decl)]
@@ -260,7 +262,8 @@
 
 
 (defmacro let
-  {:special-form :true}
+  {:special-form :true
+   :forms '[(let [bindings*] exprs*)]}
   [bindings & body]
   `(let* ~(destructure bindings) ~(if (next body)
                                     (conj* body 'do)
@@ -281,7 +284,8 @@
 
 
 (defmacro loop
-  {:special-form :true}
+  {:special-form :true
+   :forms '[(loop [bindings*] exprs*)]}
   [bindings & body]
   (let [bvs (partition-kv bindings)
         bs (map1 first bvs)]
@@ -496,11 +500,12 @@
       out)))
 
 
-(defn print-doc [name {:keys [ns macro doc arglists special-form]}]
+(defn print-doc [name {:keys [ns macro doc arglists forms special-form]}]
   (println "--------------------------------")
   (println (str (when ns (str (ns-name ns) "/")) name))
-  (when arglists
-    (println arglists))
+  (cond
+    forms (doseq [form forms] (println " " form))
+    arglists (println arglists))
   (cond
     special-form (println "Special Form")
     macro (println "Macro"))
