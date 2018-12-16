@@ -226,11 +226,12 @@
 
 
 (deftest defn
-  (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y))))
-  (assert= '(def {:doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" [x] y)))
-  (assert= '(def {:const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc {:const :true} [x] y)))
-  (assert= '(def {:const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true} [x] y)))
-  (assert= '(def {:const :true, :doc "better doc"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y))))
+  (assert= '(def {:arglists '([a b])} abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y))))
+  (assert= '(def {:arglists '([] [x] [a b])} abc (cleo.core/fn abc ([] 1) ([x] 2) ([a b] 3))) (macroexpand '(defn abc ([] 1) ([x] 2) ([a b] 3))))
+  (assert= '(def {:arglists '([x]) :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" [x] y)))
+  (assert= '(def {:arglists '([x]) :const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc {:const :true} [x] y)))
+  (assert= '(def {:arglists '([x]) :const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true} [x] y)))
+  (assert= '(def {:arglists '([x]) :const :true, :doc "better doc"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y))))
 
 
 (defn df-example1 [[x y]] [y x])
