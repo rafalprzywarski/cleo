@@ -557,10 +557,11 @@ Force str(const Value *args, std::uint8_t n)
     Root s;
     std::string str;
     for (decltype(n) i = 0; i < n; ++i)
-    {
-        s = print_str(args[i]);
-        str.append(get_string_ptr(*s), get_string_len(*s));
-    }
+        if (auto arg = args[i])
+        {
+            s = print_str(arg);
+            str.append(get_string_ptr(*s), get_string_len(*s));
+        }
     return create_string(str);
 }
 
