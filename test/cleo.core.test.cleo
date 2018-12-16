@@ -112,7 +112,8 @@
   (assert= '(def {:const :true, :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:const :true} [x])))
   (assert= '(def {:const :true, :doc "some", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true} [x])))
   (assert= '(def {:const :true, :doc "better", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true, :doc "better"} [x])))
-  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:macro false} [x]))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:macro false} [x])))
+  (assert= '(def {:macro :true, :arglists '([1 2 3])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:arglists '([1 2 3])} [x]))))
 
 
 (deftest let
@@ -232,7 +233,8 @@
   (assert= '(def {:arglists '([x]) :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" [x] y)))
   (assert= '(def {:arglists '([x]) :const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc {:const :true} [x] y)))
   (assert= '(def {:arglists '([x]) :const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true} [x] y)))
-  (assert= '(def {:arglists '([x]) :const :true, :doc "better doc"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y))))
+  (assert= '(def {:arglists '([x]) :const :true, :doc "better doc"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y)))
+  (assert= '(def {:arglists '([1 2 3])} abc (cleo.core/fn abc [a b])) (macroexpand '(defn abc {:arglists '([1 2 3])} [a b]))))
 
 
 (defn df-example1 [[x y]] [y x])
