@@ -515,6 +515,13 @@ Value transient_array_call(Value v, Value index)
     return get_transient_array_elem(v, i);
 }
 
+Force var_call(const Value *args, std::uint8_t n)
+{
+    std::vector<Value> vargs{args, args + n};
+    vargs[0] = get_var_value(args[0]);
+    return call(vargs.data(), vargs.size());
+}
+
 Force pr(const Value *args, std::uint8_t n)
 {
     Root s;
@@ -1510,6 +1517,10 @@ struct Initialize
         derive(*type::CFunction, *type::Callable);
         f = create_native_function(call_c_function);
         define_method(OBJ_CALL, *type::CFunction, *f);
+
+        derive(*type::Var, *type::Callable);
+        f = create_native_function(var_call);
+        define_method(OBJ_CALL, *type::Var, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
