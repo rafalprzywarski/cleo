@@ -422,22 +422,22 @@
 
 
 (deftest partition-kv
-  (assert= () (partition-kv []))
-  (assert= [[nil :b]] (partition-kv [nil :b]))
-  (assert= [[:a nil]] (partition-kv [:a nil]))
-  (assert= [[:a :b]] (partition-kv [:a :b :c]))
-  (assert= [[:a :b]] (partition-kv [:a :b nil]))
-  (assert= [[:a :b] [:c :d]] (partition-kv [:a :b :c :d]))
-  (assert= [[:a :b] [:c nil]] (partition-kv [:a :b :c nil]))
-  (assert= [[:a :b] [:c nil]] (partition-kv [:a :b :c nil :e])))
+  (assert= () (#'cleo.core/partition-kv []))
+  (assert= [[nil :b]] (#'cleo.core/partition-kv [nil :b]))
+  (assert= [[:a nil]] (#'cleo.core/partition-kv [:a nil]))
+  (assert= [[:a :b]] (#'cleo.core/partition-kv [:a :b :c]))
+  (assert= [[:a :b]] (#'cleo.core/partition-kv [:a :b nil]))
+  (assert= [[:a :b] [:c :d]] (#'cleo.core/partition-kv [:a :b :c :d]))
+  (assert= [[:a :b] [:c nil]] (#'cleo.core/partition-kv [:a :b :c nil]))
+  (assert= [[:a :b] [:c nil]] (#'cleo.core/partition-kv [:a :b :c nil :e])))
 
 
 (deftest reduce1
-  (assert= 100 (reduce1 + 100 nil))
-  (assert= 100 (reduce1 + 100 []))
-  (assert= 110 (reduce1 + 100 [10]))
-  (assert= 160 (reduce1 + 100 [10 20 30]))
-  (assert= [[30 20] 10] (reduce1 list 30 [20 10])))
+  (assert= 100 (#'cleo.core/reduce1 + 100 nil))
+  (assert= 100 (#'cleo.core/reduce1 + 100 []))
+  (assert= 110 (#'cleo.core/reduce1 + 100 [10]))
+  (assert= 160 (#'cleo.core/reduce1 + 100 [10 20 30]))
+  (assert= [[30 20] 10] (#'cleo.core/reduce1 list 30 [20 10])))
 
 
 (deftest concati

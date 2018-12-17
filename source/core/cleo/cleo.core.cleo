@@ -1,7 +1,7 @@
 (ns cleo.core)
 
 
-(def reduce1
+(def {:private :true} reduce1
   (fn* reduce1 [f val coll]
     (let* [s (seq coll)]
       (if s
@@ -9,12 +9,12 @@
         val))))
 
 
-(def reverse1
+(def {:private :true} reverse1
   (fn* reverse1 [xs]
     (reduce1 conj* () xs)))
 
 
-(def map1
+(def {:private :true} map1
   (fn* map1 [f s]
     (reverse1 (reduce1 (fn* [out x] (conj* out (f x))) () s))))
 
@@ -35,11 +35,11 @@
     (let* [n (next coll)]
       (if n n ()))))
 
-(def prepend*
+(def {:private :true} prepend*
   (fn* prepend* [p b]
     (conj* (rest b) (apply vector (concati p (first b))))))
 
-(def wrapdo*
+(def {:private :true} wrapdo*
   (fn* wrapdo* [body eparams]
     (prepend*
       eparams
@@ -50,7 +50,7 @@
         (list (first body))))))
 
 
-(def arglists*
+(def {:private :true} arglists*
   (fn* [decl]
        (list 'quote
              (if (isa? (type (first decl)) cleo.core/Sequence)
@@ -172,7 +172,7 @@
       `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))
 
 
-(defn partition-kv [coll]
+(defn- partition-kv [coll]
   (let* [s (seq coll)]
     (if s
       (let* [n (next s)]
@@ -289,13 +289,13 @@
                                     (first body))))
 
 
-(defn interleave2 [coll1 coll2]
+(defn- interleave2 [coll1 coll2]
   (loop* [s1 (seq coll1) s2 (seq coll2) out []]
     (if s1
       (recur (next s1) (next s2) (conj out (first s1) (first s2)))
       out)))
 
-(defn pairs1 [coll1 coll2]
+(defn- pairs1 [coll1 coll2]
   (loop* [s1 (seq coll1) s2 (seq coll2) out []]
     (if s1
       (recur (next s1) (next s2) (conj out [(first s1) (first s2)]))
@@ -325,7 +325,7 @@
              (let ~(interleave2 bs ls) ~@body)))))))
 
 
-(defn destructure-fn [body]
+(defn- destructure-fn [body]
   (let* [params (first body)]
     (if (every? symbol? params)
       body
@@ -340,7 +340,7 @@
                `(~dparams (let ~locals ~@(next body))))))))
 
 
-(def wrapdo*
+(def {:private :true} wrapdo*
   (fn* wrapdo* [body eparams]
     (destructure-fn
       (prepend*
