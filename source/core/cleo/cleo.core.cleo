@@ -20,6 +20,11 @@
 
 
 (def {:arglists '([x])}
+  second
+  (fn* second [x] (first (next x))))
+
+
+(def {:arglists '([x])}
   nnext
   (fn* nnext [x] (next (next x))))
 
@@ -53,16 +58,23 @@
                (list (first decl))))))
 
 
+(def {:private :true} parse-fdecl-meta
+  (fn* parse-fdecl-meta [decl]
+       (let* [m (if (string? (first decl)) {:doc (first decl)} {})
+              decl (if (string? (first decl)) (next decl) decl)
+              m (if (map? (first decl)) (merge m (first decl)) m)
+              decl (if (map? (first decl)) (next decl) decl)]
+         [m decl])))
+
+
 (def {:macro :true
       :arglists '([name doc-string? attr-map? [params*] body]
                   [name doc-string? attr-map? ([params*] body)+])}
   defmacro
   (fn* defmacro [&form &env name & decl]
-       (let* [m (if (string? (first decl)) {:doc (first decl)} {})
-              decl (if (string? (first decl)) (next decl) decl)
-              m (if (map? (first decl)) (merge m (first decl)) m)
-              decl (if (map? (first decl)) (next decl) decl)
-              m (assoc* m :macro :true)
+       (let* [mdecl (parse-fdecl-meta decl)
+              decl (second mdecl)
+              m (assoc* (first mdecl) :macro :true)
               m (merge {:arglists (arglists* decl)} m)]
          (list 'def m name (if (vector? (first decl))
                              `(fn* ~name ~@(wrapdo* decl '[&form &env]))
@@ -102,15 +114,22 @@
   {:arglists '([name doc-string? attr-map? [params*] body]
                [name doc-string? attr-map? ([params*] body)+])}
   [name & decl]
-  (let* [m (if (string? (first decl)) {:doc (first decl)} {})
-         decl (if (string? (first decl)) (next decl) decl)
-         m (if (map? (first decl)) (merge m (first decl)) m)
-         decl (if (map? (first decl)) (next decl) decl)
+  (let* [mdecl (parse-fdecl-meta decl)
+         decl (second mdecl)
          arglists (if (isa? (type (first decl)) cleo.core/Sequence)
                     (map1 first decl)
                     (list (first decl)))
-         m (merge {:arglists (arglists* decl)} m)]
+         m (merge {:arglists (arglists* decl)} (first mdecl))]
     `(def ~m ~name (fn ~name ~@decl))))
+
+
+(defmacro defn-
+  {:arglists '([name doc-string? attr-map? [params*] body]
+               [name doc-string? attr-map? ([params*] body)+])}
+  [name & decl]
+  (let* [mdecl (parse-fdecl-meta decl)
+         m (assoc* (first mdecl) :private :true)]
+    `(defn ~name ~m ~@(second mdecl))))
 
 
 (defmacro not [x] `(if ~x nil :true))
@@ -129,9 +148,6 @@
 
 
 (defn seq? [x] (isa? (type x) cleo.core/Sequence))
-
-
-(defn second [x] (first (next x)))
 
 
 (defmacro lazy-seq [& body] `(lazy-seq* (fn* [] (do ~@body))))

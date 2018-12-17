@@ -237,6 +237,14 @@
   (assert= '(def {:arglists '([1 2 3])} abc (cleo.core/fn abc [a b])) (macroexpand '(defn abc {:arglists '([1 2 3])} [a b]))))
 
 
+(deftest defn-
+  (assert= '(def {:private :true, :arglists '([a b])} abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn- abc [a b] (x) (y))))
+  (assert= '(def {:private :true, :arglists '([x]) :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn- abc "some" [x] y)))
+  (assert= '(def {:private :true, :arglists '([x]) :const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn- abc {:const :true} [x] y)))
+  (assert= '(def {:private :true, :arglists '([x]) :const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn- abc "some" {:const :true} [x] y)))
+  (assert= '(def {:private :true, :arglists '([x])} abc (cleo.core/fn abc [x])) (macroexpand '(defn- abc {:private 10} [x]))))
+
+
 (defn df-example1 [[x y]] [y x])
 (defn df-example2 [[x] [y]] [y x])
 (defn df-example3 [{:keys [x y]}] [y x])
