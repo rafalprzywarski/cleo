@@ -115,6 +115,7 @@ const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value CONCATI = create_symbol("cleo.core", "concati");
 const Value MACRO_KEY = create_keyword("macro");
 const Value DYNAMIC_KEY = create_keyword("dynamic");
+const Value PRIVATE_KEY = create_keyword("private");
 const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");

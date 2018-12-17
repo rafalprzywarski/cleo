@@ -19,6 +19,7 @@ inline Value get_var_root_value(Value var) { return get_object_element(var, 1); 
 Value get_var_value(Value var);
 Value is_var_macro(Value var);
 Value is_var_dynamic(Value var);
+Value is_var_public(Value var);
 Value get_var_meta(Value var);
 
 struct PushBindingsGuard

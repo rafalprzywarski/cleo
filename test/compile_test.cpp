@@ -369,6 +369,24 @@ TEST_F(compile_test, should_compile_functions_returning_vars)
     expect_body_with_vars_and_bytecode(*fn, 0, arrayv(x), b(vm::LDV, 0, 0));
 }
 
+TEST_F(compile_test, should_compile_functions_returning_private_vars_from_the_same_namespace)
+{
+    in_ns(create_symbol("cleo.compile.private-vars.test"));
+    Root meta{phmap(PRIVATE_KEY, TRUE)};
+    auto x = define(create_symbol("cleo.compile.private-vars.test", "x"), create_keyword(":abc"), *meta);
+    Root fn{compile_fn("(fn* [] x)")};
+    expect_body_with_vars_and_bytecode(*fn, 0, arrayv(x), b(vm::LDV, 0, 0));
+}
+
+TEST_F(compile_test, should_fail_to_compile_functions_returning_private_vars_from_different_namespaces)
+{
+    in_ns(create_symbol("cleo.compile.private-vars.test"));
+    Root meta{phmap(PRIVATE_KEY, TRUE)};
+    define(create_symbol("cleo.compile.private-vars.test", "x"), create_keyword(":abc"), *meta);
+    in_ns(create_symbol("cleo.compile.private-vars.other.test"));
+    expect_compilation_error("(fn* [] cleo.compile.private-vars.test/x)", "var: cleo.compile.private-vars.test/x is not public");
+}
+
 TEST_F(compile_test, should_compile_functions_returning_dynamic_vars)
 {
     in_ns(create_symbol("cleo.compile.vars.test"));

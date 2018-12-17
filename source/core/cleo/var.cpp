@@ -120,6 +120,11 @@ Value is_var_dynamic(Value var)
     return meta ? map_get(meta, DYNAMIC_KEY) : nil;
 }
 
+Value is_var_public(Value var)
+{
+    return map_get(get_var_meta(var), PRIVATE_KEY) ? nil : TRUE;
+}
+
 Value get_var_meta(Value var)
 {
     return get_object_element(var, 2);
