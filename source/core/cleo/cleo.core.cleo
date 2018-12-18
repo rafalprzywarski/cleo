@@ -132,7 +132,7 @@
     `(defn ~name ~m ~@(second mdecl))))
 
 
-(defmacro not [x] `(if ~x nil :true))
+(defn not [x] (if x nil :true))
 
 
 (defmacro or
