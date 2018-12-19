@@ -1,22 +1,28 @@
 (ns cleo.core)
 
 
-(def {:private :true} reduce1
-  (fn* reduce1 [f val coll]
-    (let* [s (seq coll)]
-      (if s
-        (recur f (f val (first s)) (next s))
-        val))))
+(def {:arglists '([f coll] [f val coll])} reduce
+  (fn* reduce
+       ([f coll]
+        (let* [s (seq coll)]
+          (if s
+            (reduce f (first coll) (next coll))
+            (f))))
+       ([f val coll]
+        (let* [s (seq coll)]
+          (if s
+            (recur f (f val (first s)) (next s))
+            val)))))
 
 
 (def {:private :true} reverse1
   (fn* reverse1 [xs]
-    (reduce1 conj* () xs)))
+    (reduce conj* () xs)))
 
 
 (def {:private :true} map1
   (fn* map1 [f s]
-    (reverse1 (reduce1 (fn* [out x] (conj* out (f x))) () s))))
+    (reverse1 (reduce (fn* [out x] (conj* out (f x))) () s))))
 
 
 (def {:arglists '([x])}
@@ -35,19 +41,18 @@
     (let* [n (next coll)]
       (if n n ()))))
 
-(def {:private :true} prepend*
-  (fn* prepend* [p b]
+
+(def {:private :true} prepend-params
+  (fn* prepend-params [p b]
     (conj* (rest b) (apply vector (concati p (first b))))))
 
-(def {:private :true} wrapdo*
-  (fn* wrapdo* [body eparams]
-    (prepend*
-      eparams
-      (if (next body)
-        (if (nnext body)
-          (list (first body) (conj* (next body) 'do))
-          body)
-        (list (first body))))))
+
+(def {:private :true} into-do
+  (fn* into-do
+       ([body]
+        (into-do body nil))
+       ([body eparams]
+        (prepend-params eparams body))))
 
 
 (def {:private :true} arglists*
@@ -77,8 +82,8 @@
               m (assoc* (first mdecl) :macro :true)
               m (merge {:arglists (arglists* decl)} m)]
          (list 'def m name (if (vector? (first decl))
-                             `(fn* ~name ~@(wrapdo* decl '[&form &env]))
-                             `(fn* ~name ~@(map1 (fn* [d] (wrapdo* d '[&form &env])) decl)))))))
+                             `(fn* ~name ~@(into-do decl '[&form &env]))
+                             `(fn* ~name ~@(map1 (fn* [d] (into-do d '[&form &env])) decl)))))))
 
 
 (defmacro deftype [name fields]
@@ -106,8 +111,8 @@
   (let* [name (if (symbol? (first decl)) [(first decl)] [])
          decl (if (symbol? (first decl)) (next decl) decl)]
     (if (vector? (first decl))
-      `(fn* ~@name ~@(wrapdo* decl []))
-      `(fn* ~@name ~@(map1 (fn* [d] (wrapdo* d [])) decl)))))
+      `(fn* ~@name ~@(into-do decl))
+      `(fn* ~@name ~@(map1 (fn* [d] (into-do d)) decl)))))
 
 
 (defmacro defn
@@ -255,9 +260,9 @@
                            all (b :as)
                            destructure-locals
                            (fn [out key-fn locals]
-                             (reduce1 (fn* [out sym] (if (symbol? sym)
-                                                       (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym)))
-                                                       (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
+                             (reduce (fn* [out sym] (if (symbol? sym)
+                                                      (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym)))
+                                                      (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
                                       out
                                       locals))
                            out (if all (conj out all vsym) out)
@@ -265,19 +270,19 @@
                            out (destructure-locals out (fn* [sym] (list 'quote sym)) (b :syms))
                            out (destructure-locals out name (b :strs))
                            b (dissoc b :or :as :keys :syms :strs)]
-                      (reduce1 (fn* [out bk]
-                                 (destructure-binding out
-                                                      (first bk)
-                                                      `(get ~vsym ~(second bk) ~(get defaults (first bk)))))
-                               out
-                               b)))]
+                      (reduce (fn* [out bk]
+                                   (destructure-binding out
+                                                        (first bk)
+                                                        `(get ~vsym ~(second bk) ~(get defaults (first bk)))))
+                              out
+                              b)))]
              (cond
                (vector? b) (destructure-vector out b v)
                (map? b) (destructure-map out b v)
                (symbol? b) (conj out b v)
                :else (throw (new IllegalArgument (str "Unsupported binding form: " b))))))
          destructure-binding-pair (fn* [out bv] (destructure-binding out (first bv) (second bv)))]
-    (reduce1 destructure-binding-pair [] pairs)))
+    (reduce destructure-binding-pair [] pairs)))
 
 
 (defmacro let
@@ -313,13 +318,13 @@
                            (conj* body 'do)
                            (first body)))
       (let [ls (map1 (fn* [p] (if (symbol? p) p (gensym "l__"))) bs)
-            lvbls (reduce1 (fn* [out bvl]
-                             (let [[[b v] l] bvl]
-                               (if (symbol? b)
-                                 (conj out b v)
-                                 (conj out l v b l))))
-                           []
-                           (pairs1 bvs ls))]
+            lvbls (reduce (fn* [out bvl]
+                               (let [[[b v] l] bvl]
+                                 (if (symbol? b)
+                                   (conj out b v)
+                                   (conj out l v b l))))
+                          []
+                          (pairs1 bvs ls))]
         `(let ~lvbls
            (loop* ~(interleave2 ls ls)
              (let ~(interleave2 bs ls) ~@body)))))))
@@ -340,16 +345,17 @@
                `(~dparams (let ~locals ~@(next body))))))))
 
 
-(def {:private :true} wrapdo*
-  (fn* wrapdo* [body eparams]
-    (destructure-fn
-      (prepend*
-        eparams
-        (if (next body)
+(def {:private :true} into-do
+  (fn* into-do
+       ([body]
+        (into-do body nil))
+       ([body eparams]
+        (destructure-fn
+         (prepend-params
+          eparams
           (if (nnext body)
             (list (first body) (conj* (next body) 'do))
-            body)
-          (list (first body)))))))
+            body))))))
 
 
 (defn bit-and
@@ -412,7 +418,7 @@
 (defn vec [x]
   (if (vector? x)
     x
-    (reduce1 conj [] x)))
+    (persistent! (reduce conj! (transient []) x))))
 
 
 (defmacro dotimes [bindings & body]
