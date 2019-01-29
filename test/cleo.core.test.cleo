@@ -32,11 +32,11 @@
          (let* [actual-val# ~actual]
            (fail-unless (= expected-val# actual-val#)
                         "assertion failed: " ~(pr-str actual)
-                        " expected to equal: " expected-val#
-                        " actual: " actual-val#))
+                        " expected to equal: " (pr-str expected-val#)
+                        " actual: " (pr-str actual-val#)))
          (catch* Exception ~'e
            (fail "assertion failed: " ~(pr-str actual)
-                 " expected to equal: " expected-val#
+                 " expected to equal: " (pr-str expected-val#)
                  " actual exception: " ~'e))))))
 
 
@@ -93,10 +93,27 @@
   (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[a b c])) (cleo.core/defn ->Xyz [a b c] (cleo.core/new Xyz a b c)) Xyz) (macroexpand '(deftype Xyz [a b c]))))
 
 
+(deftest defmulti
+  (assert= '(def abc (cleo.core/multi* 'cleo.core.run/abc (fn* [x] x) :default)) (macroexpand '(defmulti abc (fn* [x] x))))
+  (assert= '(def abc (cleo.core/multi* 'cleo.core.run/abc (fn* [x] x) 7)) (macroexpand '(defmulti abc (fn* [x] x) :default 7))))
+
+
+(deftest defmethod
+  (assert= '(cleo.core/defmethod* abc 10 (cleo.core/fn [x y] (x y))) (macroexpand '(defmethod abc 10 [x y] (x y))))
+  (assert= '(cleo.core/defmethod* abc 10 (cleo.core/fn ([x] x) ([x y] (x y)))) (macroexpand '(defmethod abc 10 ([x] x) ([x y] (x y))))))
+
+
 (deftest defmacro
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))
-  (assert= '(def {:macro :true} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia [x]))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x] (do (a) (b) (c)))) (macroexpand '(defmacro sonia [x] (a) (b) (c))))
+  (assert= '(def {:macro :true, :arglists '([] [x] [a b])} sonia (fn* sonia ([&form &env] 1) ([&form &env x] 2) ([&form &env a b] 3))) (macroexpand '(defmacro sonia ([] 1) ([x] 2) ([a b] 3))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x] (a))) (macroexpand '(defmacro sonia [x] (a))))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia [x])))
+  (assert= '(def {:doc "some", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" [x])))
+  (assert= '(def {:const :true, :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:const :true} [x])))
+  (assert= '(def {:const :true, :doc "some", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true} [x])))
+  (assert= '(def {:const :true, :doc "better", :macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia "some" {:const :true, :doc "better"} [x])))
+  (assert= '(def {:macro :true, :arglists '([x])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:macro false} [x])))
+  (assert= '(def {:macro :true, :arglists '([1 2 3])} sonia (fn* sonia [&form &env x])) (macroexpand '(defmacro sonia {:arglists '([1 2 3])} [x]))))
 
 
 (deftest let
@@ -116,6 +133,8 @@
   (assert= '(:a nil nil (:a)) ((fn* [v] (let [[x y z :as vn] v] (list x y z vn))) [:a]))
   (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b :c]))
   (assert= '(:a [:b :c]) ((fn* [v] (let [[x & y] v] (list x y))) '(:a :b :c)))
+  (assert= '(:a :b :c :d) ((fn* [v] (let [[x y & [z w]] v] (list x y z w))) [:a :b :c :d]))
+  (assert= '(:a :b :c :d) ((fn* [v] (let [[x y & [z w]] v] (list x y z w))) '(:a :b :c :d)))
   (assert= '(:a [:b :c] [:a :b :c]) ((fn* [v] (let [[x & y :as vn] v] (list x y vn))) '(:a :b :c)))
   (assert= '(:a [:b]) ((fn* [v] (let [[x & y] v] (list x y))) [:a :b]))
   (assert= '(:a nil) ((fn* [v] (let [[x & y] v] (list x y))) [:a]))
@@ -190,7 +209,8 @@
 (deftest fn-destructuring
   (assert= [:a :b] ((fn [[x y]] [y x]) [:b :a]))
   (assert= [:a :b] ((fn [[x] [y]] [y x]) [:b] [:a]))
-  (assert= [:a :b] ((fn [{:keys [x y]}] [y x]) {:x :b :y :a})))
+  (assert= [:a :b] ((fn [{:keys [x y]}] [y x]) {:x :b :y :a}))
+  (assert= [:a :b] ((fn [x & [y]] [y x]) :b :a)))
 
 
 (deftest loop
@@ -208,7 +228,21 @@
 
 
 (deftest defn
-  (assert= '(def abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y)))))
+  (assert= '(def {:arglists '([a b])} abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn abc [a b] (x) (y))))
+  (assert= '(def {:arglists '([] [x] [a b])} abc (cleo.core/fn abc ([] 1) ([x] 2) ([a b] 3))) (macroexpand '(defn abc ([] 1) ([x] 2) ([a b] 3))))
+  (assert= '(def {:arglists '([x]) :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" [x] y)))
+  (assert= '(def {:arglists '([x]) :const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc {:const :true} [x] y)))
+  (assert= '(def {:arglists '([x]) :const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true} [x] y)))
+  (assert= '(def {:arglists '([x]) :const :true, :doc "better doc"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y)))
+  (assert= '(def {:arglists '([1 2 3])} abc (cleo.core/fn abc [a b])) (macroexpand '(defn abc {:arglists '([1 2 3])} [a b]))))
+
+
+(deftest defn-
+  (assert= '(def {:private :true, :arglists '([a b])} abc (cleo.core/fn abc [a b] (x) (y))) (macroexpand '(defn- abc [a b] (x) (y))))
+  (assert= '(def {:private :true, :arglists '([x]) :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn- abc "some" [x] y)))
+  (assert= '(def {:private :true, :arglists '([x]) :const :true} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn- abc {:const :true} [x] y)))
+  (assert= '(def {:private :true, :arglists '([x]) :const :true, :doc "some"} abc (cleo.core/fn abc [x] y)) (macroexpand '(defn- abc "some" {:const :true} [x] y)))
+  (assert= '(def {:private :true, :arglists '([x])} abc (cleo.core/fn abc [x])) (macroexpand '(defn- abc {:private 10} [x]))))
 
 
 (defn df-example1 [[x y]] [y x])
@@ -388,22 +422,27 @@
 
 
 (deftest partition-kv
-  (assert= () (partition-kv []))
-  (assert= [[nil :b]] (partition-kv [nil :b]))
-  (assert= [[:a nil]] (partition-kv [:a nil]))
-  (assert= [[:a :b]] (partition-kv [:a :b :c]))
-  (assert= [[:a :b]] (partition-kv [:a :b nil]))
-  (assert= [[:a :b] [:c :d]] (partition-kv [:a :b :c :d]))
-  (assert= [[:a :b] [:c nil]] (partition-kv [:a :b :c nil]))
-  (assert= [[:a :b] [:c nil]] (partition-kv [:a :b :c nil :e])))
+  (assert= () (#'cleo.core/partition-kv []))
+  (assert= [[nil :b]] (#'cleo.core/partition-kv [nil :b]))
+  (assert= [[:a nil]] (#'cleo.core/partition-kv [:a nil]))
+  (assert= [[:a :b]] (#'cleo.core/partition-kv [:a :b :c]))
+  (assert= [[:a :b]] (#'cleo.core/partition-kv [:a :b nil]))
+  (assert= [[:a :b] [:c :d]] (#'cleo.core/partition-kv [:a :b :c :d]))
+  (assert= [[:a :b] [:c nil]] (#'cleo.core/partition-kv [:a :b :c nil]))
+  (assert= [[:a :b] [:c nil]] (#'cleo.core/partition-kv [:a :b :c nil :e])))
 
 
-(deftest reduce1
-  (assert= 100 (reduce1 + 100 nil))
-  (assert= 100 (reduce1 + 100 []))
-  (assert= 110 (reduce1 + 100 [10]))
-  (assert= 160 (reduce1 + 100 [10 20 30]))
-  (assert= [[30 20] 10] (reduce1 list 30 [20 10])))
+(deftest reduce
+  (assert= "" (reduce str nil))
+  (assert= "" (reduce str []))
+  (assert= 10 (reduce str [10]))
+  (assert= "102030" (reduce str [10 20 30]))
+  (assert= [[30 20] 10] (reduce list [30 20 10]))
+  (assert= 100 (reduce + 100 nil))
+  (assert= 100 (reduce + 100 []))
+  (assert= 110 (reduce + 100 [10]))
+  (assert= 160 (reduce + 100 [10 20 30]))
+  (assert= [[30 20] 10] (reduce list 30 [20 10])))
 
 
 (deftest concati
@@ -457,12 +496,34 @@
 
 
 (deftest ns
-  (assert= '(do (cleo.core/in-ns 'some.thing) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+  (assert= '(do (cleo.core/in-ns 'some.thing nil) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
+  (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
            (macroexpand '(ns abc (:require [xyz] [rst]))))
-  (assert= '(do (cleo.core/in-ns 'abc) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]) (cleo.core/require '[zzz] '[nnn]))
-           (macroexpand '(ns abc (:require [xyz] [rst]) (:require [zzz] [nnn])))))
+  (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]) (cleo.core/require '[zzz] '[nnn]))
+           (macroexpand '(ns abc (:require [xyz] [rst]) (:require [zzz] [nnn]))))
+  (assert= '(do (cleo.core/in-ns 'abc {:doc "some"}) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+           (macroexpand '(ns abc "some" (:require [xyz] [rst]))))
+  (assert= '(do (cleo.core/in-ns 'abc {:x :y}) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+           (macroexpand '(ns abc {:x :y} (:require [xyz] [rst]))))
+  (assert= '(do (cleo.core/in-ns 'abc {:x :y :doc "some"}) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
+           (macroexpand '(ns abc "some" {:x :y} (:require [xyz] [rst])))))
 
 
 (deftest update
   (assert= {:abc 31 :xyz 12} (update {:abc 30 :xyz 12} :abc inc)))
+
+
+(deftest ->
+  (assert= 'x (macroexpand '(-> x)))
+  (assert= '(f0 x) (macroexpand '(-> x f0)))
+  (assert= '(f0 x a b) (macroexpand '(-> x (f0 a b))))
+  (assert= '(f2 (f1 (f0 x))) (macroexpand '(-> x f0 f1 f2)))
+  (assert= '(f1 (f0 x a) b c) (macroexpand '(-> x (f0 a) (f1 b c)))))
+
+
+(deftest ->>
+  (assert= 'x (macroexpand '(->> x)))
+  (assert= '(f0 x) (macroexpand '(->> x f0)))
+  (assert= '(f0 a b x) (macroexpand '(->> x (f0 a b))))
+  (assert= '(f2 (f1 (f0 x))) (macroexpand '(->> x f0 f1 f2)))
+  (assert= '(f1 b c (f0 a x)) (macroexpand '(->> x (f0 a) (f1 b c)))))

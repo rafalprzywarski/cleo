@@ -325,12 +325,9 @@ TEST_F(eval_test, should_eval_an_empty_list_as_an_empty_list)
 
 TEST_F(eval_test, should_eval_vectors)
 {
-    Root x{create_int64(55)};
-    auto xs = create_symbol("x");
-    Root ex{array(*rt::seq, *rt::first, *x)};
-    Root val{array(SEQ, FIRST, xs)};
-    Root env{amap(xs, *x)};
-    val = eval(*val, *env);
+    Root val{read_str("(let* [x 55] [cleo.core/seq cleo.core/first x])")};
+    Root ex{array(*rt::seq, *rt::first, 55)};
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = array();
@@ -340,12 +337,9 @@ TEST_F(eval_test, should_eval_vectors)
 
 TEST_F(eval_test, should_eval_set)
 {
-    Root x{create_int64(55)};
-    auto xs = create_symbol("x");
-    Root ex{aset(*rt::seq, *rt::first, *x)};
-    Root val{aset(SEQ, FIRST, xs)};
-    Root env{amap(xs, *x)};
-    val = eval(*val, *env);
+    Root val{read_str("(let* [x 55] #{cleo.core/seq cleo.core/first x})")};
+    Root ex{aset(*rt::seq, *rt::first, 55)};
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = aset();
@@ -356,11 +350,9 @@ TEST_F(eval_test, should_eval_set)
 TEST_F(eval_test, should_define_vars_in_the_current_ns)
 {
     Root ex{create_int64(55)};
-    auto x = create_symbol("x");
-    Root env{amap(x, *ex)};
     in_ns(create_symbol("clue.eval.test"));
-    Root val{read_str("(def var1 ((fn* [] x)))")};
-    val = eval(*val, *env);
+    Root val{read_str("(def var1 ((fn* [] 55)))")};
+    val = eval(*val);
     auto name = create_symbol("clue.eval.test", "var1");
     EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_FALSE(bool(is_var_macro(*val)));
@@ -369,13 +361,11 @@ TEST_F(eval_test, should_define_vars_in_the_current_ns)
 
 TEST_F(eval_test, def_should_fail_when_ns_is_specified)
 {
-    auto x = create_symbol("x");
-    Root env{amap(x, 55)};
     in_ns(create_symbol("clue.eval.test"));
-    Root val{read_str("(def clue.eval.test.other/var2 ((fn* [] x)))")};
+    Root val{read_str("(def clue.eval.test.other/var2 ((fn* [] 55)))")};
     try
     {
-        eval(*val, *env);
+        eval(*val);
         FAIL() << "expected CompilationError";
     }
     catch (const Exception& )
@@ -454,11 +444,9 @@ TEST_F(eval_test, def_should_fail_when_meta_is_not_a_map)
 TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_current_one)
 {
     Root ex{create_int64(55)};
-    auto x = create_symbol("x");
-    Root env{amap(x, *ex)};
     in_ns(create_symbol("clue.eval.test"));
-    Root val{read_str("(def clue.eval.test/var3 ((fn* [] x)))")};
-    val = eval(*val, *env);
+    Root val{read_str("(def clue.eval.test/var3 ((fn* [] 55)))")};
+    val = eval(*val);
     auto name = create_symbol("clue.eval.test", "var3");
     EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_EQ_VALS(*ex, lookup(create_symbol("clue.eval.test", "var3")));
@@ -466,14 +454,9 @@ TEST_F(eval_test, def_should_not_fail_when_the_specified_ns_is_the_same_as_the_c
 
 TEST_F(eval_test, should_eval_maps)
 {
-    Root x{create_int64(55)};
-    Root y{create_int64(77)};
-    auto xs = create_symbol("x");
-    auto ys = create_symbol("y");
-    Root ex{phmap(*rt::seq, *rt::first, *x, *y)};
-    Root val{phmap(SEQ, FIRST, xs, ys)};
-    Root env{amap(xs, *x, ys, *y)};
-    val = eval(*val, *env);
+    Root val{read_str("(let* [x 55 y 77] {cleo.core/seq cleo.core/first x y})")};
+    Root ex{phmap(*rt::seq, *rt::first, 55, 77)};
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = amap();
@@ -488,10 +471,9 @@ TEST_F(eval_test, should_eval_let)
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("(let* [x 10 y 20] {:a x, :b y, :c z})");
+    val = read_str("(let* [x -1 y -1 z 30] (let* [x 10 y 20] {:a x, :b y, :c z}))");
     ex = amap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
-    Root env{amap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
-    val = eval(*val, *env);
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -549,10 +531,9 @@ TEST_F(eval_test, should_eval_loop)
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("(loop* [x 10 y 20] {:a x, :b y, :c z})");
+    val = read_str("(let* [x -1 y -1 z 30] (loop* [x 10 y 20] {:a x, :b y, :c z}))");
     ex = amap(create_keyword("a"), 10, create_keyword("b"), 20, create_keyword("c"), 30);
-    Root env{amap(create_symbol("x"), -1, create_symbol("y"), -1, create_symbol("z"), 30)};
-    val = eval(*val, *env);
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -659,16 +640,16 @@ TEST_F(eval_test, recur_should_fail_when_the_number_of_bindings_does_not_match_a
 
 TEST_F(eval_test, should_eval_if)
 {
+    in_ns(create_symbol("cleo.eval.if.test"));
     Root bad{create_native_function([](const Value *, std::uint8_t) -> Force { throw std::runtime_error("should not have been evaluated"); })};
-    Root val{read_str("(if c a (bad))")};
+    define(create_symbol("cleo.eval.if.test", "bad"), *bad);
+    Root val{read_str("(let* [c 11111 a 55] (if c a (bad)))")};
     Root ex{create_int64(55)};
-    Root env{amap(create_symbol("c"), 11111, create_symbol("a"), 55, create_symbol("bad"), *bad)};
-    val = eval(*val, *env);
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = read_str("(if c (bad) a)");
-    env = amap(create_symbol("c"), nil, create_symbol("a"), 55, create_symbol("bad"), *bad);
-    val = eval(*val, *env);
+    val = read_str("(let* [c nil a 55] (if c (bad) a))");
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -696,17 +677,15 @@ TEST_F(eval_test, if_should_fail_when_given_too_many_arguments)
 
 TEST_F(eval_test, should_eval_throw)
 {
-    Root val{read_str("(throw x)")};
-    Root env{amap(create_symbol("x"), 107)};
+    Root val{read_str("(let* [x 107] (throw x))")};
     Root ex{create_int64(107)};
     try
     {
-        eval(*val, *env);
+        eval(*val);
         FAIL() << "expected an exception";
     }
     catch (const Exception& e)
     {
-        env = nil;
         val = nil;
         gc();
         EXPECT_EQ_VALS(*ex, *Root(catch_exception()));
@@ -715,10 +694,9 @@ TEST_F(eval_test, should_eval_throw)
 
 TEST_F(eval_test, should_eval_try_catch)
 {
-    Root val{read_str("(try* (throw x) (catch* cleo.core/Int64 e (cleo.core/+ e a)))")};
-    Root env{amap(create_symbol("x"), 107, create_symbol("a"), 2)};
+    Root val{read_str("(let* [x 107 a 2] (try* (throw x) (catch* cleo.core/Int64 e (cleo.core/+ e a))))")};
     Root ex{create_int64(109)};
-    val = eval(*val, *env);
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 
@@ -732,27 +710,26 @@ TEST_F(eval_test, should_eval_try_catch)
     EXPECT_THROW(eval(*val), Exception);
     EXPECT_EQ_VALS(*ex, *Root(catch_exception()));
 
-    val = read_str("(try* 777 (catch* cleo.core/Int64 x x))");
+    val = read_str("(let* [x 107] (try* 777 (catch* cleo.core/Int64 x x)))");
     ex = create_int64(777);
-    val = eval(*val, *env);
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_EQ_VALS(nil, *Root(catch_exception()));
 }
 
 TEST_F(eval_test, should_eval_do)
 {
-    Root env{amap(create_symbol("a"), create_keyword("z"))};
     Root val, ex;
     val = read_str("(do)");
     val = eval(*val);
     EXPECT_EQ_VALS(nil, *val);
 
-    val = read_str("(do a)");
-    val = eval(*val, *env);
+    val = read_str("(let* [a :z] (do a))");
+    val = eval(*val);
     EXPECT_EQ_VALS(create_keyword("z"), *val);
 
-    val = read_str("(do (cleo.core/in-ns 'cleo.eval.do.test) a)");
-    val = eval(*val, *env);
+    val = read_str("(let* [a :z] (do (cleo.core/in-ns 'cleo.eval.do.test) a))");
+    val = eval(*val);
     EXPECT_EQ_VALS(create_keyword("z"), *val);
     EXPECT_EQ_VALS(create_symbol("cleo.eval.do.test"), ns_name(*rt::current_ns));
 }
@@ -777,16 +754,18 @@ Force on_finally(Value)
 
 TEST_F(eval_test, should_eval_try_finally)
 {
+    in_ns(create_symbol("cleo.eval.try.finally.test"));
     Root call_me{create_native_function1<on_finally>()};
     Root call_me_before{create_native_function1<on_before_finally>()};
-    Root env{amap(create_symbol("call-me"), *call_me, create_symbol("call-me-before"), *call_me_before)};
+    define(create_symbol("cleo.eval.try.finally.test", "call-me"), *call_me);
+    define(create_symbol("cleo.eval.try.finally.test", "call-me-before"), *call_me_before);
 
     Root val{read_str("(try* (throw [1 2]) (finally* (call-me nil)))")};
     Root ex{array(1, 2)};
     finally_called = false;
     try
     {
-        val = eval(*val, *env);
+        val = eval(*val);
     }
     catch (const Exception& )
     {
@@ -796,14 +775,14 @@ TEST_F(eval_test, should_eval_try_finally)
 
     finally_called = false;
     val = read_str("(try* [1 2] (finally* (call-me nil)))");
-    val = eval(*val, *env);
+    val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
     EXPECT_TRUE(finally_called);
 
     finally_called = false;
     finally_called_too_early = false;
     val = read_str("(try* (call-me-before nil) (finally* (call-me nil)))");
-    eval(*val, *env);
+    eval(*val);
     EXPECT_FALSE(finally_called_too_early);
 }
 

@@ -22,6 +22,7 @@
 #include <fstream>
 #include <limits>
 #include <chrono>
+#include "bytecode_fn.hpp"
 
 namespace cleo
 {
@@ -81,6 +82,7 @@ const Value ISA = create_symbol("cleo.core", "isa?");
 const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
 const Value KEYWORD_Q = create_symbol("cleo.core", "keyword?");
 const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
+const Value STRING_Q = create_symbol("cleo.core", "string?");
 const Value LT = create_symbol("cleo.core", "<");
 const Value EQ = create_symbol("cleo.core", "=");
 const Value THROW = create_symbol("throw");
@@ -113,6 +115,9 @@ const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value CONCATI = create_symbol("cleo.core", "concati");
 const Value MACRO_KEY = create_keyword("macro");
 const Value DYNAMIC_KEY = create_keyword("dynamic");
+const Value PRIVATE_KEY = create_keyword("private");
+const Value NAME_KEY = create_keyword("name");
+const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 
 const Root ZERO{create_int64(0)};
@@ -236,6 +241,13 @@ Int64 gen_id()
     return next_id++;
 }
 
+namespace
+{
+
+const ConstRoot DYNAMIC_META{persistent_hash_map_assoc(*EMPTY_MAP, DYNAMIC_KEY, TRUE)};
+
+}
+
 namespace rt
 {
 
@@ -245,11 +257,11 @@ const Root transient_array_persistent{create_native_function1<cleo::transient_ar
 const Root array_set_conj{create_native_function2<cleo::array_set_conj>()};
 const Root persistent_hash_map_assoc{create_native_function3<cleo::persistent_hash_map_assoc>()};
 
-const DynamicVar current_ns = define_var(CURRENT_NS, nil);
-const DynamicVar lib_paths = define_var(LIB_PATHS, nil);
+const DynamicVar current_ns = define_var(CURRENT_NS, nil, *DYNAMIC_META);
+const DynamicVar lib_paths = define_var(LIB_PATHS, nil, *DYNAMIC_META);
 const StaticVar obj_eq = define_var(OBJ_EQ, nil);
 const StaticVar obj_call = define_var(OBJ_CALL, nil);
-const DynamicVar print_readably = define_var(PRINT_READABLY, nil);
+const DynamicVar print_readably = define_var(PRINT_READABLY, nil, *DYNAMIC_META);
 const StaticVar pr_str_obj = define_var(PR_STR_OBJ, nil);
 const StaticVar first = define_var(FIRST, nil);
 const StaticVar next = define_var(NEXT, nil);
@@ -294,6 +306,7 @@ const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shi
 const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
+const Value NAMESPACE = create_symbol("cleo.core", "name");
 const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
@@ -306,6 +319,13 @@ const Value TRANSIENT = create_symbol("cleo.core", "transient");
 const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
 const Value CONJ_E = create_symbol("cleo.core", "conj!");
 const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
+const Value MULTI = create_symbol("cleo.core", "multi*");
+const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
+const Value DISASM = create_symbol("cleo.core", "disasm*");
+const Value META = create_symbol("cleo.core", "meta");
+const Value THE_NS = create_symbol("cleo.core", "the-ns");
+const Value FIND_NS = create_symbol("cleo.core", "find-ns");
+const Value RESOLVE = create_symbol("cleo.core", "resolve");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -495,6 +515,13 @@ Value transient_array_call(Value v, Value index)
     return get_transient_array_elem(v, i);
 }
 
+Force var_call(const Value *args, std::uint8_t n)
+{
+    std::vector<Value> vargs{args, args + n};
+    vargs[0] = get_var_value(args[0]);
+    return call(vargs.data(), vargs.size());
+}
+
 Force pr(const Value *args, std::uint8_t n)
 {
     Root s;
@@ -542,10 +569,11 @@ Force str(const Value *args, std::uint8_t n)
     Root s;
     std::string str;
     for (decltype(n) i = 0; i < n; ++i)
-    {
-        s = print_str(args[i]);
-        str.append(get_string_ptr(*s), get_string_len(*s));
-    }
+        if (auto arg = args[i])
+        {
+            s = print_str(arg);
+            str.append(get_string_ptr(*s), get_string_len(*s));
+        }
     return create_string(str);
 }
 
@@ -582,6 +610,22 @@ Force pr_str_var(Value var)
     return create_string("#'" + to_string(get_var_name(var)));
 }
 
+Force pr_str_bytecode_fn(Value fn)
+{
+    check_type("fn", fn, *type::BytecodeFn);
+    std::ostringstream os;
+    os << "#" << to_string(get_object_type_name(*type::BytecodeFn)) << "[" << to_string(get_bytecode_fn_name(fn)) << " 0x" << std::hex << fn.bits() << "]";
+    return create_string(os.str());
+}
+
+Force pr_str_multimethod(Value m)
+{
+    check_type("m", m, *type::Multimethod);
+    std::ostringstream os;
+    os << "#" << to_string(get_object_type_name(*type::Multimethod)) << "[" << to_string(get_multimethod_name(m)) << " 0x" << std::hex << m.bits() << "]";
+    return create_string(os.str());
+}
+
 Force merge_maps(Value m1, Value m2)
 {
     Root m{m1}, kv;
@@ -611,6 +655,11 @@ Value keyword_q(Value x)
 Value vector_q(Value x)
 {
     return get_value_type(x) == *type::Array ? TRUE : nil;
+}
+
+Value string_q(Value x)
+{
+    return get_value_tag(x) == tag::STRING ? TRUE : nil;
 }
 
 Value map_q(Value x)
@@ -819,13 +868,14 @@ Force seq_count(Value s)
 
 Force cons_size(Value c)
 {
-    Root nc{call_multimethod1(*rt::count, cons_next(c))};
+    Root next{cons_next(c)};
+    Root nc{call_multimethod1(*rt::count, *next)};
     return create_int64(1 + get_int64_value(*nc));
 }
 
 Force cons(Value elem, Value next)
 {
-    Root s{call_multimethod1(*rt::seq, next)};
+    Root s{is_seq(next) ? next : call_multimethod1(*rt::seq, next)};
     return create_cons(elem, *s);
 }
 
@@ -906,6 +956,199 @@ Force new_instance(const Value *args, std::uint8_t n)
     return create_object(type, args + 1, n - 1);
 }
 
+Value multi(Value name, Value dispatchFn, Value defaultDispatchVal)
+{
+    check_type("name", name, *type::Symbol);
+    return define_multimethod(name, dispatchFn, defaultDispatchVal);
+}
+
+Value defmethod(Value mm, Value dispatchValue, Value fn)
+{
+    check_type("multifn", mm, *type::Multimethod);
+    define_method(get_multimethod_name(mm), dispatchValue, fn);
+    return nil;
+}
+
+Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
+{
+    Root dbs{transient_array(*EMPTY_VECTOR)};
+    auto p = bytes;
+    auto endp = p + size;
+    auto read_u16 = [](const vm::Byte *p) { return std::uint8_t(p[0]) | std::uint16_t(std::uint8_t(p[1])) << 8; };
+    auto read_i16 = [=](const vm::Byte *p) { return std::int16_t(read_u16(p)); };
+    auto mk = [&p, bytes](const std::string& oc, Value arg0 = *SENTINEL)
+    {
+        Root offset{create_int64(p - bytes)};
+        std::array<Value, 3> s{{*offset, create_symbol(oc), arg0}};
+        std::uint32_t n = 3;
+        if (arg0 == *SENTINEL)
+            n = 2;
+        return create_array(s.data(), n);
+    };
+    Root oc, x;
+    while (p != endp)
+    {
+        switch (*p)
+        {
+        case vm::LDC:
+            oc = mk("LDC", get_array_elem(consts, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDL:
+            x = create_int64(read_i16(p + 1));
+            oc = mk("LDL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDDV:
+            oc = mk("LDDV", get_array_elem(vars, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDV:
+            oc = mk("LDV", get_array_elem(vars, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::LDDF:
+            oc = mk("LDDF");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::STL:
+            x = create_int64(read_i16(p + 1));
+            oc = mk("STL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::SETV:
+            oc = mk("SETV", get_array_elem(vars, read_u16(p + 1)));
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::POP:
+            oc = mk("POP");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::BNIL:
+            x = create_int64((p - bytes) + 3 + read_i16(p + 1));
+            oc = mk("BNIL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::BNNIL:
+            x = create_int64((p - bytes) + 3 + read_i16(p + 1));
+            oc = mk("BNNIL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::BR:
+            x = create_int64((p - bytes) + 3 + read_i16(p + 1));
+            oc = mk("BR", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
+        case vm::CALL:
+            x = create_int64(std::uint8_t(p[1]));
+            oc = mk("CALL", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 2;
+            break;
+        case vm::APPLY:
+            x = create_int64(std::uint8_t(p[1]));
+            oc = mk("APPLY", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 2;
+            break;
+        case vm::CNIL:
+            oc = mk("CNIL");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::IFN:
+            x = create_int64(std::uint8_t(p[1]));
+            oc = mk("IFN", *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 2;
+            break;
+        case vm::THROW:
+            oc = mk("THROW");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        default:
+            throw_illegal_argument("Invalid opcode");
+        }
+    }
+    return transient_array_persistent(*dbs);
+}
+
+Force disasm_exception_table(Value et)
+{
+    if (!et)
+        return nil;
+    Root det{transient_array(*EMPTY_VECTOR)};
+    for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
+    {
+        Root soff{create_int64(get_bytecode_fn_exception_table_start_offset(et, i))};
+        Root eoff{create_int64(get_bytecode_fn_exception_table_end_offset(et, i))};
+        Root hoff{create_int64(get_bytecode_fn_exception_table_handler_offset(et, i))};
+        Root entry{*EMPTY_MAP};
+        entry = map_assoc(*entry, create_keyword("start-offset"), *soff);
+        entry = map_assoc(*entry, create_keyword("end-offset"), *eoff);
+        entry = map_assoc(*entry, create_keyword("handler-offset"), *hoff);
+        entry = map_assoc(*entry, create_keyword("type"), get_bytecode_fn_exception_table_type(et, i));
+        det = transient_array_conj(*det, *entry);
+    }
+    return transient_array_persistent(*det);
+}
+
+Force disasm(Value fn)
+{
+    if (get_value_type(fn).is(*type::Var))
+        fn = get_var_value(fn);
+    check_type("fn", fn, *type::BytecodeFn);
+    Root dfn{*EMPTY_MAP};
+    dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
+    Root bodies{*EMPTY_VECTOR};
+    for (Int64 i = 0; i < get_bytecode_fn_size(fn); ++i)
+    {
+        Root arity{create_int64(get_bytecode_fn_arity(fn, i))};
+        Root dbody{*EMPTY_MAP};
+        auto body = get_bytecode_fn_body(fn, i);
+        Root locals_size{create_int64(get_bytecode_fn_body_locals_size(body))};
+        dbody = map_assoc(*dbody, create_keyword("arity"), *arity);
+        dbody = map_assoc(*dbody, create_keyword("locals-size"), *locals_size);
+        Root dbs{disasm_bytes(get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body), get_bytecode_fn_body_consts(body), get_bytecode_fn_body_vars(body))};
+        dbody = map_assoc(*dbody, create_keyword("bytecode"), *dbs);
+        Root det{disasm_exception_table(get_bytecode_fn_body_exception_table(body))};
+        if (*det)
+            dbody = map_assoc(*dbody, create_keyword("exception-table"), *det);
+        bodies = array_conj(*bodies, *dbody);
+    }
+    dfn = map_assoc(*dfn, create_keyword("bodies"), *bodies);
+    return *dfn;
+}
+
+Value meta(Value x)
+{
+    auto type = get_value_type(x);
+    if (type.is(*type::Var))
+        return get_var_meta(x);
+    if (type.is(*type::Namespace))
+        return get_ns_meta(x);
+    return nil;
+}
+
+Value the_ns(Value ns)
+{
+    if (get_value_type(ns).is(*type::Namespace))
+        return ns;
+    return get_ns(ns);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -935,6 +1178,10 @@ struct Initialize
     Initialize()
     {
         stack.reserve(1048576);
+        Root core_meta{*EMPTY_MAP};
+        Root core_doc{create_string("The core Cleo library")};
+        core_meta = map_assoc(*core_meta, create_keyword("doc"), *core_doc);
+        define_ns(CLEO_CORE, *core_meta);
 
         define_type(*type::Int64);
         define_type(*type::Float64);
@@ -944,7 +1191,6 @@ struct Initialize
         define_type(*type::Keyword);
         define_type(*type::Symbol);
         define_type(*type::Var);
-        define_type(*type::Seqable);
         define_type(*type::List);
         define_type(*type::Cons);
         define_type(*type::LazySeq);
@@ -987,15 +1233,21 @@ struct Initialize
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);
 
-        define_function(NEW, create_native_function(new_instance));
+        define_function(NEW, create_native_function(new_instance, NEW));
+
+        define_function(META, create_native_function1<meta, &META>());
+
+        define_function(THE_NS, create_native_function1<the_ns, &THE_NS>());
+        define_function(FIND_NS, create_native_function1<find_ns, &FIND_NS>());
+        define_function(RESOLVE, create_native_function1<maybe_resolve_var, &RESOLVE>());
 
         Root f;
 
-        define(CURRENT_NS, get_ns(CLEO_CORE));
-        f = create_native_function1<in_ns, &IN_NS>();
+        define(CURRENT_NS, get_ns(CLEO_CORE), *DYNAMIC_META);
+        f = create_native_function1or2<in_ns, in_ns, &IN_NS>();
         define(IN_NS, *f);
 
-        define(LIB_PATHS, nil);
+        define(LIB_PATHS, nil, *DYNAMIC_META);
 
         define(COMMAND_LINE_ARGS, nil);
 
@@ -1014,22 +1266,25 @@ struct Initialize
         f = create_native_function1<vector_q, &VECTOR_Q>();
         define(VECTOR_Q, *f);
 
+        f = create_native_function1<string_q, &STRING_Q>();
+        define(STRING_Q, *f);
+
         f = create_native_function1<map_q, &MAP_Q>();
         define(MAP_Q, *f);
 
-        f = create_native_function(list);
+        f = create_native_function(list, LIST);
         define(LIST, *f);
 
-        f = create_native_function(vector);
+        f = create_native_function(vector, VECTOR);
         define(VECTOR, *f);
 
-        f = create_native_function(hash_map);
+        f = create_native_function(hash_map, HASH_MAP);
         define(HASH_MAP, *f);
 
-        f = create_native_function(hash_set);
+        f = create_native_function(hash_set, HASH_SET);
         define(HASH_SET, *f);
 
-        f = create_native_function(concati);
+        f = create_native_function(concati, CONCATI);
         define(CONCATI, *f);
 
         f = create_native_function1<mk_keyword, &KEYWORD>();
@@ -1263,6 +1518,10 @@ struct Initialize
         f = create_native_function(call_c_function);
         define_method(OBJ_CALL, *type::CFunction, *f);
 
+        derive(*type::Var, *type::Callable);
+        f = create_native_function(var_call);
+        define_method(OBJ_CALL, *type::Var, *f);
+
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
         define_method(OBJ_EQ, nil, *ret_nil);
 
@@ -1303,7 +1562,7 @@ struct Initialize
         f = create_native_function2<are_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        define(PRINT_READABLY, TRUE);
+        define(PRINT_READABLY, TRUE, *DYNAMIC_META);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
 
@@ -1323,9 +1582,15 @@ struct Initialize
         f = create_native_function1<pr_str_var>();
         define_method(PR_STR_OBJ, *type::Var, *f);
 
+        f = create_native_function1<pr_str_bytecode_fn>();
+        define_method(PR_STR_OBJ, *type::BytecodeFn, *f);
+
+        f = create_native_function1<pr_str_multimethod>();
+        define_method(PR_STR_OBJ, *type::Multimethod, *f);
+
         f = create_native_function2<add2, &PLUS>();
         define(PLUS, *f);
-        f = create_native_function(sub);
+        f = create_native_function(sub, MINUS);
         define(MINUS, *f);
         f = create_native_function2<mult2, &ASTERISK>();
         define(ASTERISK, *f);
@@ -1421,25 +1686,25 @@ struct Initialize
         f = create_swap_fn();
         define(SWAP, *f);
 
-        f = create_native_function(apply_wrapped);
+        f = create_native_function(apply_wrapped, APPLY);
         define(APPLY, *f);
 
         f = create_native_function1<pr_str, &PR_STR>();
         define(PR_STR, *f);
 
-        f = create_native_function(pr);
+        f = create_native_function(pr, create_symbol("cleo.core", "pr"));
         define(create_symbol("cleo.core", "pr"), *f);
 
-        f = create_native_function(prn);
+        f = create_native_function(prn, create_symbol("cleo.core", "prn"));
         define(create_symbol("cleo.core", "prn"), *f);
 
-        f = create_native_function(print);
+        f = create_native_function(print, create_symbol("cleo.core", "print"));
         define(create_symbol("cleo.core", "print"), *f);
 
-        f = create_native_function(println);
+        f = create_native_function(println, create_symbol("cleo.core", "println"));
         define(create_symbol("cleo.core", "println"), *f);
 
-        define_function(STR, create_native_function(str));
+        define_function(STR, create_native_function(str, STR));
 
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);
@@ -1452,7 +1717,7 @@ struct Initialize
         f = create_native_function4<import_c_fn, &IMPORT_C_FN>();
         define(IMPORT_C_FN, *f);
 
-        f = create_native_function(gensym);
+        f = create_native_function(gensym, GENSYM);
         define(GENSYM, *f);
 
         f = create_native_function0<mem_used, &MEMUSED>();
@@ -1494,6 +1759,10 @@ struct Initialize
 
         define_method(PERSISTENT, *type::TransientArray, *rt::transient_array_persistent);
 
+        define_function(MULTI, create_native_function3<multi, &MULTI>());
+        define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());
+
+        define_function(DISASM, create_native_function1<disasm, &DISASM>());
     }
 } initialize;
 

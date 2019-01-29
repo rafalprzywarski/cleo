@@ -106,9 +106,14 @@ T *get_ptr(Value val)
     return reinterpret_cast<T *>(val.bits() & ~tag::MASK);
 }
 
-Force create_native_function(NativeFunction f);
+Force create_native_function(NativeFunction f, Value name);
+inline Force create_native_function(NativeFunction f)
+{
+    return create_native_function(f, nil);
+}
 
 NativeFunction get_native_function_ptr(Value val);
+Value get_native_function_name(Value fn);
 
 Value create_symbol(const std::string& ns, const std::string& name);
 Value create_symbol(const std::string& name);

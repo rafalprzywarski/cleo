@@ -1,53 +1,218 @@
 (ns cleo.core)
 
 
-(def reduce1
-  (fn* reduce1 [f val coll]
-    (let* [s (seq coll)]
-      (if s
-        (recur f (f val (first s)) (next s))
-        val))))
+(def {:arglists '([f coll] [f val coll])} reduce
+  (fn* reduce
+       ([f coll]
+        (let* [s (seq coll)]
+          (if s
+            (reduce f (first coll) (next coll))
+            (f))))
+       ([f val coll]
+        (let* [s (seq coll)]
+          (if s
+            (recur f (f val (first s)) (next s))
+            val)))))
 
 
-(def reverse1
+(def {:private :true} reverse1
   (fn* reverse1 [xs]
-    (reduce1 conj* () xs)))
+    (reduce conj* () xs)))
 
 
-(def map1
+(def {:private :true} map1
   (fn* map1 [f s]
-    (reverse1 (reduce1 (fn* [out x] (conj* out (f x))) () s))))
+    (reverse1 (reduce (fn* [out x] (conj* out (f x))) () s))))
 
 
-(def nnext
+(def {:arglists '([x])}
+  second
+  (fn* second [x] (first (next x))))
+
+
+(def {:arglists '([x])}
+  nnext
   (fn* nnext [x] (next (next x))))
 
 
-(def rest
+(def {:arglists '([coll])}
+  rest
   (fn* [coll]
     (let* [n (next coll)]
       (if n n ()))))
 
-(def prepend*
-  (fn* prepend* [p b]
+
+(def {:private :true} partition-kv
+  (fn* partition-kv [coll]
+       (let* [s (seq coll)]
+         (if s
+           (let* [n (next s)]
+             (if n
+               (conj* (partition-kv (next n)) [(first s) (first n)])
+               ()))
+           ()))))
+
+
+(def {:arglists '([] [coll] [coll x] [coll x & xs])} conj
+  (fn* conj
+       ([] [])
+       ([coll] coll)
+       ([coll x] (conj* coll x))
+       ([coll x & xs]
+        (if xs
+          (recur (conj* coll x) (first xs) (next xs))
+          (conj* coll x)))))
+
+
+(def {:macro :true, :arglists '([& pairs])} cond
+  (fn* cond [&form &env & pairs]
+       (if pairs
+         (if (next pairs)
+           `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs)))
+           (throw (new IllegalArgument  "cond requires an even number of forms"))))))
+
+
+(def {:arglists '([m] [m k] [m k & ks])} dissoc
+  (fn* dissoc
+       ([m] m)
+       ([m k] (dissoc* m k))
+       ([m k & ks]
+        (let* [m (dissoc* m k)]
+          (if ks
+            (recur m (first ks) (next ks))
+            m)))))
+
+
+(def {:arglists '([pred coll])} every?
+  (fn* [pred coll]
+       (let* [s (seq coll)]
+         (if s
+           (if (pred (first s))
+             (recur pred (next s)))
+           :true))))
+
+
+(def destructure
+  (fn* destructure [bindings]
+       (let* [pairs (partition-kv bindings)
+              destructure-binding
+              (fn* destructure-binding [out b v]
+                   (let* [destructure-vector
+                          (fn* [out b v]
+                               (let* [vsym (gensym "val__")
+                                      ssym (gensym "seq__")
+                                      out (conj out vsym v ssym `(seq ~vsym))]
+                                 (loop* [out out
+                                         s (seq b)
+                                         expect-as? nil]
+                                        (if s
+                                          (cond
+                                            (= '& (first s)) (recur (destructure-binding out (second s) ssym)
+                                                                    (nnext s)
+                                                                    :true)
+                                            (= :as (first s)) (destructure-binding out (second s) vsym)
+                                            :else (if expect-as?
+                                                    (throw (new IllegalArgument "Unsupported binding form, only :as can follow & parameter"))
+                                                    (recur (conj (destructure-binding out (first s) `(first ~ssym)) ssym `(next ~ssym))
+                                                           (next s)
+                                                           nil)))
+                                          out))))
+                          destructure-map
+                          (fn* [out b v]
+                               (let* [vsym (gensym "val__")
+                                      out (conj out vsym v)
+                                      defaults (b :or)
+                                      all (b :as)
+                                      destructure-locals
+                                      (fn* [out key-fn locals]
+                                           (reduce (fn* [out sym] (if (symbol? sym)
+                                                                    (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym)))
+                                                                    (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
+                                                   out
+                                                   locals))
+                                      out (if all (conj out all vsym) out)
+                                      out (destructure-locals out keyword (b :keys))
+                                      out (destructure-locals out (fn* [sym] (list 'quote sym)) (b :syms))
+                                      out (destructure-locals out name (b :strs))
+                                      b (dissoc b :or :as :keys :syms :strs)]
+                                 (reduce (fn* [out bk]
+                                              (destructure-binding out
+                                                                   (first bk)
+                                                                   `(get ~vsym ~(second bk) ~(get defaults (first bk)))))
+                                         out
+                                         b)))]
+                     (cond
+                       (vector? b) (destructure-vector out b v)
+                       (map? b) (destructure-map out b v)
+                       (symbol? b) (conj out b v)
+                       :else (throw (new IllegalArgument (str "Unsupported binding form: " b))))))
+              destructure-binding-pair (fn* [out bv] (destructure-binding out (first bv) (second bv)))]
+         (reduce destructure-binding-pair [] pairs))))
+
+
+(def {:private :true} destructure-fn
+  (fn* destructure-fn [body]
+       (let* [params (first body)]
+         (if (every? symbol? params)
+           body
+           (loop* [s (seq params)
+                   dparams []
+                   locals []]
+                  (if s
+                    (if (symbol? (first s))
+                      (recur (next s) (conj dparams (first s)) locals)
+                      (let* [p (gensym "p__")]
+                        (recur (next s) (conj dparams p) (conj locals (first s) p))))
+                    `(~dparams (let ~locals ~@(next body)))))))))
+
+
+(def {:private :true} prepend-params
+  (fn* prepend-params [p b]
     (conj* (rest b) (apply vector (concati p (first b))))))
 
-(def wrapdo*
-  (fn* wrapdo* [body eparams]
-    (prepend*
-      eparams
-      (if (next body)
-        (if (nnext body)
-          (list (first body) (conj* (next body) 'do))
-          body)
-        (list (first body))))))
+
+(def {:private :true} into-do
+  (fn* into-do
+       ([body]
+        (into-do body nil))
+       ([body eparams]
+        (destructure-fn
+         (prepend-params
+          eparams
+          (if (nnext body)
+            (list (first body) (conj* (next body) 'do))
+            body))))))
 
 
-(def {:macro :true} defmacro
+(def {:private :true} arglists*
+  (fn* [decl]
+       (list 'quote
+             (if (isa? (type (first decl)) cleo.core/Sequence)
+               (map1 first decl)
+               (list (first decl))))))
+
+
+(def {:private :true} parse-fdecl-meta
+  (fn* parse-fdecl-meta [decl]
+       (let* [m (if (string? (first decl)) {:doc (first decl)} {})
+              decl (if (string? (first decl)) (next decl) decl)
+              m (if (map? (first decl)) (merge m (first decl)) m)
+              decl (if (map? (first decl)) (next decl) decl)]
+         [m decl])))
+
+
+(def {:macro :true
+      :arglists '([name doc-string? attr-map? [params*] body]
+                  [name doc-string? attr-map? ([params*] body)+])}
+  defmacro
   (fn* defmacro [&form &env name & decl]
-    (list 'def {:macro :true} name (if (vector? (first decl))
-                      `(fn* ~name ~@(wrapdo* decl '[&form &env]))
-                      `(fn* ~name ~@(map1 (fn* [d] (wrapdo* d '[&form &env])) decl))))))
+       (let* [mdecl (parse-fdecl-meta decl)
+              decl (second mdecl)
+              m (assoc* (first mdecl) :macro :true)
+              m (merge {:arglists (arglists* decl)} m)]
+         (list 'def m name (if (vector? (first decl))
+                             `(fn* ~name ~@(into-do decl '[&form &env]))
+                             `(fn* ~name ~@(map1 (fn* [d] (into-do d '[&form &env])) decl)))))))
 
 
 (defmacro deftype [name fields]
@@ -57,18 +222,51 @@
      ~name))
 
 
-(defmacro fn [& decl]
+(defmacro defmulti [name dispatch-fn & options]
+  (let* [options (apply hash-map options)
+         default (options :default :default)]
+    `(def ~name (multi* '~(symbol (cleo.core/name (cleo.core/ns-name *ns*)) (cleo.core/name name)) ~dispatch-fn ~default))))
+
+
+(defmacro defmethod [multi dispatch-val & fn-tail]
+  `(defmethod* ~multi ~dispatch-val (fn ~@fn-tail)))
+
+
+(defmacro fn
+  {:special-form :true
+   :forms '[(fn name? [params*] exprs*)
+            (fn name? ([params*] exprs*)+)]}
+  [& decl]
   (let* [name (if (symbol? (first decl)) [(first decl)] [])
          decl (if (symbol? (first decl)) (next decl) decl)]
     (if (vector? (first decl))
-      `(fn* ~@name ~@(wrapdo* decl []))
-      `(fn* ~@name ~@(map1 (fn* [d] (wrapdo* d [])) decl)))))
+      `(fn* ~@name ~@(into-do decl))
+      `(fn* ~@name ~@(map1 (fn* [d] (into-do d)) decl)))))
 
 
-(defmacro defn [name & decl] (list 'def name `(fn ~name ~@decl)))
+(defmacro defn
+  {:arglists '([name doc-string? attr-map? [params*] body]
+               [name doc-string? attr-map? ([params*] body)+])}
+  [name & decl]
+  (let* [mdecl (parse-fdecl-meta decl)
+         decl (second mdecl)
+         arglists (if (isa? (type (first decl)) cleo.core/Sequence)
+                    (map1 first decl)
+                    (list (first decl)))
+         m (merge {:arglists (arglists* decl)} (first mdecl))]
+    `(def ~m ~name (fn ~name ~@decl))))
 
 
-(defmacro not [x] `(if ~x nil :true))
+(defmacro defn-
+  {:arglists '([name doc-string? attr-map? [params*] body]
+               [name doc-string? attr-map? ([params*] body)+])}
+  [name & decl]
+  (let* [mdecl (parse-fdecl-meta decl)
+         m (assoc* (first mdecl) :private :true)]
+    `(defn ~name ~m ~@(second mdecl))))
+
+
+(defn not [x] (if x nil :true))
 
 
 (defmacro or
@@ -86,49 +284,11 @@
 (defn seq? [x] (isa? (type x) cleo.core/Sequence))
 
 
-(defn second [x] (first (next x)))
-
-
 (defmacro lazy-seq [& body] `(lazy-seq* (fn* [] (do ~@body))))
 
 
 (defmacro when [expr & body]
   `(if ~expr (do ~@body)))
-
-
-(defn every? [pred coll]
-  (let* [s (seq coll)]
-    (if s
-      (when (pred (first s))
-        (recur pred (next s)))
-      :true)))
-
-
-(defmacro cond [& pairs]
-  (when pairs
-    (if (not (next pairs))
-      (throw (new IllegalArgument  "cond requires an even number of forms"))
-      `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs))))))
-
-
-(defn partition-kv [coll]
-  (let* [s (seq coll)]
-    (if s
-      (let* [n (next s)]
-        (if n
-          (conj* (partition-kv (next n)) [(first s) (first n)])
-          ()))
-      ())))
-
-
-(defn conj
-  ([] [])
-  ([coll] coll)
-  ([coll x] (conj* coll x))
-  ([coll x & xs]
-    (if xs
-      (recur (conj* coll x) (first xs) (next xs))
-      (conj* coll x))))
 
 
 (defn dec [x] (- x 1))
@@ -152,93 +312,32 @@
         m))))
 
 
-(defn dissoc
-  ([m] m)
-  ([m k] (dissoc* m k))
-  ([m k & ks]
-   (let* [m (dissoc* m k)]
-     (if ks
-       (recur m (first ks) (next ks))
-       m))))
-
-
-(defn destructure [bindings]
-  (let* [pairs (partition-kv bindings)
-         destructure-binding
-         (fn* destructure-binding [out b v]
-           (let* [destructure-vector
-                  (fn* [out b v]
-                    (let* [vsym (gensym "val__")
-                           ssym (gensym "seq__")
-                           out (conj out vsym v ssym `(seq ~vsym))]
-                      (loop* [out out
-                              s (seq b)
-                              expect-as? nil]
-                             (if s
-                               (cond
-                                 (= '& (first s)) (recur (conj out (second s) ssym)
-                                                         (nnext s)
-                                                         :true)
-                                 (= :as (first s)) (destructure-binding out (second s) vsym)
-                                 :else (if expect-as?
-                                         (throw (new IllegalArgument "Unsupported binding form, only :as can follow & parameter"))
-                                         (recur (conj (destructure-binding out (first s) `(first ~ssym)) ssym `(next ~ssym))
-                                                (next s)
-                                                nil)))
-                               out))))
-                  destructure-map
-                  (fn* [out b v]
-                    (let* [vsym (gensym "val__")
-                           out (conj out vsym v)
-                           defaults (b :or)
-                           all (b :as)
-                           destructure-locals
-                           (fn [out key-fn locals]
-                             (reduce1 (fn* [out sym] (if (symbol? sym)
-                                                       (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym)))
-                                                       (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
-                                      out
-                                      locals))
-                           out (if all (conj out all vsym) out)
-                           out (destructure-locals out keyword (b :keys))
-                           out (destructure-locals out (fn* [sym] (list 'quote sym)) (b :syms))
-                           out (destructure-locals out name (b :strs))
-                           b (dissoc b :or :as :keys :syms :strs)]
-                      (reduce1 (fn* [out bk]
-                                 (destructure-binding out
-                                                      (first bk)
-                                                      `(get ~vsym ~(second bk) ~(get defaults (first bk)))))
-                               out
-                               b)))]
-             (cond
-               (vector? b) (destructure-vector out b v)
-               (map? b) (destructure-map out b v)
-               (symbol? b) (conj out b v)
-               :else (throw (new IllegalArgument (str "Unsupported binding form: " b))))))
-         destructure-binding-pair (fn* [out bv] (destructure-binding out (first bv) (second bv)))]
-    (reduce1 destructure-binding-pair [] pairs)))
-
-
-(defmacro let [bindings & body]
+(defmacro let
+  {:special-form :true
+   :forms '[(let [bindings*] exprs*)]}
+  [bindings & body]
   `(let* ~(destructure bindings) ~(if (next body)
                                     (conj* body 'do)
                                     (first body))))
 
 
-(defn interleave2 [coll1 coll2]
+(defn- interleave2 [coll1 coll2]
   (loop* [s1 (seq coll1) s2 (seq coll2) out []]
     (if s1
       (recur (next s1) (next s2) (conj out (first s1) (first s2)))
       out)))
 
-(defn pairs1 [coll1 coll2]
+(defn- pairs1 [coll1 coll2]
   (loop* [s1 (seq coll1) s2 (seq coll2) out []]
     (if s1
       (recur (next s1) (next s2) (conj out [(first s1) (first s2)]))
       out)))
 
 
-(defmacro loop [bindings & body]
+(defmacro loop
+  {:special-form :true
+   :forms '[(loop [bindings*] exprs*)]}
+  [bindings & body]
   (let [bvs (partition-kv bindings)
         bs (map1 first bvs)]
     (if (every? symbol? bs)
@@ -246,41 +345,16 @@
                            (conj* body 'do)
                            (first body)))
       (let [ls (map1 (fn* [p] (if (symbol? p) p (gensym "l__"))) bs)
-            lvbls (reduce1 (fn* [out bvl]
-                             (let [[[b v] l] bvl]
-                               (if (symbol? b)
-                                 (conj out b v)
-                                 (conj out l v b l))))
-                           []
-                           (pairs1 bvs ls))]
+            lvbls (reduce (fn* [out bvl]
+                               (let [[[b v] l] bvl]
+                                 (if (symbol? b)
+                                   (conj out b v)
+                                   (conj out l v b l))))
+                          []
+                          (pairs1 bvs ls))]
         `(let ~lvbls
            (loop* ~(interleave2 ls ls)
              (let ~(interleave2 bs ls) ~@body)))))))
-
-
-(defn destructure-fn [body]
-  (let* [params (first body)]
-    (if (every? symbol? params)
-      body
-      (loop* [s (seq params)
-              dparams []
-              locals []]
-        (if s
-          (let* [p (gensym "p__")]
-            (recur (next s) (conj dparams p) (conj locals (first s) p)))
-          `(~dparams (let ~locals ~@(next body))))))))
-
-
-(def wrapdo*
-  (fn* wrapdo* [body eparams]
-    (destructure-fn
-      (prepend*
-        eparams
-        (if (next body)
-          (if (nnext body)
-            (list (first body) (conj* (next body) 'do))
-            body)
-          (list (first body)))))))
 
 
 (defn bit-and
@@ -343,7 +417,7 @@
 (defn vec [x]
   (if (vector? x)
     x
-    (reduce1 conj [] x)))
+    (persistent! (reduce conj! (transient []) x))))
 
 
 (defmacro dotimes [bindings & body]
@@ -381,15 +455,92 @@
           (filter pred n))))))
 
 
-(defmacro ns [name & references]
+(defmacro ns
+  {:arglists '([name docstring? attr-map? references*])}
+  [name & references]
   (let [gen-reference
         (fn [[kind & args]]
-          `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))]
+          `(~(symbol "cleo.core" (cleo.core/name kind)) ~@(map (fn [arg] `'~arg) args)))
+        docstring (if (string? (first references)) (first references))
+        references (if docstring (next references) references)
+        metadata (if (map? (first references)) (first references))
+        references (if metadata (next references) references)
+        metadata (if docstring (assoc metadata :doc docstring) metadata)]
     `(do
-       (cleo.core/in-ns '~name)
+       (cleo.core/in-ns '~name ~metadata)
        (cleo.core/refer '~'cleo.core)
        ~@(map gen-reference references))))
 
 
 (defn update [m k f]
   (assoc m k (f (get m k))))
+
+
+(defn disasm [fn]
+  (let [{:keys [name bodies]} (disasm* fn)
+        right (fn [w n]
+                (loop [n (str n)]
+                  (if (< (count n) w)
+                    (recur (str " " n))
+                    n)))
+        left (fn [w n]
+               (loop [n (str n)]
+                 (if (< (count n) w)
+                   (recur (str n " "))
+                   n)))]
+    (println "fn:" name)
+    (doseq [{:keys [arity locals-size bytecode exception-table]} bodies]
+      (println "arity:" arity)
+      (println "locals size:" locals-size)
+      (println "bytecode:")
+      (doseq [[offset oc & args] bytecode]
+        (println (right 6 offset) (left 5 oc) (if args (pr-str (first args)) "")))
+      (when exception-table
+        (println "exception table:")
+        (println "  start     end handler type")
+        (doseq [{:keys [start-offset end-offset handler-offset type]} exception-table]
+          (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) type))))))
+
+
+(defmacro -> [x & forms]
+  (loop [forms forms
+         out x]
+    (if forms
+      (let [form (first forms)
+            form (if (seq? form)
+                   `(~(first form) ~out ~@(next form))
+                   (list form out))]
+        (recur (next forms) form))
+      out)))
+
+
+(defmacro ->> [x & forms]
+  (loop [forms forms
+         out x]
+    (if forms
+      (let [form (first forms)
+            form (if (seq? form)
+                   `(~@form ~out)
+                   (list form out))]
+        (recur (next forms) form))
+      out)))
+
+
+(defn print-doc [name {:keys [ns macro doc arglists forms special-form]}]
+  (println "--------------------------------")
+  (println (str (when ns (str (ns-name ns) "/")) name))
+  (cond
+    forms (doseq [form forms] (println " " form))
+    arglists (println arglists))
+  (cond
+    special-form (println "Special Form")
+    macro (println "Macro"))
+  (println " " doc))
+
+
+(defmacro doc
+  "Prints documentation for a var or a namespace"
+  [name]
+  (cond
+    (resolve name) `(print-doc (:name (meta (resolve '~name))) (meta (resolve '~name)))
+    (find-ns name) `(print-doc (ns-name (find-ns '~name)) (meta (find-ns '~name)))))

@@ -32,7 +32,7 @@ Force create_native_function0()
         if (num_args != 0)
             throw_arity_error(deref_name<name>(), num_args);
         return f();
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(), const Value *name>
@@ -43,7 +43,7 @@ Force create_native_new0()
         if (num_args != 1)
             throw_arity_error(deref_name<name>(), num_args);
         return f();
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value), const Value *name = nullptr>
@@ -54,7 +54,7 @@ Force create_native_function1()
         if (num_args != 1)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[0]);
-    });
+    }, deref_name<name>());
 }
 
 template <Value f(Value), const Value *name = nullptr>
@@ -65,7 +65,20 @@ Force create_native_function1()
         if (num_args != 1)
             throw_arity_error(deref_name<name>(), num_args);
         return force(f(args[0]));
-    });
+    }, deref_name<name>());
+}
+
+template <Value f1(Value), Value f2(Value, Value), const Value *name = nullptr>
+Force create_native_function1or2()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
+    {
+        if (num_args == 1)
+            return f1(args[0]);
+        if (num_args == 2)
+            return f2(args[0], args[1]);
+        throw_arity_error(deref_name<name>(), num_args);
+    }, deref_name<name>());
 }
 
 template <Force f(Value), const Value *name = nullptr>
@@ -76,7 +89,7 @@ Force create_native_new1()
         if (num_args != 2)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[1]);
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value, Value), const Value *name = nullptr>
@@ -87,7 +100,7 @@ Force create_native_function2()
         if (num_args != 2)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[0], args[1]);
-    });
+    }, deref_name<name>());
 }
 
 template <Value f(Value, Value), const Value *name = nullptr>
@@ -98,7 +111,7 @@ Force create_native_function2()
         if (num_args != 2)
             throw_arity_error(deref_name<name>(), num_args);
         return force(f(args[0], args[1]));
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value, Value), const Value *name = nullptr>
@@ -109,7 +122,7 @@ Force create_native_new2()
         if (num_args != 3)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[1], args[2]);
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value, Value, Value), const Value *name = nullptr>
@@ -120,7 +133,18 @@ Force create_native_function3()
         if (num_args != 3)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[0], args[1], args[2]);
-    });
+    }, deref_name<name>());
+}
+
+template <Value f(Value, Value, Value), const Value *name = nullptr>
+Force create_native_function3()
+{
+    return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
+    {
+        if (num_args != 3)
+            throw_arity_error(deref_name<name>(), num_args);
+        return f(args[0], args[1], args[2]);
+    }, deref_name<name>());
 }
 
 template <Value f2(Value, Value), Value f3(Value, Value, Value), const Value *name = nullptr>
@@ -133,7 +157,7 @@ Force create_native_function2or3()
         if (num_args == 3)
             return f3(args[0], args[1], args[2]);
         throw_arity_error(deref_name<name>(), num_args);
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value, Value, Value), const Value *name = nullptr>
@@ -144,7 +168,7 @@ Force create_native_new3()
         if (num_args != 4)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[1], args[2], args[3]);
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value, Value, Value, Value), const Value *name = nullptr>
@@ -155,7 +179,7 @@ Force create_native_function4()
         if (num_args != 4)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[0], args[1], args[2], args[3]);
-    });
+    }, deref_name<name>());
 }
 
 template <Force f(Value, Value, Value, Value, Value), const Value *name = nullptr>
@@ -166,7 +190,7 @@ Force create_native_function5()
         if (num_args != 5)
             throw_arity_error(deref_name<name>(), num_args);
         return f(args[0], args[1], args[2], args[3], args[4]);
-    });
+    }, deref_name<name>());
 }
 
 Int64 count(Value val);

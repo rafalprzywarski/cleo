@@ -193,12 +193,10 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 
 TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 {
-    auto s = create_symbol("s");
-    Root env{amap(s, *rt::seq)};
     eval_str("(def {:macro :true} mex6 (fn* [&form &env] (quote (cleo.core/first (s [5 6 7])))))");
-    auto name = create_symbol("cleo.macro.test", "mex6");
-    Root call{list(name)};
-    Root val{eval(*call, *env)};
+    Root call{create_string("(let* [s cleo.core/seq] (mex6))")};
+    call = read(*call);
+    Root val{eval(*call)};
     Root ex{create_int64(5)};
     EXPECT_EQ_VALS(*ex, *val);
 }

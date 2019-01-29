@@ -15,39 +15,43 @@ namespace cleo
 namespace
 {
 
-Force create_namespace(Value name)
+Force create_namespace(Value name, Value meta)
 {
-    return create_object3(*type::Namespace, name, *EMPTY_MAP, *EMPTY_MAP);
+    return create_object4(*type::Namespace, name, meta, *EMPTY_MAP, *EMPTY_MAP);
 }
 
 Value get_ns_mapping(Value ns)
 {
-    return get_object_element(ns, 1);
+    return get_object_element(ns, 2);
 }
 
 void set_ns_mapping(Value ns, Value mapping)
 {
-    set_object_element(ns, 1, mapping);
+    set_object_element(ns, 2, mapping);
 }
 
 Value get_ns_aliases(Value ns)
 {
-    return get_object_element(ns, 2);
+    return get_object_element(ns, 3);
 }
 
 void set_ns_aliseses(Value ns, Value aliases)
 {
-    set_object_element(ns, 2, aliases);
+    set_object_element(ns, 3, aliases);
 }
 
-Value get_or_create_ns(Value name)
+Value get_or_create_ns(Value name, Value meta)
 {
+    if (meta)
+        check_type("meta", meta, *type::PersistentHashMap);
     auto ns = persistent_hash_map_get(*namespaces, name);
     if (ns)
+    {
+        if (meta && get_ns_meta(ns) != meta)
+            throw_illegal_argument("in-ns cannot change meta of an existing namespace: " + to_string(name));
         return ns;
-    Root new_ns{create_namespace(name)};
-    namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
-    return *new_ns;
+    }
+    return define_ns(name, meta);
 }
 
 std::string locate_source(const std::string& ns_name)
@@ -66,29 +70,47 @@ std::string locate_source(const std::string& ns_name)
 
 }
 
+Value define_ns(Value name, Value meta)
+{
+    check_type("name", name, *type::Symbol);
+    Root new_ns{create_namespace(name, meta)};
+    namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
+    return *new_ns;
+}
+
 Value ns_name(Value ns)
 {
     check_type("ns", ns, *type::Namespace);
     return get_object_element(ns, 0);
 }
 
+Value find_ns(Value name)
+{
+    return persistent_hash_map_get(*namespaces, name);
+}
+
 Value get_ns(Value name)
 {
     check_type("ns", name, *type::Symbol);
-    auto found = persistent_hash_map_get(*namespaces, name);
+    auto found = find_ns(name);
     if (!found)
         throw_illegal_argument("Namespace not found: " + to_string(name));
     return found;
 }
 
-Value in_ns(Value ns)
+Value get_ns_meta(Value ns)
+{
+    return get_object_element(ns, 1);
+}
+
+Value in_ns(Value ns, Value meta)
 {
     if (get_value_tag(ns) != tag::SYMBOL)
     {
         Root msg{create_string("ns must be a symbol")};
         throw_exception(new_illegal_argument(*msg));
     }
-    rt::current_ns = get_or_create_ns(ns);
+    rt::current_ns = get_or_create_ns(ns, meta);
     return nil;
 }
 
@@ -110,11 +132,14 @@ Value define(Value sym, Value val, Value meta)
 {
     assert(get_value_tag(sym) == tag::SYMBOL);
     auto ns_name = namespace_symbol(sym);
-    auto ns = get_or_create_ns(ns_name);
-    auto var = define_var(sym, val, meta);
+    auto ns = get_or_create_ns(ns_name, nil);
     auto var_name = name_symbol(sym);
+    Root nmeta;
+    nmeta = map_assoc(meta ? meta : *EMPTY_MAP, NAME_KEY, var_name);
+    nmeta = map_assoc(*nmeta, NS_KEY, ns);
+    auto var = define_var(sym, val, *nmeta);
     Root mapping{get_ns_mapping(ns)};
-    mapping = persistent_hash_map_assoc(*mapping, var_name, var);
+    mapping = map_assoc(*mapping, var_name, var);
     set_ns_mapping(ns, *mapping);
     return var;
 }

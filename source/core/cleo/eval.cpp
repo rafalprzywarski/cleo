@@ -19,13 +19,6 @@ namespace cleo
 namespace
 {
 
-Value symbol_var(Value sym, Value env)
-{
-    if (env && map_contains(env, sym))
-        return nil;
-    return maybe_resolve_var(sym);
-}
-
 std::pair<Value, Int64> find_bytecode_fn_body(Value fn, std::uint8_t arity, std::uint8_t public_n)
 {
     auto body = bytecode_fn_find_body(fn, arity);
@@ -121,7 +114,7 @@ Force macroexpand1(Value form, Value env)
             return create_cons(DOT, *expanded);
         }
     }
-    auto var = symbol_var(*m, env);
+    auto var = maybe_resolve_var(*m);
     if (!var || !is_var_macro(var))
         return form;
     m = get_var_value(var);
@@ -176,13 +169,13 @@ Force call(const Value *vals, std::uint32_t size)
     return call_fn(get_value_type(vals[0]), vals, size);
 }
 
-Force eval(Value val, Value env)
+Force eval(Value val)
 {
     if (get_value_type(val).is(*type::List) && get_list_first(val) == FN)
-        return compile_fn(val, env);
+        return compile_fn(val);
     std::array<Value, 3> awrap{{FN, *EMPTY_VECTOR, val}};
     Root rwrap{create_list(awrap.data(), awrap.size())};
-    rwrap = compile_fn(*rwrap, env);
+    rwrap = compile_fn(*rwrap);
     auto wrap = *rwrap;
     return call_bytecode_fn(&wrap, 1, 0);
 }

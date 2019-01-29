@@ -18,7 +18,7 @@ namespace
 Force pr_str_native_function(Value fn)
 {
     std::ostringstream os;
-    os << "#cleo.core/NativeFunction[0x" << std::hex << fn.bits() << "]";
+    os << "#cleo.core/NativeFunction[" << to_string(get_native_function_name(fn)) << " 0x" << std::hex << fn.bits() << "]";
     return create_string(os.str());
 }
 

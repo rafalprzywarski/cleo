@@ -1,6 +1,7 @@
 .*
 *~
 !.gitignore
+!.travis.yml
 /Debug
 /Release
 /xcode

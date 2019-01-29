@@ -1,0 +1,12 @@
+sudo: false
+
+matrix:
+  fast_finish: true
+  include:
+    - os: osx
+      language: objective-c
+      env: CMAKE_COMPILER=clang++
+
+install:
+
+script: CXX=${CMAKE_COMPILER} travis_wait 30 ./build_and_test.sh
