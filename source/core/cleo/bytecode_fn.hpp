@@ -5,13 +5,23 @@
 namespace cleo
 {
 
+struct bytecode_fn_exception_handler
+{
+    Int64 offset{};
+    Int64 stack_size{};
+
+    bytecode_fn_exception_handler() = default;
+    bytecode_fn_exception_handler(Int64 offset, Int64 stack_size) : offset(offset), stack_size(stack_size) {}
+};
+
 Force create_bytecode_fn_exception_table(const Int64 *entries, const Value *types, std::uint32_t size);
 std::uint32_t get_bytecode_fn_exception_table_size(Value et);
 Int64 get_bytecode_fn_exception_table_start_offset(Value et, std::uint32_t i);
 Int64 get_bytecode_fn_exception_table_end_offset(Value et, std::uint32_t i);
 Int64 get_bytecode_fn_exception_table_handler_offset(Value et, std::uint32_t i);
+Int64 get_bytecode_fn_exception_table_stack_size(Value et, std::uint32_t i);
 Value get_bytecode_fn_exception_table_type(Value et, std::uint32_t i);
-Int64 bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type);
+bytecode_fn_exception_handler bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type);
 
 Force create_bytecode_fn_body(Value consts, Value vars, Value exception_table, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size);
 Value get_bytecode_fn_body_consts(Value body);

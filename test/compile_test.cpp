@@ -104,7 +104,7 @@ struct compile_test : Test
     void expect_body_with_exception_table_locals_and_bytecode(Value fn, std::uint8_t index, std::vector<Int64> et_offsets, std::vector<Value> et_types, std::uint32_t locals_size, std::vector<vm::Byte> code)
     {
         ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
-        ASSERT_EQ(et_offsets.size(), et_types.size() * 3) << "mismatched offsets and types in the test";
+        ASSERT_EQ(et_offsets.size(), et_types.size() * 4) << "mismatched offsets and types in the test";
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
@@ -114,9 +114,10 @@ struct compile_test : Test
         ASSERT_EQ(et_types.size(), get_bytecode_fn_exception_table_size(et));
         for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
         {
-            EXPECT_EQ(et_offsets[i * 3 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
-            EXPECT_EQ(et_offsets[i * 3 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
-            EXPECT_EQ(et_offsets[i * 3 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 3], get_bytecode_fn_exception_table_stack_size(et, i)) << "entry #" << i;
             EXPECT_EQ_REFS(et_types[i], get_bytecode_fn_exception_table_type(et, i)) << "entry #" << i;
         }
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
@@ -127,7 +128,7 @@ struct compile_test : Test
     void expect_body_with_consts_exception_table_locals_and_bytecode(Value fn, std::uint8_t index, Consts constsv, std::vector<Int64> et_offsets, std::vector<Value> et_types, std::uint32_t locals_size, std::vector<vm::Byte> code)
     {
         ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
-        ASSERT_EQ(et_offsets.size(), et_types.size() * 3) << "mismatched offsets and types in the test";
+        ASSERT_EQ(et_offsets.size(), et_types.size() * 4) << "mismatched offsets and types in the test";
         auto body = get_bytecode_fn_body(fn, index);
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         Root consts{to_value(constsv)};
@@ -141,6 +142,7 @@ struct compile_test : Test
             EXPECT_EQ(et_offsets[i * 3 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
             EXPECT_EQ(et_offsets[i * 3 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
             EXPECT_EQ(et_offsets[i * 3 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 3], get_bytecode_fn_exception_table_stack_size(et, i)) << "entry #" << i;
             EXPECT_EQ_REFS(et_types[i], get_bytecode_fn_exception_table_type(et, i)) << "entry #" << i;
         }
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
@@ -1322,7 +1324,7 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
 
     fn = compile_fn("(fn* [f] (fn* [] (try* (f) (catch* cleo.core/Exception e e))))");
     inner_fn = get_fn_const(*fn, 0, 0);
-    expect_body_with_consts_exception_table_locals_and_bytecode(inner_fn, 0, arrayv(nil), {0, 5, 8}, {*type::Exception}, 1,
+    expect_body_with_consts_exception_table_locals_and_bytecode(inner_fn, 0, arrayv(nil), {0, 5, 8, 0}, {*type::Exception}, 1,
                                                                 b(vm::LDC, 0, 0,
                                                                   vm::CALL, 0,
                                                                   vm::BR, 6, 0,
@@ -1381,7 +1383,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
     expect_body_with_bytecode(*fn, 0, b(vm::LDL, -2, -1, vm::LDL, -1, -1, vm::CALL, 1));
 
     fn = compile_fn("(fn* [f g] (try* (f) (catch* Exception e (g e))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0}, {*type::Exception}, 1,
                                                          b(vm::LDL, -2, -1,
                                                            vm::CALL, 0,
                                                            vm::BR, 11, 0,
@@ -1391,7 +1393,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::CALL, 1));
 
     fn = compile_fn("(fn* [f g h] (try* (try* (f) (catch* Exception e (g e))) (catch* IllegalArgument e (h e))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0, 19, 22}, {*type::Exception, *type::IllegalArgument}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0, 0, 19, 22, 0}, {*type::Exception, *type::IllegalArgument}, 1,
                                                          b(vm::LDL, -3, -1,
                                                            vm::CALL, 0,
                                                            vm::BR, 11, 0,
@@ -1406,7 +1408,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::CALL, 1));
 
     fn = compile_fn("(fn* [a b] (let* [f a g b] (try* (f) (catch* Exception e (g e)))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 20}, {*type::Exception}, 3,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 20, 0}, {*type::Exception}, 3,
                                                          b(vm::LDL, -2, -1,
                                                            vm::STL, 0, 0,
                                                            vm::LDL, -1, -1,
@@ -1428,7 +1430,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                                    vm::IFN, 2,
                                                                    vm::CALL, 0,
                                                                    vm::CALL, 1));
-    expect_body_with_consts_exception_table_locals_and_bytecode(try_fn, 0, arrayv(nil, nil), {0, 5, 8}, {*type::Exception}, 1,
+    expect_body_with_consts_exception_table_locals_and_bytecode(try_fn, 0, arrayv(nil, nil), {0, 5, 8, 0}, {*type::Exception}, 1,
                                                                 b(vm::LDC, 0, 0,
                                                                   vm::CALL, 0,
                                                                   vm::BR, 8, 0,
@@ -1440,7 +1442,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
     EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
 
     fn = compile_fn("(fn* [f g] (do (try* (f) (catch* Exception e (g e)))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0}, {*type::Exception}, 1,
                                                          b(vm::LDL, -2, -1,
                                                            vm::CALL, 0,
                                                            vm::BR, 11, 0,
@@ -1450,7 +1452,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::CALL, 1));
 
     fn = compile_fn("(fn* [f] (do (try* (f) (catch* Exception e nil)) (f)))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0}, {*type::Exception}, 1,
                                                          b(vm::LDL, -1, -1,
                                                            vm::CALL, 0,
                                                            vm::BR, 4, 0,
@@ -1481,7 +1483,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
     form = seq(*form);
     form = list(FN, arrayv(create_symbol("f"), create_symbol("g")), *form);
     fn = cleo::compile_fn(*form, nil);
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8}, {*type::Exception}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0}, {*type::Exception}, 1,
                                                          b(vm::LDL, -2, -1,
                                                            vm::CALL, 0,
                                                            vm::BR, 11, 0,
@@ -1506,7 +1508,7 @@ TEST_F(compile_test, should_fail_when_if_branch_is_out_of_range)
 TEST_F(compile_test, should_compile_functions_with_try_finally)
 {
     Root fn{compile_fn("(fn* [f g] (try* (f) (finally* (g))))")};
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14}, {nil}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14, 0}, {nil}, 1,
                                                          b(vm::LDL, -2, -1,
                                                            vm::CALL, 0,
                                                            vm::LDL, -1, -1,
@@ -1521,7 +1523,7 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::THROW));
 
     fn = compile_fn("(fn* [a b] (let* [f a g b] (try* (f) (finally* (g)))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 26}, {nil}, 3,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 26, 0}, {nil}, 3,
                                                          b(vm::LDL, -2, -1,
                                                            vm::STL, 0, 0,
                                                            vm::LDL, -1, -1,
@@ -1540,7 +1542,7 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::THROW));
 
     fn = compile_fn("(fn* [f g h] (try* (try* (f) (finally* (g))) (finally* (h))))");
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14, 0, 27, 36}, {nil, nil}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14, 0, 0, 27, 36, 0}, {nil, nil}, 1,
                                                          b(vm::LDL, -3, -1,
                                                            vm::CALL, 0,
                                                            vm::LDL, -2, -1,
@@ -1569,7 +1571,7 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
     form = seq(*form);
     form = list(FN, arrayv(create_symbol("f"), create_symbol("g")), *form);
     fn = cleo::compile_fn(*form, nil);
-    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14}, {nil}, 1,
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 14, 0}, {nil}, 1,
                                                          b(vm::LDL, -2, -1,
                                                            vm::CALL, 0,
                                                            vm::LDL, -1, -1,

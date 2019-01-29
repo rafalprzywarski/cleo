@@ -655,6 +655,7 @@ void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Valu
     et_entries.push_back(start);
     et_entries.push_back(end);
     et_entries.push_back(handler);
+    et_entries.push_back(0);
     et_types.push_back(type);
 }
 

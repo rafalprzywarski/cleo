@@ -28,7 +28,7 @@ Force bytecode_fn_body_replace_consts(Value b, const Value *consts, Int64 n)
 
 Force create_bytecode_fn_exception_table(const Int64 *entries, const Value *types, std::uint32_t size)
 {
-    return create_object(*type::BytecodeFnExceptionTable, entries, size * 3, types, size);
+    return create_object(*type::BytecodeFnExceptionTable, entries, size * 4, types, size);
 }
 
 std::uint32_t get_bytecode_fn_exception_table_size(Value et)
@@ -38,17 +38,22 @@ std::uint32_t get_bytecode_fn_exception_table_size(Value et)
 
 Int64 get_bytecode_fn_exception_table_start_offset(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 3);
+    return get_object_int(et, i * 4);
 }
 
 Int64 get_bytecode_fn_exception_table_end_offset(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 3 + 1);
+    return get_object_int(et, i * 4 + 1);
 }
 
 Int64 get_bytecode_fn_exception_table_handler_offset(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 3 + 2);
+    return get_object_int(et, i * 4 + 2);
+}
+
+Int64 get_bytecode_fn_exception_table_stack_size(Value et, std::uint32_t i)
+{
+    return get_object_int(et, i * 4 + 3);
 }
 
 Value get_bytecode_fn_exception_table_type(Value et, std::uint32_t i)
@@ -56,7 +61,7 @@ Value get_bytecode_fn_exception_table_type(Value et, std::uint32_t i)
     return get_object_element(et, i);
 }
 
-Int64 bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type)
+bytecode_fn_exception_handler bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type)
 {
     auto size = get_bytecode_fn_exception_table_size(et);
     for (decltype(size) i = 0; i < size; ++i)
@@ -65,9 +70,10 @@ Int64 bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type)
         if (offset >= get_bytecode_fn_exception_table_start_offset(et, i) &&
             offset < get_bytecode_fn_exception_table_end_offset(et, i) &&
             (isa(type, et_type) || et_type.is_nil()))
-            return get_bytecode_fn_exception_table_handler_offset(et, i);
+            return {get_bytecode_fn_exception_table_handler_offset(et, i),
+                    get_bytecode_fn_exception_table_stack_size(et, i)};
     }
-    return -1;
+    return {-1, -1};
 }
 
 Force create_bytecode_fn_body(Value consts, Value vars, Value exception_table, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)

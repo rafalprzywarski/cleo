@@ -28,7 +28,7 @@ struct vm_test : Test
     }
 
     template <std::size_t N, std::size_t K>
-    void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Int64, K * 3>& et_entries, const std::array<Value, K>& et_types, const std::array<Byte, N>& bc)
+    void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Int64, K * 4>& et_entries, const std::array<Value, K>& et_types, const std::array<Byte, N>& bc)
     {
         Root etv{create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size())};
         vm::eval_bytecode(constants, vars, locals_size, *etv, bc.data(), bc.size());
@@ -728,17 +728,19 @@ TEST_F(vm_test, catching_exceptions_from_throw)
 {
     Root ex{new_index_out_of_bounds()};
 
-    const std::array<Byte, 9> bc1{{CNIL, CNIL, LDL, 0, 0, THROW, CNIL, CNIL, CNIL}};
-    std::array<Int64, 3> et{{5, 6, 8}};
+    const std::array<Byte, 18> bc1{{CNIL, LDL, 0, 0, CNIL, LDL, 1, 0, LDL, 0, 0, LDL, 2, 0, THROW, CNIL, CNIL, CNIL}};
+    std::array<Int64, 4> et{{14, 15, 17, 2}};
     std::array<Value, 1> types{{*type::IndexOutOfBounds}};
     stack_push(*THREE);
     stack_push(*TWO);
     stack_push(*ex);
-    eval_bytecode(nil, nil, 1, et, types, bc1);
+    eval_bytecode(nil, nil, 3, et, types, bc1);
 
-    ASSERT_EQ(5u, stack.size());
-    EXPECT_EQ_VALS(nil, stack[4]);
-    EXPECT_EQ_REFS(*ex, stack[3]);
+    ASSERT_EQ(7u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[6]);
+    EXPECT_EQ_REFS(*ex, stack[5]);
+    EXPECT_EQ_REFS(*THREE, stack[4]);
+    EXPECT_EQ_REFS(nil, stack[3]);
     EXPECT_EQ_REFS(*ex, stack[2]);
     EXPECT_EQ_REFS(*TWO, stack[1]);
     EXPECT_EQ_REFS(*THREE, stack[0]);
@@ -748,7 +750,7 @@ TEST_F(vm_test, catching_exceptions_from_throw)
     stack_push(*ex);
     try
     {
-        eval_bytecode(nil, nil, 1, et, other_types, bc1);
+        eval_bytecode(nil, nil, 3, et, other_types, bc1);
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -762,7 +764,7 @@ TEST_F(vm_test, catching_exceptions_from_call)
 {
     Root constants{array(8, *rt::first)};
     const std::array<Byte, 12> bc1{{CNIL, CNIL, LDC, 1, 0, LDC, 0, 0, CALL, 1, CNIL, CNIL}};
-    const std::array<Int64, 3> et{{8, 9, 11}};
+    const std::array<Int64, 4> et{{8, 9, 11, 0}};
     const std::array<Value, 1> types{{*type::IllegalArgument}};
     stack_push(*TWO);
     stack_push(*THREE);
@@ -799,7 +801,7 @@ TEST_F(vm_test, catching_exceptions_from_apply)
 {
     Root constants{array(8, *rt::first)};
     const std::array<Byte, 13> bc1{{CNIL, CNIL, LDC, 1, 0, LDC, 0, 0, CNIL, APPLY, 1, CNIL, CNIL}};
-    const std::array<Int64, 3> et{{9, 10, 12}};
+    const std::array<Int64, 4> et{{9, 10, 12, 0}};
     const std::array<Value, 1> types{{*type::IllegalArgument}};
     stack_push(*TWO);
     stack_push(*THREE);
@@ -889,7 +891,7 @@ TEST_F(vm_test, catching_excpetions_from_lddf)
     Root val{i64(17)};
     Root obj{create_object1(*type, *val)};
     const std::array<Byte, 12> bc1{{CNIL, CNIL, LDL, 0, 0, LDL, 1, 0, LDDF, CNIL, CNIL, CNIL}};
-    std::array<Int64, 3> et{{8, 9, 11}};
+    std::array<Int64, 4> et{{8, 9, 11, 0}};
     std::array<Value, 1> types{{*type::IllegalArgument}};
     stack_push(*THREE);
     stack_push(*obj);

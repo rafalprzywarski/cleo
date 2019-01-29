@@ -169,7 +169,13 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
         {
             return exception_table ?
             bytecode_fn_find_exception_handler(exception_table, p - bytecode, get_value_type(ex)) :
-            -1;
+            bytecode_fn_exception_handler{-1, -1};
+        };
+    auto handle_exception = [=](auto handler, const Byte *p, Value ex)
+        {
+            stack[stack_base + locals_size + handler.stack_size] = ex;
+            stack_pop(stack.size() - stack_base - locals_size - 1 - handler.stack_size);
+            return bytecode + handler.offset;
         };
     while (p != endp)
     {
@@ -201,12 +207,10 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             {
                 Root msg{create_string("No matching field found: " + to_string(field) + " for type: " + to_string(type))};
                 Root ex{new_illegal_argument(*msg)};
-                auto handler_offset = find_exception_handler(p, *ex);
-                if (handler_offset < 0)
+                auto handler = find_exception_handler(p, *ex);
+                if (handler.offset < 0)
                     throw_exception(*ex);
-                stack[stack_base + locals_size] = *ex;
-                stack_pop(stack.size() - stack_base - locals_size - 1);
-                p = bytecode + handler_offset;
+                p = handle_exception(handler, p, *ex);
                 break;
             }
             stack[stack.size() - 2] = get_object_element(obj, index);
@@ -267,13 +271,11 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             }
             catch (cleo::Exception const& )
             {
-                auto handler_offset = find_exception_handler(p, *current_exception);
-                if (handler_offset < 0)
+                auto handler = find_exception_handler(p, *current_exception);
+                if (handler.offset < 0)
                     throw;
                 Root ex{catch_exception()};
-                stack_pop(stack.size() - stack_base - locals_size);
-                p = bytecode + handler_offset;
-                stack_push(*ex);
+                p = handle_exception(handler, p, *ex);
             }
             break;
         }
@@ -294,13 +296,11 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             }
             catch (cleo::Exception const& )
             {
-                auto handler_offset = find_exception_handler(p, *current_exception);
-                if (handler_offset < 0)
+                auto handler = find_exception_handler(p, *current_exception);
+                if (handler.offset < 0)
                     throw;
                 Root ex{catch_exception()};
-                stack_pop(stack.size() - stack_base - locals_size);
-                p = bytecode + handler_offset;
-                stack_push(*ex);
+                p = handle_exception(handler, p, *ex);
             }
             break;
         }
@@ -323,12 +323,10 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
         case THROW:
         {
             auto ex = stack.back();
-            auto handler_offset = find_exception_handler(p, ex);
-            if (handler_offset < 0)
+            auto handler = find_exception_handler(p, ex);
+            if (handler.offset < 0)
                 throw_exception(ex);
-            stack[stack_base + locals_size] = ex;
-            stack_pop(stack.size() - stack_base - locals_size - 1);
-            p = bytecode + handler_offset;
+            p = handle_exception(handler, p, ex);
             break;
         }
         }
