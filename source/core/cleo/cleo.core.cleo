@@ -497,9 +497,9 @@
         (println (right 6 offset) (left 5 oc) (if args (pr-str (first args)) "")))
       (when exception-table
         (println "exception table:")
-        (println "  start     end handler type")
-        (doseq [{:keys [start-offset end-offset handler-offset type]} exception-table]
-          (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) type))))))
+        (println "  start     end handler stacksz type")
+        (doseq [{:keys [start-offset end-offset handler-offset stack-size type]} exception-table]
+          (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) (right 7 stack-size) type))))))
 
 
 (defmacro -> [x & forms]

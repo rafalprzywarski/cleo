@@ -1095,10 +1095,12 @@ Force disasm_exception_table(Value et)
         Root soff{create_int64(get_bytecode_fn_exception_table_start_offset(et, i))};
         Root eoff{create_int64(get_bytecode_fn_exception_table_end_offset(et, i))};
         Root hoff{create_int64(get_bytecode_fn_exception_table_handler_offset(et, i))};
+        Root ssize{create_int64(get_bytecode_fn_exception_table_stack_size(et, i))};
         Root entry{*EMPTY_MAP};
         entry = map_assoc(*entry, create_keyword("start-offset"), *soff);
         entry = map_assoc(*entry, create_keyword("end-offset"), *eoff);
         entry = map_assoc(*entry, create_keyword("handler-offset"), *hoff);
+        entry = map_assoc(*entry, create_keyword("stack-size"), *ssize);
         entry = map_assoc(*entry, create_keyword("type"), get_bytecode_fn_exception_table_type(et, i));
         det = transient_array_conj(*det, *entry);
     }
