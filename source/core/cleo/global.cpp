@@ -1023,7 +1023,7 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             p += 3;
             break;
         case vm::SETV:
-            oc = mk("SETV", get_array_elem(vars, read_u16(p + 1)));
+            oc = mk("SETV");
             dbs = transient_array_conj(*dbs, *oc);
             ++p;
             break;
