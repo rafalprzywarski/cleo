@@ -132,9 +132,9 @@ struct compile_test : Test
         ASSERT_EQ(et_types.size(), get_bytecode_fn_exception_table_size(et));
         for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
         {
-            EXPECT_EQ(et_offsets[i * 3 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
-            EXPECT_EQ(et_offsets[i * 3 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
-            EXPECT_EQ(et_offsets[i * 3 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 0], get_bytecode_fn_exception_table_start_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 1], get_bytecode_fn_exception_table_end_offset(et, i)) << "entry #" << i;
+            EXPECT_EQ(et_offsets[i * 4 + 2], get_bytecode_fn_exception_table_handler_offset(et, i)) << "entry #" << i;
             EXPECT_EQ(et_offsets[i * 4 + 3], get_bytecode_fn_exception_table_stack_size(et, i)) << "entry #" << i;
             EXPECT_EQ_REFS(et_types[i], get_bytecode_fn_exception_table_type(et, i)) << "entry #" << i;
         }
@@ -1190,6 +1190,22 @@ TEST_F(compile_test, should_compile_def)
     v = get_var(create_symbol("cleo.compile.def.test", "z"));
     EXPECT_EQ_VALS(*var_meta, get_var_meta(v));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 13, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDC, 2, 0, vm::SETV));
+
+    fn = compile_fn("(fn* [x] (def z (try* (x) (catch* cleo.core/Exception e e))))");
+    v = get_var(create_symbol("cleo.compile.def.test", "z"));
+    expect_body_with_consts_exception_table_locals_and_bytecode(*fn, 0,
+                                                                arrayv(v),
+                                                                {3, 8, 11, 1},
+                                                                {*type::Exception},
+                                                                1,
+                                                                b(vm::LDC, 0, 0,
+                                                                  vm::LDL, -1, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::CNIL,
+                                                                  vm::SETV));
 }
 
 TEST_F(compile_test, should_compile_functions_applying_functions)
@@ -1416,24 +1432,40 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::CALL, 1));
 
     fn = compile_fn("(fn* [f g x] (f (try* (x) (catch* Exception e (g)))))");
-    auto try_fn = get_fn_const(*fn, 0, 0);
-    expect_body_with_consts_and_bytecode(*fn, 0, arrayv(try_fn), b(vm::LDL, -3, -1,
-                                                                   vm::LDC, 0, 0,
-                                                                   vm::LDL, -1, -1,
-                                                                   vm::LDL, -2, -1,
-                                                                   vm::IFN, 2,
-                                                                   vm::CALL, 0,
-                                                                   vm::CALL, 1));
-    expect_body_with_consts_exception_table_locals_and_bytecode(try_fn, 0, arrayv(nil, nil), {0, 5, 8, 0}, {*type::Exception}, 1,
-                                                                b(vm::LDC, 0, 0,
-                                                                  vm::CALL, 0,
-                                                                  vm::BR, 8, 0,
-                                                                  vm::STL, 0, 0,
-                                                                  vm::LDC, 1, 0,
-                                                                  vm::CALL, 0));
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {3, 8, 11, 1}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -3, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 8, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::CALL, 1));
+
+    fn = compile_fn("(fn* [f g x] (f x g (try* (x) (catch* Exception e (g)))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {9, 14, 17, 3}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -3, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, -2, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 8, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::CALL, 3));
 
     fn = compile_fn("(fn* [f] (f (let* [x f] (try* (f) (catch* Exception e nil)))))");
-    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {9, 14, 17, 1}, {*type::Exception}, 2,
+                                                         b(vm::LDL, -1, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 4, 0,
+                                                           vm::STL, 1, 0,
+                                                           vm::CNIL,
+                                                           vm::CALL, 1));
 
     fn = compile_fn("(fn* [f g] (do (try* (f) (catch* Exception e (g e)))))");
     expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {0, 5, 8, 0}, {*type::Exception}, 1,
@@ -1456,20 +1488,110 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
                                                            vm::LDL, -1, -1,
                                                            vm::CALL, 0));
 
-    fn = compile_fn("(fn* [f] (f (do (try* (f) (catch* Exception e nil)))))");
-    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+    fn = compile_fn("(fn* [f x] (f x (if x (try* (f) (catch* Exception e nil)) (try* (f) (catch* Exception e nil)))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {12, 17, 20, 2, 27, 32, 35, 2},
+                                                         {*type::Exception, *type::Exception}, 1,
+                                                         b(vm::LDL, -2, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::BNIL, 15, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 4, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::CNIL,
+                                                           vm::BR, 12, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 4, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::CNIL,
+                                                           vm::CALL, 2));
+    fn = compile_fn("(fn* [f g x] (cleo.core/apply f x g (try* (x) (catch* Exception e (g)))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {9, 14, 17, 3}, {*type::Exception}, 1,
+                                                         b(vm::LDL, -3, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::LDL, -2, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 8, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::APPLY, 2));
 
-    fn = compile_fn("(fn* [f] (f (do (try* (f) (catch* Exception e nil)) (f))))");
-    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+    fn = compile_fn("(fn* [x y] [3 4 (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))])");
+    expect_body_with_consts_exception_table_locals_and_bytecode(*fn, 0,
+                                                                arrayv(*rt::transient_array_persistent,
+                                                                       *rt::transient_array_conj,
+                                                                       *rt::transient_array,
+                                                                       arrayv(3, 4)),
+                                                                {17, 22, 25, 4, 33, 38, 41, 3},
+                                                                {*type::Exception, *type::Exception},
+                                                                1,
+                                                                b(vm::LDC, 0, 0,
+                                                                  vm::LDC, 1, 0,
+                                                                  vm::LDC, 1, 0,
+                                                                  vm::LDC, 2, 0,
+                                                                  vm::LDC, 3, 0,
+                                                                  vm::CALL, 1,
+                                                                  vm::LDL, -2, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::CALL, 2,
+                                                                  vm::LDL, -1, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::CALL, 2,
+                                                                  vm::CALL, 1));
 
-    fn = compile_fn("(fn* [f] (if (try* (f) (catch* Exception e nil)) 1 2))");
-    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+    fn = compile_fn("(fn* [x y] #{3 4 (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))})");
+    expect_body_with_consts_exception_table_locals_and_bytecode(*fn, 0,
+                                                                arrayv(*rt::array_set_conj,
+                                                                       asetv(3, 4)),
+                                                                {9, 14, 17, 3, 25, 30, 33, 2},
+                                                                {*type::Exception, *type::Exception},
+                                                                1,
+                                                                b(vm::LDC, 0, 0,
+                                                                  vm::LDC, 0, 0,
+                                                                  vm::LDC, 1, 0,
+                                                                  vm::LDL, -2, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::CALL, 2,
+                                                                  vm::LDL, -1, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::CALL, 2));
 
-    fn = compile_fn("(fn* [f x] (if x (try* (f) (catch* Exception e nil)) (try* (f) (catch* Exception e nil))))");
-    EXPECT_EQ_REFS(nil, get_bytecode_fn_body_consts(get_bytecode_fn_body(*fn, 0)));
-
-    fn = compile_fn("(fn* [f x] (f (if x (try* (f) (catch* Exception e nil)) (try* (f) (catch* Exception e nil)))))");
-    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(get_fn_const(*fn, 0, 0)));
+    fn = compile_fn("(fn* [x y] {3 4 (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))})");
+    expect_body_with_consts_exception_table_locals_and_bytecode(*fn, 0,
+                                                                arrayv(*rt::persistent_hash_map_assoc,
+                                                                       phmapv(3, 4)),
+                                                                {6, 11, 14, 2, 20, 25, 28, 3},
+                                                                {*type::Exception, *type::Exception},
+                                                                1,
+                                                                b(vm::LDC, 0, 0,
+                                                                  vm::LDC, 1, 0,
+                                                                  vm::LDL, -2, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::LDL, -1, -1,
+                                                                  vm::CALL, 0,
+                                                                  vm::BR, 6, 0,
+                                                                  vm::STL, 0, 0,
+                                                                  vm::LDL, 0, 0,
+                                                                  vm::CALL, 3));
 
     Root form{read_str("[catch* Exception e (g e)]")};
     form = seq(*form);
@@ -1559,6 +1681,25 @@ TEST_F(compile_test, should_compile_functions_with_try_finally)
                                                            vm::POP,
                                                            vm::LDL, 0, 0,
                                                            vm::THROW));
+
+    fn = compile_fn("(fn* [f g x] (f g (try* (x) (finally* (g)))))");
+    expect_body_with_exception_table_locals_and_bytecode(*fn, 0, {6, 11, 20, 2}, {nil}, 1,
+                                                         b(vm::LDL, -3, -1,
+                                                           vm::LDL, -2, -1,
+                                                           vm::LDL, -1, -1,
+                                                           vm::CALL, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
+                                                           vm::BR, 13, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, -2, -1,
+                                                           vm::CALL, 0,
+                                                           vm::POP,
+                                                           vm::LDL, 0, 0,
+                                                           vm::THROW,
+                                                           vm::CALL, 2));
+
     Root form{read_str("[finally* (g)]")};
     form = seq(*form);
     form = array(TRY, listv(create_symbol("f")), *form);

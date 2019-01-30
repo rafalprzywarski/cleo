@@ -34,6 +34,7 @@ struct Compiler
         std::int16_t recur_locals_index{};
         Int64 recur_start_offset{};
         std::uint16_t locals_size{};
+        Int64 stack_depth{};
     };
 
     std::vector<vm::Byte> code;
@@ -53,12 +54,12 @@ struct Compiler
     void compile_local_ref(Value sym);
     void compile_call(Scope scope, Value val);
     void compile_apply(Scope scope, Value form);
-    void compile_if(Scope scope, Value val, bool wrap_try);
-    void compile_do(Scope scope, Value val, bool wrap_try);
+    void compile_if(Scope scope, Value val);
+    void compile_do(Scope scope, Value val);
     void compile_quote(Value form);
     void update_locals_size(Scope scope);
     Scope compile_let_bindings(Scope scope, Value bindings, Root& llocals);
-    void compile_let(Scope scope, Value form, bool wrap_try);
+    void compile_let(Scope scope, Value form);
     void compile_loop(Scope scope, Value form);
     void compile_recur(Scope scope, Value form);
     void compile_vector(Scope scope, Value val);
@@ -67,11 +68,10 @@ struct Compiler
     void compile_def(Scope scope, Value form);
     void compile_fn(Scope scope, Value form);
     void compile_throw(Scope scope, Value form);
-    void add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type);
+    void add_exception_handler(Int64 start, Int64 end, Int64 handler, Int64 stack_size, Value type);
     void compile_try(Scope scope, Value form);
-    void compile_try_wrapped(Scope scope, Value form);
     void compile_dot(Scope scope, Value form);
-    void compile_value(Scope scope, Value val, bool wrap_try = true);
+    void compile_value(Scope scope, Value val);
 };
 
 Compiler::Scope no_recur(Compiler::Scope s)
@@ -276,6 +276,7 @@ void Compiler::compile_call(Scope scope, Value val)
     {
         v = seq_first(*e);
         compile_value(scope, *v);
+        scope.stack_depth++;
         ++n;
     }
     --n;
@@ -294,12 +295,13 @@ void Compiler::compile_apply(Scope scope, Value form)
     {
         v = seq_first(*e);
         compile_value(scope, *v);
+        scope.stack_depth++;
     }
     append(code, vm::APPLY, size - 3);
 }
 
 
-void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
+void Compiler::compile_if(Scope scope, Value val)
 {
     Root cond{seq_next(val)};
     if (!*cond)
@@ -314,15 +316,15 @@ void Compiler::compile_if(Scope scope, Value val, bool wrap_try)
     compile_value(no_recur(scope), *cond);
     auto bnil_offset = append_branch(code, vm::BNIL, 0);
     then = seq_first(*then);
-    compile_value(scope, *then, wrap_try);
+    compile_value(scope, *then);
     auto br_offset = append_branch(code, vm::BR, 0);
     set_branch_target(code, bnil_offset, code.size());
     else_ = seq_first(*else_);
-    compile_value(scope, *else_, wrap_try);
+    compile_value(scope, *else_);
     set_branch_target(code, br_offset, code.size());
 }
 
-void Compiler::compile_do(Scope scope, Value val, bool wrap_try)
+void Compiler::compile_do(Scope scope, Value val)
 {
     if (seq_next(val).value().is_nil())
         return append(code, vm::CNIL);
@@ -331,11 +333,11 @@ void Compiler::compile_do(Scope scope, Value val, bool wrap_try)
     for (s = seq_next(val); seq_next(*s).value(); s = seq_next(*s))
     {
         e = seq_first(*s);
-        compile_value(no_recur_scope, *e, wrap_try);
+        compile_value(no_recur_scope, *e);
         append(code, vm::POP);
     }
     e = seq_first(*s);
-    compile_value(scope, *e, wrap_try);
+    compile_value(scope, *e);
 }
 
 void Compiler::compile_quote(Value form)
@@ -392,7 +394,7 @@ Compiler::Scope Compiler::compile_let_bindings(Scope scope, Value bindings, Root
     return scope;
 }
 
-void Compiler::compile_let(Scope scope, Value form, bool wrap_try)
+void Compiler::compile_let(Scope scope, Value form)
 {
     Root bindings{check_let_bindings(LET, form)};
     Root llocals;
@@ -401,7 +403,7 @@ void Compiler::compile_let(Scope scope, Value form, bool wrap_try)
     Root expr{seq_next(form)};
     expr = seq_next(*expr);
     expr = seq_first(*expr);
-    compile_value(scope, *expr, wrap_try);
+    compile_value(scope, *expr);
 }
 
 void Compiler::compile_loop(Scope scope, Value form)
@@ -501,10 +503,12 @@ void Compiler::compile_vector(Scope scope, Value val)
     Root prefix{get_vector_prefix(val, prefix_len)};
     compile_const(*prefix);
     append(code, vm::CALL, 1);
+    scope.stack_depth += size - prefix_len + 2;
     for (Int64 i = prefix_len; i < size; ++i)
     {
         compile_value(scope, get_array_elem(val, i));
         append(code, vm::CALL, 2);
+        scope.stack_depth--;
     }
     append(code, vm::CALL, 1);
 }
@@ -533,6 +537,7 @@ void Compiler::compile_hash_set(Scope scope, Value val)
     for (Int64 i = subset_size; i < size; ++i)
         compile_const(*rt::array_set_conj);
     compile_const(*subset);
+    scope.stack_depth = size - subset_size + 1;
     for (Int64 i = 0; i < size; ++i)
     {
         auto e = get_array_set_elem(val, i);
@@ -540,6 +545,7 @@ void Compiler::compile_hash_set(Scope scope, Value val)
         {
             compile_value(scope, e);
             append(code, vm::CALL, 2);
+            scope.stack_depth--;
         }
     }
 }
@@ -569,6 +575,7 @@ void Compiler::compile_hash_map(Scope scope, Value val)
     for (Int64 i = submap_size; i < size; ++i)
         compile_const(*rt::persistent_hash_map_assoc);
     compile_const(*submap);
+    scope.stack_depth = size - submap_size + 1;
     for (Root s{seq(val)}; *s; s = seq_next(*s))
     {
         Root kv{seq_first(*s)};
@@ -577,8 +584,10 @@ void Compiler::compile_hash_map(Scope scope, Value val)
         if (!persistent_hash_map_contains(*submap, k))
         {
             compile_value(scope, k);
+            scope.stack_depth++;
             compile_value(scope, v);
             append(code, vm::CALL, 3);
+            scope.stack_depth -= 2;
         }
     }
 }
@@ -617,7 +626,9 @@ void Compiler::compile_def(Scope scope, Value form_)
         {get_string_ptr(sym_name), get_string_len(sym_name)});
     auto var = define(*name, nil, *meta);
     compile_const(var);
+    scope.stack_depth++;
     compile_value(scope, *val);
+    scope.stack_depth++;
     compile_value(scope, *meta);
     append(code, vm::SETV);
 }
@@ -649,12 +660,12 @@ void Compiler::compile_throw(Scope scope, Value form_)
     append(code, vm::THROW);
 }
 
-void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Value type)
+void Compiler::add_exception_handler(Int64 start, Int64 end, Int64 handler, Int64 stack_size, Value type)
 {
     et_entries.push_back(start);
     et_entries.push_back(end);
     et_entries.push_back(handler);
-    et_entries.push_back(0);
+    et_entries.push_back(stack_size);
     et_types.push_back(type);
 }
 
@@ -664,7 +675,7 @@ void Compiler::compile_try(Scope scope, Value form_)
     auto start_offset = code.size();
     Root form{seq_next(form_)};
     Root expr{*form ? seq_first(*form) : nil};
-    compile_value(scope, *expr, false);
+    compile_value(scope, *expr);
     Root handler_{*form ? seq_next(*form) : nil};
     if (!*handler_)
         return;
@@ -696,7 +707,7 @@ void Compiler::compile_try(Scope scope, Value form_)
         auto type = maybe_resolve_var(*type_sym);
         if (!type)
             throw_compilation_error("unable to resolve symbol: " + to_string(*type_sym));
-        add_exception_handler(start_offset, br_offset, code.size(), get_var_value(type));
+        add_exception_handler(start_offset, br_offset, code.size(), scope.stack_depth, get_var_value(type));
         append_STL(code, index);
         compile_value(scope, *expr);
         set_branch_target(code, br_offset, code.size());
@@ -713,7 +724,7 @@ void Compiler::compile_try(Scope scope, Value form_)
         compile_value(scope, *expr);
         append(code, vm::POP);
         auto br_offset = append_branch(code, vm::BR, 0);
-        add_exception_handler(start_offset, end_offset, code.size(), nil);
+        add_exception_handler(start_offset, end_offset, code.size(), scope.stack_depth, nil);
         Root rlocal;
         Int64 index{};
         std::tie(scope, index) = add_local(scope, nil, rlocal);
@@ -727,15 +738,6 @@ void Compiler::compile_try(Scope scope, Value form_)
     }
     else
         throw_compilation_error("expected " + to_string(CATCH) + " or " + to_string(FINALLY) + " block in " + to_string(TRY));
-}
-
-void Compiler::compile_try_wrapped(Scope scope, Value form)
-{
-    Root call{create_cons(form, nil)};
-    call = create_cons(*EMPTY_VECTOR, *call);
-    call = create_cons(FN, *call);
-    call = create_cons(*call, nil);
-    compile_value(scope, *call);
 }
 
 void Compiler::compile_dot(Scope scope, Value form)
@@ -764,7 +766,7 @@ Value maybe_resolved_var_name(Value sym)
     return v ? get_var_name(v) : nil;
 }
 
-void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
+void Compiler::compile_value(Scope scope, Value val)
 {
     Root xval{macroexpand(val)};
     val = *xval;
@@ -777,13 +779,13 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
     {
         Root first{seq_first(val)};
         if (*first == IF)
-            return compile_if(scope, val, wrap_try);
+            return compile_if(scope, val);
         if (*first == DO)
-            return compile_do(scope, val, wrap_try);
+            return compile_do(scope, val);
         if (*first == QUOTE)
             return compile_quote(val);
         if (*first == LET)
-            return compile_let(scope, val, wrap_try);
+            return compile_let(scope, val);
         if (*first == RECUR)
             return compile_recur(scope, val);
         if (*first == LOOP)
@@ -797,7 +799,7 @@ void Compiler::compile_value(Scope scope, Value val, bool wrap_try)
         if (*first == THROW)
             return compile_throw(scope, val);
         if (*first == TRY)
-            return wrap_try ? compile_try_wrapped(scope, val) : compile_try(scope, val);
+            return compile_try(scope, val);
         if (*first == DOT)
             return compile_dot(scope, val);
 
@@ -831,7 +833,7 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     Root params{seq_first(form)};
     Root locals{create_locals(name, *params)};
     auto scope = create_fn_body_scope(form, *locals, parent_locals);
-    c.compile_value(scope, *val, false);
+    c.compile_value(scope, *val);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.parent_local_refs));
     auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
     for (auto off : c.parent_local_ref_offsets)
