@@ -1,4 +1,6 @@
 (ns cleo.core.test)
+(require 'cleo.compiler)
+(alias 'cc 'cleo.compiler)
 
 
 (def tests (atom {}))
@@ -72,6 +74,25 @@
                " expected to throw " ~(pr-str expected)
                " actual exception: " ~'e)))))
 
+
+(def {:macro :true} assert-compilation-error
+  (fn* [&form &env expected actual]
+    `(try*
+       (try*
+         (let* [actual-val# ~actual]
+           (fail
+            "assertion failed: " ~(pr-str actual)
+            " expected to throw " ~(pr-str CompilationError) " with message " ~(pr-str expected)
+            " actual value: " actual-val#))
+         (catch* CompilationError ~'e
+           (when (not (= ~expected (~'.-msg ~'e)))
+             (fail "assertion failed: " ~(pr-str actual)
+                   " expected to throw " ~(pr-str CompilationError) " with message " ~(pr-str expected)
+                   " actual exception: " ~'e))))
+       (catch* Exception ~'e
+         (fail "assertion failed: " ~(pr-str actual)
+               " expected to throw " ~(pr-str CompilationError) " with message " ~(pr-str expected)
+               " actual exception: " ~'e)))))
 
 (def main
   (fn* main []
@@ -527,3 +548,29 @@
   (assert= '(f0 a b x) (macroexpand '(->> x (f0 a b))))
   (assert= '(f2 (f1 (f0 x))) (macroexpand '(->> x f0 f1 f2)))
   (assert= '(f1 b c (f0 a x)) (macroexpand '(->> x (f0 a) (f1 b c)))))
+
+
+(deftest parse
+  (assert= 10 (cc/parse 10))
+  (assert= 3.5 (cc/parse 3.5))
+  (assert= "abc" (cc/parse "abc"))
+  (assert= :abc (cc/parse :abc))
+  (assert= nil (cc/parse nil))
+  (assert= () (cc/parse ()))
+
+  (assert= {:tag :const, :value {:a 10}} (cc/parse {:a 10}))
+
+  (assert= {:tag :var, :name 'abc} (cc/parse 'abc))
+
+  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}} (cc/parse '(if c a)))
+  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else nil} (cc/parse '(if c a nil)))
+  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else {:tag :var, :name 'b}} (cc/parse '(if c a b)))
+
+  (assert= {:tag :call, :fn [7], :args []} (cc/parse '([7])))
+  (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [10 {:tag :var, :name 'x}]} (cc/parse '(f 10 x))))
+
+
+(deftest parse-errors
+  (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
+  (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))
+  (assert-compilation-error "Too many arguments to if" (cc/parse '(if 1 2 3 4 ))))

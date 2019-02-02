@@ -1,0 +1,59 @@
+(ns cleo.compiler)
+
+
+(def parse)
+
+
+(defn- parse-const [form]
+  (if (map? form)
+    {:tag :const
+     :value form}
+    form))
+
+
+(defn- parse-symbol [s]
+  {:tag :var
+   :name s})
+
+
+(defn- parse-if [form]
+  (let [form (next form)
+        cond (if form
+               (first form)
+               (throw (CompilationError. "Too few arguments to if")))
+        form (next form)
+        then (if form
+               (first form)
+               (throw (CompilationError. "Too few arguments to if")))
+        expr {:tag :if
+              :cond (parse cond)
+              :then (parse then)}
+        form (next form)
+        expr (if form
+               (assoc expr :else (parse (first form)))
+               expr)]
+    (if (next form)
+      (throw (CompilationError. "Too many arguments to if"))
+      expr)))
+
+
+(defn- parse-call [form]
+  {:tag :call,
+   :fn (parse (first form))
+   :args (vec (map parse (next form)))})
+
+
+(defn- parse-seq [form]
+  (if-let [form (seq form)]
+    (let [f (first form)]
+      (cond
+        (= f 'if) (parse-if form)
+        :else (parse-call form)))
+    ()))
+
+
+(defn parse [form]
+  (cond
+    (symbol? form) (parse-symbol form)
+    (seq? form) (parse-seq form)
+    :else (parse-const form)))
