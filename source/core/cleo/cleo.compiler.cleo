@@ -40,6 +40,13 @@
    :exprs (vec (map parse (next form)))})
 
 
+(defn- parse-quote [form]
+  (when (or (not (next form))
+            (nnext form))
+    (throw (CompilationError. (str "Wrong number of args (" (dec (count form)) ") passed to quote, form: " (pr-str form)))))
+  (parse-const (second form)))
+
+
 (defn- parse-call [form]
   {:tag :call,
    :fn (parse (first form))
@@ -52,6 +59,7 @@
       (cond
         (= f 'if) (parse-if form)
         (= f 'do) (parse-do form)
+        (= f 'quote) (parse-quote form)
         :else (parse-call form)))
     ()))
 

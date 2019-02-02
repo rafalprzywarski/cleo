@@ -48,7 +48,7 @@
        (let* [actual-val# ~actual]
          (fail-unless actual-val#
                       "assertion failed: " ~(pr-str actual)
-                      " expected to be true, actual: " actual-val#))
+                      " expected to be true, actual: " (pr-str actual-val#)))
        (catch* Exception ~'e
          (fail "assertion failed: " ~(pr-str actual)
                " expected to be true, actual exception: " ~'e)))))
@@ -67,7 +67,7 @@
            (fail
             "assertion failed: " ~(pr-str actual)
             " expected to throw " ~(pr-str expected)
-            " actual value: " actual-val#))
+            " actual value: " (pr-str actual-val#)))
          (catch* ~expected ~'e nil))
        (catch* Exception ~'e
          (fail "assertion failed: " ~(pr-str actual)
@@ -83,7 +83,7 @@
            (fail
             "assertion failed: " ~(pr-str actual)
             " expected to throw " ~(pr-str CompilationError) " with message " ~(pr-str expected)
-            " actual value: " actual-val#))
+            " actual value: " (pr-str actual-val#)))
          (catch* CompilationError ~'e
            (when (not (= ~expected (~'.-msg ~'e)))
              (fail "assertion failed: " ~(pr-str actual)
@@ -569,6 +569,10 @@
   (assert= {:tag :call, :fn [7], :args []} (cc/parse '([7])))
   (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [10 {:tag :var, :name 'x}]} (cc/parse '(f 10 x)))
 
+  (assert= 10 (cc/parse ''10))
+  (assert= '(10 20) (cc/parse ''(10 20)))
+  (assert= {:tag :const, :value {:a :b}} (cc/parse ''{:a :b}))
+
   (assert= {:tag :do, :exprs []} (cc/parse '(do)))
   (assert= {:tag :do, :exprs [{:tag :var, :name 'x}]} (cc/parse '(do x)))
   (assert= {:tag :do, :exprs [{:tag :var, :name 'x} {:tag :var, :name 'y}]} (cc/parse '(do x y))))
@@ -577,4 +581,7 @@
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))
-  (assert-compilation-error "Too many arguments to if" (cc/parse '(if 1 2 3 4 ))))
+  (assert-compilation-error "Too many arguments to if" (cc/parse '(if 1 2 3 4 )))
+
+  (assert-compilation-error "Wrong number of args (0) passed to quote, form: (quote)" (cc/parse '(quote)))
+  (assert-compilation-error "Wrong number of args (2) passed to quote, form: (quote 10 \"20\")" (cc/parse '(quote 10 "20"))))
