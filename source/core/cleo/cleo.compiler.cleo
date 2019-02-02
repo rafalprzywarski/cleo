@@ -37,6 +37,11 @@
       expr)))
 
 
+(defn- parse-do [form]
+  {:tag :do
+   :exprs (vec (map parse (next form)))})
+
+
 (defn- parse-call [form]
   {:tag :call,
    :fn (parse (first form))
@@ -48,6 +53,7 @@
     (let [f (first form)]
       (cond
         (= f 'if) (parse-if form)
+        (= f 'do) (parse-do form)
         :else (parse-call form)))
     ()))
 

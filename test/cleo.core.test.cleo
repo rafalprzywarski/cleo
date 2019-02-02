@@ -567,7 +567,11 @@
   (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else {:tag :var, :name 'b}} (cc/parse '(if c a b)))
 
   (assert= {:tag :call, :fn [7], :args []} (cc/parse '([7])))
-  (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [10 {:tag :var, :name 'x}]} (cc/parse '(f 10 x))))
+  (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [10 {:tag :var, :name 'x}]} (cc/parse '(f 10 x)))
+
+  (assert= {:tag :do, :exprs []} (cc/parse '(do)))
+  (assert= {:tag :do, :exprs [{:tag :var, :name 'x}]} (cc/parse '(do x)))
+  (assert= {:tag :do, :exprs [{:tag :var, :name 'x} {:tag :var, :name 'y}]} (cc/parse '(do x y))))
 
 
 (deftest parse-errors
