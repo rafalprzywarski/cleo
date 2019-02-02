@@ -25,16 +25,14 @@
         then (if form
                (first form)
                (throw (CompilationError. "Too few arguments to if")))
-        expr {:tag :if
-              :cond (parse cond)
-              :then (parse then)}
         form (next form)
-        expr (if form
-               (assoc expr :else (parse (first form)))
-               expr)]
+        else (first form)]
     (if (next form)
       (throw (CompilationError. "Too many arguments to if"))
-      expr)))
+      {:tag :if
+       :cond (parse cond)
+       :then (parse then)
+       :else (parse else)})))
 
 
 (defn- parse-do [form]

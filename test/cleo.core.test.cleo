@@ -562,7 +562,7 @@
 
   (assert= {:tag :var, :name 'abc} (cc/parse 'abc))
 
-  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}} (cc/parse '(if c a)))
+  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else nil} (cc/parse '(if c a)))
   (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else nil} (cc/parse '(if c a nil)))
   (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else {:tag :var, :name 'b}} (cc/parse '(if c a b)))
 
