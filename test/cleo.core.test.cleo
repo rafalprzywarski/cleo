@@ -718,7 +718,13 @@
              :member 'mz}] (:exprs (cc/parse '(let* [x 1] (. x -mz)))))
   (assert= (:exprs (cc/parse '(let* [x 1] (cleo.core/persistent! (cleo.core/conj! (cleo.core/transient []) x))))) (:exprs (cc/parse '(let* [x 1] [x]))))
   (assert= (:exprs (cc/parse '(let* [x 1] (cleo.core/conj #{} x)))) (:exprs (cc/parse '(let* [x 1] #{x}))))
-  (assert= (:exprs (cc/parse '(let* [x 1 y 2] (cleo.core/assoc {3 4 5 6} x y)))) (:exprs (cc/parse '(let* [x 1 y 2] {3 4 5 6 x y})))))
+  (assert= (:exprs (cc/parse '(let* [x 1 y 2] (cleo.core/assoc {3 4 5 6} x y)))) (:exprs (cc/parse '(let* [x 1 y 2] {3 4 5 6 x y}))))
+  (assert= [{:tag :local, :index 0}] (:exprs (cc/parse '(let* [x 1] (try* x)))))
+  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :finally {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [f 1 g 2] (try* f (finally* g))))))
+  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :catch {:type 'X, :local {:name 'x :index 2}, :expr {:tag :local, :index 1}}}]
+           (:exprs (cc/parse '(let* [f 1 g 2] (try* f (catch* X x g))))))
+  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :catch {:type 'X, :local {:name 'x :index 2}, :expr {:tag :local, :index 2}}}]
+           (:exprs (cc/parse '(let* [f 1 g 2] (try* f (catch* X x x))))))  )
 
 
 (defmacro add-macro [x y] `(cleo.core/+ ~x ~y))
@@ -726,6 +732,20 @@
 
 (deftest parse-macro
   (assert= (cc/parse '(cleo.core/+ (cleo.core/+ 1 2) (cleo.core/+ 3 4))) (cc/parse '(cleo.core.test/add-macro (cleo.core.test/add-macro 1 2) (cleo.core.test/add-macro 3 4)))))
+
+
+(deftest parse-try
+  (assert= nil (cc/parse '(try*)))
+  (assert= {:tag :var, :name 'x} (cc/parse '(try* x))))
+
+
+(deftest parse-try-catch
+  (assert= {:tag :try, :expr {:tag :var, :name 'f}, :catch {:type 'X, :local {:name 'x :index 0}, :expr {:tag :var, :name 'g}}} (cc/parse '(try* f (catch* X x g))))
+  (assert= {:tag :try, :expr {:tag :var, :name 'f}, :catch {:type 'X, :local {:name 'x :index 0}, :expr {:tag :local, :index 0}}} (cc/parse '(try* f (catch* X x x)))))
+
+
+(deftest parse-try-finally
+  (assert= {:tag :try, :expr {:tag :var, :name 'f}, :finally {:tag :var, :name 'g}} (cc/parse '(try* f (finally* g)))))
 
 
 (deftest parse-errors
@@ -766,4 +786,14 @@
   (assert-compilation-error "Malformed member expression" (cc/parse '(. x)))
   (assert-compilation-error "Malformed member expression" (cc/parse '(.)))
   (assert-compilation-error "Malformed member expression" (cc/parse '(. x y)))
-  (assert-compilation-error "Malformed member expression" (cc/parse '(. x -y 20))))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x -y 20)))
+
+  (assert-compilation-error "expected catch* or finally* block in try*" (cc/parse '(try* 10 20)))
+  (assert-compilation-error "expected catch* or finally* block in try*" (cc/parse '(try* 10 (something))))
+  (assert-compilation-error "missing exception type in catch*" (cc/parse '(try* 10 (catch*))))
+  (assert-compilation-error "missing exception binding in catch*" (cc/parse '(try* 10 (catch* Exception))))
+  (assert-compilation-error "missing catch* body" (cc/parse '(try* 10 (catch* Exception x))))
+  (assert-compilation-error "missing finally* body" (cc/parse '(try* 10 (finally*))))
+  (assert-compilation-error "Too many expressions in finally*, expected one" (cc/parse '(try* 10 (finally* 20 30))))
+  (assert-compilation-error "Too many expressions in catch*, expected one" (cc/parse '(try* 10 (catch* Exception x 20 30))))
+  (assert-compilation-error "Too many expressions in try*" (cc/parse '(try* 10 (catch* Exception x nil) (finally* nil)))))

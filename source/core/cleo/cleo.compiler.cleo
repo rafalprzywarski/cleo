@@ -147,6 +147,54 @@
      :member (symbol nil (subs member 1))}))
 
 
+(defn- parse-finally [scope ast form]
+  (when (not form)
+    (throw (CompilationError. "missing finally* body")))
+  (when (next form)
+    (throw (CompilationError. "Too many expressions in finally*, expected one")))
+  (assoc ast :finally (parse scope (first form))))
+
+
+(defn- parse-catch [scope ast form]
+  (let [type (if form
+               (first form)
+               (throw (CompilationError. "missing exception type in catch*")))
+        form (next form)
+        binding (if form
+                  (first form)
+                  (throw (CompilationError. "missing exception binding in catch*")))
+        form (next form)
+        expr (if form
+               (first form)
+               (throw (CompilationError. "missing catch* body")))]
+    (when (next form)
+      (throw (CompilationError. "Too many expressions in catch*, expected one")))
+    (assoc ast :catch {:type type
+                       :local {:name binding, :index (get scope :next-local-index 0)} ; bad
+                       :expr (parse (add-local scope binding) expr)})))
+
+
+(defn- parse-try [scope form]
+  (let [form (next form)
+        expr (first form)
+        ast {:tag :try
+             :expr (parse scope expr)}
+        form (next form)]
+    (if form
+      (let [form (if (next form)
+                   (throw (CompilationError. "Too many expressions in try*"))
+                   (first form))
+            s (if (seq? form)
+                (first form)
+                (throw (CompilationError. "expected catch* or finally* block in try*")))
+            form (next form)]
+        (cond
+          (= s 'finally*) (parse-finally scope ast form)
+          (= s 'catch*) (parse-catch scope ast form)
+          :else  (throw (CompilationError. "expected catch* or finally* block in try*"))))
+      (:expr ast))))
+
+
 (defn- parse-call [scope form]
   {:tag :call,
    :fn (parse scope (first form))
@@ -165,6 +213,7 @@
         (= f 'def) (parse-def scope form)
         (= f 'throw) (parse-throw scope form)
         (= f '.) (parse-dot scope form)
+        (= f 'try*) (parse-try scope form)
         :else (parse-call scope form)))
     ()))
 
