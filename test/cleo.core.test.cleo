@@ -697,6 +697,13 @@
   (assert= (:exprs (cc/parse '(let* [x 1 y 2] (cleo.core/assoc {3 4 5 6} x y)))) (:exprs (cc/parse '(let* [x 1 y 2] {3 4 5 6 x y})))))
 
 
+(defmacro add-macro [x y] `(cleo.core/+ ~x ~y))
+
+
+(deftest parse-macro
+  (assert= (cc/parse '(cleo.core/+ (cleo.core/+ 1 2) (cleo.core/+ 3 4))) (cc/parse '(cleo.core.test/add-macro (cleo.core.test/add-macro 1 2) (cleo.core.test/add-macro 3 4)))))
+
+
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))

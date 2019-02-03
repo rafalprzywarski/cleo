@@ -241,10 +241,11 @@
   ([form]
    (parse nil form))
   ([scope form]
-   (cond
-     (symbol? form) (parse-symbol scope form)
-     (seq? form) (parse-seq scope form)
-     (vector? form) (parse-vector scope form)
-     (set? form) (parse-set scope form)
-     (map? form) (parse-map scope form)
-     :else (parse-const form))))
+   (let [form (macroexpand form)]
+     (cond
+       (symbol? form) (parse-symbol scope form)
+       (seq? form) (parse-seq scope form)
+       (vector? form) (parse-vector scope form)
+       (set? form) (parse-set scope form)
+       (map? form) (parse-map scope form)
+       :else (parse-const form)))))
