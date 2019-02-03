@@ -624,6 +624,10 @@
   (assert= {:tag :throw, :expr {:tag :var, :name 'x}} (cc/parse '(throw x))))
 
 
+(deftest parse-dot
+  (assert= {:tag :dot, :expr {:tag :var, :name 'x}, :member 'xf} (cc/parse '(. x -xf))))
+
+
 (deftest parse-let-with-other-forms
   (assert= [{:tag :if
              :cond {:tag :local, :index 1}
@@ -640,7 +644,10 @@
              :meta {10 20}
              :expr {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [x 1 y 2] (def {10 20} x y)))))
   (assert= [{:tag :throw
-             :expr {:tag :local, :index 0}}] (:exprs (cc/parse '(let* [x 1] (throw x))))))
+             :expr {:tag :local, :index 0}}] (:exprs (cc/parse '(let* [x 1] (throw x)))))
+  (assert= [{:tag :dot
+             :expr {:tag :local, :index 0}
+             :member 'mz}] (:exprs (cc/parse '(let* [x 1] (. x -mz))))))
 
 
 (deftest parse-errors
@@ -666,4 +673,12 @@
   (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 x)))
 
   (assert-compilation-error "Too few arguments to throw, expected a single value" (cc/parse '(throw)))
-  (assert-compilation-error "Too many arguments to throw, expected a single value" (cc/parse '(throw 10 20))))
+  (assert-compilation-error "Too many arguments to throw, expected a single value" (cc/parse '(throw 10 20)))
+
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x y)))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x 10)))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x -)))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x)))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(.)))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x y)))
+  (assert-compilation-error "Malformed member expression" (cc/parse '(. x -y 20))))

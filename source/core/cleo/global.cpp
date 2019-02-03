@@ -326,6 +326,7 @@ const Value META = create_symbol("cleo.core", "meta");
 const Value THE_NS = create_symbol("cleo.core", "the-ns");
 const Value FIND_NS = create_symbol("cleo.core", "find-ns");
 const Value RESOLVE = create_symbol("cleo.core", "resolve");
+const Value SUBS = create_symbol("cleo.core", "subs");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1162,6 +1163,36 @@ Value the_ns(Value ns)
     return get_ns(ns);
 }
 
+Force subs(Value s, Value start)
+{
+    check_type("s", s, *type::String);
+    check_type("start", start, *type::Int64);
+    return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start)));
+}
+
+Force subs(Value s, Value start, Value end)
+{
+    check_type("s", s, *type::String);
+    check_type("start", start, *type::Int64);
+    return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start), get_int64_value(end)));
+}
+
+Force string_get(Value s, Value idx, Value def)
+{
+    check_type("s", s, *type::String);
+    if (get_value_tag(idx) != tag::INT64)
+        return def;
+    Int64 i = get_int64_value(idx);
+    if (i < 0 || i >= get_string_len(s))
+        return def;
+    return create_string(std::string(1, get_string_ptr(s)[i]));
+}
+
+Force string_get(Value s, Value idx)
+{
+    return string_get(s, idx, nil);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1253,6 +1284,8 @@ struct Initialize
         define_function(THE_NS, create_native_function1<the_ns, &THE_NS>());
         define_function(FIND_NS, create_native_function1<find_ns, &FIND_NS>());
         define_function(RESOLVE, create_native_function1<maybe_resolve_var, &RESOLVE>());
+
+        define_function(SUBS, create_native_function2or3<subs, subs, &SUBS>());
 
         Root f;
 
@@ -1434,6 +1467,9 @@ struct Initialize
 
         f = create_native_function2or3<nil_get, nil_get, &GET>();
         define_method(GET, nil, *f);
+
+        f = create_native_function2or3<string_get, string_get, &GET>();
+        define_method(GET, *type::String, *f);
 
         define_multimethod(CONTAINS, *first_type, undefined);
 

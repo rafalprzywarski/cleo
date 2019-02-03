@@ -124,6 +124,21 @@
      :expr (parse scope (first form))}))
 
 
+(defn- parse-dot [scope form]
+  (let [fail (fn [] (throw (CompilationError. "Malformed member expression")))
+        form (next form)
+        expr (if form (parse scope (first form)) (fail))
+        form (next form)
+        member (if form (name (first form)) (fail))]
+    (when (or (< (count member) 2)
+              (not (= "-" (get member 0)))
+              (next form))
+      (fail))
+    {:tag :dot
+     :expr expr
+     :member (symbol nil (subs member 1))}))
+
+
 (defn- parse-call [scope form]
   {:tag :call,
    :fn (parse scope (first form))
@@ -140,6 +155,7 @@
         (= f 'let*) (parse-let scope form)
         (= f 'def) (parse-def scope form)
         (= f 'throw) (parse-throw scope form)
+        (= f '.) (parse-dot scope form)
         :else (parse-call scope form)))
     ()))
 
