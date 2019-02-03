@@ -160,6 +160,34 @@
     ()))
 
 
+(defn- is-const [form]
+  (and (not (symbol? form))
+       (not (seq? form))
+       (or (not (vector? form))
+           (every? is-const form))))
+
+
+(defn- split-vector-by-const [v]
+  (if (every? is-const v)
+    [v, []]
+    (loop [more (seq v)
+           prefix (transient [])]
+      (if (is-const (first more))
+        (recur (next more) (conj! prefix (first more)))
+        [(persistent! prefix) (vec more)]))))
+
+
+(defn- parse-vector [scope form]
+  (let [[prefix more] (split-vector-by-const form)]
+    (if (seq more)
+      (parse scope
+             (list 'cleo.core/persistent!
+                   (reduce (fn [call elem] (list 'cleo.core/conj! call elem))
+                           (list 'cleo.core/transient prefix)
+                           more)))
+      form)))
+
+
 (defn parse
   ([form]
    (parse nil form))
@@ -167,4 +195,5 @@
    (cond
      (symbol? form) (parse-symbol scope form)
      (seq? form) (parse-seq scope form)
+     (vector? form) (parse-vector scope form)
      :else (parse-const form))))

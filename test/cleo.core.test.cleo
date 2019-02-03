@@ -628,6 +628,19 @@
   (assert= {:tag :dot, :expr {:tag :var, :name 'x}, :member 'xf} (cc/parse '(. x -xf))))
 
 
+(deftest parse-vector
+  (assert= [] (cc/parse []))
+  (assert= [5 6 7] (cc/parse [5 6 7]))
+  (assert= (cc/parse '(cleo.core/persistent! (cleo.core/conj! (cleo.core/transient [3 4]) x))) (cc/parse '[3 4 x]))
+  (assert= (cc/parse '(cleo.core/persistent! (cleo.core/conj! (cleo.core/conj! (cleo.core/conj! (cleo.core/transient []) z) x) y))) (cc/parse '[z x y]))
+  (assert= (cc/parse '(cleo.core/persistent! (cleo.core/conj! (cleo.core/transient [2 4.0 "x" :k]) (f 3)))) (cc/parse '[2 4.0 "x" :k (f 3)]))
+  (assert= [10 [20 30]] (cc/parse [10 [20 30]]))
+  (assert= (cc/parse '(cleo.core/persistent!
+                       (cleo.core/conj!
+                        (cleo.core/transient [10])
+                        (cleo.core/persistent! (cleo.core/conj! (cleo.core/transient [20]) x))))) (cc/parse '[10 [20 x]])))
+
+
 (deftest parse-let-with-other-forms
   (assert= [{:tag :if
              :cond {:tag :local, :index 1}
@@ -647,7 +660,8 @@
              :expr {:tag :local, :index 0}}] (:exprs (cc/parse '(let* [x 1] (throw x)))))
   (assert= [{:tag :dot
              :expr {:tag :local, :index 0}
-             :member 'mz}] (:exprs (cc/parse '(let* [x 1] (. x -mz))))))
+             :member 'mz}] (:exprs (cc/parse '(let* [x 1] (. x -mz)))))
+  (assert= (:exprs (cc/parse '(let* [x 1] (cleo.core/persistent! (cleo.core/conj! (cleo.core/transient []) x))))) (:exprs (cc/parse '(let* [x 1] [x])))))
 
 
 (deftest parse-errors
