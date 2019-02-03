@@ -611,6 +611,15 @@
              {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(let* [x x y y x y y x])))))
 
 
+(deftest parse-def
+  (assert= {:tag :def, :name 'x, :meta nil, :expr 10} (cc/parse '(def x 10)))
+  (assert= {:tag :def, :name 'x, :meta nil, :expr nil} (cc/parse '(def x)))
+  (assert= {:tag :def, :name 'a/x, :meta nil, :expr 10} (cc/parse '(def a/x 10)))
+  (assert= {:tag :def, :name 'xr, :meta nil, :expr {:tag :var, :name 'xr}} (cc/parse '(def xr xr)))
+  (assert= {:tag :def, :name 'z, :meta {10 20}, :expr 13} (cc/parse '(def {10 20} z 13)))
+  (assert= {:tag :def, :name 'z, :meta {10 20}, :expr nil} (cc/parse '(def {10 20} z))))
+
+
 (deftest parse-let-with-other-forms
   (assert= [{:tag :if
              :cond {:tag :local, :index 1}
@@ -621,7 +630,11 @@
                      {:tag :local, :index 0}]}] (:exprs (cc/parse '(let* [x 10 y 20] (do y x)))))
   (assert= [{:tag :call
              :fn {:tag :local, :index 0}
-             :args [{:tag :local, :index 1}]}] (:exprs (cc/parse '(let* [f 0 x 10] (f x))))))
+             :args [{:tag :local, :index 1}]}] (:exprs (cc/parse '(let* [f 0 x 10] (f x)))))
+  (assert= [{:tag :def
+             :name 'x
+             :meta {10 20}
+             :expr {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [x 1 y 2] (def {10 20} x y))))))
 
 
 (deftest parse-errors
@@ -637,4 +650,11 @@
   (assert-compilation-error "Bad binding form, expected vector" (cc/parse '(let* ())))
   (assert-compilation-error "Bad binding form, expected matched symbol expression pairs" (cc/parse '(let* [a 10 b])))
   (assert-compilation-error "Unsupported binding form: 10" (cc/parse '(let* [10 20])))
-  (assert-compilation-error "Can't let qualified name: x/a" (cc/parse '(let* [x/a 20]))))
+  (assert-compilation-error "Can't let qualified name: x/a" (cc/parse '(let* [x/a 20])))
+
+  (assert-compilation-error "Too few arguments to def" (cc/parse '(def)))
+  (assert-compilation-error "Too few arguments to def" (cc/parse '(def {2 3})))
+  (assert-compilation-error "Too many arguments to def" (cc/parse '(def x 10 30)))
+  (assert-compilation-error "Too many arguments to def" (cc/parse '(def {} x 10 30)))
+  (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 20)))
+  (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 x))))

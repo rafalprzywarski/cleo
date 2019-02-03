@@ -95,6 +95,25 @@
      :exprs (vec (map (fn [x] (parse scope x)) (nnext form)))}))
 
 
+(defn- parse-def [scope form]
+  (let [form (next form)
+        meta (first form)
+        meta (if (map? meta) meta nil)
+        form (if meta (next form) form)
+        name (if form
+               (first form)
+               (throw (CompilationError. "Too few arguments to def")))
+        form (next form)]
+    (when (not (symbol? name))
+      (throw (CompilationError. "First argument to def must be a Symbol")))
+    (when (next form)
+      (throw (CompilationError. "Too many arguments to def")))
+    {:tag :def
+     :name name
+     :meta meta
+     :expr (parse scope (first form))}))
+
+
 (defn- parse-call [scope form]
   {:tag :call,
    :fn (parse scope (first form))
@@ -109,6 +128,7 @@
         (= f 'do) (parse-do scope form)
         (= f 'quote) (parse-quote form)
         (= f 'let*) (parse-let scope form)
+        (= f 'def) (parse-def scope form)
         :else (parse-call scope form)))
     ()))
 
