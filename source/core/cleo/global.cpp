@@ -306,7 +306,7 @@ const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shi
 const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
-const Value NAMESPACE = create_symbol("cleo.core", "name");
+const Value NAMESPACE = create_symbol("cleo.core", "namespace");
 const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
@@ -920,6 +920,17 @@ Force get_name(Value val)
     }
 }
 
+Force get_namespace(Value val)
+{
+    auto t = get_value_tag(val);
+    switch (t)
+    {
+        case tag::KEYWORD: return get_keyword_namespace(val);
+        case tag::SYMBOL: return get_symbol_namespace(val);
+        default: return nil;
+    }
+}
+
 Value set_gc_log(Value set)
 {
     if (static_cast<bool>(set) == static_cast<bool>(gc_log))
@@ -1294,6 +1305,9 @@ struct Initialize
 
         f = create_native_function1<get_name, &NAME>();
         define(NAME, *f);
+
+        f = create_native_function1<get_namespace, &NAMESPACE>();
+        define(NAMESPACE, *f);
 
         f = create_native_function2<mk_symbol, &SYMBOL>();
         define(SYMBOL, *f);

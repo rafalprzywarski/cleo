@@ -4,6 +4,13 @@
 (def parse)
 
 
+(defn- add-local [scope name]
+  (let [next-local-index (get scope :next-local-index 0)]
+    (-> scope
+        (update :indexed-locals (fn [locals] (assoc locals name next-local-index)))
+        (assoc :next-local-index (inc next-local-index)))))
+
+
 (defn- parse-const [form]
   (if (map? form)
     {:tag :const
@@ -11,12 +18,15 @@
     form))
 
 
-(defn- parse-symbol [s]
-  {:tag :var
-   :name s})
+(defn- parse-symbol [scope s]
+  (if-let [local-index (get (:indexed-locals scope) s)]
+    {:tag :local
+     :index local-index}
+    {:tag :var
+     :name s}))
 
 
-(defn- parse-if [form]
+(defn- parse-if [scope form]
   (let [form (next form)
         cond (if form
                (first form)
@@ -30,14 +40,14 @@
     (if (next form)
       (throw (CompilationError. "Too many arguments to if"))
       {:tag :if
-       :cond (parse cond)
-       :then (parse then)
-       :else (parse else)})))
+       :cond (parse scope cond)
+       :then (parse scope then)
+       :else (parse scope else)})))
 
 
-(defn- parse-do [form]
+(defn- parse-do [scope form]
   {:tag :do
-   :exprs (vec (map parse (next form)))})
+   :exprs (vec (map (fn [x] (parse scope x)) (next form)))})
 
 
 (defn- parse-quote [form]
@@ -47,25 +57,67 @@
   (parse-const (second form)))
 
 
-(defn- parse-call [form]
+(defn- check-let-bindings [form]
+  (let [bindings (next form)
+        bindings (if bindings
+                   (first bindings)
+                   (throw (CompilationError. (str "Wrong number of args (" (dec (count form)) ") passed to let*, form: " (pr-str form)))))]
+    (when (not (vector? bindings))
+      (throw (CompilationError. "Bad binding form, expected vector")))
+    (when (not (zero? (rem (count bindings) 2)))
+      (throw (CompilationError. "Bad binding form, expected matched symbol expression pairs")))
+    bindings))
+
+
+(defn- parse-let-bindings [scope bindings]
+  (loop [bindings (seq bindings)
+         scope scope
+         locals (transient [])]
+    (if bindings
+      (let [[name expr & more] bindings]
+        (when (not (symbol? name))
+          (throw (CompilationError. (str "Unsupported binding form: " name))))
+        (when (namespace name)
+          (throw (CompilationError. (str "Can't let qualified name: " name))))
+        (recur more
+               (add-local scope name)
+               (conj! locals {:name name
+                              :index (get scope :next-local-index 0)
+                              :expr (parse scope expr)})))
+      [scope (persistent! locals)])))
+
+
+(defn- parse-let [scope form]
+  (check-let-bindings form)
+  (let [[scope locals] (parse-let-bindings scope (second form))]
+    {:tag :let,
+     :locals locals,
+     :exprs (vec (map (fn [x] (parse scope x)) (nnext form)))}))
+
+
+(defn- parse-call [scope form]
   {:tag :call,
-   :fn (parse (first form))
-   :args (vec (map parse (next form)))})
+   :fn (parse scope (first form))
+   :args (vec (map (fn [x] (parse scope x)) (next form)))})
 
 
-(defn- parse-seq [form]
+(defn- parse-seq [scope form]
   (if-let [form (seq form)]
     (let [f (first form)]
       (cond
-        (= f 'if) (parse-if form)
-        (= f 'do) (parse-do form)
+        (= f 'if) (parse-if scope form)
+        (= f 'do) (parse-do scope form)
         (= f 'quote) (parse-quote form)
-        :else (parse-call form)))
+        (= f 'let*) (parse-let scope form)
+        :else (parse-call scope form)))
     ()))
 
 
-(defn parse [form]
-  (cond
-    (symbol? form) (parse-symbol form)
-    (seq? form) (parse-seq form)
-    :else (parse-const form)))
+(defn parse
+  ([form]
+   (parse nil form))
+  ([scope form]
+   (cond
+     (symbol? form) (parse-symbol scope form)
+     (seq? form) (parse-seq scope form)
+     :else (parse-const form))))
