@@ -163,9 +163,9 @@
 (defn- is-const [form]
   (and (not (symbol? form))
        (not (seq? form))
-       (or (not (vector? form))
-           (every? is-const form))
-       (or (not (set? form))
+       (or (and (not (vector? form))
+                (not (set? form))
+                (not (map? form)))
            (every? is-const form))))
 
 
@@ -213,6 +213,30 @@
       form)))
 
 
+(defn- split-map-by-const [m]
+  (if (every? is-const m)
+    [m, nil]
+    (loop [s (seq m)
+           submap {}
+           more (transient [])]
+      (if s
+        (let [kv (first s)]
+          (if (is-const kv)
+            (recur (next s) (assoc submap (first kv) (second kv)) more)
+            (recur (next s) submap (conj! more (first s)))))
+        [submap (persistent! more)]))))
+
+
+(defn- parse-map [scope form]
+  (let [[submap more] (split-map-by-const form)]
+    (if (seq more)
+      (parse scope
+             (reduce (fn [call elem] (list 'cleo.core/assoc call (first elem) (second elem)))
+                     submap
+                     more))
+      (parse-const form))) )
+
+
 (defn parse
   ([form]
    (parse nil form))
@@ -222,4 +246,5 @@
      (seq? form) (parse-seq scope form)
      (vector? form) (parse-vector scope form)
      (set? form) (parse-set scope form)
+     (map? form) (parse-map scope form)
      :else (parse-const form))))

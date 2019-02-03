@@ -651,6 +651,27 @@
   (assert= (cc/parse '(cleo.core/conj #{10} (cleo.core/conj #{20} x))) (cc/parse '#{10 #{20 x}})))
 
 
+(deftest parse-hash-map
+  (assert= {:tag :const, :value {}} (cc/parse {}))
+  (assert= {:tag :const, :value {5 6 7 8}} (cc/parse {5 6 7 8}))
+  (assert= (cc/parse '(cleo.core/assoc {3 4 5 6} x y)) (cc/parse '{3 4 5 6 x y}))
+  (assert= (cc/parse '(cleo.core/assoc {3 4} x 6)) (cc/parse '{3 4 x 6}))
+  (assert= (cc/parse '(cleo.core/assoc {3 4} 5 x)) (cc/parse '{3 4 5 x}))
+  (assert= {:tag :const, :value {{1 2} 3 4 {5 6}}} (cc/parse '{{1 2} 3 4 {5 6}}))
+  (let [m2 (cc/parse '{3 4 5 x y 6})]
+    (assert (or (= (cc/parse '(cleo.core/assoc (cleo.core/assoc {3 4} 5 x) y 6)) m2)
+                (= (cc/parse '(cleo.core/assoc (cleo.core/assoc {3 4} y 6) 5 x)) m2))))
+  (assert= (cc/parse '(cleo.core/assoc {1 2} 10 (cleo.core/assoc {} 20 x))) (cc/parse '{1 2 10 {20 x}}))
+  (assert= (cc/parse '(cleo.core/assoc {1 2} (cleo.core/assoc {} x 20) 10)) (cc/parse '{1 2 {x 20} 10})))
+
+
+(deftest parse-nested-structures
+  (assert= [[10 20] [[30 [40]]]] (cc/parse [[10 20] [[30 [40]]]]))
+  (assert= #{10 20 [30 40] #{50 #{} #{60}}} (cc/parse #{10 20 [30 40] #{50 #{} #{60}}}))
+  (assert= [10 {20 {30 40}} #{50} [60]] (cc/parse [10 {20 {30 40}} #{50} [60]]))
+  (assert= {:tag :const, :value {10 {20 {30 40}} #{50} [60]}} (cc/parse {10 {20 {30 40}} #{50} [60]})))
+
+
 (deftest parse-let-with-other-forms
   (assert= [{:tag :if
              :cond {:tag :local, :index 1}
@@ -672,7 +693,8 @@
              :expr {:tag :local, :index 0}
              :member 'mz}] (:exprs (cc/parse '(let* [x 1] (. x -mz)))))
   (assert= (:exprs (cc/parse '(let* [x 1] (cleo.core/persistent! (cleo.core/conj! (cleo.core/transient []) x))))) (:exprs (cc/parse '(let* [x 1] [x]))))
-  (assert= (:exprs (cc/parse '(let* [x 1] (cleo.core/conj #{} x)))) (:exprs (cc/parse '(let* [x 1] #{x})))))
+  (assert= (:exprs (cc/parse '(let* [x 1] (cleo.core/conj #{} x)))) (:exprs (cc/parse '(let* [x 1] #{x}))))
+  (assert= (:exprs (cc/parse '(let* [x 1 y 2] (cleo.core/assoc {3 4 5 6} x y)))) (:exprs (cc/parse '(let* [x 1 y 2] {3 4 5 6 x y})))))
 
 
 (deftest parse-errors
