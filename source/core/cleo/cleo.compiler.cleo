@@ -57,11 +57,11 @@
   (parse-const (second form)))
 
 
-(defn- check-let-bindings [form]
+(defn- check-let-bindings [name form]
   (let [bindings (next form)
         bindings (if bindings
                    (first bindings)
-                   (throw (CompilationError. (str "Wrong number of args (" (dec (count form)) ") passed to let*, form: " (pr-str form)))))]
+                   (throw (CompilationError. (str "Wrong number of args (" (dec (count form)) ") passed to " name ", form: " (pr-str form)))))]
     (when (not (vector? bindings))
       (throw (CompilationError. "Bad binding form, expected vector")))
     (when (not (zero? (rem (count bindings) 2)))
@@ -88,9 +88,17 @@
 
 
 (defn- parse-let [scope form]
-  (check-let-bindings form)
+  (check-let-bindings 'let* form)
   (let [[scope locals] (parse-let-bindings scope (second form))]
     {:tag :let,
+     :locals locals,
+     :exprs (vec (map (fn [x] (parse scope x)) (nnext form)))}))
+
+
+(defn- parse-loop [scope form]
+  (check-let-bindings 'loop* form)
+  (let [[scope locals] (parse-let-bindings scope (second form))]
+    {:tag :loop,
      :locals locals,
      :exprs (vec (map (fn [x] (parse scope x)) (nnext form)))}))
 
@@ -153,6 +161,7 @@
         (= f 'do) (parse-do scope form)
         (= f 'quote) (parse-quote form)
         (= f 'let*) (parse-let scope form)
+        (= f 'loop*) (parse-loop scope form)
         (= f 'def) (parse-def scope form)
         (= f 'throw) (parse-throw scope form)
         (= f '.) (parse-dot scope form)

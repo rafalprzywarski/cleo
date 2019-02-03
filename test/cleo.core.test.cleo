@@ -611,6 +611,30 @@
              {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(let* [x x y y x y y x])))))
 
 
+(deftest parse-loop
+   (assert= {:tag :loop, :locals [], :exprs []} (cc/parse '(loop* [])))
+   (assert= {:tag :loop, :locals [], :exprs [nil]} (cc/parse '(loop* [] nil)))
+   (assert= {:tag :loop, :locals [], :exprs [{:tag :var, :name 'a} 10]} (cc/parse '(loop* [] a 10)))
+   (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr 10}], :exprs []} (cc/parse '(loop* [a 10])))
+   (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr 10}
+                                 {:name 'b, :index 1, :expr 20}
+                                 {:name 'c, :index 2, :expr 30}], :exprs []} (cc/parse '(loop* [a 10 b 20 c 30])))
+   (assert= [{:tag :local, :index 1} {:tag :local, :index 2} {:tag :local, :index 0}] (:exprs (cc/parse '(loop* [a 10 b 20 c 30] b c a))))
+   (let [loop3 (cc/parse '(loop* [a :x] (loop* [b :y c :z] (loop* [d :w]))))]
+     (assert= [{:name 'a, :index 0, :expr :x}] (-> loop3 :locals))
+     (assert= [{:name 'b, :index 1, :expr :y} {:name 'c, :index 2, :expr :z}] (-> loop3 :exprs first :locals))
+     (assert= [{:name 'd, :index 3, :expr :w}] (-> loop3 :exprs first :exprs first :locals)))
+   (assert= {:tag :loop
+             :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+                      {:name 'x, :index 1, :expr {:tag :local, :index 0}}
+                      {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
+             :exprs [{:tag :local, :index 2}]} (cc/parse '(loop* [x x x x x x] x)))
+   (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+             {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
+             {:name 'x, :index 2, :expr {:tag :local, :index 1}}
+             {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(loop* [x x y y x y y x])))))
+
+
 (deftest parse-def
   (assert= {:tag :def, :name 'x, :meta nil, :expr 10} (cc/parse '(def x 10)))
   (assert= {:tag :def, :name 'x, :meta nil, :expr nil} (cc/parse '(def x)))
@@ -718,6 +742,13 @@
   (assert-compilation-error "Bad binding form, expected matched symbol expression pairs" (cc/parse '(let* [a 10 b])))
   (assert-compilation-error "Unsupported binding form: 10" (cc/parse '(let* [10 20])))
   (assert-compilation-error "Can't let qualified name: x/a" (cc/parse '(let* [x/a 20])))
+
+  (assert-compilation-error "Wrong number of args (0) passed to loop*, form: (loop*)" (cc/parse '(loop*)))
+  (assert-compilation-error "Bad binding form, expected vector" (cc/parse '(loop* nil)))
+  (assert-compilation-error "Bad binding form, expected vector" (cc/parse '(loop* ())))
+  (assert-compilation-error "Bad binding form, expected matched symbol expression pairs" (cc/parse '(loop* [a 10 b])))
+  (assert-compilation-error "Unsupported binding form: 10" (cc/parse '(loop* [10 20])))
+  (assert-compilation-error "Can't let qualified name: x/a" (cc/parse '(loop* [x/a 20])))
 
   (assert-compilation-error "Too few arguments to def" (cc/parse '(def)))
   (assert-compilation-error "Too few arguments to def" (cc/parse '(def {2 3})))
