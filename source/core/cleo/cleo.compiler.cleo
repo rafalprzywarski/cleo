@@ -114,6 +114,16 @@
      :expr (parse scope (first form))}))
 
 
+(defn- parse-throw [scope form]
+  (let [form (next form)]
+    (when (not form)
+      (throw (CompilationError. "Too few arguments to throw, expected a single value")))
+    (when (next form)
+      (throw (CompilationError. "Too many arguments to throw, expected a single value")))
+    {:tag :throw
+     :expr (parse scope (first form))}))
+
+
 (defn- parse-call [scope form]
   {:tag :call,
    :fn (parse scope (first form))
@@ -129,6 +139,7 @@
         (= f 'quote) (parse-quote form)
         (= f 'let*) (parse-let scope form)
         (= f 'def) (parse-def scope form)
+        (= f 'throw) (parse-throw scope form)
         :else (parse-call scope form)))
     ()))
 

@@ -620,6 +620,10 @@
   (assert= {:tag :def, :name 'z, :meta {10 20}, :expr nil} (cc/parse '(def {10 20} z))))
 
 
+(deftest parse-throw
+  (assert= {:tag :throw, :expr {:tag :var, :name 'x}} (cc/parse '(throw x))))
+
+
 (deftest parse-let-with-other-forms
   (assert= [{:tag :if
              :cond {:tag :local, :index 1}
@@ -634,7 +638,9 @@
   (assert= [{:tag :def
              :name 'x
              :meta {10 20}
-             :expr {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [x 1 y 2] (def {10 20} x y))))))
+             :expr {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [x 1 y 2] (def {10 20} x y)))))
+  (assert= [{:tag :throw
+             :expr {:tag :local, :index 0}}] (:exprs (cc/parse '(let* [x 1] (throw x))))))
 
 
 (deftest parse-errors
@@ -657,4 +663,7 @@
   (assert-compilation-error "Too many arguments to def" (cc/parse '(def x 10 30)))
   (assert-compilation-error "Too many arguments to def" (cc/parse '(def {} x 10 30)))
   (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 20)))
-  (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 x))))
+  (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 x)))
+
+  (assert-compilation-error "Too few arguments to throw, expected a single value" (cc/parse '(throw)))
+  (assert-compilation-error "Too many arguments to throw, expected a single value" (cc/parse '(throw 10 20))))
