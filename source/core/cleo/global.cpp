@@ -82,6 +82,7 @@ const Value ISA = create_symbol("cleo.core", "isa?");
 const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
 const Value KEYWORD_Q = create_symbol("cleo.core", "keyword?");
 const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
+const Value SET_Q = create_symbol("cleo.core", "set?");
 const Value STRING_Q = create_symbol("cleo.core", "string?");
 const Value LT = create_symbol("cleo.core", "<");
 const Value EQ = create_symbol("cleo.core", "=");
@@ -656,6 +657,11 @@ Value keyword_q(Value x)
 Value vector_q(Value x)
 {
     return get_value_type(x) == *type::Array ? TRUE : nil;
+}
+
+Value set_q(Value x)
+{
+    return get_value_type(x) == *type::ArraySet ? TRUE : nil;
 }
 
 Value string_q(Value x)
@@ -1311,6 +1317,9 @@ struct Initialize
 
         f = create_native_function1<vector_q, &VECTOR_Q>();
         define(VECTOR_Q, *f);
+
+        f = create_native_function1<set_q, &SET_Q>();
+        define(SET_Q, *f);
 
         f = create_native_function1<string_q, &STRING_Q>();
         define(STRING_Q, *f);
