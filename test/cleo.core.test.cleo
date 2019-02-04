@@ -748,6 +748,43 @@
   (assert= {:tag :try, :expr {:tag :var, :name 'f}, :finally {:tag :var, :name 'g}} (cc/parse '(try* f (finally* g)))))
 
 
+(deftest parse-fn
+  (assert= {:tag :fn, :name nil, :bodies []} (cc/parse '(fn*)))
+  (assert= {:tag :fn, :name 'abc, :bodies []} (cc/parse '(fn* abc)))
+  (assert= {:tag :fn, :name nil, :bodies [{:params [] :expr nil}]} (cc/parse '(fn* [])))
+  (assert= {:tag :fn, :name 'abc, :bodies [{:params [] :expr nil}]} (cc/parse '(fn* abc [])))
+  (assert= [{:params [] :expr {:tag :var, :name 'f}}] (:bodies (cc/parse '(fn* [] f))))
+  (assert= [{:params [{:name 'x, :index 0}], :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [x] x))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [x y] x))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y] y))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y &] y))))
+  (assert= [{:params [{:name 'x, :index 0}], :vararg :true, :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [& x] x))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :vararg :true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x & y] y))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1} {:name 'z, :index 2}], :vararg :true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y & z] y))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* ([x y] y)))))
+  (assert= 'abc (:name (cc/parse '(fn* abc ([x y] y)))))
+  (assert= [{:params [{:name 'z, :index 0}], :expr {:tag :local, :index 0}}
+            {:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}]
+           (:bodies (cc/parse '(fn* ([z] z) ([x y] y)))))
+  (assert= {:params [{:name 'a, :index 0} {:name 'b, :index 1}]
+            :expr {:tag :fn
+                   :name nil
+                   :bodies [{:params [{:name 'a, :index 2} {:name 'c, :index 3}]
+                             :expr {:tag :do
+                                    :exprs [{:tag :local, :index 2}
+                                            {:tag :local, :index 1}
+                                            {:tag :local, :index 3}]}}]}}
+           (-> (cc/parse '(fn* [a b] (fn* [a c] (do a b c)))) :bodies first))
+  (assert= {:tag :let
+            :locals [{:name 'z, :index 1, :expr 10}]
+            :exprs [{:tag :local, :index 1}]}
+           (-> (cc/parse '(fn* [z] (let* [z 10] z))) :bodies first :expr))
+  (assert= {:params [{:name 'z, :index 2}]
+            :expr {:tag :do
+                   :exprs [{:tag :local, :index 0} {:tag :local, :index 2}]}}
+           (-> (cc/parse '(let* [x 10 z 20] (fn* [z] (do x z)))) :exprs first :bodies first)))
+
+
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))
@@ -796,4 +833,19 @@
   (assert-compilation-error "missing finally* body" (cc/parse '(try* 10 (finally*))))
   (assert-compilation-error "Too many expressions in finally*, expected one" (cc/parse '(try* 10 (finally* 20 30))))
   (assert-compilation-error "Too many expressions in catch*, expected one" (cc/parse '(try* 10 (catch* Exception x 20 30))))
-  (assert-compilation-error "Too many expressions in try*" (cc/parse '(try* 10 (catch* Exception x nil) (finally* nil)))))
+  (assert-compilation-error "Too many expressions in try*" (cc/parse '(try* 10 (catch* Exception x nil) (finally* nil))))
+
+  (assert-compilation-error "Bad fn* param list, expected vector" (cc/parse '(fn* 10 nil)))
+  (assert-compilation-error "Bad fn* param list, expected vector" (cc/parse '(fn* nil [])))
+  (assert-compilation-error "Bad fn* param list, expected vector" (cc/parse '(fn* some 10 nil)))
+  (assert-compilation-error "Bad fn* param list, expected vector" (cc/parse '(fn* (10 nil))))
+  (assert-compilation-error "Bad fn* param list, expected vector" (cc/parse '(fn* some (10 nil))))
+  (assert-compilation-error "fn* params must be symbols" (cc/parse '(fn* [10] nil)))
+  (assert-compilation-error "fn* params must be symbols" (cc/parse '(fn* [x y 20] nil)))
+  (assert-compilation-error "Can't user qualified name as parameter: a/x" (cc/parse '(fn* [a/x y] nil)))
+  (assert-compilation-error "Can't user qualified name as parameter: b/y" (cc/parse '(fn* [x b/y] nil)))
+  (assert-compilation-error "Too many forms passed to fn*" (cc/parse '(fn* [] 10 20)))
+  (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [& x y] nil)))
+  (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x & y z] nil)))
+  (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x & y z &] nil)))
+  (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x y & &] nil))))

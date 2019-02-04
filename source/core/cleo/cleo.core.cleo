@@ -301,6 +301,11 @@
 (defn odd? [x] (not (even? x)))
 
 
+(defn not=
+  "Equivalent to (not (= x y))"
+  [x y] (not (= x y)))
+
+
 (defn assoc
   ([m k v] (assoc* m k v))
   ([m k v & kvs]

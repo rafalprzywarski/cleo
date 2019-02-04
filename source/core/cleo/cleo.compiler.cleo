@@ -4,6 +4,9 @@
 (def parse)
 
 
+(defn- fail [& msg]
+  (throw (CompilationError. (apply str msg))))
+
 (defn- add-local [scope name]
   (let [next-local-index (get scope :next-local-index 0)]
     (-> scope
@@ -195,6 +198,49 @@
       (:expr ast))))
 
 
+(defn- check-fn-params [params]
+  (when (not (vector? params))
+    (fail "Bad fn* param list, expected vector"))
+  (doseq [p params]
+    (when (not (symbol? p))
+      (fail "fn* params must be symbols"))
+    (when (namespace p)
+      (fail "Can't user qualified name as parameter: " p)))
+  (let [va (= '& (get params (- (count params) 2)))
+        trailing-amp (= '& (get params (dec (count params))))
+        rparams (filter (fn [p] (not= '& p)) params)]
+    (when (and (not= (count rparams) (count params))
+               (or (and (not va) (not trailing-amp))
+                   (not= (inc (count rparams)) (count params))))
+      (fail "Invalid parameter list"))
+    [rparams va]))
+
+
+(defn- parse-fn-body [scope form]
+  (let [[params va] (check-fn-params (first form))
+        form (next form)]
+    (let [scope (reduce add-local scope params)
+          params (vec (map (fn [p] {:name p, :index ((:indexed-locals scope) p)}) params))
+          ast {:params params
+               :expr (parse scope (first form))}]
+      (when (next form)
+        (fail "Too many forms passed to fn*"))
+      (if va
+        (assoc ast :vararg :true)
+        ast))))
+
+
+(defn- parse-fn [scope form]
+  (let [form (next form)
+        name (when (symbol? (first form)) (first form))
+        form (if (symbol? name) (next form) form)
+        bodies (if (and form (not (seq? (first form)))) (list form) form)
+        bodies (vec (map (fn [body] (parse-fn-body scope body)) bodies))]
+    {:tag :fn
+     :name name
+     :bodies bodies}))
+
+
 (defn- parse-call [scope form]
   {:tag :call,
    :fn (parse scope (first form))
@@ -214,6 +260,7 @@
         (= f 'throw) (parse-throw scope form)
         (= f '.) (parse-dot scope form)
         (= f 'try*) (parse-try scope form)
+        (= f 'fn*) (parse-fn scope form)
         :else (parse-call scope form)))
     ()))
 
