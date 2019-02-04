@@ -33,15 +33,15 @@
   (let [form (next form)
         cond (if form
                (first form)
-               (throw (CompilationError. "Too few arguments to if")))
+               (fail "Too few arguments to if"))
         form (next form)
         then (if form
                (first form)
-               (throw (CompilationError. "Too few arguments to if")))
+               (fail "Too few arguments to if"))
         form (next form)
         else (first form)]
     (if (next form)
-      (throw (CompilationError. "Too many arguments to if"))
+      (fail "Too many arguments to if")
       {:tag :if
        :cond (parse scope cond)
        :then (parse scope then)
@@ -56,7 +56,7 @@
 (defn- parse-quote [form]
   (when (or (not (next form))
             (nnext form))
-    (throw (CompilationError. (str "Wrong number of args (" (dec (count form)) ") passed to quote, form: " (pr-str form)))))
+    (fail "Wrong number of args (" (dec (count form)) ") passed to quote, form: " (pr-str form)))
   (parse-const (second form)))
 
 
@@ -64,11 +64,11 @@
   (let [bindings (next form)
         bindings (if bindings
                    (first bindings)
-                   (throw (CompilationError. (str "Wrong number of args (" (dec (count form)) ") passed to " name ", form: " (pr-str form)))))]
+                   (fail "Wrong number of args (" (dec (count form)) ") passed to " name ", form: " (pr-str form)))]
     (when (not (vector? bindings))
-      (throw (CompilationError. "Bad binding form, expected vector")))
+      (fail "Bad binding form, expected vector"))
     (when (not (zero? (rem (count bindings) 2)))
-      (throw (CompilationError. "Bad binding form, expected matched symbol expression pairs")))
+      (fail "Bad binding form, expected matched symbol expression pairs"))
     bindings))
 
 
@@ -79,9 +79,9 @@
     (if bindings
       (let [[name expr & more] bindings]
         (when (not (symbol? name))
-          (throw (CompilationError. (str "Unsupported binding form: " name))))
+          (fail "Unsupported binding form: " name))
         (when (namespace name)
-          (throw (CompilationError. (str "Can't let qualified name: " name))))
+          (fail "Can't let qualified name: " name))
         (recur more
                (add-local scope name)
                (conj! locals {:name name
@@ -113,12 +113,12 @@
         form (if meta (next form) form)
         name (if form
                (first form)
-               (throw (CompilationError. "Too few arguments to def")))
+               (fail "Too few arguments to def"))
         form (next form)]
     (when (not (symbol? name))
-      (throw (CompilationError. "First argument to def must be a Symbol")))
+      (fail "First argument to def must be a Symbol"))
     (when (next form)
-      (throw (CompilationError. "Too many arguments to def")))
+      (fail "Too many arguments to def"))
     {:tag :def
      :name name
      :meta meta
@@ -128,15 +128,15 @@
 (defn- parse-throw [scope form]
   (let [form (next form)]
     (when (not form)
-      (throw (CompilationError. "Too few arguments to throw, expected a single value")))
+      (fail "Too few arguments to throw, expected a single value"))
     (when (next form)
-      (throw (CompilationError. "Too many arguments to throw, expected a single value")))
+      (fail "Too many arguments to throw, expected a single value"))
     {:tag :throw
      :expr (parse scope (first form))}))
 
 
 (defn- parse-dot [scope form]
-  (let [fail (fn [] (throw (CompilationError. "Malformed member expression")))
+  (let [fail (fn [] (fail "Malformed member expression"))
         form (next form)
         expr (if form (parse scope (first form)) (fail))
         form (next form)
@@ -152,26 +152,26 @@
 
 (defn- parse-finally [scope ast form]
   (when (not form)
-    (throw (CompilationError. "missing finally* body")))
+    (fail "missing finally* body"))
   (when (next form)
-    (throw (CompilationError. "Too many expressions in finally*, expected one")))
+    (fail "Too many expressions in finally*, expected one"))
   (assoc ast :finally (parse scope (first form))))
 
 
 (defn- parse-catch [scope ast form]
   (let [type (if form
                (first form)
-               (throw (CompilationError. "missing exception type in catch*")))
+               (fail "missing exception type in catch*"))
         form (next form)
         binding (if form
                   (first form)
-                  (throw (CompilationError. "missing exception binding in catch*")))
+                  (fail "missing exception binding in catch*"))
         form (next form)
         expr (if form
                (first form)
-               (throw (CompilationError. "missing catch* body")))]
+               (fail "missing catch* body"))]
     (when (next form)
-      (throw (CompilationError. "Too many expressions in catch*, expected one")))
+      (fail "Too many expressions in catch*, expected one"))
     (assoc ast :catch {:type type
                        :local {:name binding, :index (get scope :next-local-index 0)} ; bad
                        :expr (parse (add-local scope binding) expr)})))
@@ -185,16 +185,16 @@
         form (next form)]
     (if form
       (let [form (if (next form)
-                   (throw (CompilationError. "Too many expressions in try*"))
+                   (fail "Too many expressions in try*")
                    (first form))
             s (if (seq? form)
                 (first form)
-                (throw (CompilationError. "expected catch* or finally* block in try*")))
+                (fail "expected catch* or finally* block in try*"))
             form (next form)]
         (cond
           (= s 'finally*) (parse-finally scope ast form)
           (= s 'catch*) (parse-catch scope ast form)
-          :else  (throw (CompilationError. "expected catch* or finally* block in try*"))))
+          :else  (fail "expected catch* or finally* block in try*")))
       (:expr ast))))
 
 
