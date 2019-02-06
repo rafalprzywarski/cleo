@@ -1,7 +1,7 @@
 (ns cleo.compiler)
 
 
-(def parse)
+(def parse-form)
 
 
 (defn- fail [& msg]
@@ -52,9 +52,9 @@
     (if (next form)
       (fail "Too many arguments to if")
       {:tag :if
-       :cond (parse (no-recur scope) cond)
-       :then (parse scope then)
-       :else (parse scope else)})))
+       :cond (parse-form (no-recur scope) cond)
+       :then (parse-form scope then)
+       :else (parse-form scope else)})))
 
 
 (defn- parse-exprs [scope form]
@@ -63,8 +63,8 @@
            out (transient [])]
       (if form
         (if (next form)
-          (recur (next form) (conj! out (parse nrscope (first form))))
-          (recur nil (conj! out (parse scope (first form)))))
+          (recur (next form) (conj! out (parse-form nrscope (first form))))
+          (recur nil (conj! out (parse-form scope (first form)))))
         (persistent! out)))))
 
 
@@ -107,7 +107,7 @@
                  new-scope
                  (conj! locals {:name name
                                 :index local-index
-                                :expr (parse (no-recur scope) expr)}))))
+                                :expr (parse-form (no-recur scope) expr)}))))
       [scope (persistent! locals)])))
 
 
@@ -144,7 +144,7 @@
     {:tag :def
      :name name
      :meta meta
-     :expr (parse (no-recur scope) (first form))}))
+     :expr (parse-form (no-recur scope) (first form))}))
 
 
 (defn- parse-throw [scope form]
@@ -154,13 +154,13 @@
     (when (next form)
       (fail "Too many arguments to throw, expected a single value"))
     {:tag :throw
-     :expr (parse scope (first form))}))
+     :expr (parse-form scope (first form))}))
 
 
 (defn- parse-dot [scope form]
   (let [fail (fn [] (fail "Malformed member expression"))
         form (next form)
-        expr (if form (parse scope (first form)) (fail))
+        expr (if form (parse-form scope (first form)) (fail))
         form (next form)
         member (if form (name (first form)) (fail))]
     (when (or (< (count member) 2)
@@ -177,7 +177,7 @@
     (fail "missing finally* body"))
   (when (next form)
     (fail "Too many expressions in finally*, expected one"))
-  (assoc ast :finally (parse (no-recur scope) (first form))))
+  (assoc ast :finally (parse-form (no-recur scope) (first form))))
 
 
 (defn- parse-catch [scope ast form]
@@ -197,14 +197,14 @@
     (let [[scope local-index] (add-local-with-index scope binding)]
       (assoc ast :catch {:type type
                          :local {:name binding, :index local-index}
-                         :expr (parse (no-recur scope) expr)}))))
+                         :expr (parse-form (no-recur scope) expr)}))))
 
 
 (defn- parse-try [scope form]
   (let [form (next form)
         expr (first form)
         ast {:tag :try
-             :expr (parse (no-recur scope) expr)}
+             :expr (parse-form (no-recur scope) expr)}
         form (next form)]
     (if form
       (let [form (if (next form)
@@ -246,7 +246,7 @@
           scope (assoc scope :recur-size (count params))
           params (vec (map (fn [p] {:name p, :index ((:indexed-locals scope) p)}) params))
           ast {:params params
-               :expr (parse scope (first form))}]
+               :expr (parse-form scope (first form))}]
       (when (next form)
         (fail "Too many forms passed to fn*"))
       (if va
@@ -272,14 +272,14 @@
     (when (not= (count form) (:recur-size scope))
       (fail "Mismatched argument count to recur, expected " (:recur-size scope) " args, got " (count form)))
     {:tag :recur
-     :args (vec (map (fn [x] (parse scope x)) form))}))
+     :args (vec (map (fn [x] (parse-form scope x)) form))}))
 
 
 (defn- parse-call [scope form]
   (let [scope (no-recur scope)]
     {:tag :call,
-     :fn (parse scope (first form))
-     :args (vec (map (fn [x] (parse scope x)) (next form)))}))
+     :fn (parse-form scope (first form))
+     :args (vec (map (fn [x] (parse-form scope x)) (next form)))}))
 
 
 (defn- parse-seq [scope form]
@@ -323,7 +323,7 @@
 (defn- parse-vector [scope form]
   (let [[prefix more] (split-vector-by-const form)]
     (if (seq more)
-      (parse scope
+      (parse-form scope
              (list 'cleo.core/persistent!
                    (reduce (fn [call elem] (list 'cleo.core/conj! call elem))
                            (list 'cleo.core/transient prefix)
@@ -347,7 +347,7 @@
 (defn- parse-set [scope form]
   (let [[subset more] (split-set-by-const form)]
     (if (seq more)
-      (parse scope
+      (parse-form scope
              (reduce (fn [call elem] (list 'cleo.core/conj call elem))
                      subset
                      more))
@@ -371,16 +371,14 @@
 (defn- parse-map [scope form]
   (let [[submap more] (split-map-by-const form)]
     (if (seq more)
-      (parse scope
+      (parse-form scope
              (reduce (fn [call elem] (list 'cleo.core/assoc call (first elem) (second elem)))
                      submap
                      more))
       (parse-const form))) )
 
 
-(defn parse
-  ([form]
-   (parse nil form))
+(defn- parse-form
   ([scope form]
    (let [form (macroexpand form)]
      (cond
@@ -390,3 +388,7 @@
        (set? form) (parse-set scope form)
        (map? form) (parse-map scope form)
        :else (parse-const form)))))
+
+
+(defn parse [form]
+  (parse-form nil form))
