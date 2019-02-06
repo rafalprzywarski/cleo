@@ -75,6 +75,15 @@
                " actual exception: " ~'e)))))
 
 
+(def {:macro :true} assert-no-exception
+  (fn* [&form &env actual]
+    `(try*
+       ~actual
+       (catch* Exception ~'e
+         (fail "assertion failed: " ~(pr-str actual)
+               " expected no exception, got: " ~'e)))))
+
+
 (def {:macro :true} assert-compilation-error
   (fn* [&form &env expected actual]
     `(try*
@@ -785,6 +794,21 @@
            (-> (cc/parse '(let* [x 10 z 20] (fn* [z] (do x z)))) :exprs first :bodies first)))
 
 
+(deftest parse-recur
+  (assert= {:tag :recur
+            :args [{:tag :local, :index 1}
+                   {:tag :local, :index 0}]}
+           (-> (cc/parse '(fn* [a b] (recur b a))) :bodies first :expr))
+  (assert= {:tag :recur
+            :args [{:tag :local, :index 1}
+                   {:tag :local, :index 2}]}
+           (-> (cc/parse '(fn* [a b] (let [c 5] (recur b c)))) :bodies first :expr :exprs first))
+  (assert-no-exception (cc/parse '(fn* [x] (do 10 (recur 20)))))
+  (assert-no-exception (cc/parse '(fn* [x] (let* [c 0] 10 (recur 20)))))
+  (assert-no-exception (cc/parse '(loop* [c 0] 10 (recur 20))))
+  (assert-no-exception (cc/parse '(fn* [x] (if x (recur x) 1))))
+  (assert-no-exception (cc/parse '(fn* [x] (if x 1 (recur x))))))
+
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))
@@ -848,4 +872,39 @@
   (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [& x y] nil)))
   (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x & y z] nil)))
   (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x & y z &] nil)))
-  (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x y & &] nil))))
+  (assert-compilation-error "Invalid parameter list" (cc/parse '(fn* [x y & &] nil)))
+
+  (assert-compilation-error "Mismatched argument count to recur, expected 0 args, got 1" (cc/parse '(fn* [x] (loop* [] (recur 1)))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 0" (cc/parse '(fn* [] (loop* [x 5 y 6] (recur)))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 1" (cc/parse '(loop* [x 5 y 6] (recur 1))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 3" (cc/parse '(loop* [x 5 y 6] (recur 1 2 3))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 0 args, got 1" (cc/parse '(fn* [] (recur 1))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 1" (cc/parse '(fn* [x y] (recur 1))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 3" (cc/parse '(fn* [x y] (recur 1 2 3))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 1" (cc/parse '(fn* [x & y] (recur 1))))
+  (assert-compilation-error "Mismatched argument count to recur, expected 2 args, got 3" (cc/parse '(fn* [x & y] (recur 1 2 3))))
+
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(recur 10)))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (do (recur) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (do (recur 10) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (do 1 (recur 10) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (let* [y (recur 10)] 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (let* [y 1] (recur 10) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (let* [y 1] 2 (recur 10) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (loop* [y (recur 10)]) 0)))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (loop* [y 1] (recur 10) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (loop* [y 1] 2 (recur 10) 0))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (try* (recur 10)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (try* (recur 10) (catch* Exception e e)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (try* 10 (catch* Exception e (recur 10))))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (try* (recur 10) (finally* 10)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (try* 10 (finally* (recur 10))))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] [(recur 10)])))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] #{(recur 10)})))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] {(recur 10) :v})))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] {:k (recur 10)})))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (f (recur 10)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (f 0 (recur 10)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] ((recur 10) 20))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (def z (recur 10)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (if (recur 10) 1 2)))))

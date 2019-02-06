@@ -7,11 +7,16 @@
 (defn- fail [& msg]
   (throw (CompilationError. (apply str msg))))
 
+
 (defn- add-local [scope name]
   (let [next-local-index (get scope :next-local-index 0)]
     (-> scope
         (update :indexed-locals (fn [locals] (assoc locals name next-local-index)))
         (assoc :next-local-index (inc next-local-index)))))
+
+
+(defn- no-recur [scope]
+  (dissoc scope :recur-size))
 
 
 (defn- parse-const [form]
@@ -43,14 +48,25 @@
     (if (next form)
       (fail "Too many arguments to if")
       {:tag :if
-       :cond (parse scope cond)
+       :cond (parse (no-recur scope) cond)
        :then (parse scope then)
        :else (parse scope else)})))
 
 
+(defn- parse-exprs [scope form]
+  (let [nrscope (no-recur scope)]
+    (loop [form form
+           out (transient [])]
+      (if form
+        (if (next form)
+          (recur (next form) (conj! out (parse nrscope (first form))))
+          (recur nil (conj! out (parse scope (first form)))))
+        (persistent! out)))))
+
+
 (defn- parse-do [scope form]
   {:tag :do
-   :exprs (vec (map (fn [x] (parse scope x)) (next form)))})
+   :exprs (parse-exprs scope (next form))})
 
 
 (defn- parse-quote [form]
@@ -86,7 +102,7 @@
                (add-local scope name)
                (conj! locals {:name name
                               :index (get scope :next-local-index 0)
-                              :expr (parse scope expr)})))
+                              :expr (parse (no-recur scope) expr)})))
       [scope (persistent! locals)])))
 
 
@@ -95,15 +111,16 @@
   (let [[scope locals] (parse-let-bindings scope (second form))]
     {:tag :let,
      :locals locals,
-     :exprs (vec (map (fn [x] (parse scope x)) (nnext form)))}))
+     :exprs (parse-exprs scope (nnext form))}))
 
 
 (defn- parse-loop [scope form]
   (check-let-bindings 'loop* form)
-  (let [[scope locals] (parse-let-bindings scope (second form))]
+  (let [[scope locals] (parse-let-bindings scope (second form))
+        scope (assoc scope :recur-size (count locals))]
     {:tag :loop,
      :locals locals,
-     :exprs (vec (map (fn [x] (parse scope x)) (nnext form)))}))
+     :exprs (parse-exprs scope (nnext form))}))
 
 
 (defn- parse-def [scope form]
@@ -122,7 +139,7 @@
     {:tag :def
      :name name
      :meta meta
-     :expr (parse scope (first form))}))
+     :expr (parse (no-recur scope) (first form))}))
 
 
 (defn- parse-throw [scope form]
@@ -155,7 +172,7 @@
     (fail "missing finally* body"))
   (when (next form)
     (fail "Too many expressions in finally*, expected one"))
-  (assoc ast :finally (parse scope (first form))))
+  (assoc ast :finally (parse (no-recur scope) (first form))))
 
 
 (defn- parse-catch [scope ast form]
@@ -174,14 +191,14 @@
       (fail "Too many expressions in catch*, expected one"))
     (assoc ast :catch {:type type
                        :local {:name binding, :index (get scope :next-local-index 0)} ; bad
-                       :expr (parse (add-local scope binding) expr)})))
+                       :expr (parse (no-recur (add-local scope binding)) expr)})))
 
 
 (defn- parse-try [scope form]
   (let [form (next form)
         expr (first form)
         ast {:tag :try
-             :expr (parse scope expr)}
+             :expr (parse (no-recur scope) expr)}
         form (next form)]
     (if form
       (let [form (if (next form)
@@ -220,6 +237,7 @@
   (let [[params va] (check-fn-params (first form))
         form (next form)]
     (let [scope (reduce add-local scope params)
+          scope (assoc scope :recur-size (count params))
           params (vec (map (fn [p] {:name p, :index ((:indexed-locals scope) p)}) params))
           ast {:params params
                :expr (parse scope (first form))}]
@@ -241,10 +259,21 @@
      :bodies bodies}))
 
 
+(defn- parse-recur [scope form]
+  (let [form (next form)]
+    (when (not (:recur-size scope))
+      (fail "Can only recur from tail position"))
+    (when (not= (count form) (:recur-size scope))
+      (fail "Mismatched argument count to recur, expected " (:recur-size scope) " args, got " (count form)))
+    {:tag :recur
+     :args (vec (map (fn [x] (parse scope x)) form))}))
+
+
 (defn- parse-call [scope form]
-  {:tag :call,
-   :fn (parse scope (first form))
-   :args (vec (map (fn [x] (parse scope x)) (next form)))})
+  (let [scope (no-recur scope)]
+    {:tag :call,
+     :fn (parse scope (first form))
+     :args (vec (map (fn [x] (parse scope x)) (next form)))}))
 
 
 (defn- parse-seq [scope form]
@@ -261,6 +290,7 @@
         (= f '.) (parse-dot scope form)
         (= f 'try*) (parse-try scope form)
         (= f 'fn*) (parse-fn scope form)
+        (= f 'recur) (parse-recur scope form)
         :else (parse-call scope form)))
     ()))
 
