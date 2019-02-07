@@ -19,6 +19,7 @@
 (defn- add-local [scope name]
   (first (add-local-with-index scope name)))
 
+
 (defn- no-recur [scope]
   (dissoc scope :recur-size))
 
@@ -62,9 +63,8 @@
     (loop [form form
            out (transient [])]
       (if form
-        (if (next form)
-          (recur (next form) (conj! out (parse-form nrscope (first form))))
-          (recur nil (conj! out (parse-form scope (first form)))))
+        (recur (next form)
+               (conj! out (parse-form (if (next form) nrscope scope) (first form))))
         (persistent! out)))))
 
 
