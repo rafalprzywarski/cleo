@@ -452,12 +452,20 @@
          :bytecode (-> bytecode (conj! vm/LDL) (conj! (bit-and (locals index) 0xff)) (conj! 255))))
 
 
+(defn translate-call! [{:keys [bytecode] :as body} {:keys [fn args]}]
+  (let [body (translate-expr! body fn)
+        body (reduce translate-expr! body args)]
+    (assoc body
+           :bytecode (-> bytecode (conj! vm/CALL) (conj! (count args))))))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
       (cond (= tag :do) (translate-do! body expr)
             (= tag :var) (translate-var! body expr)
             (= tag :local) (translate-local! body expr)
+            (= tag :call) (translate-call! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 

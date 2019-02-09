@@ -1030,11 +1030,43 @@
 (deftest translate-param
   (assert= {:arity 1
             :bytecode [vm/LDL 255 255]}
-           (-> '(fn* [a] a) cc/parse cc/translate :bodies first))
+           (translate-body '(fn* [a] a)))
   (assert= {:arity 3
             :bytecode [vm/LDL 254 255
                        vm/POP
                        vm/LDL 253 255
                        vm/POP
                        vm/LDL 255 255]}
-           (-> '(fn* fx [a b c] (do b a c)) cc/parse cc/translate :bodies first)))
+           (translate-body '(fn* fx [a b c] (do b a c)))))
+
+
+(deftest translate-call
+  (assert= {:arity 0
+            :vars [#'test-var1]
+            :bytecode [vm/LDV 0 0
+                       vm/CALL 0]}
+           (translate-body '(cleo.core.test/test-var1)))
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255
+                       vm/CALL 0]}
+           (translate-body '(fn* [p] (p))))
+  (assert= {:arity 1
+            :consts [10 20]
+            :vars [#'test-var1]
+            :bytecode [vm/LDL 255 255
+                       vm/LDV 0 0
+                       vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/CALL 3]}
+           (translate-body '(fn* [f] (f cleo.core.test/test-var1 10 20))))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/LDL 255 255
+                       vm/LDL 254 255
+                       vm/LDL 253 255
+                       vm/CALL 1
+                       vm/CALL 1
+                       vm/CALL 2]}
+           (translate-body '(fn* [a b c] (a (b) (c (b a)))))))
