@@ -399,15 +399,15 @@
 (def translate-expr!)
 
 
-(defn- intern-const [consts value]
-  (if (contains? consts value)
-    consts
-    (assoc consts value (count consts))))
+(defn- intern [m val]
+  (if (contains? m val)
+    m
+    (assoc m val (count m))))
 
 
 (defn- translate-const! [{:keys [bytecode consts] :as body} val]
   (if val
-    (let [consts (intern-const consts val)]
+    (let [consts (intern consts val)]
       (assoc body
              :consts consts
              :bytecode (-> bytecode (conj! vm/LDC) (conj! (get consts val)) (conj! 0))))
@@ -415,16 +415,16 @@
            :bytecode (conj! bytecode vm/CNIL))))
 
 
-(defn- serialize-consts [consts]
-  (let [sconsts (loop [n (count consts)
-                       s (transient [])]
-                  (if (pos? n)
-                    (recur (dec n) (conj! s 0))
-                    s))]
+(defn- serialize [m]
+  (let [sm (loop [n (count m)
+                  s (transient [])]
+             (if (pos? n)
+               (recur (dec n) (conj! s 0))
+               s))]
     (persistent! (reduce (fn [s [val index]]
                            (assoc! s index val))
-                         sconsts
-                         consts))))
+                         sm
+                         m))))
 
 
 (defn- translate-do! [body {exprs :exprs}]
@@ -436,10 +436,22 @@
           (next exprs)))
 
 
+(defn translate-var! [{:keys [bytecode vars] :as body} {name :name}]
+  (let [v (resolve name)
+        vars (intern vars v)
+        opcode (if (:dynamic (meta v)) vm/LDDV vm/LDV)]
+    (when (not v)
+      (fail "unable to resolve symbol: " name))
+    (assoc body
+           :vars vars
+           :bytecode (-> bytecode (conj! opcode) (conj! (vars v)) (conj! 0)))))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
       (cond (= tag :do) (translate-do! body expr)
+            (= tag :var) (translate-var! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
@@ -449,9 +461,13 @@
                :bytecode (transient [])}
         tbody (translate-expr! tbody expr)
         tbody (update tbody :bytecode persistent!)
-        tbody (update tbody :consts serialize-consts)
-        tbody (if (not (seq (:consts tbody)))
+        tbody (update tbody :consts serialize)
+        tbody (if (empty?(:consts tbody))
                 (dissoc tbody :consts)
+                tbody)
+        tbody (update tbody :vars serialize)
+        tbody (if (empty? (:vars tbody))
+                (dissoc tbody :vars)
                 tbody)]
     tbody))
 

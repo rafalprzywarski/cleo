@@ -468,6 +468,10 @@
           (filter pred n))))))
 
 
+(defn empty? [coll]
+  (not (seq coll)))
+
+
 (defmacro ns
   {:arglists '([name docstring? attr-map? references*])}
   [name & references]

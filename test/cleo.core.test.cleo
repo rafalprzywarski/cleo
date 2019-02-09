@@ -568,6 +568,16 @@
   (assert= '(f1 b c (f0 a x)) (macroexpand '(->> x (f0 a) (f1 b c)))))
 
 
+(deftest empty?
+  (assert (empty? nil))
+  (assert (empty? []))
+  (assert-not (empty? [1]))
+  (assert (empty? ()))
+  (assert-not (empty? '(1)))
+  (assert (empty? {}))
+  (assert-not (empty? {1 2})))
+
+
 (deftest parse-const
   (assert= 10 (cc/parse 10))
   (assert= 3.5 (cc/parse 3.5))
@@ -988,3 +998,30 @@
                        vm/POP
                        vm/LDC 2 0]}
            (translate-body '(do (do 10 (do 20  10)) (do) 30))))
+
+
+(def test-var1 10)
+(def {:dynamic nil} test-var2 20)
+(def {:dynamic :true} test-dynvar 30)
+
+
+(deftest translate-var
+  (assert= {:arity 0
+            :vars [#'test-var1]
+            :bytecode [vm/LDV 0 0]}
+           (translate-body 'cleo.core.test/test-var1))
+  (assert-compilation-error "unable to resolve symbol: cleo.core.test/missing-var" (translate-body 'cleo.core.test/missing-var))
+  (assert= {:arity 0
+            :vars [#'test-var2 #'test-dynvar]
+            :bytecode [vm/LDV 0 0
+                       vm/POP
+                       vm/LDDV 1 0]}
+           (translate-body '(do cleo.core.test/test-var2 cleo.core.test/test-dynvar)))
+  (assert= {:arity 0
+            :vars [#'test-var1 #'test-var2]
+            :bytecode [vm/LDV 0 0
+                       vm/POP
+                       vm/LDV 1 0
+                       vm/POP
+                       vm/LDV 0 0]}
+           (translate-body '(do cleo.core.test/test-var1 cleo.core.test/test-var2 cleo.core.test/test-var1))))
