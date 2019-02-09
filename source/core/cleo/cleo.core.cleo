@@ -301,6 +301,17 @@
 (defn odd? [x] (not (even? x)))
 
 
+(defn max
+  ([x] x)
+  ([x y] (if (< y x) x y))
+  ([x y & xs]
+   (loop* [xs xs
+           x (max x y)]
+     (if xs
+       (recur (next xs) (max x (first xs)))
+       x))))
+
+
 (defn not=
   "Equivalent to (not (= x y))"
   [x y] (not (= x y)))

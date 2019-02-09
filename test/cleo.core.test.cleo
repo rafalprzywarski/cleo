@@ -578,6 +578,15 @@
   (assert-not (empty? {1 2})))
 
 
+(deftest max
+  (assert= 10 (max 10))
+  (assert= 20 (max 10 20))
+  (assert= 10 (max 10 0))
+  (assert= 3 (max 1 2 3))
+  (assert= 3 (max 3 1 2))
+  (assert= 4 (max 3 1 2 4)))
+
+
 (deftest parse-const
   (assert= 10 (cc/parse 10))
   (assert= 3.5 (cc/parse 3.5))
@@ -1070,3 +1079,53 @@
                        vm/CALL 1
                        vm/CALL 2]}
            (translate-body '(fn* [a b c] (a (b) (c (b a)))))))
+
+
+(deftest translate-let
+  (assert= {:arity 0
+            :bytecode [vm/CNIL]}
+           (translate-body '(let* [])))
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255]}
+           (translate-body '(fn* [x] (let* [] x))))
+  (assert= {:arity 2
+            :bytecode [vm/LDL 254 255
+                       vm/POP
+                       vm/LDL 255 255]}
+           (translate-body '(fn* [x y] (let* [] x y))))
+  (assert= {:arity 0
+            :locals-size 2
+            :consts [10]
+            :bytecode [vm/LDC 0 0
+                       vm/STL 0 0
+                       vm/LDC 0 0
+                       vm/STL 1 0
+                       vm/LDL 0 0
+                       vm/POP
+                       vm/LDL 1 0]}
+           (translate-body '(let* [x 10 y 10] x y)))
+  (assert= {:arity 1
+            :locals-size 1
+            :bytecode [vm/LDL 255 255
+                       vm/STL 0 0
+                       vm/LDL 0 0]}
+           (translate-body '(fn* [x] (let* [x x] x))))
+  (assert= {:arity 1
+            :locals-size 2
+            :bytecode [vm/LDL 255 255
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/STL 1 0
+                       vm/LDL 1 0]}
+           (translate-body '(fn* [x] (let* [x x
+                                            x x] x))))
+  (assert= {:arity 1
+            :locals-size 1
+            :bytecode [vm/LDL 255 255
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/STL 0 0
+                       vm/LDL 0 0]}
+           (translate-body '(fn* [a] (let* [x (let* [y (let* [z a] z)] y)] x)))))
