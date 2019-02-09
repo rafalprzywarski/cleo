@@ -447,17 +447,33 @@
            :bytecode (-> bytecode (conj! opcode) (conj! (vars v)) (conj! 0)))))
 
 
+(defn translate-local! [{:keys [bytecode locals] :as body} {index :index}]
+  (assoc body
+         :bytecode (-> bytecode (conj! vm/LDL) (conj! (bit-and (locals index) 0xff)) (conj! 255))))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
       (cond (= tag :do) (translate-do! body expr)
             (= tag :var) (translate-var! body expr)
+            (= tag :local) (translate-local! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
 
+(defn- make-locals [params]
+  (loop [index (- (count params))
+         params (seq params)
+         locals {}]
+    (if params
+      (recur (inc index) (next params) (assoc locals (:index (first params)) index))
+      locals)))
+
+
 (defn- translate-body [{:keys [expr params]}]
   (let [tbody {:arity (count params)
+               :locals (make-locals params)
                :bytecode (transient [])}
         tbody (translate-expr! tbody expr)
         tbody (update tbody :bytecode persistent!)
@@ -468,7 +484,8 @@
         tbody (update tbody :vars serialize)
         tbody (if (empty? (:vars tbody))
                 (dissoc tbody :vars)
-                tbody)]
+                tbody)
+        tbody (dissoc tbody :locals)]
     tbody))
 
 

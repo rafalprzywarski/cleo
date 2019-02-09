@@ -1025,3 +1025,16 @@
                        vm/POP
                        vm/LDV 0 0]}
            (translate-body '(do cleo.core.test/test-var1 cleo.core.test/test-var2 cleo.core.test/test-var1))))
+
+
+(deftest translate-param
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255]}
+           (-> '(fn* [a] a) cc/parse cc/translate :bodies first))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 254 255
+                       vm/POP
+                       vm/LDL 253 255
+                       vm/POP
+                       vm/LDL 255 255]}
+           (-> '(fn* fx [a b c] (do b a c)) cc/parse cc/translate :bodies first)))
