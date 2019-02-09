@@ -328,6 +328,7 @@ const Value THE_NS = create_symbol("cleo.core", "the-ns");
 const Value FIND_NS = create_symbol("cleo.core", "find-ns");
 const Value RESOLVE = create_symbol("cleo.core", "resolve");
 const Value SUBS = create_symbol("cleo.core", "subs");
+const Value ASSOC_E = create_symbol("cleo.core", "assoc!");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -495,6 +496,16 @@ Value transient_array_get(Value v, Value index)
     if (i < 0 || i >= get_int64_value(get_transient_array_size(v)))
         return nil;
     return get_transient_array_elem(v, i);
+}
+
+Force transient_array_assoc(Value v, Value index, Value e)
+{
+    if (get_value_tag(index) != tag::INT64)
+        return nil;
+    auto i = get_int64_value(index);
+    if (i < 0 || i > get_int64_value(get_transient_array_size(v)))
+        throw_index_out_of_bounds();
+    return transient_array_assoc_elem(v, i, e);
 }
 
 Value array_call(Value v, Value index)
@@ -1527,6 +1538,11 @@ struct Initialize
 
         derive(*type::PersistentHashMap, *type::PersistentMap);
         define_method(ASSOC, *type::PersistentHashMap, *rt::persistent_hash_map_assoc);
+
+        define_multimethod(ASSOC_E, *first_type, undefined);
+
+        f = create_native_function3<transient_array_assoc>();
+        define_method(ASSOC_E, *type::TransientArray, *f);
 
         f = create_native_function3<nil_assoc>();
         define_method(ASSOC, nil, *f);

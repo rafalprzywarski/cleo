@@ -1,4 +1,6 @@
 (ns cleo.compiler)
+(require 'cleo.vm)
+(alias 'vm 'cleo.vm)
 
 
 (def parse-form)
@@ -392,3 +394,79 @@
 
 (defn parse [form]
   (parse-form nil form))
+
+
+(def translate-expr!)
+
+
+(defn- intern-const [consts value]
+  (if (contains? consts value)
+    consts
+    (assoc consts value (count consts))))
+
+
+(defn- translate-const! [{:keys [bytecode consts] :as body} val]
+  (if val
+    (let [consts (intern-const consts val)]
+      (assoc body
+             :consts consts
+             :bytecode (-> bytecode (conj! vm/LDC) (conj! (get consts val)) (conj! 0))))
+    (assoc body
+           :bytecode (conj! bytecode vm/CNIL))))
+
+
+(defn- serialize-consts [consts]
+  (let [sconsts (loop [n (count consts)
+                       s (transient [])]
+                  (if (pos? n)
+                    (recur (dec n) (conj! s 0))
+                    s))]
+    (persistent! (reduce (fn [s [val index]]
+                           (assoc! s index val))
+                         sconsts
+                         consts))))
+
+
+(defn- translate-do! [body {exprs :exprs}]
+  (reduce (fn [body expr]
+            (-> body
+                (assoc :bytecode (conj! (:bytecode body) vm/POP))
+                (translate-expr! expr)))
+          (translate-expr! body (first exprs))
+          (next exprs)))
+
+
+(defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
+  (if (map? expr)
+    (let [tag (:tag expr)]
+      (cond (= tag :do) (translate-do! body expr)
+            :else (translate-const! body (:value expr))))
+    (translate-const! body expr)))
+
+
+(defn- translate-body [{:keys [expr params]}]
+  (let [tbody {:arity (count params)
+               :bytecode (transient [])}
+        tbody (translate-expr! tbody expr)
+        tbody (update tbody :bytecode persistent!)
+        tbody (update tbody :consts serialize-consts)
+        tbody (if (not (seq (:consts tbody)))
+                (dissoc tbody :consts)
+                tbody)]
+    tbody))
+
+
+(defn translate-fn [{:keys [name bodies]}]
+  (let [f {:bodies (mapv translate-body bodies)}]
+    (if name
+      (assoc f :name name)
+      f)))
+
+
+(defn translate [ast]
+  (let [ast (if (or (not (map? ast))
+                    (not= :fn (:tag ast)))
+              {:tag :fn
+               :bodies [{:params [], :expr ast}]}
+              ast)]
+    (translate-fn ast)))

@@ -450,6 +450,14 @@
       (cons (f (first s)) (map f (next s))))))
 
 
+(defn mapv [f coll]
+  (loop [s (seq coll)
+         out (transient [])]
+    (if s
+      (recur (next s) (conj! out (f (first s))))
+      (persistent! out))))
+
+
 (defn filter [pred coll]
   (lazy-seq
     (when-let [s (seq coll)]

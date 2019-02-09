@@ -1,6 +1,8 @@
 (ns cleo.core.test)
 (require 'cleo.compiler)
 (alias 'cc 'cleo.compiler)
+(require 'cleo.vm)
+(alias 'vm 'cleo.vm)
 
 
 (def tests (atom {}))
@@ -516,6 +518,13 @@
   (assert= '(9 7 2) (map dec [10 8 3])))
 
 
+(deftest mapv
+  (assert= [] (mapv inc nil))
+  (assert= [] (mapv inc []))
+  (assert= [11] (mapv inc [10]))
+  (assert= [9 7 2] (mapv dec [10 8 3])))
+
+
 (deftest filter
   (assert= () (filter even? nil))
   (assert= () (filter even? []))
@@ -809,6 +818,7 @@
   (assert-no-exception (cc/parse '(fn* [x] (if x (recur x) 1))))
   (assert-no-exception (cc/parse '(fn* [x] (if x 1 (recur x))))))
 
+
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))
@@ -908,3 +918,73 @@
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] ((recur 10) 20))))
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (def z (recur 10)))))
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (if (recur 10) 1 2)))))
+
+
+(deftest translate-fn
+  (assert= {:bodies [{:arity 0
+                      :bytecode [vm/CNIL]}]}
+           (cc/translate (cc/parse '(fn* []))))
+  (assert= {:name 'abc
+            :bodies [{:arity 0
+                      :bytecode [vm/CNIL]}]}
+           (cc/translate (cc/parse '(fn* abc []))))
+  (assert= {:bodies [{:arity 0
+                      :bytecode [vm/CNIL]}
+                     {:arity 1
+                      :bytecode [vm/CNIL]}
+                     {:arity 3
+                      :bytecode [vm/CNIL]}]}
+           (cc/translate (cc/parse '(fn* ([]) ([x]) ([x y z]))))))
+
+
+(defn translate-body [form]
+  (-> form
+      cc/parse
+      cc/translate
+      :bodies
+      first))
+
+
+(deftest translate-const
+  (assert= {:arity 0
+            :consts [:xyz]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body :xyz))
+  (assert= {:arity 0
+            :consts [100]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body 100))
+  (assert= {:arity 0
+            :bytecode [vm/CNIL]}
+           (translate-body nil))
+  (assert= {:arity 0
+            :bytecode [vm/CNIL]}
+           (translate-body '(do)))
+  (assert= {:arity 0
+            :consts [{:a :b}]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body {:a :b}))
+  (assert= {:arity 0
+            :consts [10 20 30]
+            :bytecode [vm/LDC 0 0
+                       vm/POP
+                       vm/LDC 1 0
+                       vm/POP
+                       vm/LDC 0 0
+                       vm/POP
+                       vm/CNIL
+                       vm/POP
+                       vm/LDC 2 0]}
+           (translate-body '(do 10 20 10 nil 30)))
+  (assert= {:arity 0
+            :consts [10 20 30]
+            :bytecode [vm/LDC 0 0
+                       vm/POP
+                       vm/LDC 1 0
+                       vm/POP
+                       vm/LDC 0 0
+                       vm/POP
+                       vm/CNIL
+                       vm/POP
+                       vm/LDC 2 0]}
+           (translate-body '(do (do 10 (do 20  10)) (do) 30))))

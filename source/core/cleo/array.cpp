@@ -1,5 +1,6 @@
 #include "array.hpp"
 #include "global.hpp"
+#include "util.hpp"
 
 namespace cleo
 {
@@ -80,6 +81,17 @@ Force transient_array_conj(Value v, Value e)
         set_object_element(*t, i, get_object_element(v, i));
     set_object_element(*t, capacity, e);
     return *t;
+}
+
+Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e)
+{
+    auto size = get_int64_value(get_transient_array_size(v));
+    if (index > size)
+        throw_index_out_of_bounds();
+    if (index == size)
+        return transient_array_conj(v, e);
+    set_object_element(v, index, e);
+    return v;
 }
 
 Force transient_array_persistent(Value v)

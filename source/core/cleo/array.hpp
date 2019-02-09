@@ -17,6 +17,7 @@ Force transient_array(Value other);
 Value get_transient_array_size(Value v);
 Value get_transient_array_elem(Value v, std::uint32_t index);
 Force transient_array_conj(Value v, Value e);
+Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e);
 Force transient_array_persistent(Value v);
 
 }
