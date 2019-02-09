@@ -507,6 +507,22 @@
            :bytecode (conj! (:bytecode body) vm/THROW))))
 
 
+(defn- translate-if! [body {:keys [cond then else]}]
+  (let [body (translate-expr! body cond)
+        bnil-off (count (:bytecode body))
+        body (assoc body :bytecode (-> (:bytecode body) (conj! vm/BNIL) (conj! 6) (conj! 0)))
+        body (translate-expr! body then)
+        br-off (count (:bytecode body))
+        body (assoc body :bytecode (-> (:bytecode body) (conj! vm/BR) (conj! 3) (conj! 0)))
+        body (translate-expr! body else)
+        bytecode (:bytecode body)
+        body (assoc body
+                    :bytecode (-> bytecode
+                                  (assoc! (inc bnil-off) (- br-off bnil-off))
+                                  (assoc! (inc br-off) (- (- (count bytecode) br-off) 3))))]
+    body))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -516,6 +532,7 @@
             (= tag :call) (translate-call! body expr)
             (= tag :let) (translate-let! body expr)
             (= tag :throw) (translate-throw! body expr)
+            (= tag :if) (translate-if! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 

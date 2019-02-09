@@ -1128,7 +1128,23 @@
                        vm/LDL 0 0
                        vm/STL 0 0
                        vm/LDL 0 0]}
-           (translate-body '(fn* [a] (let* [x (let* [y (let* [z a] z)] y)] x)))))
+           (translate-body '(fn* [a] (let* [x (let* [y (let* [z a] z)] y)] x))))
+  (assert= {:arity 1
+            :locals-size 2
+            :bytecode [vm/LDL 255 255
+                       vm/BNIL 23 0
+                       vm/LDL 255 255
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/STL 1 0
+                       vm/LDL 0 0
+                       vm/LDL 1 0
+                       vm/CALL 1
+                       vm/BR 9 0
+                       vm/LDL 255 255
+                       vm/STL 0 0
+                       vm/LDL 0 0]}
+           (translate-body '(fn* [a] (if a (let* [x a y a] (x y)) (let* [x a] x))))))
 
 
 (deftest translate-throw
@@ -1141,3 +1157,39 @@
             :bytecode [vm/LDC 0 0
                        vm/THROW]}
            (translate-body '(throw 10))))
+
+
+(deftest translate-if
+  (assert= {:arity 3
+            :bytecode [vm/LDL 253 255
+                       vm/BNIL 6 0
+                       vm/LDL 254 255
+                       vm/BR 3 0
+                       vm/LDL 255 255]}
+           (translate-body '(fn* [a b c] (if a b c))))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 253 255
+                       vm/CALL 0
+                       vm/BNIL 8 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/BR 5 0
+                       vm/LDL 255 255
+                       vm/CALL 0]}
+           (translate-body '(fn* [a b c] (if (a) (b) (c)))))
+  (assert= {:arity 3
+            :consts [101 102 103 104]
+            :bytecode [vm/LDL 253 255
+                       vm/BNIL 30 0
+                       vm/LDL 254 255
+                       vm/BNIL 18 0
+                       vm/LDL 255 255
+                       vm/BNIL 6 0
+                       vm/LDC 0 0
+                       vm/BR 3 0
+                       vm/LDC 1 0
+                       vm/BR 3 0
+                       vm/LDC 2 0
+                       vm/BR 3 0
+                       vm/LDC 3 0]}
+           (translate-body '(fn* [a b c] (if a (if b (if c 101 102) 103) 104)))))
