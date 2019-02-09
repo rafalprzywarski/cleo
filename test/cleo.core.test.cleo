@@ -1210,3 +1210,34 @@
                        vm/LDC 0 0
                        vm/LDDF]}
            (translate-body '(fn* [f x] (. (f x) -xf)))))
+
+
+(deftest translate-apply
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255
+                       vm/CNIL
+                       vm/APPLY 0]}
+           (translate-body '(fn* [f] (cleo.core/apply f nil))))
+  (assert= {:arity 1
+            :consts [10 20 30]
+            :bytecode [vm/LDL 255 255
+                       vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDC 2 0
+                       vm/CNIL
+                       vm/APPLY 3]}
+           (translate-body '(fn* [f] (apply f 10 20 30 nil))))
+  (assert= {:arity 3
+            :consts [10 20]
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 254 255
+                       vm/LDC 0 0
+                       vm/APPLY 0
+                       vm/LDL 255 255
+                       vm/LDC 1 0
+                       vm/CALL 1
+                       vm/APPLY 1]}
+           (translate-body '(fn* [f g h] (apply f (apply g 10) (h 20)))))
+  (assert-compilation-error "Wrong number of args (0) passed to cleo.core/apply" (cc/translate (cc/parse '(apply))))
+  (assert-compilation-error "Wrong number of args (0) passed to cleo.core/apply" (cc/translate (cc/parse '(cleo.core/apply))))
+  (assert-compilation-error "Wrong number of args (1) passed to cleo.core/apply" (cc/translate (cc/parse '(fn* [f] (cleo.core/apply f))))))

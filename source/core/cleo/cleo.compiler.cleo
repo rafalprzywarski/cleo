@@ -463,10 +463,20 @@
 
 
 (defn translate-call! [{:keys [bytecode] :as body} {:keys [fn args]}]
-  (let [body (translate-expr! body fn)
+  (let [apply? (and (map? fn)
+                    (= (:tag fn) :var)
+                    (= (resolve (:name fn)) #'cleo.core/apply))
+        arg-count (count args)
+        fn (if apply? (first args) fn)
+        args (if apply? (next args) args)
+        opcode (if apply? vm/APPLY vm/CALL)
+        body (translate-expr! body fn)
         body (reduce translate-expr! body args)]
+    (when (and apply?
+               (< arg-count 2))
+      (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))
     (assoc body
-           :bytecode (-> bytecode (conj! vm/CALL) (conj! (count args))))))
+           :bytecode (-> bytecode (conj! opcode) (conj! (if apply? (dec (count args)) (count args)))))))
 
 
 (defn- add-tlocal [{{:keys [locals locals-size] :as scope} :scope :as body} index]
