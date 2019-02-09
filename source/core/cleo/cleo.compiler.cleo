@@ -501,6 +501,12 @@
     body))
 
 
+(defn- translate-throw! [body {expr :expr}]
+  (let [body (translate-expr! body expr)]
+    (assoc body
+           :bytecode (conj! (:bytecode body) vm/THROW))))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -509,6 +515,7 @@
             (= tag :local) (translate-local! body expr)
             (= tag :call) (translate-call! body expr)
             (= tag :let) (translate-let! body expr)
+            (= tag :throw) (translate-throw! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 

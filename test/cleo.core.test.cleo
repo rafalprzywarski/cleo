@@ -1129,3 +1129,15 @@
                        vm/STL 0 0
                        vm/LDL 0 0]}
            (translate-body '(fn* [a] (let* [x (let* [y (let* [z a] z)] y)] x)))))
+
+
+(deftest translate-throw
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255
+                       vm/THROW]}
+           (translate-body '(fn* [p] (throw p))))
+  (assert= {:arity 0
+            :consts [10]
+            :bytecode [vm/LDC 0 0
+                       vm/THROW]}
+           (translate-body '(throw 10))))
