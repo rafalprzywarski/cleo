@@ -1193,3 +1193,20 @@
                        vm/BR 3 0
                        vm/LDC 3 0]}
            (translate-body '(fn* [a b c] (if a (if b (if c 101 102) 103) 104)))))
+
+
+(deftest translate-dot
+  (assert= {:arity 1
+            :consts ['xf]
+            :bytecode [vm/LDL 255 255
+                       vm/LDC 0 0
+                       vm/LDDF]}
+           (translate-body '(fn* [x] (. x -xf))))
+  (assert= {:arity 2
+            :consts ['xf]
+            :bytecode [vm/LDL 254 255
+                       vm/LDL 255 255
+                       vm/CALL 1
+                       vm/LDC 0 0
+                       vm/LDDF]}
+           (translate-body '(fn* [f x] (. (f x) -xf)))))

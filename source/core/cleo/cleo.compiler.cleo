@@ -523,6 +523,13 @@
     body))
 
 
+(defn- translate-dot! [body {:keys [expr member]}]
+  (let [body (translate-expr! body expr)
+        body (translate-const! body member)
+        body (assoc body :bytecode (conj! (:bytecode body) vm/LDDF))]
+    body))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -533,6 +540,7 @@
             (= tag :let) (translate-let! body expr)
             (= tag :throw) (translate-throw! body expr)
             (= tag :if) (translate-if! body expr)
+            (= tag :dot) (translate-dot! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
