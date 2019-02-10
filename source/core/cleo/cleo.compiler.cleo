@@ -422,14 +422,15 @@
       (assoc! off (bit-and n 0xff))
       (assoc! (inc off) (bit-and (bit-shift-right n 8) 0xff))))
 
-(defn- translate-const! [{:keys [bytecode consts] :as body} val]
+
+(defn- translate-const! [{:keys [consts] :as body} val]
   (if val
     (let [consts (intern consts val)]
       (assoc body
              :consts consts
-             :bytecode (-> bytecode (conj! vm/LDC) (conj! (get consts val)) (conj! 0))))
+             :bytecode (-> (:bytecode body) (conj! vm/LDC) (conj! (get consts val)) (conj! 0))))
     (assoc body
-           :bytecode (conj! bytecode vm/CNIL))))
+           :bytecode (conj! (:bytecode body) vm/CNIL))))
 
 
 (defn- serialize [m]
@@ -444,10 +445,10 @@
                          m))))
 
 
-(defn- translate-exprs! [{:keys [bytecode] :as body} exprs]
+(defn- translate-exprs! [body exprs]
   (reduce (fn [body expr]
             (-> body
-                (assoc :bytecode (conj! bytecode vm/POP))
+                (assoc :bytecode (conj! (:bytecode body) vm/POP))
                 (translate-expr! expr)))
           (translate-expr! body (first exprs))
           (next exprs)))
@@ -457,7 +458,7 @@
   (translate-exprs! body exprs))
 
 
-(defn translate-var! [{:keys [bytecode vars] :as body} {name :name}]
+(defn translate-var! [{:keys [vars] :as body} {name :name}]
   (let [v (resolve name)
         vars (intern vars v)
         opcode (if (:dynamic (meta v)) vm/LDDV vm/LDV)]
@@ -470,12 +471,12 @@
       (fail "var: " name " is not public"))
     (assoc body
            :vars vars
-           :bytecode (-> bytecode (conj! opcode) (conj! (vars v)) (conj! 0)))))
+           :bytecode (-> (:bytecode body) (conj! opcode) (conj! (vars v)) (conj! 0)))))
 
 
-(defn translate-local! [{:keys [bytecode] {locals :locals} :scope :as body} {index :index}]
+(defn translate-local! [{{locals :locals} :scope :as body} {index :index}]
   (assoc body
-         :bytecode (-> bytecode (conj! vm/LDL) (conj-i16! (locals index)))))
+         :bytecode (-> (:bytecode body) (conj! vm/LDL) (conj-i16! (locals index)))))
 
 
 (defn inc-stack-depth [body]
@@ -519,14 +520,14 @@
    locals-size])
 
 
-(defn- translate-binding! [{:keys [bytecode] :as body} {:keys [index expr]}]
+(defn- translate-binding! [body {:keys [index expr]}]
   (let [body (translate-expr! body expr)
         [body tindex] (add-tlocal body index)]
     (assoc body
-           :bytecode (-> bytecode (conj! vm/STL) (conj! tindex) (conj! 0)))))
+           :bytecode (-> (:bytecode body) (conj! vm/STL) (conj! tindex) (conj! 0)))))
 
 
-(defn- translate-let! [{:keys [bytecode] :as body} {:keys [locals exprs]}]
+(defn- translate-let! [body {:keys [locals exprs]}]
   (let [body (push-scope body)
         body (reduce translate-binding! body locals)
         body (translate-exprs! body exprs)
@@ -534,7 +535,7 @@
     body))
 
 
-(defn- translate-loop! [{:keys [bytecode] :as body} {:keys [locals exprs]}]
+(defn- translate-loop! [body {:keys [locals exprs]}]
   (let [body (push-scope body)
         recur-local-index (-> body :scope :locals-size)
         body (reduce translate-binding! body locals)
@@ -655,7 +656,7 @@
   ((if (:catch expr) translate-try-catch! translate-try-finally!) body expr))
 
 
-(defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
+(defn- translate-expr! [body expr]
   (if (map? expr)
     (let [tag (:tag expr)]
       (cond (= tag :do) (translate-do! body expr)
