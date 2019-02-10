@@ -959,6 +959,18 @@
             :bodies [{:arity 0
                       :bytecode [vm/CNIL]}]}
            (cc/translate (cc/parse '(fn* abc []))))
+  (assert= {:name 'abc
+            :bodies [{:arity 0
+                      :bytecode [vm/LDL 255 255]}]}
+           (cc/translate (cc/parse '(fn* abc [] abc))))
+  (assert= {:name 'abc
+            :bodies [{:arity 2
+                      :bytecode [vm/LDL 254 255
+                                 vm/POP
+                                 vm/LDL 255 255
+                                 vm/POP
+                                 vm/LDL 253 255]}]}
+           (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))))
   (assert= {:bodies [{:arity 0
                       :bytecode [vm/CNIL]}
                      {:arity 1

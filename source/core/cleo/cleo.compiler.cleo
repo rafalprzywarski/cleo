@@ -613,18 +613,18 @@
     (translate-const! body expr)))
 
 
-(defn- make-locals [params]
+(defn- make-locals [name-index params]
   (loop [index (- (count params))
          params (seq params)
-         locals {}]
+         locals (if name-index {name-index (dec index)} {})]
     (if params
       (recur (inc index) (next params) (assoc locals (:index (first params)) index))
       locals)))
 
 
-(defn- translate-body [{:keys [expr params]}]
+(defn- translate-body [fn-name-index {:keys [expr params]}]
   (let [tbody {:arity (count params)
-               :scope {:locals (make-locals params)
+               :scope {:locals (make-locals fn-name-index params)
                        :locals-size 0
                        :recur-offset 0
                        :recur-local-index (- (count params))}
@@ -647,8 +647,8 @@
     tbody))
 
 
-(defn translate-fn [{:keys [name bodies]}]
-  (let [f {:bodies (mapv translate-body bodies)}]
+(defn translate-fn [{:keys [name name-index bodies]}]
+  (let [f {:bodies (mapv (fn [body] (translate-body name-index body)) bodies)}]
     (if name
       (assoc f :name name)
       f)))
