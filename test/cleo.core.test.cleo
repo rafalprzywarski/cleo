@@ -1582,4 +1582,132 @@
                        vm/CNIL
                        vm/SETV]
             :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
-           (translate-body '(fn [x] (def z (try* (x) (catch* cleo.core/Exception e e)))))))
+           (translate-body '(fn* [x] (def z (try* (x) (catch* cleo.core/Exception e e)))))))
+
+
+(deftest translate-try-finally
+  (assert= {:arity 2
+            :bytecode [vm/LDL 254 255
+                       vm/CALL 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 14, :stack-size 0}]}
+           (translate-body '(fn* [f g] (try* (f) (finally* (g))))))
+  (assert= {:arity 2
+            :locals-size 2
+            :bytecode [vm/LDL 254 255
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/STL 1 0
+                       vm/LDL 0 0
+                       vm/CALL 0
+                       vm/LDL 1 0
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 1 0
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW]
+            :exception-table [{:start-offset 12, :end-offset 17, :handler-offset 26, :stack-size 0}]}
+           (translate-body '(fn* [a b] (let* [f a g b] (try* (f) (finally* (g)))))))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 253 255
+                       vm/CALL 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 14, :stack-size 0}
+                              {:start-offset 0, :end-offset 21, :handler-offset 30, :stack-size 0}]}
+           (translate-body '(fn* [f g h] (try* (try* (f) (finally* (g))) (finally* (h))))))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 254 255
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW
+                       vm/CALL 2]
+            :exception-table [{:start-offset 6, :end-offset 11, :handler-offset 20, :stack-size 2}]}
+           (translate-body '(fn* [f g x] (f g (try* (x) (finally* (g)))))))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 253 255
+                       vm/CALL 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW
+                       vm/POP
+                       vm/BR 23 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW
+                       vm/POP
+                       vm/THROW]
+            :exception-table [{:start-offset 5, :end-offset 10, :handler-offset 19, :stack-size 1}
+                              {:start-offset 30, :end-offset 35, :handler-offset 44, :stack-size 0}
+                              {:start-offset 0, :end-offset 5, :handler-offset 30, :stack-size 0}]}
+           (translate-body '(fn* [f g h] (try* (f) (finally* (try* (g) (finally* (h))))))))
+  (assert= {:arity 4
+            :bytecode [vm/LDL 252 255
+                       vm/CALL 0
+                       vm/LDL 253 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 253 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW
+                       vm/POP
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/BR 7 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/THROW]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 14, :stack-size 0}
+                              {:start-offset 22, :end-offset 27, :handler-offset 36, :stack-size 0}]}
+           (translate-body '(fn* [f g h i] (do (try* (f) (finally* (g))) (try* (h) (finally* (i))))))))
