@@ -1241,3 +1241,57 @@
   (assert-compilation-error "Wrong number of args (0) passed to cleo.core/apply" (cc/translate (cc/parse '(apply))))
   (assert-compilation-error "Wrong number of args (0) passed to cleo.core/apply" (cc/translate (cc/parse '(cleo.core/apply))))
   (assert-compilation-error "Wrong number of args (1) passed to cleo.core/apply" (cc/translate (cc/parse '(fn* [f] (cleo.core/apply f))))))
+
+
+(defmacro binding-ns [name expr]
+  `(let [prev# (ns-name *ns*)]
+     (try*
+       (do
+         (in-ns ~name)
+         ~expr)
+       (finally*
+         (in-ns prev#)))))
+
+
+(define-var 'cleo.compiler.def.test.other/ex nil)
+
+
+(deftest translate-def
+  (let [tbody (binding-ns 'cleo.compiler.def.test
+                          (translate-body '(def x 10)))]
+    (assert (resolve 'cleo.compiler.def.test/x))
+    (assert= {:arity 0
+              :consts ['x 10]
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/CNIL
+                         vm/SETV]}
+             tbody))
+  (let [tbody (binding-ns 'cleo.compiler.def.test
+                          (translate-body '(def xr xr)))]
+    (assert (resolve 'cleo.compiler.def.test/xr))
+    (assert= {:arity 0
+              :consts ['xr]
+              :vars [(resolve 'cleo.compiler.def.test/xr)]
+              :bytecode [vm/LDC 0 0
+                         vm/LDV 0 0
+                         vm/CNIL
+                         vm/SETV]}
+             tbody))
+  (let [tbody (binding-ns 'cleo.compiler.def.test
+                          (translate-body '(def {:x 7} y 10)))]
+    (assert= 7 (:x (meta (resolve 'cleo.compiler.def.test/y))))
+    (assert= {:arity 0
+              :consts ['y 10 {:x 7}]
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/LDC 2 0
+                         vm/SETV]}
+             tbody))
+  (assert (resolve 'cleo.compiler.def.test.other/ex))
+  (assert-compilation-error "Can't create defs outside of current ns"
+                            (binding-ns 'cleo.compiler.def.test
+                                        (cc/translate (cc/parse '(def cleo.compiler.def.test.other/ex)))))
+  (assert-compilation-error "Can't refer to qualified var that doesn't exist"
+                            (binding-ns 'cleo.compiler.def.test
+                                        (cc/translate (cc/parse '(def cleo.compiler.def.test.other/nex))))))

@@ -329,6 +329,8 @@ const Value FIND_NS = create_symbol("cleo.core", "find-ns");
 const Value RESOLVE = create_symbol("cleo.core", "resolve");
 const Value SUBS = create_symbol("cleo.core", "subs");
 const Value ASSOC_E = create_symbol("cleo.core", "assoc!");
+const Value DEFINE_VAR = create_symbol("cleo.core", "define-var");
+
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1210,6 +1212,11 @@ Force string_get(Value s, Value idx)
     return string_get(s, idx, nil);
 }
 
+Value define_var_(Value name, Value meta)
+{
+    return define(name, nil, meta);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1303,6 +1310,8 @@ struct Initialize
         define_function(RESOLVE, create_native_function1<maybe_resolve_var, &RESOLVE>());
 
         define_function(SUBS, create_native_function2or3<subs, subs, &SUBS>());
+
+        define_function(DEFINE_VAR, create_native_function2<define_var_, &DEFINE_VAR>());
 
         Root f;
 

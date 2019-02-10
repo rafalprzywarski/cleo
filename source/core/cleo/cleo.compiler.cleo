@@ -540,6 +540,20 @@
     body))
 
 
+(defn- translate-def! [body {:keys [meta name expr]}]
+  (let [body (translate-const! body name)
+        cur-ns-name (str (ns-name *ns*))
+        sym-ns (namespace name)]
+    (when (and sym-ns
+               (not= sym-ns cur-ns-name))
+      (fail (if (resolve name) "Can't create defs outside of current ns" "Can't refer to qualified var that doesn't exist")))
+    (define-var (symbol cur-ns-name (str name)) meta)
+    (let [body (translate-expr! body expr)
+          body (translate-const! body meta)
+          body (assoc body :bytecode (conj! (:bytecode body) vm/SETV))]
+      body)))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -551,6 +565,7 @@
             (= tag :throw) (translate-throw! body expr)
             (= tag :if) (translate-if! body expr)
             (= tag :dot) (translate-dot! body expr)
+            (= tag :def) (translate-def! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
