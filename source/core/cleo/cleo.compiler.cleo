@@ -516,6 +516,18 @@
     body))
 
 
+(defn- translate-loop! [{:keys [bytecode] :as body} {:keys [locals exprs]}]
+  (let [body (push-scope body)
+        recur-local-index (-> body :scope :locals-size)
+        body (reduce translate-binding! body locals)
+        body (assoc body :scope (assoc (:scope body)
+                                       :recur-offset (count (:bytecode body))
+                                       :recur-local-index recur-local-index))
+        body (translate-exprs! body exprs)
+        body (pop-scope body)]
+    body))
+
+
 (defn- translate-throw! [body {expr :expr}]
   (let [body (translate-expr! body expr)]
     (assoc body
@@ -559,6 +571,24 @@
       body)))
 
 
+(defn- translate-reassign-locals! [body first-index n]
+  (assoc body
+         :bytecode (loop [i n
+                          bytecode (:bytecode body)]
+                     (if (pos? i)
+                       (recur (dec i) (-> bytecode (conj! vm/STL) (conj-i16! (+ first-index (dec i)))))
+                       bytecode))))
+
+
+(defn- translate-recur! [body {args :args}]
+  (let [body (reduce translate-expr! body args)
+        recur-local-index (-> body :scope :recur-local-index)
+        body (translate-reassign-locals! body recur-local-index (count args))
+        br-off (count (:bytecode body))
+        recur-off (-> body :scope :recur-offset)]
+    (assoc body :bytecode (-> body :bytecode (conj! vm/BR) (conj-i16! (- (- recur-off br-off) 3))))))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -567,11 +597,12 @@
             (= tag :local) (translate-local! body expr)
             (= tag :call) (translate-call! body expr)
             (= tag :let) (translate-let! body expr)
-            (= tag :loop) (translate-let! body expr)
+            (= tag :loop) (translate-loop! body expr)
             (= tag :throw) (translate-throw! body expr)
             (= tag :if) (translate-if! body expr)
             (= tag :dot) (translate-dot! body expr)
             (= tag :def) (translate-def! body expr)
+            (= tag :recur) (translate-recur! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
@@ -588,7 +619,9 @@
 (defn- translate-body [{:keys [expr params]}]
   (let [tbody {:arity (count params)
                :scope {:locals (make-locals params)
-                       :locals-size 0}
+                       :locals-size 0
+                       :recur-offset 0
+                       :recur-local-index (- (count params))}
                :locals-size 0
                :bytecode (transient [])}
         tbody (translate-expr! tbody expr)

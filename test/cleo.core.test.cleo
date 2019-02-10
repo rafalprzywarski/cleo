@@ -1372,3 +1372,74 @@
   (assert-compilation-error "Can't refer to qualified var that doesn't exist"
                             (binding-ns 'cleo.compiler.def.test
                                         (cc/translate (cc/parse '(def cleo.compiler.def.test.other/nex))))))
+
+
+(deftest translate-recur
+  (assert= {:arity 0
+            :bytecode [vm/BR 253 255]}
+           (translate-body '(fn* [] (recur))))
+  (assert= {:arity 1
+            :consts [10]
+            :bytecode [vm/LDC 0 0
+                       vm/STL 255 255
+                       vm/BR (- 256 9) 255]}
+           (translate-body '(fn* [x] (recur 10))))
+  (assert= {:arity 3
+            :consts [10]
+            :bytecode [vm/LDC 0 0
+                       vm/LDL 255 255
+                       vm/LDL 253 255
+                       vm/STL 255 255
+                       vm/STL 254 255
+                       vm/STL 253 255
+                       vm/BR (- 256 21) 255]}
+           (translate-body '(fn* [x y z] (recur 10 z x))))
+  (assert= {:arity 2
+            :bytecode [vm/LDL 255 255
+                       vm/BNIL 23 0
+                       vm/LDL 254 255
+                       vm/LDL 254 255
+                       vm/LDL 255 255
+                       vm/CALL 1
+                       vm/STL 255 255
+                       vm/STL 254 255
+                       vm/BR (- 256 26) 255
+                       vm/BR 1 0
+                       vm/CNIL]}
+           (translate-body '(fn* [f x] (if x (recur f (f x))))))
+  (assert= {:arity 2
+            :consts [1 2]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/STL 255 255
+                       vm/STL 254 255
+                       vm/BR (- 256 15) 255]}
+           (translate-body '(fn* [x & xs] (recur 1 2))))
+  (assert= {:arity 0
+            :bytecode [vm/BR 253 255]}
+           (translate-body '(fn* [] (loop* [] (recur)))))
+  (assert= {:arity 3
+            :locals-size 2
+            :bytecode [vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/LDL 253 255
+                       vm/STL 0 0
+                       vm/LDL 254 255
+                       vm/STL 1 0
+                       vm/LDL 1 0
+                       vm/LDL 0 0
+                       vm/STL 1 0
+                       vm/STL 0 0
+                       vm/BR (- 256 15) 255]}
+           (translate-body '(fn* [a b f] (do (f) (loop* [x a y b] (recur y x))))))
+  (assert= {:arity 1
+            :locals-size 2
+            :bytecode [vm/LDL 255 255
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/STL 1 0
+                       vm/LDL 1 0
+                       vm/STL 0 0
+                       vm/BR (- 256 15) 255]}
+           (translate-body '(fn* [x] (loop* [a x] (let* [b a] (recur b)))))))
