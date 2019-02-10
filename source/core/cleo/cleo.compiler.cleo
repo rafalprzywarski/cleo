@@ -567,6 +567,7 @@
             (= tag :local) (translate-local! body expr)
             (= tag :call) (translate-call! body expr)
             (= tag :let) (translate-let! body expr)
+            (= tag :loop) (translate-let! body expr)
             (= tag :throw) (translate-throw! body expr)
             (= tag :if) (translate-if! body expr)
             (= tag :dot) (translate-dot! body expr)
