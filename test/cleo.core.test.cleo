@@ -1009,9 +1009,23 @@
            (translate-body '(do (do 10 (do 20  10)) (do) 30))))
 
 
+(defmacro binding-ns [name expr]
+  `(let [prev# (ns-name *ns*)]
+     (try*
+       (do
+         (in-ns ~name)
+         ~expr)
+       (finally*
+         (in-ns prev#)))))
+
+
 (def test-var1 10)
 (def {:dynamic nil} test-var2 20)
 (def {:dynamic :true} test-dynvar 30)
+(def {:macro :true} test-macro 40)
+
+
+(define-var 'cleo.compiler.private-var.test/test-var {:private :true})
 
 
 (deftest translate-var
@@ -1033,7 +1047,14 @@
                        vm/LDV 1 0
                        vm/POP
                        vm/LDV 0 0]}
-           (translate-body '(do cleo.core.test/test-var1 cleo.core.test/test-var2 cleo.core.test/test-var1))))
+           (translate-body '(do cleo.core.test/test-var1 cleo.core.test/test-var2 cleo.core.test/test-var1)))
+  (assert-compilation-error "var: cleo.compiler.private-var.test/test-var is not public" (cc/translate (cc/parse 'cleo.compiler.private-var.test/test-var)))
+  (binding-ns 'cleo.compiler.private-var.test
+              (assert= {:arity 0
+                        :vars [#'cleo.compiler.private-var.test/test-var]
+                        :bytecode [vm/LDV 0 0]}
+                       (translate-body 'cleo.compiler.private-var.test/test-var)))
+  (assert-compilation-error "Can't take value of a macro: #'cleo.core.test/test-macro" (cc/translate (cc/parse 'cleo.core.test/test-macro))))
 
 
 (deftest translate-param
@@ -1241,16 +1262,6 @@
   (assert-compilation-error "Wrong number of args (0) passed to cleo.core/apply" (cc/translate (cc/parse '(apply))))
   (assert-compilation-error "Wrong number of args (0) passed to cleo.core/apply" (cc/translate (cc/parse '(cleo.core/apply))))
   (assert-compilation-error "Wrong number of args (1) passed to cleo.core/apply" (cc/translate (cc/parse '(fn* [f] (cleo.core/apply f))))))
-
-
-(defmacro binding-ns [name expr]
-  `(let [prev# (ns-name *ns*)]
-     (try*
-       (do
-         (in-ns ~name)
-         ~expr)
-       (finally*
-         (in-ns prev#)))))
 
 
 (define-var 'cleo.compiler.def.test.other/ex nil)

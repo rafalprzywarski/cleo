@@ -452,6 +452,11 @@
         opcode (if (:dynamic (meta v)) vm/LDDV vm/LDV)]
     (when (not v)
       (fail "unable to resolve symbol: " name))
+    (when (:macro (meta v))
+      (fail "Can't take value of a macro: " v))
+    (when (and (:private (meta v))
+               (not (identical? *ns* (:ns (meta v)))))
+      (fail "var: " name " is not public"))
     (assoc body
            :vars vars
            :bytecode (-> bytecode (conj! opcode) (conj! (vars v)) (conj! 0)))))
