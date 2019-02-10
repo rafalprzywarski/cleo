@@ -1765,6 +1765,9 @@ struct Initialize
         f = create_native_function1<atom_deref>();
         define_method(DEREF, *type::Atom, *f);
 
+        f = create_native_function1<get_var_value>();
+        define_method(DEREF, *type::Var, *f);
+
         define_multimethod(RESET, *first_type, nil);
         f = create_native_function2<atom_reset>();
         define_method(RESET, *type::Atom, *f);

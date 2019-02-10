@@ -417,6 +417,11 @@
       (conj! (bit-and (bit-shift-right n 8) 0xff))))
 
 
+(defn- assoc-i16! [v off n]
+  (-> v
+      (assoc! off (bit-and n 0xff))
+      (assoc! (inc off) (bit-and (bit-shift-right n 8) 0xff))))
+
 (defn- translate-const! [{:keys [bytecode consts] :as body} val]
   (if val
     (let [consts (intern consts val)]
@@ -473,6 +478,18 @@
          :bytecode (-> bytecode (conj! vm/LDL) (conj-i16! (locals index)))))
 
 
+(defn inc-stack-depth [body]
+  (update body :scope (fn [s] (update s :stack-depth inc))))
+
+
+(defn- push-scope [{scope :scope :as body}]
+  (assoc body :scope (assoc scope :prev scope)))
+
+
+(defn- pop-scope [body]
+  (assoc body :scope (-> body :scope :prev)))
+
+
 (defn translate-call! [{:keys [bytecode] :as body} {:keys [fn args]}]
   (let [apply? (and (map? fn)
                     (= (:tag fn) :var)
@@ -481,8 +498,11 @@
         fn (if apply? (first args) fn)
         args (if apply? (next args) args)
         opcode (if apply? vm/APPLY vm/CALL)
+        body (push-scope body)
         body (translate-expr! body fn)
-        body (reduce translate-expr! body args)]
+        body (inc-stack-depth body)
+        body (reduce (fn [body arg] (-> body (translate-expr! arg) inc-stack-depth)) body args)
+        body (pop-scope body)]
     (when (and apply?
                (< arg-count 2))
       (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))
@@ -504,14 +524,6 @@
         [body tindex] (add-tlocal body index)]
     (assoc body
            :bytecode (-> bytecode (conj! vm/STL) (conj! tindex) (conj! 0)))))
-
-
-(defn- push-scope [{scope :scope :as body}]
-  (assoc body :scope (assoc scope :prev scope)))
-
-
-(defn- pop-scope [body]
-  (assoc body :scope (-> body :scope :prev)))
 
 
 (defn- translate-let! [{:keys [bytecode] :as body} {:keys [locals exprs]}]
@@ -565,6 +577,7 @@
 
 (defn- translate-def! [body {:keys [meta name expr]}]
   (let [body (translate-const! body name)
+        body (inc-stack-depth body)
         cur-ns-name (str (ns-name *ns*))
         sym-ns (namespace name)]
     (when (and sym-ns
@@ -595,6 +608,26 @@
     (assoc body :bytecode (-> body :bytecode (conj! vm/BR) (conj-i16! (- (- recur-off br-off) 3))))))
 
 
+(defn- translate-try! [body {expr :expr {catch-expr :expr {catch-index :index} :local type :type} :catch}]
+  (let [stack-size (-> body :scope :stack-depth)
+        start-off (count (:bytecode body))
+        body (translate-expr! body expr)
+        body (push-scope body)
+        [body tindex] (add-tlocal body catch-index)
+        br-off (count (:bytecode body))
+        body (assoc body :bytecode (-> body :bytecode (conj! vm/BR) (conj-i16! 0) (conj! vm/STL) (conj-i16! tindex)))
+        body (translate-expr! body catch-expr)
+        body (update body :bytecode (fn [bc] (assoc-i16! bc (inc br-off) (-> (count bc) (- br-off) (- 3)))))
+        body (pop-scope body)
+        body (update body :exception-table (fn [et]
+                                             (conj! et {:start-offset start-off
+                                                        :end-offset br-off
+                                                        :handler-offset (+ br-off 3)
+                                                        :stack-size stack-size
+                                                        :type @(resolve type)})))]
+    body))
+
+
 (defn- translate-expr! [{:keys [bytecode consts] :as body} expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -609,6 +642,7 @@
             (= tag :dot) (translate-dot! body expr)
             (= tag :def) (translate-def! body expr)
             (= tag :recur) (translate-recur! body expr)
+            (= tag :try) (translate-try! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
@@ -622,28 +656,35 @@
       locals)))
 
 
+(defn- dissoc-empty [m k]
+  (if (empty? (get m k))
+    (dissoc m k)
+    m))
+
+
 (defn- translate-body [fn-name-index {:keys [expr params]}]
   (let [tbody {:arity (count params)
                :scope {:locals (make-locals fn-name-index params)
                        :locals-size 0
                        :recur-offset 0
-                       :recur-local-index (- (count params))}
+                       :recur-local-index (- (count params))
+                       :stack-depth 0}
                :locals-size 0
-               :bytecode (transient [])}
+               :bytecode (transient [])
+               :exception-table (transient [])}
         tbody (translate-expr! tbody expr)
         tbody (update tbody :bytecode persistent!)
+        tbody (update tbody :exception-table persistent!)
         tbody (update tbody :consts serialize)
-        tbody (if (empty?(:consts tbody))
-                (dissoc tbody :consts)
-                tbody)
         tbody (update tbody :vars serialize)
-        tbody (if (empty? (:vars tbody))
-                (dissoc tbody :vars)
-                tbody)
         tbody (if (zero? (:locals-size tbody))
                 (dissoc tbody :locals-size)
                 tbody)
-        tbody (dissoc tbody :scope)]
+        tbody (dissoc tbody :scope)
+        tbody (-> tbody
+                  (dissoc-empty :consts)
+                  (dissoc-empty :vars)
+                  (dissoc-empty :exception-table))]
     tbody))
 
 

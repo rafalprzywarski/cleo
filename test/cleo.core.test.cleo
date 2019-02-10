@@ -1467,3 +1467,119 @@
                        vm/STL 0 0
                        vm/BR (- 256 15) 255]}
            (translate-body '(fn* [x] (loop* [a x] (let* [b a] (recur b)))))))
+
+
+(deftest translate-try-catch
+  (assert= {:arity 2
+            :locals-size 1
+            :bytecode [vm/LDL 254 255
+                       vm/CALL 0
+                       vm/BR 11 0
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/LDL 0 0
+                       vm/CALL 1]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 8, :stack-size 0, :type Exception}]}
+           (translate-body '(fn* [f g] (try* (f) (catch* Exception e (g e))))))
+  (assert= {:arity 3
+            :locals-size 1
+            :bytecode [vm/LDL 253 255
+                       vm/CALL 0
+                       vm/BR 11 0
+                       vm/STL 0 0
+                       vm/LDL 254 255
+                       vm/LDL 0 0
+                       vm/CALL 1
+                       vm/BR 11 0
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/LDL 0 0
+                       vm/CALL 1]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 8, :stack-size 0, :type Exception}
+                              {:start-offset 0, :end-offset 19, :handler-offset 22, :stack-size 0, :type IllegalArgument}]}
+           (translate-body '(fn* [f g h] (try* (try* (f) (catch* Exception e (g e))) (catch* IllegalArgument e (h e))))))
+  (assert= {:arity 2
+            :locals-size 3
+            :bytecode [vm/LDL 254 255
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/STL 1 0
+                       vm/LDL 0 0
+                       vm/CALL 0
+                       vm/BR 11 0
+                       vm/STL 2 0
+                       vm/LDL 1 0
+                       vm/LDL 2 0
+                       vm/CALL 1]
+            :exception-table [{:start-offset 12, :end-offset 17, :handler-offset 20, :stack-size 0, :type Exception}]}
+           (translate-body '(fn* [a b] (let* [f a g b] (try* (f) (catch* Exception e (g e)))))))
+  (assert= {:arity 3
+            :locals-size 1
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 8 0
+                       vm/STL 0 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/CALL 1]
+            :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
+           (translate-body '(fn* [f g x] (f (try* (x) (catch* Exception e (g)))))))
+  (assert= {:arity 3
+            :locals-size 1
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 255 255
+                       vm/LDL 254 255
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 8 0
+                       vm/STL 0 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/CALL 3]
+            :exception-table [{:start-offset 9, :end-offset 14, :handler-offset 17, :stack-size 3, :type Exception}]}
+           (translate-body '(fn* [f g x] (f x g (try* (x) (catch* Exception e (g)))))))
+  (assert= {:arity 3
+            :locals-size 1
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 255 255
+                       vm/LDL 254 255
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 8 0
+                       vm/STL 0 0
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/APPLY 2]
+            :exception-table [{:start-offset 9, :end-offset 14, :handler-offset 17, :stack-size 3, :type Exception}]}
+           (translate-body '(fn* [f g x] (cleo.core/apply f x g (try* (x) (catch* Exception e (g)))))))
+  (assert= {:arity 3
+            :locals-size 1
+            :bytecode [vm/LDL 253 255
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/BR 6 0
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 6 0
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/CALL 2]
+            :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}
+                              {:start-offset 17, :end-offset 22, :handler-offset 25, :stack-size 2, :type Exception}]}
+           (translate-body '(fn* [f x y] (f (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))))))
+  (assert= {:arity 1
+            :locals-size 1
+            :consts ['z]
+            :bytecode [vm/LDC 0 0
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 6 0
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/CNIL
+                       vm/SETV]
+            :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
+           (translate-body '(fn [x] (def z (try* (x) (catch* cleo.core/Exception e e)))))))
