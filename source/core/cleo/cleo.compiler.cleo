@@ -259,12 +259,18 @@
 (defn- parse-fn [scope form]
   (let [form (next form)
         name (when (symbol? (first form)) (first form))
+        scope (if name (add-local scope name) scope)
         form (if (symbol? name) (next form) form)
         bodies (if (and form (not (seq? (first form)))) (list form) form)
-        bodies (vec (map (fn [body] (parse-fn-body scope body)) bodies))]
-    {:tag :fn
-     :name name
-     :bodies bodies}))
+        bodies (vec (map (fn [body] (parse-fn-body scope body)) bodies))
+        ast {:tag :fn
+             :bodies bodies}
+        ast (if name
+              (assoc ast
+                     :name name
+                     :name-index (get (:indexed-locals scope) name))
+              ast)]
+    ast))
 
 
 (defn- parse-recur [scope form]
