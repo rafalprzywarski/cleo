@@ -926,4 +926,64 @@ Force compile_fn(Value form)
     return compile_ifn(form, *EMPTY_MAP, used_locals);
 }
 
+Force serialize_fn(Value fn)
+{
+    Value ARITY = create_keyword("arity");
+    Value VARARG = create_keyword("vararg");
+    Value LOCALS_SIZE = create_keyword("locals-size");
+    Value CONSTS = create_keyword("consts");
+    Value VARS = create_keyword("vars");
+    Value EXCEPTION_TABLE = create_keyword("exception-table");
+    Value START_OFFSET = create_keyword("start-offset");
+    Value END_OFFSET = create_keyword("end-offset");
+    Value HANDLER_OFFSET = create_keyword("handler-offset");
+    Value STACK_SIZE = create_keyword("stack-size");
+    Value TYPE = create_keyword("type");
+    Value BYTECODE = create_keyword("bytecode");
+    Value fn_bodies = map_get(fn, create_keyword("bodies"));
+    Value name = map_get(fn, create_keyword("name"));
+    auto body_count = count(fn_bodies);
+    std::vector<std::pair<Int64, Value>> arities_and_bodies;
+    Roots body_roots(body_count);
+    Root body;
+    for (Root s{seq(fn_bodies)}; *s; s = seq_next(*s))
+    {
+        body = seq_first(*s);
+        Value fn_et = map_get(*body, EXCEPTION_TABLE);
+        std::vector<Int64> et_entries;
+        std::vector<Value> et_types;
+        for (Int64 i = 0, size = get_array_size(fn_et); i < size; ++i)
+        {
+            auto e = get_array_elem_unchecked(fn_et, i);
+            et_entries.push_back(get_int64_value(map_get(e, START_OFFSET)));
+            et_entries.push_back(get_int64_value(map_get(e, END_OFFSET)));
+            et_entries.push_back(get_int64_value(map_get(e, HANDLER_OFFSET)));
+            et_entries.push_back(get_int64_value(map_get(e, STACK_SIZE)));
+            et_types.push_back(map_get(e, TYPE));
+        }
+        Root exception_table;
+        if (!et_entries.empty())
+            exception_table = create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size());
+        Value fn_bytecode = map_get(*body, BYTECODE);
+        std::vector<vm::Byte> bytecode;
+        for (Int64 i = 0, size = get_array_size(fn_bytecode); i < size; ++i)
+            bytecode.push_back(get_int64_value(get_array_elem_unchecked(fn_bytecode, i)));
+        body_roots.set(arities_and_bodies.size(),
+                       create_bytecode_fn_body(map_get(*body, CONSTS),
+                                               map_get(*body, VARS),
+                                               *exception_table,
+                                               map_contains(*body, LOCALS_SIZE) ? get_int64_value(map_get(*body, LOCALS_SIZE)) : 0,
+                                               bytecode.data(), bytecode.size()));
+        auto arity = get_int64_value(map_get(*body, ARITY));
+        arities_and_bodies.emplace_back(map_get(*body, VARARG) ? -arity : arity, body_roots[arities_and_bodies.size()]);
+    }
+
+    return create_fn(name, arities_and_bodies);
+}
+
+Force deserialize_fn(Value fn)
+{
+    return nil;
+}
+
 }

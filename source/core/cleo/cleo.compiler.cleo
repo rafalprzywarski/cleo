@@ -691,7 +691,7 @@
     m))
 
 
-(defn- translate-body [fn-name-index {:keys [expr params]}]
+(defn- translate-body [fn-name-index {:keys [expr params vararg]}]
   (let [tbody {:arity (count params)
                :scope {:locals (make-locals fn-name-index params)
                        :locals-size 0
@@ -701,6 +701,7 @@
                :locals-size 0
                :bytecode (transient [])
                :exception-table (transient [])}
+        tbody (if vararg (assoc tbody :vararg :true) tbody)
         tbody (translate-expr! tbody expr)
         tbody (update tbody :bytecode persistent!)
         tbody (update tbody :exception-table persistent!)
@@ -731,3 +732,10 @@
                :bodies [{:params [], :expr ast}]}
               ast)]
     (translate-fn ast)))
+
+
+(defn compile [form]
+  (-> form
+      parse
+      translate
+      serialize-fn))

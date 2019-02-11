@@ -971,6 +971,15 @@
                                  vm/POP
                                  vm/LDL 253 255]}]}
            (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))))
+  (assert= {:name 'abc
+            :bodies [{:arity 2
+                      :vararg :true
+                      :bytecode [vm/LDL 254 255
+                                 vm/POP
+                                 vm/LDL 255 255
+                                 vm/POP
+                                 vm/LDL 253 255]}]}
+           (cc/translate (cc/parse '(fn* abc [x & y] (do x y abc)))))
   (assert= {:bodies [{:arity 0
                       :bytecode [vm/CNIL]}
                      {:arity 1
@@ -1432,6 +1441,7 @@
                        vm/CNIL]}
            (translate-body '(fn* [f x] (if x (recur f (f x))))))
   (assert= {:arity 2
+            :vararg :true
             :consts [1 2]
             :bytecode [vm/LDC 0 0
                        vm/LDC 1 0
@@ -1717,3 +1727,28 @@
             :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 14, :stack-size 0}
                               {:start-offset 22, :end-offset 27, :handler-offset 36, :stack-size 0}]}
            (translate-body '(fn* [f g h i] (do (try* (f) (finally* (g))) (try* (h) (finally* (i))))))))
+
+
+(deftest compile-fn
+  (let [f (binding-ns 'cleo.core.test
+                      (cc/compile '(fn dummy [x & xs] (reduce + x xs))))]
+    (assert= 4 (f 4))
+    (assert= 10 (f 4 6))
+    (assert= 19 (f 4 6 9)))
+  (let [f (binding-ns 'cleo.core.test
+                      (cc/compile '(fn dummy
+                                     ([x y z] (+ x (- y z)))
+                                     ([a b c & d] [a b c d])
+                                     ([x] 10))))]
+    (assert= 7 (f 8 4 5))
+    (assert= 10 (f 8))
+    (assert= '(1 2 3 (4)) (f 1 2 3 4)))
+  (let [f (binding-ns 'cleo.core.test
+                      (cc/compile '(fn dummy
+                                     ([a] (try* (throw (IllegalArgument. "Bad")) (finally* (reset! a 5))))
+                                     ([_ x] (try* (throw x) (catch* IllegalArgument e e))))))
+        a (atom 1)]
+    (assert-throws IllegalArgument (f a))
+    (assert= 5 @a)
+    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds.)))
+    (assert= IllegalArgument (type (f 0 (IllegalArgument. "x"))))))

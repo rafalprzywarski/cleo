@@ -23,6 +23,7 @@
 #include <limits>
 #include <chrono>
 #include "bytecode_fn.hpp"
+#include "compile.hpp"
 
 namespace cleo
 {
@@ -330,7 +331,8 @@ const Value RESOLVE = create_symbol("cleo.core", "resolve");
 const Value SUBS = create_symbol("cleo.core", "subs");
 const Value ASSOC_E = create_symbol("cleo.core", "assoc!");
 const Value DEFINE_VAR = create_symbol("cleo.core", "define-var");
-
+const Value SERIALIZE_FN = create_symbol("cleo.core", "serialize-fn");
+const Value DESERIALIZE_FN = create_symbol("cleo.core", "deserialize-fn");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1852,6 +1854,9 @@ struct Initialize
         define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());
 
         define_function(DISASM, create_native_function1<disasm, &DISASM>());
+
+        define_function(SERIALIZE_FN, create_native_function1<serialize_fn, &SERIALIZE_FN>());
+        define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
     }
 } initialize;
 
