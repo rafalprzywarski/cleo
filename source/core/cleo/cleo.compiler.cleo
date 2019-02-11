@@ -638,10 +638,11 @@
         end-off (count (:bytecode body))
         body (translate-expr! body finally-expr)
         body (update body :bytecode (fn [bc] (conj! bc vm/POP)))
-        body (pop-scope body)
         br-off (count (:bytecode body))
         body (update body :bytecode (fn [bc] (-> bc (conj! vm/BR) (conj-i16! 0))))
+        body (inc-stack-depth body)
         body (translate-expr! body finally-expr)
+        body (pop-scope body)
         body (update body :bytecode (fn [bc] (-> bc (conj! vm/POP) (conj! vm/THROW))))
         body (update body :bytecode (fn [bc] (assoc-i16! bc (inc br-off) (-> (count bc) (- br-off) (- 3)))))
         body (update body :exception-table (fn [et]

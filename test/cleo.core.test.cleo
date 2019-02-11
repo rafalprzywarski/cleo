@@ -1656,34 +1656,40 @@
             :exception-table [{:start-offset 6, :end-offset 11, :handler-offset 20, :stack-size 2}]}
            (translate-body '(fn* [f g x] (f g (try* (x) (finally* (g)))))))
   (assert= {:arity 3
-            :bytecode [vm/LDL 253 255
+            :bytecode [vm/LDL 253 255 ; (f)
                        vm/CALL 0
-                       vm/LDL 254 255
+
+                       vm/LDL 254 255 ; (g)
                        vm/CALL 0
-                       vm/LDL 255 255
+                       vm/LDL 255 255 ; (h)
                        vm/CALL 0
                        vm/POP
+
                        vm/BR 7 0
-                       vm/LDL 255 255
+                       vm/LDL 255 255 ; (h)
                        vm/CALL 0
                        vm/POP
                        vm/THROW
+
                        vm/POP
+
                        vm/BR 23 0
-                       vm/LDL 254 255
+                       vm/LDL 254 255 ; (g)
                        vm/CALL 0
-                       vm/LDL 255 255
+                       vm/LDL 255 255 ; (h)
                        vm/CALL 0
                        vm/POP
+
                        vm/BR 7 0
-                       vm/LDL 255 255
+                       vm/LDL 255 255 ; (h)
                        vm/CALL 0
                        vm/POP
                        vm/THROW
+
                        vm/POP
                        vm/THROW]
             :exception-table [{:start-offset 5, :end-offset 10, :handler-offset 19, :stack-size 1}
-                              {:start-offset 30, :end-offset 35, :handler-offset 44, :stack-size 0}
+                              {:start-offset 30, :end-offset 35, :handler-offset 44, :stack-size 2}
                               {:start-offset 0, :end-offset 5, :handler-offset 30, :stack-size 0}]}
            (translate-body '(fn* [f g h] (try* (f) (finally* (try* (g) (finally* (h))))))))
   (assert= {:arity 4
