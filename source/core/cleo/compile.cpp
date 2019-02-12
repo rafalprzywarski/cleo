@@ -918,6 +918,45 @@ Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
     return create_fn(name, std::move(arities_and_bodies));
 }
 
+Force deserialize_exception_table(Value et)
+{
+    if (!et)
+        return nil;
+    Value START_OFFSET = create_keyword("start-offset");
+    Value END_OFFSET = create_keyword("end-offset");
+    Value HANDLER_OFFSET = create_keyword("handler-offset");
+    Value STACK_SIZE = create_keyword("stack-size");
+    Value TYPE = create_keyword("type");
+    Root det{transient_array(*EMPTY_VECTOR)};
+    for (Int64 i = 0; i < get_bytecode_fn_exception_table_size(et); ++i)
+    {
+        Root soff{create_int64(get_bytecode_fn_exception_table_start_offset(et, i))};
+        Root eoff{create_int64(get_bytecode_fn_exception_table_end_offset(et, i))};
+        Root hoff{create_int64(get_bytecode_fn_exception_table_handler_offset(et, i))};
+        Root ssize{create_int64(get_bytecode_fn_exception_table_stack_size(et, i))};
+        Root entry{*EMPTY_MAP};
+        entry = map_assoc(*entry, START_OFFSET, *soff);
+        entry = map_assoc(*entry, END_OFFSET, *eoff);
+        entry = map_assoc(*entry, HANDLER_OFFSET, *hoff);
+        entry = map_assoc(*entry, STACK_SIZE, *ssize);
+        entry = map_assoc(*entry, TYPE, get_bytecode_fn_exception_table_type(et, i));
+        det = transient_array_conj(*det, *entry);
+    }
+    return transient_array_persistent(*det);
+}
+
+Force deserialize_bytecode(const vm::Byte *bc, Int64 size)
+{
+    Root dbc{transient_array(*EMPTY_VECTOR)};
+    Root b;
+    for (Int64 i = 0; i < size; ++i)
+    {
+        b = create_int64(bc[i] & 0xff);
+        dbc = transient_array_conj(*dbc, *b);
+    }
+    return transient_array_persistent(*dbc);
+}
+
 }
 
 Force compile_fn(Value form)
@@ -983,7 +1022,40 @@ Force serialize_fn(Value fn)
 
 Force deserialize_fn(Value fn)
 {
-    return nil;
+    Value ARITY = create_keyword("arity");
+    Value VARARG = create_keyword("vararg");
+    Value LOCALS_SIZE = create_keyword("locals-size");
+    Value CONSTS = create_keyword("consts");
+    Value VARS = create_keyword("vars");
+    Value EXCEPTION_TABLE = create_keyword("exception-table");
+    Value BYTECODE = create_keyword("bytecode");
+    Root dfn{*EMPTY_MAP};
+    dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
+    Root bodies{*EMPTY_VECTOR};
+    for (Int64 i = 0; i < get_bytecode_fn_size(fn); ++i)
+    {
+        auto arity = get_bytecode_fn_arity(fn, i);
+        Root darity{create_int64(arity < 0 ? -arity : arity)};
+        Root dbody{*EMPTY_MAP};
+        auto body = get_bytecode_fn_body(fn, i);
+        Root locals_size{create_int64(get_bytecode_fn_body_locals_size(body))};
+        dbody = map_assoc(*dbody, ARITY, *darity);
+        if (arity < 0)
+            dbody = map_assoc(*dbody, VARARG, TRUE);
+        if (get_bytecode_fn_body_consts(body))
+            dbody = map_assoc(*dbody, CONSTS, get_bytecode_fn_body_consts(body));
+        if (get_bytecode_fn_body_vars(body))
+            dbody = map_assoc(*dbody, VARS, get_bytecode_fn_body_vars(body));
+        dbody = map_assoc(*dbody, LOCALS_SIZE, *locals_size);
+        Root dbs{deserialize_bytecode(get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body))};
+        dbody = map_assoc(*dbody, BYTECODE, *dbs);
+        Root det{deserialize_exception_table(get_bytecode_fn_body_exception_table(body))};
+        if (*det)
+            dbody = map_assoc(*dbody, EXCEPTION_TABLE, *det);
+        bodies = array_conj(*bodies, *dbody);
+    }
+    dfn = map_assoc(*dfn, create_keyword("bodies"), *bodies);
+    return *dfn;
 }
 
 }
