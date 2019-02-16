@@ -1729,6 +1729,142 @@
            (translate-body '(fn* [f g h i] (do (try* (f) (finally* (g))) (try* (h) (finally* (i))))))))
 
 
+(deftest translate-ifn
+  (let [f (translate-body '(fn* [] (fn* [] 10)))]
+    (assert= {:arity 0
+              :bytecode [vm/LDC 0 0]}
+             (dissoc f :consts))
+    (assert= 1 (-> f :consts count))
+    (assert= {:bodies [{:arity 0,
+                        :consts [10],
+                        :bytecode [vm/LDC 0 0]}]}
+             (-> f :consts first deserialize-fn)))
+  (let [f (translate-body '(fn* [x y] (fn* [] (x y))))]
+    (assert= {:arity 2
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 254 255
+                         vm/LDL 255 255
+                         vm/IFN 2]}
+             (dissoc f :consts))
+    (assert= 1 (-> f :consts count))
+    (assert= {:arity 0,
+              :consts [nil nil],
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/CALL 1]}
+             (-> f :consts first deserialize-fn :bodies first)))
+  (let [f (translate-body '(fn* [x y] (fn* [] (x 10 y y x 20 30))))]
+    (assert= {:arity 2
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 254 255
+                         vm/LDL 255 255
+                         vm/IFN 2]}
+             (dissoc f :consts))
+    (assert= 1 (-> f :consts count))
+    (assert= {:arity 0,
+              :consts [10 20 30 nil nil],
+              :bytecode [vm/LDC 3 0
+                         vm/LDC 0 0
+                         vm/LDC 4 0
+                         vm/LDC 4 0
+                         vm/LDC 3 0
+                         vm/LDC 1 0
+                         vm/LDC 2 0
+                         vm/CALL 6]}
+             (-> f :consts first deserialize-fn :bodies first)))
+  (let [f (translate-body '(fn* [x y] (let* [z x] (fn* [] (z x)))))]
+    (assert= {:arity 2
+              :locals-size 1
+              :bytecode [vm/LDL 254 255
+                         vm/STL 0 0
+                         vm/LDC 0 0
+                         vm/LDL 0 0
+                         vm/LDL 254 255
+                         vm/IFN 2]}
+             (dissoc f :consts))
+    (assert= 1 (-> f :consts count))
+    (assert= {:arity 0,
+              :consts [nil nil],
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/CALL 1]}
+             (-> f :consts first deserialize-fn :bodies first)))
+  (let [f (translate-body '(fn* [x y] (fn* ([] (x 10)) ([a] (a x y)) ([a & b] (b y)))))]
+    (assert= {:arity 2
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 254 255
+                         vm/LDL 255 255
+                         vm/IFN 2]}
+             (dissoc f :consts))
+    (assert= 1 (-> f :consts count))
+    (assert= [{:arity 0
+               :consts [10 nil nil]
+               :bytecode [vm/LDC 1 0
+                          vm/LDC 0 0
+                          vm/CALL 1]}
+              {:arity 1
+               :consts [nil nil]
+               :bytecode [vm/LDL 255 255
+                          vm/LDC 0 0
+                          vm/LDC 1 0
+                          vm/CALL 2]}
+              {:arity 2
+               :vararg :true
+               :consts [nil nil]
+               :bytecode [vm/LDL 255 255
+                          vm/LDC 1 0
+                          vm/CALL 1]}]
+             (-> f :consts first deserialize-fn :bodies)))
+  (let [f (translate-body '(fn* [x] (fn* [x] (fn* [] x))))
+        inner-f (-> f :consts first deserialize-fn :bodies first)]
+    (assert= {:arity 1
+              :bytecode [vm/LDC 0 0]}
+             (dissoc f :consts))
+    (assert= {:arity 1,
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 255 255
+                         vm/IFN 1]}
+             (dissoc inner-f :consts))
+    (assert= {:arity 0,
+              :consts [nil],
+              :bytecode [vm/LDC 0 0]}
+             (-> inner-f :consts first deserialize-fn :bodies first)))
+  (let [f (translate-body '(fn* [x] (fn* [y] (fn* [] (x y)))))
+        inner-f (-> f :consts first deserialize-fn :bodies first)]
+    (assert= {:arity 1
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 255 255
+                         vm/IFN 1]}
+             (dissoc f :consts))
+    (assert= {:arity 1,
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/LDL 255 255
+                         vm/IFN 2]}
+             (dissoc inner-f :consts))
+    (assert= {:arity 0,
+              :consts [nil nil],
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/CALL 1]}
+             (-> inner-f :consts first deserialize-fn :bodies first)))
+  (let [f (translate-body '(fn* f1 [x] (fn* [] (f1 x 20))))]
+    (assert= {:arity 1
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 254 255
+                         vm/LDL 255 255
+                         vm/IFN 2]}
+             (dissoc f :consts))
+    (assert= 1 (-> f :consts count))
+    (assert= {:arity 0,
+              :consts [20 nil nil],
+              :bytecode [vm/LDC 1 0
+                         vm/LDC 2 0
+                         vm/LDC 0 0
+                         vm/CALL 2]}
+             (-> f :consts first deserialize-fn :bodies first))))
+
+
 (deftest compile-fn
   (let [f (binding-ns 'cleo.core.test
                       (cc/compile '(fn dummy [x & xs] (reduce + x xs))))]

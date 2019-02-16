@@ -474,10 +474,16 @@
            :bytecode (-> (:bytecode body) (conj! opcode) (conj! (vars v)) (conj! 0)))))
 
 
-(defn translate-local! [{{locals :locals} :scope :as body} {index :index}]
-  (assoc body
-         :bytecode (-> (:bytecode body) (conj! vm/LDL) (conj-i16! (locals index)))))
+(defn translate-local-index! [{:keys [parent-locals parent-local-loads] {locals :locals} :scope :as body} index]
+  (if (contains? parent-locals index)
+    (-> body
+        (update :parent-local-loads (fn [pll] (conj! pll {:offset (count (:bytecode body)), :index index})))
+        (update :bytecode (fn [bc] (-> bc (conj! vm/LDC) (conj-i16! 0)))))
+    (update body :bytecode (fn [bc] (-> bc (conj! vm/LDL) (conj-i16! (locals index)))))))
 
+
+(defn translate-local! [body {index :index}]
+  (translate-local-index! body index))
 
 (defn inc-stack-depth [body]
   (update body :scope (fn [s] (update s :stack-depth inc))))
@@ -657,6 +663,20 @@
   ((if (:catch expr) translate-try-catch! translate-try-finally!) body expr))
 
 
+(def translate-fn)
+
+
+(defn- translate-ifn! [body expr]
+  (let [parent-locals (merge (or (:parent-locals body) {}) (-> body :scope :locals))
+        tfn (translate-fn parent-locals expr)
+        closed-parent-locals (-> tfn :closed-parent-locals)
+        body (translate-const! body (serialize-fn tfn))
+        body (reduce translate-local-index! body closed-parent-locals)]
+    (if (empty? closed-parent-locals)
+      body
+      (update body :bytecode (fn [bc] (-> bc (conj! vm/IFN) (conj! (count closed-parent-locals))))))))
+
+
 (defn- translate-expr! [body expr]
   (if (map? expr)
     (let [tag (:tag expr)]
@@ -672,6 +692,7 @@
             (= tag :def) (translate-def! body expr)
             (= tag :recur) (translate-recur! body expr)
             (= tag :try) (translate-try! body expr)
+            (= tag :fn) (translate-ifn! body expr)
             :else (translate-const! body (:value expr))))
     (translate-const! body expr)))
 
@@ -691,8 +712,10 @@
     m))
 
 
-(defn- translate-body [fn-name-index {:keys [expr params vararg]}]
+(defn- translate-body [parent-locals fn-name-index {:keys [expr params vararg]}]
   (let [tbody {:arity (count params)
+               :parent-locals parent-locals
+               :parent-local-loads (transient [])
                :scope {:locals (make-locals fn-name-index params)
                        :locals-size 0
                        :recur-offset 0
@@ -706,23 +729,59 @@
         tbody (update tbody :bytecode persistent!)
         tbody (update tbody :exception-table persistent!)
         tbody (update tbody :consts serialize)
+        tbody (update tbody :parent-local-loads persistent!)
         tbody (update tbody :vars serialize)
         tbody (if (zero? (:locals-size tbody))
                 (dissoc tbody :locals-size)
                 tbody)
-        tbody (dissoc tbody :scope)
+        tbody (dissoc tbody :scope :parent-locals)
         tbody (-> tbody
                   (dissoc-empty :consts)
                   (dissoc-empty :vars)
-                  (dissoc-empty :exception-table))]
+                  (dissoc-empty :exception-table)
+                  (dissoc-empty :parent-local-loads))]
     tbody))
 
 
-(defn translate-fn [{:keys [name name-index bodies]}]
-  (let [f {:bodies (mapv (fn [body] (translate-body name-index body)) bodies)}]
-    (if name
-      (assoc f :name name)
-      f)))
+(defn conj-nils! [n v]
+  (loop [n n
+         v (transient v)]
+    (if (not (pos? n))
+      (persistent! v)
+      (recur (dec n) (conj! v nil)))))
+
+
+(defn init-loads [{:keys [consts parent-local-loads] :as body} closed-parent-locals]
+  (let [const-base (count consts)]
+    (-> body
+        (update :consts (fn [c] (conj-nils! (count closed-parent-locals) (or c []))))
+        (update :bytecode (fn [bc]
+                            (persistent! (reduce (fn [bc {:keys [index offset]}]
+                                                   (assoc-i16! bc (inc offset) (+ const-base (closed-parent-locals index))))
+                                                 (transient bc)
+                                                 parent-local-loads)))))))
+
+
+(defn intern-parent-locals [bodies]
+  (reduce (fn [pls b]
+            (reduce intern pls (map :index (:parent-local-loads b))))
+          {}
+          bodies))
+
+(defn translate-fn [parent-locals {:keys [name name-index bodies]}]
+  (let [tbodies (mapv (fn [body] (translate-body parent-locals name-index body)) bodies)
+        closed-parent-locals (intern-parent-locals tbodies)
+        tbodies (if (empty? closed-parent-locals)
+                  tbodies
+                  (mapv (fn [b] (init-loads b closed-parent-locals)) tbodies))
+        f {:bodies tbodies}
+        f (if (empty? closed-parent-locals)
+            f
+            (assoc f :closed-parent-locals (serialize closed-parent-locals)))
+        f (if name
+            (assoc f :name name)
+            f)]
+    f))
 
 
 (defn translate [ast]
@@ -731,7 +790,7 @@
               {:tag :fn
                :bodies [{:params [], :expr ast}]}
               ast)]
-    (translate-fn ast)))
+    (translate-fn nil ast)))
 
 
 (defn compile [form]

@@ -1022,6 +1022,8 @@ Force serialize_fn(Value fn)
 
 Force deserialize_fn(Value fn)
 {
+    if (!fn)
+        return nil;
     Value ARITY = create_keyword("arity");
     Value VARARG = create_keyword("vararg");
     Value LOCALS_SIZE = create_keyword("locals-size");
@@ -1030,7 +1032,8 @@ Force deserialize_fn(Value fn)
     Value EXCEPTION_TABLE = create_keyword("exception-table");
     Value BYTECODE = create_keyword("bytecode");
     Root dfn{*EMPTY_MAP};
-    dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
+    if (get_bytecode_fn_name(fn))
+        dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
     Root bodies{*EMPTY_VECTOR};
     for (Int64 i = 0; i < get_bytecode_fn_size(fn); ++i)
     {
@@ -1039,6 +1042,8 @@ Force deserialize_fn(Value fn)
         Root dbody{*EMPTY_MAP};
         auto body = get_bytecode_fn_body(fn, i);
         Root locals_size{create_int64(get_bytecode_fn_body_locals_size(body))};
+        if (get_bytecode_fn_body_locals_size(body) > 0)
+            dbody = map_assoc(*dbody, LOCALS_SIZE, *locals_size);
         dbody = map_assoc(*dbody, ARITY, *darity);
         if (arity < 0)
             dbody = map_assoc(*dbody, VARARG, TRUE);
@@ -1046,7 +1051,6 @@ Force deserialize_fn(Value fn)
             dbody = map_assoc(*dbody, CONSTS, get_bytecode_fn_body_consts(body));
         if (get_bytecode_fn_body_vars(body))
             dbody = map_assoc(*dbody, VARS, get_bytecode_fn_body_vars(body));
-        dbody = map_assoc(*dbody, LOCALS_SIZE, *locals_size);
         Root dbs{deserialize_bytecode(get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body))};
         dbody = map_assoc(*dbody, BYTECODE, *dbs);
         Root det{deserialize_exception_table(get_bytecode_fn_body_exception_table(body))};
