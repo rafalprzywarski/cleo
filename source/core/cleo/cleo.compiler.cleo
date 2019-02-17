@@ -741,6 +741,8 @@
 
 
 (defn- translate-body [parent-locals fn-name-index {:keys [expr params vararg]}]
+  (when (< 32767 (count params))
+    (fail "Too many params: " (count params)))
   (let [tbody {:arity (count params)
                :parent-locals parent-locals
                :parent-local-loads (transient [])

@@ -966,6 +966,14 @@
   (assert-compilation-error "Can't have 2 overloads with same arity" (cc/parse '(fn* ([x] nil) ([x y] nil) ([x] nil)))))
 
 
+(defn translate-body [form]
+  (-> form
+      cc/parse
+      cc/translate
+      :bodies
+      first))
+
+
 (deftest translate-fn
   (assert= {:bodies [{:arity 0
                       :bytecode [vm/CNIL]}]}
@@ -1001,15 +1009,14 @@
                       :bytecode [vm/CNIL]}
                      {:arity 3
                       :bytecode [vm/CNIL]}]}
-           (cc/translate (cc/parse '(fn* ([]) ([x]) ([x y z]))))))
-
-
-(defn translate-body [form]
-  (-> form
-      cc/parse
-      cc/translate
-      :bodies
-      first))
+           (cc/translate (cc/parse '(fn* ([]) ([x]) ([x y z])))))
+  (when slow-tests
+    (assert-compilation-error "Too many params: 32768" (translate-body (list 'fn*
+                                                                             (loop [i 0 bindings (transient [])]
+                                                                               (if (< i 32768)
+                                                                                 (recur (inc i) (-> bindings (conj! 'p)))
+                                                                                 (persistent! bindings)))
+                                                                             nil)))))
 
 
 (deftest translate-const
