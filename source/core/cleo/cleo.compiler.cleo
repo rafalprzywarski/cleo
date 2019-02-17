@@ -546,6 +546,8 @@
 
 
 (defn- add-tlocal [{{:keys [locals locals-size] :as scope} :scope :as body} index]
+  (when (= locals-size 32768)
+    (fail "Too many locals: " (inc locals-size)))
   [(assoc body
           :scope (assoc scope
                         :locals (assoc locals index locals-size)

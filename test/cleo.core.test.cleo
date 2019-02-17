@@ -4,7 +4,7 @@
 (require 'cleo.vm)
 (alias 'vm 'cleo.vm)
 
-
+(def slow-tests :true)
 (def tests (atom {}))
 (def current-test (atom nil))
 (def failed-tests (atom #{}))
@@ -1267,7 +1267,12 @@
                                                 a100 a] a100)))]
     (assert= [vm/LDL 255 255
               vm/STL 0 1
-              vm/LDL 0 1] (drop (* 4 256) (:bytecode let257)))))
+              vm/LDL 0 1] (drop (* 4 256) (:bytecode let257))))
+  (when slow-tests
+    (assert-compilation-error "Too many locals: 32769" (translate-body (list 'let* (loop [i 0 bindings (transient [])]
+                                                                                     (if (< i 32769)
+                                                                                       (recur (inc i) (-> bindings (conj! 'l) (conj! i)))
+                                                                                       (persistent! bindings))))))))
 
 
 (deftest translate-loop
