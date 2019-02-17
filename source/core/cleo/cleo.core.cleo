@@ -278,7 +278,7 @@
 (defmacro and
   ([] :true)
   ([x] x)
-  ([x & xs] `(let* [x# ~x] (if x# (and ~@xs) x#))))
+  ([x & xs] `(if ~x (and ~@xs))))
 
 
 (defn seq? [x] (isa? (type x) cleo.core/Sequence))
