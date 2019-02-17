@@ -479,6 +479,15 @@
           (filter pred n))))))
 
 
+(defn drop [n coll]
+  (let [lazy-drop (fn [n coll]
+                    (if (and coll
+                             (< 0 n))
+                      (recur (dec n) (next coll))
+                      coll))]
+    (lazy-seq (lazy-drop n coll))))
+
+
 (defn empty? [coll]
   (not (seq coll)))
 

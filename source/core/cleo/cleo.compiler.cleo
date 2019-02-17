@@ -445,6 +445,12 @@
       (assoc! (inc off) (bit-and (bit-shift-right n 8) 0xff))))
 
 
+(defn- conj-STL! [v n]
+  (-> v
+      (conj! vm/STL)
+      (conj-i16! n)))
+
+
 (defn- translate-const! [{:keys [consts] :as body} val]
   (if val
     (let [consts (intern consts val)]
@@ -551,8 +557,7 @@
 (defn- translate-binding! [body {:keys [index expr]}]
   (let [body (translate-expr! body expr)
         [body tindex] (add-tlocal body index)]
-    (assoc body
-           :bytecode (-> (:bytecode body) (conj! vm/STL) (conj! tindex) (conj! 0)))))
+    (update body :bytecode (fn [bc] (-> bc (conj-STL! tindex))))))
 
 
 (defn- translate-let! [body {:keys [locals exprs]}]
@@ -624,7 +629,7 @@
          :bytecode (loop [i n
                           bytecode (:bytecode body)]
                      (if (pos? i)
-                       (recur (dec i) (-> bytecode (conj! vm/STL) (conj-i16! (+ first-index (dec i)))))
+                       (recur (dec i) (-> bytecode (conj-STL! (+ first-index (dec i)))))
                        bytecode))))
 
 
@@ -644,7 +649,7 @@
         body (push-scope body)
         [body tindex] (add-tlocal body catch-index)
         br-off (count (:bytecode body))
-        body (assoc body :bytecode (-> body :bytecode (conj! vm/BR) (conj-i16! 0) (conj! vm/STL) (conj-i16! tindex)))
+        body (assoc body :bytecode (-> body :bytecode (conj! vm/BR) (conj-i16! 0) (conj-STL! tindex)))
         body (translate-expr! body catch-expr)
         body (update body :bytecode (fn [bc] (assoc-i16! bc (inc br-off) (-> (count bc) (- br-off) (- 3)))))
         body (pop-scope body)
