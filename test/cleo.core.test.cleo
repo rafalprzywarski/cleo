@@ -799,6 +799,7 @@
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y &] y))))
   (assert= [{:params [{:name 'x, :index 0}], :vararg :true, :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [& x] x))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :vararg :true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x & y] y))))
+  (assert-no-exception (cc/parse '(fn* ([x] nil) ([x & xs] nil))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1} {:name 'z, :index 2}], :vararg :true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y & z] y))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* ([x y] y)))))
   (assert= 'abc (:name (cc/parse '(fn* abc ([x y] y)))))
@@ -948,7 +949,12 @@
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (f 0 (recur 10)))))
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] ((recur 10) 20))))
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (def z (recur 10)))))
-  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (if (recur 10) 1 2)))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (if (recur 10) 1 2))))
+
+  (assert-compilation-error "Can't have fixed arity function with more params than variadic function" (cc/parse '(fn* ([a b] nil) ([a & b] nil))))
+  (assert-compilation-error "Can't have fixed arity function with more params than variadic function" (cc/parse '(fn* ([a b & c] nil) ([a b] nil) ([a b c]))))
+  (assert-compilation-error "Can't have more than 1 variadic overload" (cc/parse '(fn* ([a & b] nil) ([& b] nil))))
+  (assert-compilation-error "Can't have 2 overloads with same arity" (cc/parse '(fn* ([x] nil) ([x y] nil) ([x] nil)))))
 
 
 (deftest translate-fn

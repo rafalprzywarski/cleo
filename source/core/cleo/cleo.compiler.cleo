@@ -256,21 +256,40 @@
         ast))))
 
 
+(defn validate-overloads [bodies]
+  (let [va-bodies (filter :vararg bodies)
+        fa-bodies (filter (fn [b] (not (:vararg b))) bodies)]
+    (when (< 1 (count va-bodies))
+      (fail "Can't have more than 1 variadic overload"))
+    (let [va-arity (if (seq va-bodies) (-> va-bodies first :params count))]
+      (reduce (fn [arities {:keys [params vararg]}]
+                (let [arity (count params)]
+                  (when (and va-arity
+                             (< (dec va-arity) arity))
+                    (fail "Can't have fixed arity function with more params than variadic function"))
+                  (when (arities arity)
+                    (fail "Can't have 2 overloads with same arity"))
+                  (conj arities arity)))
+              #{}
+              fa-bodies))))
+
+
 (defn- parse-fn [scope form]
   (let [form (next form)
         name (when (symbol? (first form)) (first form))
         scope (if name (add-local scope name) scope)
         form (if (symbol? name) (next form) form)
         bodies (if (and form (not (seq? (first form)))) (list form) form)
-        bodies (vec (map (fn [body] (parse-fn-body scope body)) bodies))
-        ast {:tag :fn
-             :bodies bodies}
-        ast (if name
-              (assoc ast
-                     :name name
-                     :name-index (get (:indexed-locals scope) name))
-              ast)]
-    ast))
+        bodies (vec (map (fn [body] (parse-fn-body scope body)) bodies))]
+    (validate-overloads bodies)
+    (let [ast {:tag :fn
+               :bodies bodies}
+          ast (if name
+                (assoc ast
+                       :name name
+                       :name-index (get (:indexed-locals scope) name))
+                ast)]
+      ast)))
 
 
 (defn- parse-recur [scope form]
