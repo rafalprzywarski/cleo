@@ -303,13 +303,10 @@
 
 
 (defn- parse-call [scope form]
-  (let [scope (no-recur scope)
-        ast {:tag :call,
-             :fn (parse-form scope (first form))
-             :args (vec (map (fn [x] (parse-form scope x)) (next form)))}]
-    (when (< 255 (count (:args ast)))
-      (fail "Too many arguments: " (count (:args ast))))
-    ast))
+  (let [scope (no-recur scope)]
+    {:tag :call,
+     :fn (parse-form scope (first form))
+     :args (vec (map (fn [x] (parse-form scope x)) (next form)))}))
 
 
 (defn- parse-seq [scope form]
@@ -526,6 +523,8 @@
 
 
 (defn translate-call! [body {:keys [fn args]}]
+  (when (< 255 (count args))
+    (fail "Too many arguments: " (count args)))
   (let [apply? (and (map? fn)
                     (= (:tag fn) :var)
                     (= (resolve (:name fn)) #'cleo.core/apply))
