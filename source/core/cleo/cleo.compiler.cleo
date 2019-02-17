@@ -431,12 +431,18 @@
 
 
 (defn- conj-i16! [v n]
+  (when (or (< n -32768)
+            (< 32767 n))
+    (fail "internal error: i16 out of range: " n))
   (-> v
       (conj! (bit-and n 0xff))
       (conj! (bit-and (bit-shift-right n 8) 0xff))))
 
 
 (defn- assoc-i16! [v off n]
+  (when (or (< n -32768)
+            (< 32767 n))
+    (fail "internal error: i16 out of range: " n))
   (-> v
       (assoc! off (bit-and n 0xff))
       (assoc! (inc off) (bit-and (bit-shift-right n 8) 0xff))))
@@ -448,12 +454,36 @@
       (conj-i16! n)))
 
 
+(defn- conj-u16! [v n]
+  (when (or (< n 0)
+            (< 65535 n))
+    (fail "internal error: u16 out of range: " n))
+  (-> v
+      (conj! (bit-and n 0xff))
+      (conj! (bit-and (bit-shift-right n 8) 0xff))))
+
+
+(defn- assoc-u16! [v off n]
+  (when (or (< n 0)
+            (< 65535 n))
+    (fail "internal error: u16 out of range: " n))
+  (-> v
+      (assoc! off (bit-and n 0xff))
+      (assoc! (inc off) (bit-and (bit-shift-right n 8) 0xff))))
+
+
+(defn- conj-LDC! [v n]
+  (-> v
+      (conj! vm/LDC)
+      (conj-u16! n)))
+
+
 (defn- translate-const! [{:keys [consts] :as body} val]
   (if val
     (let [consts (intern consts val)]
       (assoc body
              :consts consts
-             :bytecode (-> (:bytecode body) (conj! vm/LDC) (conj! (get consts val)) (conj! 0))))
+             :bytecode (-> (:bytecode body) (conj-LDC! (get consts val)))))
     (assoc body
            :bytecode (conj! (:bytecode body) vm/CNIL))))
 
@@ -503,7 +533,7 @@
   (if (contains? parent-locals index)
     (-> body
         (update :parent-local-loads (fn [pll] (conj! pll {:offset (count (:bytecode body)), :index index})))
-        (update :bytecode (fn [bc] (-> bc (conj! vm/LDC) (conj-i16! 0)))))
+        (update :bytecode (fn [bc] (-> bc (conj-LDC! 0)))))
     (update body :bytecode (fn [bc] (-> bc (conj! vm/LDL) (conj-i16! (locals index)))))))
 
 
@@ -787,7 +817,7 @@
         (update :consts (fn [c] (conj-nils! (count closed-parent-locals) (or c []))))
         (update :bytecode (fn [bc]
                             (persistent! (reduce (fn [bc {:keys [index offset]}]
-                                                   (assoc-i16! bc (inc offset) (+ const-base (closed-parent-locals index))))
+                                                   (assoc-u16! bc (inc offset) (+ const-base (closed-parent-locals index))))
                                                  (transient bc)
                                                  parent-local-loads)))))))
 
