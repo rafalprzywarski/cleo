@@ -526,7 +526,7 @@
       (fail "var: " name " is not public"))
     (assoc body
            :vars vars
-           :bytecode (-> (:bytecode body) (conj! opcode) (conj! (vars v)) (conj! 0)))))
+           :bytecode (-> (:bytecode body) (conj! opcode) (conj-u16! (vars v))))))
 
 
 (defn translate-local-index! [{:keys [parent-locals parent-local-loads] {locals :locals} :scope :as body} index]
@@ -620,16 +620,16 @@
 (defn- translate-if! [body {:keys [cond then else]}]
   (let [body (translate-expr! body cond)
         bnil-off (count (:bytecode body))
-        body (assoc body :bytecode (-> (:bytecode body) (conj! vm/BNIL) (conj! 6) (conj! 0)))
+        body (assoc body :bytecode (-> (:bytecode body) (conj! vm/BNIL) (conj-i16! 0)))
         body (translate-expr! body then)
         br-off (count (:bytecode body))
-        body (assoc body :bytecode (-> (:bytecode body) (conj! vm/BR) (conj! 3) (conj! 0)))
+        body (assoc body :bytecode (-> (:bytecode body) (conj! vm/BR) (conj-i16! 0)))
         body (translate-expr! body else)
         bytecode (:bytecode body)
         body (assoc body
                     :bytecode (-> bytecode
-                                  (assoc! (inc bnil-off) (- br-off bnil-off))
-                                  (assoc! (inc br-off) (- (- (count bytecode) br-off) 3))))]
+                                  (assoc-i16! (inc bnil-off) (- br-off bnil-off))
+                                  (assoc-i16! (inc br-off) (- (- (count bytecode) br-off) 3))))]
     body))
 
 
