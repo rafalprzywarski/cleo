@@ -641,15 +641,15 @@
 
 
 (defn- translate-def! [body {:keys [meta name expr]}]
-  (let [body (translate-const! body name)
-        body (inc-stack-depth body)
-        cur-ns-name (str (ns-name *ns*))
+  (let [cur-ns-name (str (ns-name *ns*))
         sym-ns (namespace name)]
     (when (and sym-ns
                (not= sym-ns cur-ns-name))
       (fail (if (resolve name) "Can't create defs outside of current ns" "Can't refer to qualified var that doesn't exist")))
     (define-var (symbol cur-ns-name (str name)) meta)
-    (let [body (translate-expr! body expr)
+    (let [body (translate-const! body (resolve name))
+          body (inc-stack-depth body)
+          body (translate-expr! body expr)
           body (translate-const! body meta)
           body (assoc body :bytecode (conj! (:bytecode body) vm/SETV))]
       body)))

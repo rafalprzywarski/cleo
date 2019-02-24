@@ -1467,7 +1467,7 @@
                           (translate-body '(def x 10)))]
     (assert (resolve 'cleo.compiler.def.test/x))
     (assert= {:arity 0
-              :consts ['x 10]
+              :consts [(resolve 'cleo.compiler.def.test/x) 10]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
                          vm/CNIL
@@ -1477,7 +1477,7 @@
                           (translate-body '(def xr xr)))]
     (assert (resolve 'cleo.compiler.def.test/xr))
     (assert= {:arity 0
-              :consts ['xr]
+              :consts [(resolve 'cleo.compiler.def.test/xr)]
               :vars [(resolve 'cleo.compiler.def.test/xr)]
               :bytecode [vm/LDC 0 0
                          vm/LDV 0 0
@@ -1488,7 +1488,7 @@
                           (translate-body '(def {:x 7} y 10)))]
     (assert= 7 (:x (meta (resolve 'cleo.compiler.def.test/y))))
     (assert= {:arity 0
-              :consts ['y 10 {:x 7}]
+              :consts [(resolve 'cleo.compiler.def.test/y) 10 {:x 7}]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
                          vm/LDC 2 0
@@ -1676,19 +1676,21 @@
             :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}
                               {:start-offset 17, :end-offset 22, :handler-offset 25, :stack-size 2, :type Exception}]}
            (translate-body '(fn* [f x y] (f (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))))))
-  (assert= {:arity 1
-            :locals-size 1
-            :consts ['z]
-            :bytecode [vm/LDC 0 0
-                       vm/LDL 255 255
-                       vm/CALL 0
-                       vm/BR 6 0
-                       vm/STL 0 0
-                       vm/LDL 0 0
-                       vm/CNIL
-                       vm/SETV]
-            :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
-           (translate-body '(fn* [x] (def z (try* (x) (catch* cleo.core/Exception e e)))))))
+  (let [body (binding-ns 'cleo.compiler.def.test
+                         (translate-body '(fn* [x] (def z (try* (x) (catch* cleo.core/Exception e e))))))]
+    (assert= {:arity 1
+              :locals-size 1
+              :consts [(resolve 'cleo.compiler.def.test/z)]
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 255 255
+                         vm/CALL 0
+                         vm/BR 6 0
+                         vm/STL 0 0
+                         vm/LDL 0 0
+                         vm/CNIL
+                         vm/SETV]
+              :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
+             body)))
 
 
 (deftest translate-try-finally
