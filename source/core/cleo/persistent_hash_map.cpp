@@ -35,7 +35,7 @@ void copy_object_elements(Value dst, std::uint32_t dst_index, Value src, std::ui
 
 Force create_collision_node(std::uint32_t hash, Value k0, Value v0, Value k1, Value v1)
 {
-    assert(hash_value(k0) == hash_value(k1));
+    assert(static_cast<std::uint32_t>(hash_value(k0)) == static_cast<std::uint32_t>(hash_value(k1)));
     return create_object1_4(*type::PersistentHashMapCollisionNode, hash, k0, v0, k1, v1);
 }
 
@@ -278,7 +278,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
             Root new_node{create_array_node(new_value_map, node_size - 1)};
             auto node_index = map_node_index(node_map, node_size, key_bit);
             auto val0 = get_object_element(node, key_index + 1);
-            auto key0_hash = hash_value(key0);
+            std::uint32_t key0_hash = hash_value(key0);
             Root new_child{
                 (key0_hash == key_hash) ?
                 create_collision_node(key_hash, key0, val0, key, val) :
@@ -525,8 +525,8 @@ Force persistent_hash_map_assoc(Value map, Value key, Value val)
     if (key0 == key)
         return create_single_value_map(key, val);
     auto val0 = get_object_element(map, 0);
-    auto key_hash = hash_value(key);
-    auto key0_hash = hash_value(key0);
+    std::uint32_t key_hash = hash_value(key);
+    std::uint32_t key0_hash = hash_value(key0);
     if (key_hash == key0_hash)
         return create_collision_map(key_hash, key0, val0, key, val);
     return create_array_map(key0, key0_hash, val0, key, key_hash, val);
