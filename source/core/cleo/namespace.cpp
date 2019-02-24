@@ -200,6 +200,8 @@ Value require(Value ns)
         throw_exception(new_illegal_argument(*msg));
     }
     auto ns_name = get_symbol_name(ns);
+    if (ns != CLEO_CORE && persistent_hash_map_contains(*namespaces, ns))
+        return nil;
     std::string path = locate_source({get_string_ptr(ns_name), get_string_len(ns_name)});
     std::ifstream f(path);
     if (!f)
