@@ -121,6 +121,7 @@ const Value PRIVATE_KEY = create_keyword("private");
 const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
+const Value COMPILE = create_symbol("cleo.core", "compile");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -275,6 +276,7 @@ const StaticVar assoc = define_var(ASSOC, nil);
 const StaticVar merge = define_var(MERGE, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
+const StaticVar compile = define_var(COMPILE, nil);
 
 }
 

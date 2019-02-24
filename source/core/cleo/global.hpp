@@ -243,6 +243,7 @@ extern const Value PRIVATE_KEY;
 extern const Value NAME_KEY;
 extern const Value NS_KEY;
 extern const Value DOT;
+extern const Value COMPILE;
 extern const Root ZERO;
 extern const Root ONE;
 extern const Root NEG_ONE;
@@ -345,6 +346,7 @@ extern const StaticVar assoc;
 extern const StaticVar merge;
 extern const StaticVar get_message;
 extern const StaticVar hash_obj;
+extern const StaticVar compile;
 
 }
 

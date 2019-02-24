@@ -581,3 +581,9 @@
   (cond
     (resolve name) `(print-doc (:name (meta (resolve '~name))) (meta (resolve '~name)))
     (find-ns name) `(print-doc (ns-name (find-ns '~name)) (meta (find-ns '~name)))))
+
+
+(require 'cleo.compiler)
+
+
+(def compile cleo.compiler/compile)
