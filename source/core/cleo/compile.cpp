@@ -616,15 +616,17 @@ void Compiler::compile_def(Scope scope, Value form_)
         throw_compilation_error("Too many arguments to def");
     auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
     auto sym_ns = get_symbol_namespace(*name);
+    auto var = maybe_resolve_var(*name);
     if (sym_ns && sym_ns != current_ns_name)
-        throw_compilation_error(maybe_resolve_var(*name) ?
+        throw_compilation_error(var ?
                                 "Can't create defs outside of current ns" :
                                 "Can't refer to qualified var that doesn't exist");
     auto sym_name = get_symbol_name(*name);
     name = create_symbol(
         {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
         {get_string_ptr(sym_name), get_string_len(sym_name)});
-    auto var = define(*name, nil, *meta);
+    if (!var)
+        var = define(*name, nil, *meta);
     compile_const(var);
     scope.stack_depth++;
     compile_value(scope, *val);

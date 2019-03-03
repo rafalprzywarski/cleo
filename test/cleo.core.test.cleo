@@ -1461,6 +1461,9 @@
 
 (define-var 'cleo.compiler.def.test.other/ex nil)
 
+(in-ns 'cleo.compiler.def.test)
+(def existing 10)
+(cleo.core/in-ns 'cleo.core.test)
 
 (deftest translate-def
   (let [tbody (binding-ns 'cleo.compiler.def.test
@@ -1500,7 +1503,11 @@
                                         (cc/translate (cc/parse '(def cleo.compiler.def.test.other/ex)))))
   (assert-compilation-error "Can't refer to qualified var that doesn't exist"
                             (binding-ns 'cleo.compiler.def.test
-                                        (cc/translate (cc/parse '(def cleo.compiler.def.test.other/nex))))))
+                                        (cc/translate (cc/parse '(def cleo.compiler.def.test.other/nex)))))
+  (do
+    (binding-ns 'cleo.compiler.def.test
+                (translate-body '(def existing 7)))
+    (assert= 10 cleo.compiler.def.test/existing)))
 
 
 (deftest translate-recur

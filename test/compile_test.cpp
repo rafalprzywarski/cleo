@@ -1175,9 +1175,10 @@ TEST_F(compile_test, should_compile_def)
     v = get_var(create_symbol("cleo.compile.def.test", "w"));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
 
-    v = define(create_symbol("cleo.compile.def.test", "ex"), nil, nil);
+    v = define(create_symbol("cleo.compile.def.test", "ex"), *THREE, nil);
     fn = compile_fn("(fn* [] (def ex))");
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0, vm::CNIL, vm::CNIL, vm::SETV));
+    EXPECT_EQ_VALS(*THREE, get_var_value(v));
 
     fn = compile_fn("(fn* [] (def cleo.compile.def.test/nv))");
     v = get_var(create_symbol("cleo.compile.def.test", "nv"));
