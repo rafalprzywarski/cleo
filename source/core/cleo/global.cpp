@@ -1057,8 +1057,13 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
-        case vm::SETV:
-            oc = mk("SETV");
+        case vm::SVV:
+            oc = mk("SVV");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::SVM:
+            oc = mk("SVM");
             dbs = transient_array_conj(*dbs, *oc);
             ++p;
             break;

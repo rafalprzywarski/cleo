@@ -611,7 +611,8 @@ void Compiler::compile_def(Scope scope, Value form_)
     }
     if (get_value_tag(*name) != tag::SYMBOL)
         throw_compilation_error("First argument to def must be a Symbol");
-    Root val{*form ? seq_first(*form) : nil};
+    bool has_val = !form->is_nil();
+    Root val{has_val ? seq_first(*form) : nil};
     if (*form && seq_next(*form).value())
         throw_compilation_error("Too many arguments to def");
     auto current_ns_name = get_symbol_name(ns_name(*rt::current_ns));
@@ -629,10 +630,17 @@ void Compiler::compile_def(Scope scope, Value form_)
         var = define(*name, nil, *meta);
     compile_const(var);
     scope.stack_depth++;
-    compile_value(scope, *val);
-    scope.stack_depth++;
-    compile_value(scope, *meta);
-    append(code, vm::SETV);
+    if (has_val)
+    {
+        compile_value(scope, *val);
+        scope.stack_depth++;
+        append(code, vm::SVV);
+    }
+    if (*meta)
+    {
+        compile_value(scope, *meta);
+        append(code, vm::SVM);
+    }
 }
 
 void Compiler::compile_fn(Scope scope, Value form)

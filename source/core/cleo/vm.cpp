@@ -225,12 +225,18 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             p += 3;
             break;
         }
-        case SETV:
+        case SVV:
         {
-            auto var = stack[stack.size() - 3];
-            set_var_root_value(var, stack[stack.size() - 2]);
-            set_var_meta(var, stack.back());
+            auto var = stack[stack.size() - 2];
+            set_var_root_value(var, stack.back());
             stack_pop();
+            ++p;
+            break;
+        }
+        case SVM:
+        {
+            auto var = stack[stack.size() - 2];
+            set_var_meta(var, stack.back());
             stack_pop();
             ++p;
             break;

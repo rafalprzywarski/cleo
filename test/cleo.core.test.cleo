@@ -682,12 +682,13 @@
 
 
 (deftest parse-def
-  (assert= {:tag :def, :name 'x, :meta nil, :expr 10} (cc/parse '(def x 10)))
-  (assert= {:tag :def, :name 'x, :meta nil, :expr nil} (cc/parse '(def x)))
-  (assert= {:tag :def, :name 'a/x, :meta nil, :expr 10} (cc/parse '(def a/x 10)))
-  (assert= {:tag :def, :name 'xr, :meta nil, :expr {:tag :var, :name 'xr}} (cc/parse '(def xr xr)))
+  (assert= {:tag :def, :name 'x, :expr 10} (cc/parse '(def x 10)))
+  (assert= {:tag :def, :name 'x, :expr nil} (cc/parse '(def x nil)))
+  (assert= {:tag :def, :name 'x} (cc/parse '(def x)))
+  (assert= {:tag :def, :name 'a/x, :expr 10} (cc/parse '(def a/x 10)))
+  (assert= {:tag :def, :name 'xr, :expr {:tag :var, :name 'xr}} (cc/parse '(def xr xr)))
   (assert= {:tag :def, :name 'z, :meta {10 20}, :expr 13} (cc/parse '(def {10 20} z 13)))
-  (assert= {:tag :def, :name 'z, :meta {10 20}, :expr nil} (cc/parse '(def {10 20} z))))
+  (assert= {:tag :def, :name 'z, :meta {10 20}} (cc/parse '(def {10 20} z))))
 
 
 (deftest parse-throw
@@ -1473,8 +1474,23 @@
               :consts [(resolve 'cleo.compiler.def.test/x) 10]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
+                         vm/SVV]}
+             tbody))
+  (let [tbody (binding-ns 'cleo.compiler.def.test
+                          (translate-body '(def z nil)))]
+    (assert (resolve 'cleo.compiler.def.test/z))
+    (assert= {:arity 0
+              :consts [(resolve 'cleo.compiler.def.test/z)]
+              :bytecode [vm/LDC 0 0
                          vm/CNIL
-                         vm/SETV]}
+                         vm/SVV]}
+             tbody))
+  (let [tbody (binding-ns 'cleo.compiler.def.test
+                          (translate-body '(def w)))]
+    (assert (resolve 'cleo.compiler.def.test/w))
+    (assert= {:arity 0
+              :consts [(resolve 'cleo.compiler.def.test/w)]
+              :bytecode [vm/LDC 0 0]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def xr xr)))]
@@ -1484,8 +1500,7 @@
               :vars [(resolve 'cleo.compiler.def.test/xr)]
               :bytecode [vm/LDC 0 0
                          vm/LDV 0 0
-                         vm/CNIL
-                         vm/SETV]}
+                         vm/SVV]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def {:x 7} y 10)))]
@@ -1494,8 +1509,18 @@
               :consts [(resolve 'cleo.compiler.def.test/y) 10 {:x 7}]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
+                         vm/SVV
                          vm/LDC 2 0
-                         vm/SETV]}
+                         vm/SVM]}
+             tbody))
+  (let [tbody (binding-ns 'cleo.compiler.def.test
+                          (translate-body '(def {:x 7} s)))]
+    (assert= 7 (:x (meta (resolve 'cleo.compiler.def.test/s))))
+    (assert= {:arity 0
+              :consts [(resolve 'cleo.compiler.def.test/s) {:x 7}]
+              :bytecode [vm/LDC 0 0
+                         vm/LDC 1 0
+                         vm/SVM]}
              tbody))
   (assert (resolve 'cleo.compiler.def.test.other/ex))
   (assert-compilation-error "Can't create defs outside of current ns"
@@ -1694,8 +1719,7 @@
                          vm/BR 6 0
                          vm/STL 0 0
                          vm/LDL 0 0
-                         vm/CNIL
-                         vm/SETV]
+                         vm/SVV]
               :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
              body)))
 
