@@ -587,3 +587,11 @@
 
 
 (def compile cleo.compiler/compile)
+
+
+(def self-compiled)
+
+
+(when (not self-compiled)
+  (def self-compiled :true)
+  (require 'cleo.core))
