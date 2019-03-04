@@ -1324,6 +1324,9 @@ struct Initialize
 
         Root f;
 
+        f = create_native_function1<array_hash>();
+        define_method(HASH_OBJ, *type::Array, *f);
+
         define(CURRENT_NS, get_ns(CLEO_CORE), *DYNAMIC_META);
         f = create_native_function1or2<in_ns, in_ns, &IN_NS>();
         define(IN_NS, *f);

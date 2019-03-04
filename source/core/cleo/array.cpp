@@ -1,6 +1,7 @@
 #include "array.hpp"
 #include "global.hpp"
 #include "util.hpp"
+#include "hash.hpp"
 
 namespace cleo
 {
@@ -40,6 +41,15 @@ Force array_conj(Value v, Value e)
         new_elems.push_back(get_array_elem(v, i));
     new_elems.push_back(e);
     return create_array(&new_elems.front(), new_elems.size());
+}
+
+Force array_hash(Value v)
+{
+    std::uint64_t h = 0;
+    auto size = get_array_size(v);
+    for (Int64 i = 0; i < size; ++i)
+        h = h * 31 + hash_value(get_array_elem(v, i));
+    return create_int64(h * 31 + size);
 }
 
 Force transient_array(Value v)
