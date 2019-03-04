@@ -1052,6 +1052,16 @@
                        vm/LDC 2 0]}
            (translate-body '(do 10 20 10 nil 30)))
   (assert= {:arity 0
+            :consts [() [] #{} {}]
+            :bytecode [vm/LDC 0 0
+                       vm/POP
+                       vm/LDC 1 0
+                       vm/POP
+                       vm/LDC 2 0
+                       vm/POP
+                       vm/LDC 3 0]}
+           (translate-body '(do () [] #{} {})))
+  (assert= {:arity 0
             :consts [10 20 30]
             :bytecode [vm/LDC 0 0
                        vm/POP

@@ -432,6 +432,14 @@
     (assoc m val (count m))))
 
 
+(defn- intern-strict [m val]
+  (intern m [(type val) val]))
+
+
+(defn- get-index-strict [m val]
+  (get m [(type val) val]))
+
+
 (defn- conj-i16! [v n]
   (when (or (< n -32768)
             (< 32767 n))
@@ -482,10 +490,10 @@
 
 (defn- translate-const! [{:keys [consts] :as body} val]
   (if val
-    (let [consts (intern consts val)]
+    (let [consts (intern-strict consts val)]
       (assoc body
              :consts consts
-             :bytecode (-> (:bytecode body) (conj-LDC! (get consts val)))))
+             :bytecode (-> (:bytecode body) (conj-LDC! (get-index-strict consts val)))))
     (assoc body
            :bytecode (conj! (:bytecode body) vm/CNIL))))
 
@@ -500,6 +508,10 @@
                            (assoc! s index val))
                          sm
                          m))))
+
+
+(defn- serialize-strict [m]
+  (mapv second (serialize m)))
 
 
 (defn- translate-exprs! [body exprs]
@@ -798,7 +810,7 @@
         tbody (translate-expr! tbody expr)
         tbody (update tbody :bytecode persistent!)
         tbody (update tbody :exception-table persistent!)
-        tbody (update tbody :consts serialize)
+        tbody (update tbody :consts serialize-strict)
         tbody (update tbody :parent-local-loads persistent!)
         tbody (update tbody :vars serialize)
         tbody (if (zero? (:locals-size tbody))
@@ -837,6 +849,7 @@
             (reduce intern pls (map :index (:parent-local-loads b))))
           {}
           bodies))
+
 
 (defn translate-fn [parent-locals {:keys [name name-index bodies]}]
   (let [tbodies (mapv (fn [body] (translate-body parent-locals name-index body)) bodies)
