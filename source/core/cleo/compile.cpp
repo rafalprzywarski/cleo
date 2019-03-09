@@ -634,12 +634,12 @@ void Compiler::compile_def(Scope scope, Value form_)
     {
         compile_value(scope, *val);
         scope.stack_depth++;
-        append(code, vm::SVV);
+        append(code, vm::STVV);
     }
     if (*meta)
     {
         compile_value(scope, *meta);
-        append(code, vm::SVM);
+        append(code, vm::STVM);
     }
 }
 

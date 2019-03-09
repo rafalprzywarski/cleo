@@ -1484,7 +1484,7 @@
               :consts [(resolve 'cleo.compiler.def.test/x) 10]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
-                         vm/SVV]}
+                         vm/STVV]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def z nil)))]
@@ -1493,7 +1493,7 @@
               :consts [(resolve 'cleo.compiler.def.test/z)]
               :bytecode [vm/LDC 0 0
                          vm/CNIL
-                         vm/SVV]}
+                         vm/STVV]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def w)))]
@@ -1510,7 +1510,7 @@
               :vars [(resolve 'cleo.compiler.def.test/xr)]
               :bytecode [vm/LDC 0 0
                          vm/LDV 0 0
-                         vm/SVV]}
+                         vm/STVV]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def {:x 7} y 10)))]
@@ -1519,9 +1519,9 @@
               :consts [(resolve 'cleo.compiler.def.test/y) 10 {:x 7}]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
-                         vm/SVV
+                         vm/STVV
                          vm/LDC 2 0
-                         vm/SVM]}
+                         vm/STVM]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def {:x 7} s)))]
@@ -1530,7 +1530,7 @@
               :consts [(resolve 'cleo.compiler.def.test/s) {:x 7}]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
-                         vm/SVM]}
+                         vm/STVM]}
              tbody))
   (assert (resolve 'cleo.compiler.def.test.other/ex))
   (assert-compilation-error "Can't create defs outside of current ns"
@@ -1729,7 +1729,7 @@
                          vm/BR 6 0
                          vm/STL 0 0
                          vm/LDL 0 0
-                         vm/SVV]
+                         vm/STVV]
               :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
              body)))
 

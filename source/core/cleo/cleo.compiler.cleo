@@ -667,12 +667,12 @@
           body (if (not= {} (get def-expr :expr {}))
                  (-> body
                      (translate-expr! expr)
-                     (update :bytecode (fn [bc] (conj! bc vm/SVV))))
+                     (update :bytecode (fn [bc] (conj! bc vm/STVV))))
                  body)
           body (if meta
                  (-> body
                      (translate-const! meta)
-                     (update :bytecode (fn [bc] (conj! bc vm/SVM))))
+                     (update :bytecode (fn [bc] (conj! bc vm/STVM))))
                  body)]
       body)))
 

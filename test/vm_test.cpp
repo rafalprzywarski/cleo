@@ -210,13 +210,13 @@ TEST_F(vm_test, stl)
     EXPECT_EQ_VALS(*x, stack[0]);
 }
 
-TEST_F(vm_test, svv)
+TEST_F(vm_test, stvv)
 {
-    in_ns(create_symbol("vm.svv.test"));
-    auto var = define(create_symbol("vm.svv.test", "a"), *THREE);
+    in_ns(create_symbol("vm.stvv.test"));
+    auto var = define(create_symbol("vm.stvv.test", "a"), *THREE);
     stack_push(var);
     stack_push(*TWO);
-    const std::array<Byte, 7> bc1{{LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), SVV}};
+    const std::array<Byte, 7> bc1{{LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), STVV}};
     eval_bytecode(nil, nil, 0, bc1);
 
     ASSERT_EQ(3u, stack.size());
@@ -226,17 +226,17 @@ TEST_F(vm_test, svv)
     EXPECT_EQ_VALS(*TWO, get_var_root_value(var));
 }
 
-TEST_F(vm_test, svm)
+TEST_F(vm_test, stvm)
 {
-    in_ns(create_symbol("vm.svm.test"));
-    auto ns = get_ns(create_symbol("vm.svm.test"));
-    auto var = define(create_symbol("vm.svm.test", "a"), *THREE);
+    in_ns(create_symbol("vm.stvm.test"));
+    auto ns = get_ns(create_symbol("vm.stvm.test"));
+    auto var = define(create_symbol("vm.stvm.test", "a"), *THREE);
     Root meta{phmap(10, 20)};
     Root var_meta{phmap(10, 20, NS_KEY, ns, NAME_KEY, create_symbol("a"))};
     stack_push(var);
     stack_push(*TWO);
     stack_push(*meta);
-    const std::array<Byte, 7> bc1{{LDL, Byte(-3), Byte(-1), LDL, Byte(-1), Byte(-1), SVM}};
+    const std::array<Byte, 7> bc1{{LDL, Byte(-3), Byte(-1), LDL, Byte(-1), Byte(-1), STVM}};
     eval_bytecode(nil, nil, 0, bc1);
 
     ASSERT_EQ(4u, stack.size());
