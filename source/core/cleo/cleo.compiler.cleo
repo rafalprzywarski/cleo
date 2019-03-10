@@ -527,20 +527,26 @@
   (translate-exprs! body exprs))
 
 
-(defn translate-var! [{:keys [vars] :as body} {name :name}]
+(defn translate-var! [{:keys [vars consts] :as body} {name :name}]
   (let [v (resolve name)
-        vars (intern vars v)
-        opcode (if (:dynamic (meta v)) vm/LDDV vm/LDV)]
+        vmeta (meta v)]
     (when (not v)
       (fail "unable to resolve symbol: " name))
-    (when (:macro (meta v))
+    (when (:macro vmeta)
       (fail "Can't take value of a macro: " v))
-    (when (and (:private (meta v))
-               (not (identical? *ns* (:ns (meta v)))))
+    (when (and (:private vmeta)
+               (not (identical? *ns* (:ns vmeta))))
       (fail "var: " name " is not public"))
-    (assoc body
-           :vars vars
-           :bytecode (-> (:bytecode body) (conj! opcode) (conj-u16! (vars v))))))
+    (if (:const vmeta)
+      (let [consts (intern-strict consts @v)]
+        (assoc body
+               :consts consts
+               :bytecode (-> body :bytecode (conj! vm/LDC) (conj-u16! (get-index-strict consts @v)))))
+      (let [vars (intern vars v)
+            opcode (if (:dynamic vmeta) vm/LDDV vm/LDV)]
+        (assoc body
+               :vars vars
+               :bytecode (-> (:bytecode body) (conj! opcode) (conj-u16! (vars v))))))))
 
 
 (defn translate-local-index! [{:keys [parent-locals parent-local-loads] {locals :locals} :scope :as body} index]

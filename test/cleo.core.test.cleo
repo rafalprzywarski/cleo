@@ -1103,6 +1103,7 @@
 (def test-var1 10)
 (def {:dynamic nil} test-var2 20)
 (def {:dynamic :true} test-dynvar 30)
+(def {:const :true} test-constvar 77)
 (def {:macro :true} test-macro 40)
 (def test-var2 30)
 (def test-var3 40)
@@ -1404,7 +1405,11 @@
                                              (recur (inc i) (conj! vars (symbol "cleo.core.test" (str "test-var" i))))
                                              (persistent! vars)))))
                 :bytecode
-                (drop (* 4 254)))))
+                (drop (* 4 254))))
+  (assert= {:arity 0
+            :consts [77]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body 'cleo.core.test/test-constvar)))
 
 
 (deftest translate-param
