@@ -79,7 +79,10 @@ struct compile_test : Test
         ASSERT_EQ_VALS(*type::BytecodeFn, get_value_type(fn));
         ASSERT_EQ(arities.size(), get_bytecode_fn_size(fn));
         for (std::uint8_t i = 0; i < get_bytecode_fn_size(fn); ++i)
-            EXPECT_EQ(arities[i], get_bytecode_fn_arity(fn, i)) << "index: " << unsigned(i);;
+        {
+            EXPECT_EQ(arities[i], get_bytecode_fn_body_arity(get_bytecode_fn_body(fn, i))) << "index: " << unsigned(i);
+            EXPECT_EQ(arities[i], get_bytecode_fn_arity(fn, i)) << "index: " << unsigned(i);
+        }
     }
 
     void expect_body_with_bytecode(Value fn, std::uint8_t index, std::vector<vm::Byte> code)

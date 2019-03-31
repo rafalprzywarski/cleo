@@ -13,6 +13,7 @@ namespace
 
 Force bytecode_fn_body_replace_consts(Value b, const Value *consts, Int64 n)
 {
+    auto arity = get_bytecode_fn_body_arity(b);
     auto old_consts = get_bytecode_fn_body_consts(b);
     auto csize = get_array_size(old_consts);
     std::vector<Value> mconsts(csize);
@@ -21,7 +22,7 @@ Force bytecode_fn_body_replace_consts(Value b, const Value *consts, Int64 n)
     for (decltype(csize) j = 0; j < n; ++j)
         mconsts[csize - n + j] = consts[j];
     Root mrconsts{create_array(mconsts.data(), mconsts.size())};
-    return create_bytecode_fn_body(*mrconsts, get_bytecode_fn_body_vars(b), get_bytecode_fn_body_exception_table(b), get_bytecode_fn_body_locals_size(b), get_bytecode_fn_body_bytes(b), get_bytecode_fn_body_bytes_size(b));
+    return create_bytecode_fn_body(arity, *mrconsts, get_bytecode_fn_body_vars(b), get_bytecode_fn_body_exception_table(b), get_bytecode_fn_body_locals_size(b), get_bytecode_fn_body_bytes(b), get_bytecode_fn_body_bytes_size(b));
 }
 
 }
@@ -76,15 +77,21 @@ bytecode_fn_exception_handler bytecode_fn_find_exception_handler(Value et, Int64
     return {-1, -1};
 }
 
-Force create_bytecode_fn_body(Value consts, Value vars, Value exception_table, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)
+Force create_bytecode_fn_body(Int64 arity, Value consts, Value vars, Value exception_table, Int64 locals_size, const vm::Byte *bytes, Int64 bytes_size)
 {
     auto bytes_int_size = (bytes_size + sizeof(Int64) - 1) / sizeof(Int64);
-    std::vector<Int64> ints(2 + bytes_int_size, 0);
-    ints[0] = locals_size;
-    ints[1] = bytes_size;
-    std::memcpy(&ints[2], bytes, bytes_size);
+    std::vector<Int64> ints(3 + bytes_int_size, 0);
+    ints[0] = arity;
+    ints[1] = locals_size;
+    ints[2] = bytes_size;
+    std::memcpy(&ints[3], bytes, bytes_size);
     std::array<Value, 3> elems{{consts, vars, exception_table}};
     return create_object(*type::BytecodeFnBody, ints.data(), ints.size(), elems.data(), elems.size());
+}
+
+Int64 get_bytecode_fn_body_arity(Value body)
+{
+    return get_object_int(body, 0);
 }
 
 Value get_bytecode_fn_body_consts(Value body)
@@ -104,25 +111,27 @@ Value get_bytecode_fn_body_exception_table(Value body)
 
 Int64 get_bytecode_fn_body_locals_size(Value body)
 {
-    return get_object_int(body, 0);
+    return get_object_int(body, 1);
 }
 
 const vm::Byte *get_bytecode_fn_body_bytes(Value body)
 {
-    return reinterpret_cast<const vm::Byte *>(get_object_int_ptr(body, 2));
+    return reinterpret_cast<const vm::Byte *>(get_object_int_ptr(body, 3));
 }
 
 Int64 get_bytecode_fn_body_bytes_size(Value body)
 {
-    return get_object_int(body, 1);
+    return get_object_int(body, 2);
 }
 
-Force create_bytecode_fn(Value name, const Int64 *arities, const Value *bodies, std::uint8_t n)
+Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n)
 {
+    std::vector<Int64> arities(n);
+    std::transform(bodies, bodies + n, begin(arities), get_bytecode_fn_body_arity);
     std::vector<Value> elems(1 + n);
     elems[0] = name;
     std::copy_n(bodies, n, begin(elems) + 1);
-    return create_object(*type::BytecodeFn, arities, n, elems.data(), elems.size());
+    return create_object(*type::BytecodeFn, arities.data(), arities.size(), elems.data(), elems.size());
 }
 
 Value get_bytecode_fn_name(Value fn)
@@ -151,16 +160,14 @@ Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)
         return fn;
     auto size = get_bytecode_fn_size(fn);
     std::vector<Value> bodies(size);
-    std::vector<Int64> arities(size);
     Roots rbodies(size);
     for (Int64 i = 0; i < size; ++i)
     {
         rbodies.set(i, bytecode_fn_body_replace_consts(get_bytecode_fn_body(fn, i), consts, n));
         bodies[i] = rbodies[i];
-        arities[i] = get_bytecode_fn_arity(fn, i);
     }
 
-    return create_bytecode_fn(get_bytecode_fn_name(fn), arities.data(), bodies.data(), bodies.size());
+    return create_bytecode_fn(get_bytecode_fn_name(fn), bodies.data(), bodies.size());
 }
 
 std::pair<Value, Int64> bytecode_fn_find_body(Value fn, std::uint8_t arity)

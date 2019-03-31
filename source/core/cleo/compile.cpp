@@ -842,6 +842,7 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     val = *val ? seq_first(*val) : nil;
     Root params{seq_first(form)};
     Root locals{create_locals(name, *params)};
+    auto arity = get_arity(*params);
     auto scope = create_fn_body_scope(form, *locals, parent_locals);
     c.compile_value(scope, *val);
     auto used_locals_size = get_int64_value(get_transient_array_size(*c.parent_local_refs));
@@ -852,24 +853,15 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.parent_local_refs) : nil;
     Root exception_table{!c.et_types.empty() ? create_bytecode_fn_exception_table(c.et_entries.data(), c.et_types.data(), c.et_types.size()) : nil};
-    return create_bytecode_fn_body(*consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
+    return create_bytecode_fn_body(arity, *consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
 }
 
-Force create_fn(Value name, std::vector<std::pair<Int64, Value>> arities_and_bodies)
+Force create_fn(Value name, std::vector<Value> bodies)
 {
     std::sort(
-        begin(arities_and_bodies), end(arities_and_bodies),
-        [](auto& l, auto& r) { return std::abs(l.first) < std::abs(r.first); });
-    std::vector<Int64> arities;
-    arities.reserve(arities_and_bodies.size());
-    std::vector<Value> bodies;
-    bodies.reserve(arities_and_bodies.size());
-    for (auto& ab : arities_and_bodies)
-    {
-        arities.push_back(ab.first);
-        bodies.push_back(ab.second);
-    }
-    return create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
+        begin(bodies), end(bodies),
+        [](auto& l, auto& r) { return std::abs(get_bytecode_fn_body_arity(l)) < std::abs(get_bytecode_fn_body_arity(r)); });
+    return create_bytecode_fn(name, bodies.data(), bodies.size());
 }
 
 Force reserve_fn_body_consts(Value body, Int64 n)
@@ -885,7 +877,7 @@ Force reserve_fn_body_consts(Value body, Int64 n)
         throw_compilation_error("Too many constants: " + std::to_string(size));
     consts = size > 0 ? transient_array_persistent(*consts) : nil;
 
-    return create_bytecode_fn_body(*consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_exception_table(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
+    return create_bytecode_fn_body(get_bytecode_fn_body_arity(body), *consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_exception_table(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
 }
 
 Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
@@ -904,28 +896,28 @@ Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
         rest = seq_next(*rest);
     }
     if (rest->is_nil())
-        return create_bytecode_fn(name, nullptr, nullptr, 0);
+        return create_bytecode_fn(name, nullptr, 0);
     first = seq_first(*rest);
     Root forms{is_seq(*first) ? *rest : create_cons(*rest, nil)};
     auto count = seq_count(*forms);
     Roots rbodies(count);
-    std::vector<std::pair<Int64, Value>> arities_and_bodies;
-    arities_and_bodies.reserve(count);
+    std::vector<Value> bodies;
+    bodies.reserve(count);
     used_locals = nil;
     for (Int64 i = 0; i < count; ++i)
     {
         Root form{seq_first(*forms)};
         rbodies.set(i, compile_fn_body(name, *form, parent_locals, used_locals));
         Root params{seq_first(*form)};
-        arities_and_bodies.emplace_back(get_arity(*params), rbodies[i]);
+        bodies.push_back(rbodies[i]);
         forms = seq_next(*forms);
     }
     for (Int64 i = 0; i < count; ++i)
     {
-        rbodies.set(i, reserve_fn_body_consts(arities_and_bodies[i].second, get_array_size(*used_locals)));
-        arities_and_bodies[i].second = rbodies[i];
+        rbodies.set(i, reserve_fn_body_consts(bodies[i], get_array_size(*used_locals)));
+        bodies[i] = rbodies[i];
     }
-    return create_fn(name, std::move(arities_and_bodies));
+    return create_fn(name, std::move(bodies));
 }
 
 Force deserialize_exception_table(Value et)
@@ -992,7 +984,7 @@ Force serialize_fn(Value fn)
     Value fn_bodies = map_get(fn, create_keyword("bodies"));
     Value name = map_get(fn, create_keyword("name"));
     auto body_count = count(fn_bodies);
-    std::vector<std::pair<Int64, Value>> arities_and_bodies;
+    std::vector<Value> bodies;
     Roots body_roots(body_count);
     Root body;
     for (Root s{seq(fn_bodies)}; *s; s = seq_next(*s))
@@ -1017,17 +1009,19 @@ Force serialize_fn(Value fn)
         std::vector<vm::Byte> bytecode;
         for (Int64 i = 0, size = get_array_size(fn_bytecode); i < size; ++i)
             bytecode.push_back(get_int64_value(get_array_elem_unchecked(fn_bytecode, i)));
-        body_roots.set(arities_and_bodies.size(),
-                       create_bytecode_fn_body(map_get(*body, CONSTS),
+        auto arity = get_int64_value(map_get(*body, ARITY));
+        arity = map_get(*body, VARARG) ? -arity : arity;
+        body_roots.set(bodies.size(),
+                       create_bytecode_fn_body(arity,
+                                               map_get(*body, CONSTS),
                                                map_get(*body, VARS),
                                                *exception_table,
                                                map_contains(*body, LOCALS_SIZE) ? get_int64_value(map_get(*body, LOCALS_SIZE)) : 0,
                                                bytecode.data(), bytecode.size()));
-        auto arity = get_int64_value(map_get(*body, ARITY));
-        arities_and_bodies.emplace_back(map_get(*body, VARARG) ? -arity : arity, body_roots[arities_and_bodies.size()]);
+        bodies.push_back(body_roots[bodies.size()]);
     }
 
-    return create_fn(name, arities_and_bodies);
+    return create_fn(name, bodies);
 }
 
 Force deserialize_fn(Value fn)

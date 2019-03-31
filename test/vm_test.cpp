@@ -680,7 +680,7 @@ TEST_F(vm_test, cnil)
 TEST_F(vm_test, ifn)
 {
     auto name = create_symbol("abc");
-    Root fn{create_bytecode_fn(name, nullptr, nullptr, 0)};
+    Root fn{create_bytecode_fn(name, nullptr, 0)};
     stack_push(*fn);
     const std::array<Byte, 2> bc1{{IFN, 0}};
     eval_bytecode(nil, nil, 0, bc1);
@@ -693,12 +693,11 @@ TEST_F(vm_test, ifn)
     Root consts2{array(50, 60, 70, 80, 90, 100)};
     std::array<vm::Byte, 1> bytes{{vm::CNIL}};
     Roots rbodies(2);
-    rbodies.set(0, create_bytecode_fn_body(*consts1, nil, nil, 0, bytes.data(), bytes.size()));
-    rbodies.set(1, create_bytecode_fn_body(*consts2, nil, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(0, create_bytecode_fn_body(2, *consts1, nil, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(1, create_bytecode_fn_body(3, *consts2, nil, nil, 0, bytes.data(), bytes.size()));
     std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
-    std::array<Int64, 2> arities{{2, 3}};
 
-    fn = create_bytecode_fn(name, arities.data(), bodies.data(), bodies.size());
+    fn = create_bytecode_fn(name, bodies.data(), bodies.size());
     stack_push(*fn);
     stack_push(i64(17));
     stack_push(i64(19));
