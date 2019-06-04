@@ -75,11 +75,11 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
     auto memoized = multimethod.memoized_fns.find(dispatchVal);
     if (memoized != end(multimethod.memoized_fns))
         return memoized->second;
-    std::pair<Value, Value> best{nil, nil};
+    std::pair<Value, Value> best{*SENTINEL, nil};
     for (auto& fn : multimethod.fns)
         if (isa(dispatchVal, fn.first))
         {
-            if (!best.first || isa(fn.first, best.first))
+            if (best.first.is(*SENTINEL) || isa(fn.first, best.first))
                 best = fn;
             else if (!isa(best.first, fn.first))
             {
@@ -88,7 +88,7 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
             }
         }
 
-    if (!best.first)
+    if (best.first.is(*SENTINEL))
     {
         auto default_ = multimethod.fns.find(multimethod.defaultDispatchVal);
         if (default_ != end(multimethod.fns))

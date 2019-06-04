@@ -34,36 +34,42 @@ struct multimethod_test : Test
 TEST_F(multimethod_test, get_method_should_provide_the_method_for_a_dispatch_value_or_nil)
 {
     auto name = symbol("simple");
-    Root dfn, fn1, fn2, val1, val2, val3;
+    Root dfn, fn1, fn2, fnnil, val1, val2, val3;
     dfn = mk_fn();
     fn1 = mk_fn();
     fn2 = mk_fn();
+    fnnil = mk_fn();
     val1 = create_int64(100);
     val2 = create_int64(200);
     val3 = create_int64(300);
+    auto default_ = keyword("default");
 
-    Value multi = define_multimethod(name, *dfn, nil);
+    Value multi = define_multimethod(name, *dfn, default_);
     define_method(name, *val1, *fn1);
     define_method(name, *val2, *fn2);
+    define_method(name, nil, *fnnil);
 
     ASSERT_TRUE(fn1->is(get_method(multi, *val1)));
     ASSERT_TRUE(fn2->is(get_method(multi, *val2)));
+    ASSERT_TRUE(fnnil->is(get_method(multi, nil)));
     ASSERT_TRUE(get_method(multi, *val3).is_nil());
 }
 
 TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_defined_and_no_methods_are_matched)
 {
     auto name = symbol("with-default");
-    Root dfn, fn1, fn2, val1, val2;
+    Root dfn, fn1, fn2, fnnil, val1, val2;
     dfn = mk_fn();
     fn1 = mk_fn();
     fn2 = mk_fn();
+    fnnil = mk_fn();
     val1 = create_int64(100);
     val2 = create_int64(300);
     auto default_ = keyword("default");
 
     Value multi = define_multimethod(name, *dfn, default_);
     define_method(name, *val1, *fn1);
+    define_method(name, nil, *fnnil);
 
     ASSERT_TRUE(get_method(multi, *val2).is_nil());
 
@@ -71,6 +77,7 @@ TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_def
 
     ASSERT_TRUE(fn1->is(get_method(multi, *val1)));
     ASSERT_TRUE(fn2->is(get_method(multi, *val2)));
+    ASSERT_TRUE(fnnil->is(get_method(multi, nil)));
 }
 
 TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
