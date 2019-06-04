@@ -16,17 +16,20 @@ struct NativeFunctionWithName
 struct String
 {
     std::uint32_t len;
+    std::uint32_t hashVal;
     char firstChar;
 };
 
 struct Symbol
 {
     Value ns, name;
+    std::uint32_t hashVal;
 };
 
 struct Keyword
 {
     Value ns, name;
+    std::uint32_t hashVal;
 };
 
 struct ObjectType
@@ -73,6 +76,7 @@ Value create_symbol(const std::string& ns, const std::string& name)
     auto val = alloc<Symbol>();
     val->ns = *ns_root;
     val->name = *name_root;
+    val->hashVal = 0;
     return entry = tag_ptr(val, tag::SYMBOL);
 }
 
@@ -91,6 +95,16 @@ Value get_symbol_name(Value s)
     return get_ptr<Symbol>(s)->name;
 }
 
+std::uint32_t get_symbol_hash(Value val)
+{
+    return get_ptr<Symbol>(val)->hashVal;
+}
+
+void set_symbol_hash(Value val, std::uint32_t h)
+{
+    get_ptr<Symbol>(val)->hashVal = h;
+}
+
 Value create_keyword(const std::string& ns, const std::string& name)
 {
     auto& entry = keywords[ns][name];
@@ -103,6 +117,7 @@ Value create_keyword(const std::string& ns, const std::string& name)
     auto val = alloc<Keyword>();
     val->ns = *ns_root;
     val->name = *name_root;
+    val->hashVal = 0;
     return entry = tag_ptr(val, tag::KEYWORD);
 }
 
@@ -119,6 +134,16 @@ Value get_keyword_namespace(Value s)
 Value get_keyword_name(Value s)
 {
     return get_ptr<Keyword>(s)->name;
+}
+
+std::uint32_t get_keyword_hash(Value val)
+{
+    return get_ptr<Keyword>(val)->hashVal;
+}
+
+void set_keyword_hash(Value val, std::uint32_t h)
+{
+    get_ptr<Keyword>(val)->hashVal = h;
 }
 
 Force CLEO_CDECL create_int64(Int64 intVal)
@@ -145,6 +170,7 @@ Force create_string(const std::string& str)
     auto len = str.length();
     auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len + 1));
     val->len = len;
+    val->hashVal = 0;
     std::memcpy(&val->firstChar, str.data(), str.length());
     (&val->firstChar)[len] = 0;
     return tag_ptr(val, tag::STRING);
@@ -158,6 +184,16 @@ const char *get_string_ptr(Value val)
 std::uint32_t get_string_len(Value val)
 {
     return get_ptr<String>(val)->len;
+}
+
+std::uint32_t get_string_hash(Value val)
+{
+    return get_ptr<String>(val)->hashVal;
+}
+
+void set_string_hash(Value val, std::uint32_t h)
+{
+    get_ptr<String>(val)->hashVal = h;
 }
 
 Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size)

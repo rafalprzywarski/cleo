@@ -119,11 +119,15 @@ Value create_symbol(const std::string& ns, const std::string& name);
 Value create_symbol(const std::string& name);
 Value get_symbol_namespace(Value s);
 Value get_symbol_name(Value s);
+std::uint32_t get_symbol_hash(Value val);
+void set_symbol_hash(Value val, std::uint32_t h);
 
 Value create_keyword(const std::string& ns, const std::string& name);
 Value create_keyword(const std::string& name);
 Value get_keyword_namespace(Value s);
 Value get_keyword_name(Value s);
+std::uint32_t get_keyword_hash(Value val);
+void set_keyword_hash(Value val, std::uint32_t h);
 
 Force CLEO_CDECL create_int64(Int64 val);
 inline Int64 get_int64_value(Value val)
@@ -137,6 +141,8 @@ Float64 get_float64_value(Value val);
 Force create_string(const std::string& str);
 const char *get_string_ptr(Value val);
 std::uint32_t get_string_len(Value val);
+std::uint32_t get_string_hash(Value val);
+void set_string_hash(Value val, std::uint32_t h);
 
 Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size);
 inline Force create_object(Value type, const Value *elems, std::uint32_t size) { return create_object(type, nullptr, 0, elems, size); }
