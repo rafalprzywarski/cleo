@@ -70,6 +70,16 @@ Value isa(Value child, Value parent)
         is_ancestor(child, parent)) ? TRUE : nil;
 }
 
+void validate_no_ambiguity(const Multimethod& multimethod, Value dispatchVal, Value selected)
+{
+    for (auto& fn : multimethod.fns)
+        if (isa(dispatchVal, fn.first) && !isa(selected, fn.first))
+        {
+            Root msg{create_string("ambiguous multimethod call")};
+            throw_exception(new_illegal_argument(*msg));
+        }
+}
+
 Value get_method(const Multimethod& multimethod, Value dispatchVal)
 {
     auto memoized = multimethod.memoized_fns.find(dispatchVal);
@@ -77,16 +87,10 @@ Value get_method(const Multimethod& multimethod, Value dispatchVal)
         return memoized->second;
     std::pair<Value, Value> best{*SENTINEL, nil};
     for (auto& fn : multimethod.fns)
-        if (isa(dispatchVal, fn.first))
-        {
-            if (best.first.is(*SENTINEL) || isa(fn.first, best.first))
-                best = fn;
-            else if (!isa(best.first, fn.first))
-            {
-                Root msg{create_string("ambiguous multimethod call")};
-                throw_exception(new_illegal_argument(*msg));
-            }
-        }
+        if (isa(dispatchVal, fn.first) && (best.first.is(*SENTINEL) || isa(fn.first, best.first)))
+            best = fn;
+
+    validate_no_ambiguity(multimethod, dispatchVal, best.first);
 
     if (best.first.is(*SENTINEL))
     {

@@ -196,6 +196,43 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
     }
 }
 
+TEST_F(multimethod_test, get_method_should_check_for_ambiguity_after_selecting_the_best_match)
+{
+    for (int i = 0; i < 64; ++i)
+    {
+        auto name = symbol("hierarchies" + std::to_string(i));
+        auto ggchild = keyword("ggchild" + std::to_string(i));
+        auto gchild = keyword("gchild" + std::to_string(i));
+        auto lchild = keyword("lchild" + std::to_string(i));
+        auto rchild = keyword("rchild" + std::to_string(i));
+        auto parent = keyword("parent" + std::to_string(i));
+        Root dfn, fn1, fn2, fn3, fn4;
+        dfn = mk_fn();
+        fn1 = mk_fn();
+        fn2 = mk_fn();
+        fn3 = mk_fn();
+        fn4 = mk_fn();
+
+        derive(lchild, parent);
+        derive(rchild, parent);
+        derive(gchild, lchild);
+        derive(gchild, rchild);
+        derive(ggchild, gchild);
+
+        Value multi = define_multimethod(name, *dfn, nil);
+        define_method(name, parent, *fn1);
+        define_method(name, lchild, *fn2);
+        define_method(name, rchild, *fn3);
+        define_method(name, gchild, *fn4);
+
+        EXPECT_TRUE(fn1->is(get_method(multi, parent)));
+        EXPECT_TRUE(fn2->is(get_method(multi, lchild)));
+        EXPECT_TRUE(fn3->is(get_method(multi, rchild)));
+        EXPECT_TRUE(fn4->is(get_method(multi, gchild)));
+        EXPECT_TRUE(fn4->is(get_method(multi, ggchild)));
+    }
+}
+
 struct hierarchy_test : multimethod_test
 {
     Value a = keyword("a");

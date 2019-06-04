@@ -35,15 +35,15 @@ TEST_F(hash_test, should_hash_values)
     auto sym = create_symbol("org.xyz", "eqsym");
     auto kw = create_keyword("org.xyz", "eqkw");
     Root val;
-    ASSERT_EQ(std::hash<Value>{}(*fn), hash(*fn));
-    ASSERT_EQ(std::hash<Value>{}(sym), hash(sym));
-    ASSERT_EQ(std::hash<Value>{}(kw), hash(kw));
+    EXPECT_EQ(std::hash<Value>{}(*fn), hash(*fn));
+    EXPECT_EQ(std::hash<std::string>{}("org.xyz") * 31 + std::hash<std::string>{}("eqsym"), hash(sym));
+    EXPECT_EQ(std::hash<std::string>{}("org.xyz") * 31 + std::hash<std::string>{}("eqkw"), hash(kw));
     val = create_int64(55);
-    ASSERT_EQ(std::hash<Int64>{}(55), hash(*val));
+    EXPECT_EQ(std::hash<Int64>{}(55), hash(*val));
     val = create_float64(5.5);
-    ASSERT_EQ(std::hash<Float64>{}(5.5), hash(*val));
+    EXPECT_EQ(std::hash<Float64>{}(5.5), hash(*val));
     val = create_string("hamster");
-    ASSERT_EQ(std::hash<std::string>{}("hamster"), hash(*val));
+    EXPECT_EQ(std::hash<std::string>{}("hamster"), hash(*val));
 }
 
 }
