@@ -177,17 +177,18 @@ Force read_vector(Stream& s)
 {
     s.next(); // '['
     eat_ws(s);
-    Root v{*EMPTY_VECTOR};
+    Root v{transient_array(*EMPTY_VECTOR)};
 
     while (!s.eos() && s.peek() != ']')
     {
         Root e{read(s)};
-        v = array_conj(*v, *e);
+        v = transient_array_conj(*v, *e);
         eat_ws(s);
     }
     if (s.eos())
         throw_unexpected_end_of_input(s.pos());
     s.next(); // ']'
+    v = transient_array_persistent(*v);
     return *v;
 }
 
