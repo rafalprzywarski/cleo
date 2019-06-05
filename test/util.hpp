@@ -122,15 +122,16 @@ template <typename T, typename... Ts>
 Force svec_conj(Value vec, const T& first, const Ts&... elems)
 {
     Root val{to_value(first)};
-    Root nvec{array_conj(vec, *val)};
+    Root nvec{transient_array_conj(vec, *val)};
     return svec_conj(*nvec, elems...);
 }
 
 template <typename... Ts>
 Force array(const Ts&... elems)
 {
-    Root s{create_array(nullptr, 0)};
-    return svec_conj(*s, elems...);
+    Root s{transient_array(*EMPTY_VECTOR)};
+    Root t{svec_conj(*s, elems...)};
+    return transient_array_persistent(*t);
 }
 
 template <typename... Ts>
