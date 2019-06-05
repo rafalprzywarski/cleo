@@ -15,7 +15,7 @@ Force array_conj(Value v, Value e);
 Force array_hash(Value v);
 
 Force transient_array(Value other);
-Value get_transient_array_size(Value v);
+inline Int64 get_transient_array_size(Value v) { return get_object_int(v, 0); }
 Value get_transient_array_elem(Value v, std::uint32_t index);
 Force transient_array_conj(Value v, Value e);
 Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e);

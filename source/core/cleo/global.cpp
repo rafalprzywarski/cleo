@@ -499,7 +499,7 @@ Value transient_array_get(Value v, Value index)
     if (get_value_tag(index) != tag::INT64)
         return nil;
     auto i = get_int64_value(index);
-    if (i < 0 || i >= get_int64_value(get_transient_array_size(v)))
+    if (i < 0 || i >= get_transient_array_size(v))
         return nil;
     return get_transient_array_elem(v, i);
 }
@@ -509,7 +509,7 @@ Force transient_array_assoc(Value v, Value index, Value e)
     if (get_value_tag(index) != tag::INT64)
         return nil;
     auto i = get_int64_value(index);
-    if (i < 0 || i > get_int64_value(get_transient_array_size(v)))
+    if (i < 0 || i > get_transient_array_size(v))
         throw_index_out_of_bounds();
     return transient_array_assoc_elem(v, i, e);
 }
@@ -529,7 +529,7 @@ Value transient_array_call(Value v, Value index)
     if (get_value_tag(index) != tag::INT64)
         throw_illegal_argument("Key must be integer");
     auto i = get_int64_value(index);
-    if (i < 0 || i >= get_int64_value(get_transient_array_size(v)))
+    if (i < 0 || i >= get_transient_array_size(v))
         throw_index_out_of_bounds();
     return get_transient_array_elem(v, i);
 }
@@ -1482,7 +1482,7 @@ struct Initialize
         define_method(COUNT, *type::Sequence, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_size>::fn>();
         define_method(COUNT, *type::Array, *f);
-        f = create_native_function1<get_transient_array_size>();
+        f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn>();
         define_method(COUNT, *type::TransientArray, *f);
         f = create_native_function1<WrapUInt32Fn<get_string_len>::fn>();
         define_method(COUNT, *type::String, *f);

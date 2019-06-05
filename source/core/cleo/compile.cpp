@@ -168,7 +168,7 @@ Int64 get_arity(Value params)
 
 Int64 add_var(Root& vars, Value v)
 {
-    auto n = get_int64_value(get_transient_array_size(*vars));
+    auto n = get_transient_array_size(*vars);
     if (n == MAX_VARS)
         throw_compilation_error("Too many vars: " + std::to_string(n + 1));
     for (Int64 i = 0; i < n; ++i)
@@ -181,7 +181,7 @@ Int64 add_var(Root& vars, Value v)
 
 Int64 add_const(Root& consts, Value c)
 {
-    auto n = get_int64_value(get_transient_array_size(*consts));
+    auto n = get_transient_array_size(*consts);
     if (n == MAX_CONSTS)
         throw_compilation_error("Too many constants: " + std::to_string(n + 1));
     for (Int64 i = 0; i < n; ++i)
@@ -197,7 +197,7 @@ Int64 add_const(Root& consts, Value c)
 
 Int64 Compiler::add_local_ref(Value sym)
 {
-    auto n = get_int64_value(get_transient_array_size(*parent_local_refs));
+    auto n = get_transient_array_size(*parent_local_refs);
     for (Int64 i = 0; i < n; ++i)
         if (get_transient_array_elem(*parent_local_refs, i) == sym)
             return i;
@@ -845,12 +845,12 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     auto arity = get_arity(*params);
     auto scope = create_fn_body_scope(form, *locals, parent_locals);
     c.compile_value(scope, *val);
-    auto used_locals_size = get_int64_value(get_transient_array_size(*c.parent_local_refs));
-    auto consts_size = get_int64_value(get_transient_array_size(*c.consts));
+    auto used_locals_size = get_transient_array_size(*c.parent_local_refs);
+    auto consts_size = get_transient_array_size(*c.consts);
     for (auto off : c.parent_local_ref_offsets)
         set_i16(c.code, off, get_i16(c.code, off) + consts_size);
     Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
-    Root vars{get_int64_value(get_transient_array_size(*c.vars)) > 0 ? transient_array_persistent(*c.vars) : nil};
+    Root vars{get_transient_array_size(*c.vars) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.parent_local_refs) : nil;
     Root exception_table{!c.et_types.empty() ? create_bytecode_fn_exception_table(c.et_entries.data(), c.et_types.data(), c.et_types.size()) : nil};
     return create_bytecode_fn_body(arity, *consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
@@ -872,7 +872,7 @@ Force reserve_fn_body_consts(Value body, Int64 n)
     consts = transient_array(*consts ? *consts : *EMPTY_VECTOR);
     for (Int64 i = 0; i < n; ++i)
         consts = transient_array_conj(*consts, nil);
-    auto size = get_int64_value(get_transient_array_size(*consts));
+    auto size = get_transient_array_size(*consts);
     if (size > MAX_CONSTS)
         throw_compilation_error("Too many constants: " + std::to_string(size));
     consts = size > 0 ? transient_array_persistent(*consts) : nil;
