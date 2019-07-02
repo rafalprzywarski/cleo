@@ -764,6 +764,8 @@ TEST_F(vm_test, catching_exceptions_from_throw)
     stack.clear();
 
     std::array<Value, 1> other_types{{*type::IllegalArgument}};
+    stack_push(*THREE);
+    stack_push(*TWO);
     stack_push(*ex);
     try
     {
