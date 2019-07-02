@@ -596,6 +596,18 @@
   (assert= 4 (max 3 1 2 4)))
 
 
+(deftest peek
+  (assert= nil (peek []))
+  (assert= 4 (peek [4]))
+  (assert= 2 (peek [3 2]))
+  (assert= nil (peek '()))
+  (assert= 4 (peek '(4)))
+  (assert= 3 (peek '(3 2)))
+  (assert= nil (peek (transient [])))
+  (assert= 4 (peek (transient [4])))
+  (assert= 2 (peek (transient [3 2]))))
+
+
 (deftest parse-const
   (assert= 10 (cc/parse 10))
   (assert= 3.5 (cc/parse 3.5))

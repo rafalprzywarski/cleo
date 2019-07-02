@@ -122,6 +122,7 @@ const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 const Value COMPILE = create_symbol("cleo.core", "compile");
+const Value PEEK = create_symbol("cleo.core", "peek");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -903,6 +904,18 @@ Force cons(Value elem, Value next)
     return create_cons(elem, *s);
 }
 
+Value array_peek(Value v)
+{
+    auto size = get_array_size(v);
+    return size > 0 ? get_array_elem_unchecked(v, size - 1) : nil;
+}
+
+Value transient_array_peek(Value v)
+{
+    auto size = get_transient_array_size(v);
+    return size > 0 ? get_transient_array_elem(v, size - 1) : nil;
+}
+
 Force mk_keyword(Value val)
 {
     auto t = get_value_tag(val);
@@ -1390,6 +1403,7 @@ struct Initialize
         define_multimethod(SEQ, *first_type, undefined);
         define_multimethod(FIRST, *first_type, undefined);
         define_multimethod(NEXT, *first_type, undefined);
+        define_multimethod(PEEK, *first_type, undefined);
 
         f = create_native_function1<nil_seq>();
         define_method(SEQ, nil, *f);
@@ -1405,6 +1419,8 @@ struct Initialize
         define_method(FIRST, *type::List, *f);
         f = create_native_function1<get_list_next>();
         define_method(NEXT, *type::List, *f);
+        f = create_native_function1<get_list_first>();
+        define_method(PEEK, *type::List, *f);
 
         derive(*type::Cons, *type::Sequence);
         f = create_native_function1<identity>();
@@ -1429,6 +1445,11 @@ struct Initialize
         define_method(FIRST, *type::ArraySeq, *f);
         f = create_native_function1<get_array_seq_next>();
         define_method(NEXT, *type::ArraySeq, *f);
+        f = create_native_function1<array_peek>();
+        define_method(PEEK, *type::Array, *f);
+
+        f = create_native_function1<transient_array_peek>();
+        define_method(PEEK, *type::TransientArray, *f);
 
         derive(*type::ArraySet, *type::Seqable);
         f = create_native_function1<array_set_seq>();
