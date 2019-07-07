@@ -1347,7 +1347,7 @@ struct Initialize
 
         define(LIB_PATHS, nil, *DYNAMIC_META);
 
-        define(COMMAND_LINE_ARGS, nil);
+        define(COMMAND_LINE_ARGS, nil, *DYNAMIC_META);
 
         f = create_native_function2<identical, &IDENTICAL>();
         define(IDENTICAL, *f);
