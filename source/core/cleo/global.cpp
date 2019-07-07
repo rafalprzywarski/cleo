@@ -134,6 +134,7 @@ namespace
 const ConstRoot SENTINEL_TYPE{create_object_type("cleo.core", "Sentinel")};
 }
 const Root SENTINEL{create_object0(*SENTINEL_TYPE)};
+const Root RELOAD{create_keyword("reload")};
 
 const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
     QUOTE,
@@ -289,7 +290,7 @@ const Value MACROEXPAND = create_symbol("cleo.core", "macroexpand");
 const Value REFER = create_symbol("cleo.core", "refer");
 const Value READ_STRING = create_symbol("cleo.core", "read-string");
 const Value LOAD_STRING = create_symbol("cleo.core", "load-string");
-const Value REQUIRE = create_symbol("cleo.core", "require");
+const Value REQUIRE = create_symbol("cleo.core", "require*");
 const Value ALIAS = create_symbol("cleo.core", "alias");
 const Value TYPE = create_symbol("cleo.core", "type");
 const Value KEYWORD_TYPE_NAME = get_object_type_name(*type::Keyword);
@@ -1786,7 +1787,7 @@ struct Initialize
         f = create_native_function1<load, &LOAD_STRING>();
         define(LOAD_STRING, *f);
 
-        f = create_native_function1<require, &REQUIRE>();
+        f = create_native_function2<require, &REQUIRE>();
         define(REQUIRE, *f);
 
         define_function(ALIAS, create_native_function2<alias, &ALIAS>());

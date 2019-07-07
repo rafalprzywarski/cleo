@@ -192,7 +192,7 @@ Value lookup(Value sym)
     return lookup(ns_name(*rt::current_ns), sym);
 }
 
-Value require(Value ns)
+Value require(Value ns, Value opts)
 {
     if (get_value_tag(ns) != tag::SYMBOL)
     {
@@ -200,7 +200,7 @@ Value require(Value ns)
         throw_exception(new_illegal_argument(*msg));
     }
     auto ns_name = get_symbol_name(ns);
-    if (ns != CLEO_CORE && persistent_hash_map_contains(*namespaces, ns))
+    if (ns != CLEO_CORE && persistent_hash_map_contains(*namespaces, ns) && !map_get(opts, *RELOAD))
         return nil;
     std::string path = locate_source({get_string_ptr(ns_name), get_string_len(ns_name)});
     std::ifstream f(path);

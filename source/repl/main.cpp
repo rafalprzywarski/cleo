@@ -86,7 +86,7 @@ int main(int argc, const char *const* argv)
     }
     cleo::Root ns_bindings{create_ns_bindings(argc, argv)};
     cleo::PushBindingsGuard bindings_guard{*ns_bindings};
-    cleo::require(cleo::CLEO_CORE);
+    cleo::require(cleo::CLEO_CORE, cleo::nil);
     cleo::in_ns(cleo::create_symbol("user"));
     cleo::refer(cleo::CLEO_CORE);
     while ((line = readline((get_current_ns() + "=> ").c_str())) != nullptr)

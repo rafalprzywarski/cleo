@@ -250,6 +250,7 @@ extern const Root NEG_ONE;
 extern const Root TWO;
 extern const Root THREE;
 extern const Root SENTINEL;
+extern const Root RELOAD;
 
 extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 

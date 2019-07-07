@@ -48,10 +48,10 @@ int main(int argc, const char *const* argv)
         auto ns = cleo::create_symbol(ns_name);
         cleo::Root ns_bindings{create_ns_bindings(argc, argv)};
         cleo::PushBindingsGuard bindings_guard{*ns_bindings};
-        cleo::require(cleo::CLEO_CORE);
+        cleo::require(cleo::CLEO_CORE, cleo::nil);
         cleo::in_ns(cleo::create_symbol("cleo.core.run"));
         cleo::refer(cleo::CLEO_CORE);
-        cleo::require(ns);
+        cleo::require(ns, cleo::nil);
         auto main_fn = cleo::create_symbol(ns_name, "main");
         cleo::Root call_main{cleo::create_list(&main_fn, 1)};
         cleo::Root exit_code{cleo::eval(*call_main)};

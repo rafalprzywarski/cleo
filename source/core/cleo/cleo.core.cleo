@@ -492,6 +492,10 @@
   (not (seq coll)))
 
 
+(defn require [ns & opts]
+  (require* ns (reduce (fn [m o] (assoc m o :true)) {} opts)))
+
+
 (defmacro ns
   {:arglists '([name docstring? attr-map? references*])}
   [name & references]
