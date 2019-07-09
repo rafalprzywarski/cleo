@@ -1,9 +1,11 @@
 project(cleo)
 cmake_minimum_required(VERSION 2.8)
 
-add_definitions("-std=c++14 -Wall")
+add_definitions("-std=c++14 -Wall -Wsign-compare")
 if(APPLE)
 	add_definitions("-Wno-unused-const-variable")
+else(APPLE)
+        add_definitions("-Wno-psabi")
 endif(APPLE)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})

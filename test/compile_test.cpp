@@ -736,7 +736,7 @@ TEST_F(compile_test, should_compile_let_forms)
                     "                a100 a] a100))\n");
     EXPECT_EQ(257u, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*fn, 0)));
     auto code = bc(get_bytecode_fn_body(*fn, 0));
-    ASSERT_GE(code.size(), 4 * 256);
+    ASSERT_GE(code.size(), 4u * 256);
     EXPECT_EQ(b(vm::LDL, -1, -1, vm::STL, 0, 1, vm::LDL, 0, 1), subvec(code, 4 * 256));
 
     Root form{read_str("[let* [x a] x]")};

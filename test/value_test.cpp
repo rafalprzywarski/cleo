@@ -195,7 +195,7 @@ TEST_F(value_test, should_store_int_values_in_objects)
     const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
     Root obj{create_object(*type, ints.data(), ints.size(), elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
-    ASSERT_EQ(5, get_object_int_size(*obj));
+    ASSERT_EQ(5u, get_object_int_size(*obj));
     ASSERT_EQ(std::numeric_limits<Int64>::max(), get_object_int(*obj, 0));
     ASSERT_EQ(std::numeric_limits<Int64>::min(), get_object_int(*obj, 1));
     ASSERT_EQ(0, get_object_int(*obj, 2));

@@ -127,7 +127,7 @@ TEST_F(transient_array_test, should_create_a_persistent_vector_from_a_vector)
     std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
     p = create_array(elems.data(), elems.size());
     vector = transient_array(*p);
-    ASSERT_EQ(elems.size(), get_transient_array_size(*vector));
+    ASSERT_EQ(Int64(elems.size()), get_transient_array_size(*vector));
     ASSERT_TRUE(elems[0].is(get_transient_array_elem(*vector, 0)));
     ASSERT_TRUE(elems[1].is(get_transient_array_elem(*vector, 1)));
     ASSERT_TRUE(elems[2].is(get_transient_array_elem(*vector, 2)));

@@ -111,7 +111,7 @@ void test_fn()
     auto name = create_symbol("gfn");
     Root params{array(id<Types>()...)};
     Root fn{create_c_fn((void *)add<Types...>, name, clib::int64, *params)};
-    for (int i = 0; i < sizeof...(Types); ++i)
+    for (int i = 0; i < int(sizeof...(Types)); ++i)
     {
         Root examples{example_list<Types...>(i)};
         Root call{list_conj(*examples, *fn)};

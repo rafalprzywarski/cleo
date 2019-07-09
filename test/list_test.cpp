@@ -37,7 +37,7 @@ TEST_F(list_test, should_create_a_list_from_elements)
     elem2 = create_int64(103);
     std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
     list = create_list(elems.data(), elems.size());
-    ASSERT_EQ(elems.size(), get_list_size(*list));
+    ASSERT_EQ(Int64(elems.size()), get_list_size(*list));
     ASSERT_TRUE(elems[0].is(get_list_first(*list)));
 
     Value next1 = get_list_next(*list);

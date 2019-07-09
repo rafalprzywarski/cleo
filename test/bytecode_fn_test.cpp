@@ -313,8 +313,8 @@ TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
     EXPECT_EQ_REFS(*et2, get_bytecode_fn_body_exception_table(get_bytecode_fn_body(*mfn, 1)));
     EXPECT_EQ(locals_size1, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 0)));
     EXPECT_EQ(locals_size2, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 1)));
-    EXPECT_EQ(bytes1.size(), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 0)));
-    EXPECT_EQ(bytes2.size(), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ(Int64(bytes1.size()), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ(Int64(bytes2.size()), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 1)));
     EXPECT_TRUE(std::equal(begin(bytes1), end(bytes1), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 0))));
     EXPECT_TRUE(std::equal(begin(bytes2), end(bytes2), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 1))));
 }

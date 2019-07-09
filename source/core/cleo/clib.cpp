@@ -120,7 +120,7 @@ void generate_code(char *p, void *cfn, Value param_types)
 
     auto offsets = param_offsets(param_types);
     auto sizes = param_sizes(param_types);
-    auto first_on_stack = std::find(begin(offsets), end(offsets), 4) - begin(offsets);
+    std::uint32_t first_on_stack = std::find(begin(offsets), end(offsets), 4) - begin(offsets);
     if (first_on_stack < param_count)
     {
         auto total = ((offsets.back() - 4) + sizes.back()) * 4;
@@ -270,7 +270,7 @@ Force call_c_function(const Value *args, std::uint8_t num_args)
     auto addr = get_object_element(fn, 0);
     auto name = get_object_element(fn, 1);
     auto param_types = get_object_element(fn, 2);
-    if ((num_args - 1) != get_array_size(param_types))
+    if ((std::uint32_t(num_args) - 1) != get_array_size(param_types))
         throw_arity_error(name, num_args - 1);
     std::uint64_t raw_args[MAX_ARGS];
     for (decltype(num_args) i = 1; i < num_args; ++i)
