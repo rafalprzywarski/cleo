@@ -169,12 +169,13 @@ void generate_code(char *p, void *cfn, Value param_types)
         abs_addr(create_int64)                          // .word
     );
 
-    __clear_cache(code, p);
+    __builtin___clear_cache(code, p);
 }
 #else
 void generate_code(char *p, void *cfn, Value param_types)
 {
     auto param_count = get_array_size(param_types);
+    auto code = p;
     put(p,
         0x55,                                           // push   rbp
         0x48, 0x89, 0xe5                                // mov    rbp,rsp
@@ -218,6 +219,7 @@ void generate_code(char *p, void *cfn, Value param_types)
         0x5d,                                           // pop    rbp
         0xe9, rel_addr(create_int64)                    // jmp    create_int64
     );
+    __builtin___clear_cache(code, p);
 }
 #endif
 
