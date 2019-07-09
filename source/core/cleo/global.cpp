@@ -123,6 +123,7 @@ const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 const Value COMPILE = create_symbol("cleo.core", "compile");
 const Value PEEK = create_symbol("cleo.core", "peek");
+const Value VAR_NAME = create_symbol("cleo.core", "var-name");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -1865,6 +1866,8 @@ struct Initialize
         define_function(NS_MAP, create_native_function1<ns_map, &NS_MAP>());
         define_function(NS_NAME, create_native_function1<ns_name, &NS_NAME>());
         define_function(NS_ALIASES, create_native_function1<ns_aliases, &NS_ALIASES>());
+
+        define_function(VAR_NAME, create_native_function1<get_var_name, &VAR_NAME>());
 
         define_function(GC_LOG, create_native_function1<set_gc_log, &GC_LOG>());
 

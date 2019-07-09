@@ -1759,7 +1759,10 @@
 
 (define-var 'cleo.compiler.def.test.other/ex nil)
 
-(in-ns 'cleo.compiler.def.test)
+(in-ns 'cleo.compiler.imported-def.test)
+(def imported-existing 20)
+(cleo.core/in-ns 'cleo.compiler.def.test)
+(cleo.core/refer 'cleo.compiler.imported-def.test)
 (def existing 10)
 (cleo.core/in-ns 'cleo.core.test)
 
@@ -1819,6 +1822,11 @@
                          vm/LDC 1 0
                          vm/STVM]}
              tbody))
+  (assert= (resolve 'cleo.compiler.imported-def.test/imported-existing)
+           (binding-ns 'cleo.compiler.def.test (resolve 'imported-existing)))
+  (assert-compilation-error "imported-existing already refers to: #'cleo.compiler.imported-def.test/imported-existing in namespace: cleo.compiler.def.test"
+                            (binding-ns 'cleo.compiler.def.test
+                                           (translate-body '(def imported-existing 10))))
   (assert (resolve 'cleo.compiler.def.test.other/ex))
   (assert-compilation-error "Can't create defs outside of current ns"
                             (binding-ns 'cleo.compiler.def.test
