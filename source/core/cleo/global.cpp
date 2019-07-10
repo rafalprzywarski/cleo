@@ -18,6 +18,7 @@
 #include "util.hpp"
 #include "clib.hpp"
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <fstream>
 #include <limits>
@@ -1032,13 +1033,21 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
     auto endp = p + size;
     auto read_u16 = [](const vm::Byte *p) { return std::uint8_t(p[0]) | std::uint16_t(std::uint8_t(p[1])) << 8; };
     auto read_i16 = [=](const vm::Byte *p) { return std::int16_t(read_u16(p)); };
-    auto mk = [&p, bytes](const std::string& oc, Value arg0 = *SENTINEL)
+    auto hex_bytes = [](const vm::Byte *p, unsigned size)
+    {
+        std::ostringstream os;
+        for (unsigned i = 0; i < size; ++i)
+            os << std::hex << std::setfill('0') << std::setw(2) << unsigned(std::uint8_t(p[i]));
+        return os.str();
+    };
+    auto mk = [&p, bytes, hex_bytes](const std::string& oc, unsigned size = 1, Value arg0 = *SENTINEL)
     {
         Root offset{create_int64(p - bytes)};
-        std::array<Value, 3> s{{*offset, create_symbol(oc), arg0}};
-        std::uint32_t n = 3;
+        Root bytes{create_string(hex_bytes(p, size))};
+        std::array<Value, 4> s{{*offset, *bytes, create_symbol(oc), arg0}};
+        std::uint32_t n = 4;
         if (arg0 == *SENTINEL)
-            n = 2;
+            n = 3;
         return create_array(s.data(), n);
     };
     Root oc, x;
@@ -1047,23 +1056,23 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
         switch (*p)
         {
         case vm::LDC:
-            oc = mk("LDC", get_array_elem(consts, read_u16(p + 1)));
+            oc = mk("LDC", 3, get_array_elem(consts, read_u16(p + 1)));
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
         case vm::LDL:
             x = create_int64(read_i16(p + 1));
-            oc = mk("LDL", *x);
+            oc = mk("LDL", 3, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
         case vm::LDDV:
-            oc = mk("LDDV", get_array_elem(vars, read_u16(p + 1)));
+            oc = mk("LDDV", 3, get_array_elem(vars, read_u16(p + 1)));
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
         case vm::LDV:
-            oc = mk("LDV", get_array_elem(vars, read_u16(p + 1)));
+            oc = mk("LDV", 3, get_array_elem(vars, read_u16(p + 1)));
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
@@ -1074,7 +1083,7 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             break;
         case vm::STL:
             x = create_int64(read_i16(p + 1));
-            oc = mk("STL", *x);
+            oc = mk("STL", 3, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
@@ -1095,31 +1104,31 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             break;
         case vm::BNIL:
             x = create_int64((p - bytes) + 3 + read_i16(p + 1));
-            oc = mk("BNIL", *x);
+            oc = mk("BNIL", 3, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
         case vm::BNNIL:
             x = create_int64((p - bytes) + 3 + read_i16(p + 1));
-            oc = mk("BNNIL", *x);
+            oc = mk("BNNIL", 3, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
         case vm::BR:
             x = create_int64((p - bytes) + 3 + read_i16(p + 1));
-            oc = mk("BR", *x);
+            oc = mk("BR", 3, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
         case vm::CALL:
             x = create_int64(std::uint8_t(p[1]));
-            oc = mk("CALL", *x);
+            oc = mk("CALL", 2, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 2;
             break;
         case vm::APPLY:
             x = create_int64(std::uint8_t(p[1]));
-            oc = mk("APPLY", *x);
+            oc = mk("APPLY", 2, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 2;
             break;
@@ -1130,7 +1139,7 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             break;
         case vm::IFN:
             x = create_int64(std::uint8_t(p[1]));
-            oc = mk("IFN", *x);
+            oc = mk("IFN", 2, *x);
             dbs = transient_array_conj(*dbs, *oc);
             p += 2;
             break;

@@ -534,8 +534,8 @@
       (println "arity:" arity)
       (println "locals size:" locals-size)
       (println "bytecode:")
-      (doseq [[offset oc & args] bytecode]
-        (println (right 6 offset) (left 5 oc) (if args (pr-str (first args)) "")))
+      (doseq [[offset bytes oc & args] bytecode]
+        (println (right 6 offset) (left 6 bytes) (left 5 oc) (if args (pr-str (first args)) "")))
       (when exception-table
         (println "exception table:")
         (println "  start     end handler stacksz type")
