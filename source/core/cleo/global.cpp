@@ -318,6 +318,7 @@ const Value SYMBOL = create_symbol("cleo.core", "symbol");
 const Value NS_MAP = create_symbol("cleo.core", "ns-map");
 const Value NS_NAME = create_symbol("cleo.core", "ns-name");
 const Value NS_ALIASES = create_symbol("cleo.core", "ns-aliases");
+const Value NAMESPACES = create_symbol("cleo.core", "namespaces*");
 const Value QUOT = create_symbol("cleo.core", "quot");
 const Value REM = create_symbol("cleo.core", "rem");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
@@ -1017,6 +1018,11 @@ Value defmethod(Value mm, Value dispatchValue, Value fn)
     check_type("multifn", mm, *type::Multimethod);
     define_method(get_multimethod_name(mm), dispatchValue, fn);
     return nil;
+}
+
+Value get_namespaces()
+{
+    return *namespaces;
 }
 
 Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
@@ -1866,6 +1872,7 @@ struct Initialize
         define_function(NS_MAP, create_native_function1<ns_map, &NS_MAP>());
         define_function(NS_NAME, create_native_function1<ns_name, &NS_NAME>());
         define_function(NS_ALIASES, create_native_function1<ns_aliases, &NS_ALIASES>());
+        define_function(NAMESPACES, create_native_function0<get_namespaces, &NAMESPACES>());
 
         define_function(VAR_NAME, create_native_function1<get_var_name, &VAR_NAME>());
 

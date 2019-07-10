@@ -35,6 +35,17 @@ Force create_native_function0()
     }, deref_name<name>());
 }
 
+template <Value f(), const Value *name>
+Force create_native_function0()
+{
+    return create_native_function([](const Value *, std::uint8_t num_args)
+    {
+        if (num_args != 0)
+            throw_arity_error(deref_name<name>(), num_args);
+        return force(f());
+    }, deref_name<name>());
+}
+
 template <Force f(), const Value *name>
 Force create_native_new0()
 {

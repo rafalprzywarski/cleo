@@ -587,6 +587,10 @@
     (find-ns name) `(print-doc (ns-name (find-ns '~name)) (meta (find-ns '~name)))))
 
 
+(defn all-ns []
+  (map second (namespaces*)))
+
+
 (require 'cleo.compiler)
 
 
