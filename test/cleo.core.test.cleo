@@ -543,6 +543,17 @@
   (assert= () (drop 6 [:a :b :c :d])))
 
 
+(deftest take
+  (assert= () (take -1 [:a]))
+  (assert= () (take 0 [:a]))
+  (assert= () (take 1 nil))
+  (assert= () (take 1 []))
+  (assert= '(:a :b) (take 3 [:a :b]))
+  (assert= '(:a :b :c) (take 3 [:a :b :c]))
+  (assert= '(:a :b :c) (take 3 [:a :b :c :d :e]))
+  (assert= '(:a :b :c) (take 3 '(:a :b :c :d :e))))
+
+
 (deftest ns
   (assert= '(do (cleo.core/in-ns 'some.thing nil) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
   (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
