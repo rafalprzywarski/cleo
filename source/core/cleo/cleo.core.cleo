@@ -312,6 +312,17 @@
        x))))
 
 
+(defn min
+  ([x] x)
+  ([x y] (if (< x y) x y))
+  ([x y & xs]
+   (loop* [xs xs
+           x (min x y)]
+     (if xs
+       (recur (next xs) (min x (first xs)))
+       x))))
+
+
 (defn not=
   "Equivalent to (not (= x y))"
   [x y] (not (= x y)))

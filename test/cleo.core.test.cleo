@@ -607,6 +607,15 @@
   (assert= 4 (max 3 1 2 4)))
 
 
+(deftest min
+  (assert= 10 (min 10))
+  (assert= 10 (min 10 20))
+  (assert= 0 (min 10 0))
+  (assert= 1 (min 1 2 3))
+  (assert= 1 (min 3 1 2))
+  (assert= 1 (min 3 4 2 1)))
+
+
 (deftest peek
   (assert= nil (peek []))
   (assert= 4 (peek [4]))
