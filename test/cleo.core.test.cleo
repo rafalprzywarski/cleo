@@ -1803,10 +1803,12 @@
                          vm/STVV]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
-                          (translate-body '(def {:x 7} y 10)))]
-    (assert= 7 (:x (meta (resolve 'cleo.compiler.def.test/y))))
+                          (translate-body '(def {:x 7 :y '(z)} y 10)))
+        y-var (resolve 'cleo.compiler.def.test/y)]
+    (assert= 7 (:x (meta y-var)))
+    (assert= '(z) (:y (meta y-var)))
     (assert= {:arity 0
-              :consts [(resolve 'cleo.compiler.def.test/y) 10 {:x 7}]
+              :consts [y-var 10 {:x 7 :y '(z)}]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
                          vm/STVV
@@ -1814,10 +1816,12 @@
                          vm/STVM]}
              tbody))
   (let [tbody (binding-ns 'cleo.compiler.def.test
-                          (translate-body '(def {:x 7} s)))]
-    (assert= 7 (:x (meta (resolve 'cleo.compiler.def.test/s))))
+                          (translate-body '(def {:x 7 :y '(z)} s)))
+        s-var (resolve 'cleo.compiler.def.test/s)]
+    (assert= 7 (:x (meta s-var)))
+    (assert= '(z) (:y (meta s-var)))
     (assert= {:arity 0
-              :consts [(resolve 'cleo.compiler.def.test/s) {:x 7}]
+              :consts [s-var {:x 7 :y '(z)}]
               :bytecode [vm/LDC 0 0
                          vm/LDC 1 0
                          vm/STVM]}

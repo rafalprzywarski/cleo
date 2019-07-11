@@ -1159,19 +1159,20 @@ TEST_F(compile_test, should_compile_def)
                                            vm::CALL, 1,
                                            vm::STVV));
 
-    fn = compile_fn("(fn* [] (def {10 20} z 13))");
-    Root meta{phmap(10, 20)};
-    Root var_meta{phmap(10, 20, NS_KEY, ns, NAME_KEY, create_symbol("z"))};
+    fn = compile_fn("(fn* [] (def {10 'x20} z 13))");
+    Value x20 = create_symbol("x20");
+    Root meta{phmap(10, x20)};
+    Root var_meta{phmap(10, x20, NS_KEY, ns, NAME_KEY, create_symbol("z"))};
     v = get_var(create_symbol("cleo.compile.def.test", "z"));
     EXPECT_EQ_VALS(*var_meta, get_var_meta(v));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, 13, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::STVV, vm::LDC, 2, 0, vm::STVM));
 
-    fn = compile_fn("(fn* [] (def {10 20} z))");
+    fn = compile_fn("(fn* [] (def {10 'x20} z))");
     v = get_var(create_symbol("cleo.compile.def.test", "z"));
     EXPECT_EQ_VALS(*var_meta, get_var_meta(v));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v, *meta), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::STVM));
 
-    Root form{amap(10, 20)};
+    Root form{amap(10, listv(QUOTE, x20))};
     form = list(FN, *EMPTY_VECTOR, listv(DEF, *form, create_symbol("z"), 13));
     fn = cleo::compile_fn(*form);
     v = get_var(create_symbol("cleo.compile.def.test", "z"));
@@ -1195,7 +1196,7 @@ TEST_F(compile_test, should_compile_def)
     v = get_var(create_symbol("cleo.compile.def.test", "nv"));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(v), b(vm::LDC, 0, 0));
 
-    form = read_str("[def {10 20} z 13]");
+    form = read_str("[def {10 'x20} z 13]");
     form = seq(*form);
     form = list(FN, *EMPTY_VECTOR, *form);
     fn = cleo::compile_fn(*form);

@@ -606,6 +606,7 @@ void Compiler::compile_def(Scope scope, Value form_)
         if (!*form)
             throw_compilation_error("Too few arguments to def");
         meta = *name;
+        meta = eval(*meta);
         name = seq_first(*form);
         form = seq_next(*form);
     }
@@ -638,7 +639,7 @@ void Compiler::compile_def(Scope scope, Value form_)
     }
     if (*meta)
     {
-        compile_value(scope, *meta);
+        compile_const(*meta);
         append(code, vm::STVM);
     }
 }
