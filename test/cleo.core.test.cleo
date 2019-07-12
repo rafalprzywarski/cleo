@@ -554,6 +554,11 @@
   (assert= '(:a :b :c) (take 3 '(:a :b :c :d :e))))
 
 
+(deftest iterate
+  (assert= '(10 11 12) (take 3 (iterate inc 10)))
+  (assert= '(7 6 5) (take 3 (iterate dec 7))))
+
+
 (deftest ns
   (assert= '(do (cleo.core/in-ns 'some.thing nil) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
   (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))

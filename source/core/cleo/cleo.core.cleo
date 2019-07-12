@@ -506,6 +506,11 @@
        (cons (first s) (take (dec n) (next s)))))))
 
 
+(defn iterate [f x]
+  (lazy-seq
+   (cons x (iterate f (f x)))))
+
+
 (defn empty? [coll]
   (not (seq coll)))
 
