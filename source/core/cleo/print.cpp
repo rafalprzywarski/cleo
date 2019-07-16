@@ -63,6 +63,11 @@ Force pr_str_float(Value val)
     return create_string(s);
 }
 
+char hex_digit(int x)
+{
+    return "0123456789abcdef"[x & 0xf];
+}
+
 Force pr_str_string(Value val)
 {
     if (!*rt::print_readably)
@@ -84,8 +89,16 @@ Force pr_str_string(Value val)
                 s += '\\';
                 s += *p;
                 break;
+            case '\0': s += "\\0"; break;
             default:
-                s += *p;
+                if (*p < 0x20)
+                {
+                    s += "\\x";
+                    s += hex_digit(*p >> 4);
+                    s += hex_digit(*p);
+                }
+                else
+                    s += *p;
         }
     s += '\"';
     return create_string(s);

@@ -91,6 +91,8 @@ TEST_F(pr_str_test, should_print_strings)
     EXPECT_EQ("\"\\nabc\\rdef\\t\\n\"", str(pr_str(*val)));
     val = create_string("\"x\\\'y\\");
     EXPECT_EQ("\"\\\"x\\\\\\\'y\\\\\"", str(pr_str(*val)));
+    val = create_string(std::string("\x80\xff\x97\x01\0\x1f", 6));
+    EXPECT_EQ("\"\\x80\\xff\\x97\\x01\\0\\x1f\"", str(pr_str(*val)));
 }
 
 TEST_F(pr_str_test, should_print_objects)
