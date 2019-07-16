@@ -340,6 +340,7 @@ const Value ASSOC_E = create_symbol("cleo.core", "assoc!");
 const Value DEFINE_VAR = create_symbol("cleo.core", "define-var");
 const Value SERIALIZE_FN = create_symbol("cleo.core", "serialize-fn");
 const Value DESERIALIZE_FN = create_symbol("cleo.core", "deserialize-fn");
+const Value CHAR_UTF8 = create_symbol("cleo.core", "char-utf8");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1256,6 +1257,37 @@ Value define_var_(Value name, Value meta)
     return define(name, nil, meta);
 }
 
+Force char_utf8(Value x)
+{
+    check_type("char", x, *type::Int64);
+    Int64 c = get_int64_value(x);
+    std::string s;
+    s.reserve(5);
+    if (c < 0 || c >= 0x110000)
+        throw_illegal_argument("Character value out of range for UTF-8: " + std::to_string(c));
+    if (c < 0x80)
+        s = char(c);
+    else if (c < 0x800)
+    {
+        s += 0xc0 | (c >> 6);
+        s += 0x80 | (c & 0x3f);
+    }
+    else if (c < 0x10000)
+    {
+        s += 0xe0 | (c >> 12);
+        s += 0x80 | ((c >> 6) & 0x3f);
+        s += 0x80 | (c & 0x3f);
+    }
+    else
+    {
+        s += 0xf0 | (c >> 18);
+        s += 0x80 | ((c >> 12) & 0x3f);
+        s += 0x80 | ((c >> 6) & 0x3f);
+        s += 0x80 | (c & 0x3f);
+    }
+    return create_string(s);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1908,6 +1940,8 @@ struct Initialize
 
         define_function(SERIALIZE_FN, create_native_function1<serialize_fn, &SERIALIZE_FN>());
         define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
+
+        define_function(CHAR_UTF8, create_native_function1<char_utf8, &CHAR_UTF8>());
     }
 } initialize;
 
