@@ -91,7 +91,7 @@ Force pr_str_string(Value val)
                 break;
             case '\0': s += "\\0"; break;
             default:
-                if (*p < 0x20)
+                if (*p < 0x20 || std::uint8_t(*p) >= 0x80)
                 {
                     s += "\\x";
                     s += hex_digit(*p >> 4);
