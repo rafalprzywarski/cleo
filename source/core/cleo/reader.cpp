@@ -218,6 +218,37 @@ Force read_map(Stream& s)
     return *m;
 }
 
+std::uint32_t read_hex_digit(Stream& s, int n)
+{
+    auto pos = s.pos();
+    auto c = s.next();
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - ('a' - 10);
+    if (c >= 'A' && c <= 'F')
+        return c - ('A' - 10);
+    throw_read_error(std::string("invalid character length: ") + std::to_string(n), pos);
+}
+
+void append_utf8(std::string& s, std::uint32_t c)
+{
+    if (c < 0x80)
+    {
+        s += char(c);
+        return;
+    }
+    if (c < 0x800)
+    {
+        s += 0xc0 | (c >> 6);
+        s += 0x80 | (c & 0x3f);
+        return;
+    }
+    s += 0xe0 | (c >> 12);
+    s += 0x80 | ((c >> 6) & 0x3f);
+    s += 0x80 | (c & 0x3f);
+}
+
 Force read_string(Stream& s)
 {
     std::string str;
@@ -228,10 +259,20 @@ Force read_string(Stream& s)
         {
             s.next();
             char c = s.next();
-            if (c == 'n')
-                str += '\n';
-            else
+            switch (c) {
+            case 'n': str += '\n'; break;
+            case 'u':
+            {
+                std::uint32_t code = read_hex_digit(s, 0) << 12;
+                code |= read_hex_digit(s, 1) << 8;
+                code |= read_hex_digit(s, 2) << 4;
+                code |= read_hex_digit(s, 3);
+                append_utf8(str, code);
+                break;
+            }
+            default:
                 str += c;
+            }
         }
         else
             str += s.next();

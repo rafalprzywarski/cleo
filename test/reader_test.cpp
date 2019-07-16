@@ -335,6 +335,34 @@ TEST_F(reader_test, should_parse_escaped_quotes_in_strings)
     ex = create_string("\"\"\""); val = read_str("\"\\\"\\\"\\\"\""); EXPECT_EQ_VALS(*ex, *val);
 }
 
+TEST_F(reader_test, should_parse_escaped_unicode_characters)
+{
+    Root ex, val;
+    ex = create_string(std::string("\0", 1)); val = read_str("\"\\u0000\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\x01"); val = read_str("\"\\u0001\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\x09"); val = read_str("\"\\u0009\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\n"); val = read_str("\"\\u000a\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\x0f"); val = read_str("\"\\u000f\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\n"); val = read_str("\"\\u000A\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\x0f"); val = read_str("\"\\u000F\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\x7f"); val = read_str("\"\\u007f\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\xc2\x80"); val = read_str("\"\\u0080\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\xdf\xbf"); val = read_str("\"\\u07ff\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\xdb\x9c"); val = read_str("\"\\u06dc\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\xe0\xa0\x80"); val = read_str("\"\\u0800\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\xeb\x9f\xa3"); val = read_str("\"\\ub7e3\""); EXPECT_EQ_VALS(*ex, *val);
+    ex = create_string("\xef\xbf\xbf"); val = read_str("\"\\uffff\""); EXPECT_EQ_VALS(*ex, *val);
+
+    assert_read_error("invalid character length: 0", "\"\\uz\"", 1, 4);
+    assert_read_error("invalid character length: 0", "\" \\u", 1, 5);
+    assert_read_error("invalid character length: 1", "\"\\u0z\"", 1, 5);
+    assert_read_error("invalid character length: 1", "\" \\u0", 1, 6);
+    assert_read_error("invalid character length: 2", "\"\\u00z\"", 1, 6);
+    assert_read_error("invalid character length: 2", "\" \\u00", 1, 7);
+    assert_read_error("invalid character length: 3", "\"\\u000z\"", 1, 7);
+    assert_read_error("invalid character length: 3", "\" \\u000", 1, 8);
+}
+
 TEST_F(reader_test, should_parse_a_sequence_of_characters_beginning_with_a_colon_as_a_keyword)
 {
     Root val;
