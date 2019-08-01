@@ -118,6 +118,7 @@ const Value HASH_SET = create_symbol("cleo.core", "hash-set");
 const Value CONCATI = create_symbol("cleo.core", "concati");
 const Value MACRO_KEY = create_keyword("macro");
 const Value DYNAMIC_KEY = create_keyword("dynamic");
+const Value CONST_KEY = create_keyword("const");
 const Value PRIVATE_KEY = create_keyword("private");
 const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
@@ -252,6 +253,7 @@ namespace
 {
 
 const ConstRoot DYNAMIC_META{persistent_hash_map_assoc(*EMPTY_MAP, DYNAMIC_KEY, TRUE)};
+const ConstRoot CONST_META{persistent_hash_map_assoc(*EMPTY_MAP, CONST_KEY, TRUE)};
 
 }
 
@@ -1757,7 +1759,7 @@ struct Initialize
         define_method(PR_STR_OBJ, *type::Multimethod, *f);
 
         f = create_native_function2<add2, &INTERNAL_ADD_2>();
-        define(INTERNAL_ADD_2, *f);
+        define(INTERNAL_ADD_2, *f, *CONST_META);
         f = create_native_function(sub, MINUS);
         define(MINUS, *f);
         f = create_native_function2<mult2, &ASTERISK>();
