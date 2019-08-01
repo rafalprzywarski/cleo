@@ -177,6 +177,13 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             stack_pop(stack.size() - stack_base - locals_size - 1 - handler.stack_size);
             return bytecode + handler.offset;
         };
+    auto maybe_throw_exception = [=](const Byte *p, Value ex)
+        {
+            auto handler = find_exception_handler(p, ex);
+            if (handler.offset < 0)
+                throw_exception(ex);
+            return handle_exception(handler, p, ex);
+        };
     while (p != endp)
     {
         switch (*p)
@@ -207,10 +214,7 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             {
                 Root msg{create_string("No matching field found: " + to_string(field) + " for type: " + to_string(type))};
                 Root ex{new_illegal_argument(*msg)};
-                auto handler = find_exception_handler(p, *ex);
-                if (handler.offset < 0)
-                    throw_exception(*ex);
-                p = handle_exception(handler, p, *ex);
+                p = maybe_throw_exception(p, *ex);
                 break;
             }
             stack[stack.size() - 2] = get_object_element(obj, index);
@@ -328,17 +332,28 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
         }
         case THROW:
         {
-            auto ex = stack.back();
-            auto handler = find_exception_handler(p, ex);
-            if (handler.offset < 0)
-                throw_exception(ex);
-            p = handle_exception(handler, p, ex);
+            p = maybe_throw_exception(p, stack.back());
             break;
         }
         case BXI64:
         {
             stack_push(create_int64(int_stack.back()));
             int_stack_pop();
+            ++p;
+            break;
+        }
+        case UBXI64:
+        {
+            auto val = stack.back();
+            if (get_value_tag(val) != tag::INT64)
+            {
+                Root msg{create_string("Cannot unbox " + to_string(get_value_type(val)) + " as Int64")};
+                Root ex{new_illegal_argument(*msg)};
+                p = maybe_throw_exception(p, *ex);
+                break;
+            }
+            int_stack_push(get_int64_value(val));
+            stack_pop();
             ++p;
             break;
         }

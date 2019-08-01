@@ -19,6 +19,8 @@ struct vm_test : Test
     vm_test() : Test("cleo.vm.test")
     {
         refer(CLEO_CORE);
+        stack.clear();
+        int_stack.clear();
     }
 
     template <std::size_t N>
@@ -926,19 +928,66 @@ TEST_F(vm_test, catching_excpetions_from_lddf)
     EXPECT_EQ_REFS(*THREE, stack[0]);
 }
 
+TEST_F(vm_test, ubxi64)
+{
+    const std::array<Byte, 4> bc{{LDL, 0, 0, UBXI64}};
+    int_stack_push(11);
+    stack_push(*TWO);
+    stack_push(*THREE);
+    eval_bytecode(nil, nil, 1, bc);
+
+    ASSERT_EQ(2u, int_stack.size());
+    EXPECT_EQ(3, int_stack[1]);
+    EXPECT_EQ(11, int_stack[0]);
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_REFS(*THREE, stack[1]);
+    EXPECT_EQ_REFS(*TWO, stack[0]);
+
+    stack.clear();
+    int_stack.clear();
+    stack_push(CONST_KEY);
+    try
+    {
+        eval_bytecode(nil, nil, 1, bc);
+        FAIL() << "expected an exception";
+    }
+    catch (Exception const& )
+    {
+        Root e{catch_exception()};
+        EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
+    }
+}
+
+TEST_F(vm_test, catching_exceptions_from_ubxi64)
+{
+    const std::array<Byte, 6> bc{{LDL, 0, 0, UBXI64, CNIL, CNIL}};
+    std::array<Int64, 4> et{{3, 4, 5, 0}};
+    std::array<Value, 1> types{{*type::IllegalArgument}};
+    stack_push(CONST_KEY);
+
+    eval_bytecode(nil, nil, 1, et, types, bc);
+
+    ASSERT_EQ(0u, int_stack.size());
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[2]);
+    EXPECT_EQ_REFS(*type::IllegalArgument, get_value_type(stack[1]));
+    EXPECT_EQ_REFS(CONST_KEY, stack[0]);
+}
+
 TEST_F(vm_test, bxi64)
 {
-    const std::array<Byte, 1> bc{{BXI64}};
+    const std::array<Byte, 5> bc{{LDL, 0, 0, UBXI64, BXI64}};
     int_stack_push(11);
-    int_stack_push(3);
     stack_push(*TWO);
-    eval_bytecode(nil, nil, 0, bc);
+    stack_push(*THREE);
+    eval_bytecode(nil, nil, 1, bc);
 
     ASSERT_EQ(1u, int_stack.size());
     EXPECT_EQ(11, int_stack[0]);
-    ASSERT_EQ(2u, stack.size());
-    EXPECT_EQ(*THREE, stack[1]);
-    EXPECT_EQ(*TWO, stack[0]);
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(*THREE, stack[1]);
+    EXPECT_EQ_REFS(*THREE, stack[1]);
+    EXPECT_EQ_REFS(*TWO, stack[0]);
 }
 
 }
