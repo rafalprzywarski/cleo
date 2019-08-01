@@ -335,6 +335,13 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             p = handle_exception(handler, p, ex);
             break;
         }
+        case BXI64:
+        {
+            stack_push(create_int64(int_stack.back()));
+            int_stack_pop();
+            ++p;
+            break;
+        }
         }
     }
 }

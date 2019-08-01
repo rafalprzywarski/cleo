@@ -36,6 +36,7 @@ unsigned gc_counter = gc_frequency - 1;
 std::unique_ptr<std::ostream> gc_log;
 
 vm::Stack stack;
+vm::IntStack int_stack;
 
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> symbols;
 std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
@@ -1319,6 +1320,7 @@ struct Initialize
     Initialize()
     {
         stack.reserve(1048576);
+        int_stack.reserve(1048576);
         Root core_meta{*EMPTY_MAP};
         Root core_doc{create_string("The core Cleo library")};
         core_meta = map_assoc(*core_meta, create_keyword("doc"), *core_doc);

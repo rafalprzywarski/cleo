@@ -926,6 +926,21 @@ TEST_F(vm_test, catching_excpetions_from_lddf)
     EXPECT_EQ_REFS(*THREE, stack[0]);
 }
 
+TEST_F(vm_test, bxi64)
+{
+    const std::array<Byte, 1> bc{{BXI64}};
+    int_stack_push(11);
+    int_stack_push(3);
+    stack_push(*TWO);
+    eval_bytecode(nil, nil, 0, bc);
+
+    ASSERT_EQ(1u, int_stack.size());
+    EXPECT_EQ(11, int_stack[0]);
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ(*THREE, stack[1]);
+    EXPECT_EQ(*TWO, stack[0]);
+}
+
 }
 }
 }

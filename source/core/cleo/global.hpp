@@ -25,6 +25,7 @@ extern unsigned gc_counter;
 extern std::unique_ptr<std::ostream> gc_log;
 
 extern vm::Stack stack;
+extern vm::IntStack int_stack;
 
 inline void stack_push(Force val)
 {
@@ -67,14 +68,32 @@ inline auto stack_reserve(std::size_t n)
     stack_push(nil, n);
 }
 
+inline void int_stack_push(Int64 val)
+{
+    if (int_stack.size() == int_stack.capacity())
+        throw_exception(new_stack_overflow());
+    int_stack.push_back(val);
+}
+
+inline void int_stack_pop()
+{
+    if (!int_stack.empty())
+        int_stack.pop_back();
+}
+
 class StackGuard
 {
 public:
-    StackGuard(std::size_t n = 0) : stack_size(stack.size() - n) {}
+    StackGuard(std::size_t n = 0) : stack_size(stack.size() - n), int_stack_size(int_stack.size()) {}
     StackGuard(const StackGuard& ) = delete;
-    ~StackGuard() { assert(stack.size() >= stack_size); stack.resize(stack_size); }
+    ~StackGuard()
+    {
+        assert(stack.size() >= stack_size); stack.resize(stack_size);
+        assert(int_stack.size() >= int_stack_size); int_stack.resize(int_stack_size);
+    }
 private:
     const std::size_t stack_size;
+    const std::size_t int_stack_size;
 };
 
 class Root

@@ -8,6 +8,7 @@ namespace vm
 {
 
 using Stack = std::vector<Value>;
+using IntStack = std::vector<Int64>;
 using Byte = char;
 
 constexpr Byte CNIL = 0x00;
