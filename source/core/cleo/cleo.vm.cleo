@@ -1,19 +1,30 @@
 (ns cleo.vm)
 
-(def {:const :true} LDC 1)
-(def {:const :true} LDL 2)
-(def {:const :true} LDDV 3)
-(def {:const :true} LDV 16)
-(def {:const :true} LDDF 15)
-(def {:const :true} STL 4)
-(def {:const :true} STVV 13)
-(def {:const :true} STVM 17)
-(def {:const :true} POP 5)
-(def {:const :true} BNIL 6)
-(def {:const :true} BNNIL 7)
-(def {:const :true} BR 8)
-(def {:const :true} CALL 9)
-(def {:const :true} APPLY 10)
-(def {:const :true} THROW 11)
-(def {:const :true} CNIL 12)
-(def {:const :true} IFN 14)
+(def {:const :true} CNIL 0x00)
+
+(def {:const :true} POP 0x01)
+
+(def {:const :true} LDC 0x10)
+(def {:const :true} LDL 0x11)
+(def {:const :true} LDDV 0x12)
+(def {:const :true} LDV 0x13)
+(def {:const :true} LDDF 0x14)
+
+(def {:const :true} STL 0x20)
+(def {:const :true} STVV 0x21)
+(def {:const :true} STVM 0x22)
+
+(def {:const :true} BR 0x30)
+(def {:const :true} BNIL 0x31)
+(def {:const :true} BNNIL 0x32)
+
+(def {:const :true} CALL 0x40)
+(def {:const :true} APPLY 0x41)
+
+(def {:const :true} THROW 0x48)
+
+(def {:const :true} IFN 0x50)
+
+(def {:cont :true} UBXI64 0x80)
+(def {:cont :true} BXI64 0x81)
+(def {:cont :true} ADDI64 0x82)
