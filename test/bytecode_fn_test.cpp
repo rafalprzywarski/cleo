@@ -23,7 +23,7 @@ TEST_F(bytecode_fn_test, should_eval_the_body)
 {
     Root x{new_index_out_of_bounds()};
     Root consts{array(2, *x)};
-    Root vars{array(get_var(PLUS))};
+    Root vars{array(get_var(INTERNAL_ADD_2))};
     std::array<Int64, 4> entries{{0, 4, 4, 0}};
     std::array<Value, 1> types{{*type::IndexOutOfBounds}};
     Root et{create_bytecode_fn_exception_table(entries.data(), types.data(), types.size())};

@@ -15,6 +15,15 @@
             val)))))
 
 
+(def {:arglists '([] [x] [x & xs])
+      :const :true}
+  +
+  (fn* +
+       ([] 0)
+       ([x] x)
+       ([x & xs] (reduce internal-add-2 x xs))))
+
+
 (def {:private :true} reverse1
   (fn* reverse1 [xs]
     (reduce conj* () xs)))

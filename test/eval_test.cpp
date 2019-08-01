@@ -250,7 +250,7 @@ TEST_F(eval_test, should_pass_used_local_variables_to_created_fns)
 TEST_F(eval_test, should_use_the_fn_name_to_let_it_call_itself)
 {
     Root ex{i64(17)};
-    Root val{read_str("((fn* abc ([] 10) ([x] (cleo.core/+ x (abc)))) 7)")};
+    Root val{read_str("((fn* abc ([] 10) ([x] (cleo.core/internal-add-2 x (abc)))) 7)")};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
@@ -260,7 +260,7 @@ TEST_F(eval_test, should_use_the_fn_name_to_let_it_call_itself)
     EXPECT_EQ_VALS(*ex, *val);
 
     ex = i64(13);
-    val = read_str("((fn* cn [x & xs] (if xs (cleo.core/+ x (cn 0)) 10)) 3 1 1)");
+    val = read_str("((fn* cn [x & xs] (if xs (cleo.core/internal-add-2 x (cn 0)) 10)) 3 1 1)");
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 }
@@ -300,7 +300,7 @@ TEST_F(eval_test, fn_should_fail_when_a_var_does_not_exist)
 TEST_F(eval_test, should_expand_all_macros)
 {
     in_ns(create_symbol("cleo.fn.macros.test"));
-    Root add{create_string("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
+    Root add{create_string("(fn* [&form &env x y] `(cleo.core/internal-add-2 ~x ~y))")};
     add = read(*add);
     add = eval(*add);
     Root meta{amap(MACRO_KEY, TRUE)};
@@ -694,7 +694,7 @@ TEST_F(eval_test, should_eval_throw)
 
 TEST_F(eval_test, should_eval_try_catch)
 {
-    Root val{read_str("(let* [x 107 a 2] (try* (throw x) (catch* cleo.core/Int64 e (cleo.core/+ e a))))")};
+    Root val{read_str("(let* [x 107 a 2] (try* (throw x) (catch* cleo.core/Int64 e (cleo.core/internal-add-2 e a))))")};
     Root ex{create_int64(109)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);

@@ -1113,8 +1113,8 @@ TEST_F(compile_test, should_compile_hash_maps)
 TEST_F(compile_test, should_expand_macros)
 {
     in_ns(create_symbol("cleo.compile.macro.test"));
-    auto plus = get_var(PLUS);
-    Root add{compile_fn("(fn* [&form &env x y] `(cleo.core/+ ~x ~y))")};
+    auto plus = get_var(INTERNAL_ADD_2);
+    Root add{compile_fn("(fn* [&form &env x y] `(cleo.core/internal-add-2 ~x ~y))")};
     Root meta{amap(MACRO_KEY, TRUE)};
     define(create_symbol("cleo.compile.macro.test", "add"), *add, *meta);
     Root fn{compile_fn("(fn* [] (add (add 1 2) (add 3 4)))")};

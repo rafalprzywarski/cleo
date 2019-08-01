@@ -121,6 +121,13 @@
       (if (= 0 (count @failed-tests)) 0 1))))
 
 
+(deftest addition
+  (assert= 0 (+))
+  (assert= 7 (+ 7))
+  (assert= 27 (+ 7 20))
+  (assert= 123 (+ 100 20 3)))
+
+
 (deftest deftype
   (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[a b c])) (cleo.core/defn ->Xyz [a b c] (cleo.core/new Xyz a b c)) Xyz) (macroexpand '(deftype Xyz [a b c]))))
 

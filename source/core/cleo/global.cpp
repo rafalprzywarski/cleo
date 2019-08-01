@@ -76,7 +76,7 @@ const Value DO = create_symbol("do");
 const Value IF = create_symbol("if");
 const Value LOOP = create_symbol("loop*");
 const Value RECUR = create_symbol("recur");
-const Value PLUS = create_symbol("cleo.core", "+");
+const Value INTERNAL_ADD_2 = create_symbol("cleo.core", "internal-add-2");
 const Value MINUS = create_symbol("cleo.core", "-");
 const Value ASTERISK = create_symbol("cleo.core", "*");
 const Value IDENTICAL = create_symbol("cleo.core", "identical?");
@@ -1756,8 +1756,8 @@ struct Initialize
         f = create_native_function1<pr_str_multimethod>();
         define_method(PR_STR_OBJ, *type::Multimethod, *f);
 
-        f = create_native_function2<add2, &PLUS>();
-        define(PLUS, *f);
+        f = create_native_function2<add2, &INTERNAL_ADD_2>();
+        define(INTERNAL_ADD_2, *f);
         f = create_native_function(sub, MINUS);
         define(MINUS, *f);
         f = create_native_function2<mult2, &ASTERISK>();

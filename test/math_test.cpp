@@ -24,38 +24,38 @@ struct math_test : Test
 
 TEST_F(math_test, integer_addition)
 {
-    Root val{read_str("(+ 2457245677 823458723)")}, ex{create_int64(3280704400)};
+    Root val{read_str("(internal-add-2 2457245677 823458723)")}, ex{create_int64(3280704400)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = list(PLUS, Int64((std::uint64_t(1) << 63) - 1), 1);
+    val = list(INTERNAL_ADD_2, Int64((std::uint64_t(1) << 63) - 1), 1);
     EXPECT_THROW(eval(*val), Exception);
 
-    val = list(PLUS, 1, Int64((std::uint64_t(1) << 63) - 1));
+    val = list(INTERNAL_ADD_2, 1, Int64((std::uint64_t(1) << 63) - 1));
     EXPECT_THROW(eval(*val), Exception);
 
-    val = list(PLUS, Int64(std::uint64_t(1) << 63), -1);
+    val = list(INTERNAL_ADD_2, Int64(std::uint64_t(1) << 63), -1);
     EXPECT_THROW(eval(*val), Exception);
 
-    val = list(PLUS, -1, Int64(std::uint64_t(1) << 63));
+    val = list(INTERNAL_ADD_2, -1, Int64(std::uint64_t(1) << 63));
     EXPECT_THROW(eval(*val), Exception);
 
-    val = list(PLUS, Int64((std::uint64_t(1) << 63) - 1), Int64(std::uint64_t(1) << 63));
-    val = eval(*val);
-    ex = i64(-1);
-    EXPECT_EQ_VALS(*ex, *val);
-
-    val = list(PLUS, Int64(std::uint64_t(1) << 63), Int64((std::uint64_t(1) << 63) - 1));
+    val = list(INTERNAL_ADD_2, Int64((std::uint64_t(1) << 63) - 1), Int64(std::uint64_t(1) << 63));
     val = eval(*val);
     ex = i64(-1);
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = list(PLUS, Int64((std::uint64_t(1) << 63) - (std::uint64_t(1) << 17)), Int64(std::uint64_t(1) << 63));
+    val = list(INTERNAL_ADD_2, Int64(std::uint64_t(1) << 63), Int64((std::uint64_t(1) << 63) - 1));
+    val = eval(*val);
+    ex = i64(-1);
+    EXPECT_EQ_VALS(*ex, *val);
+
+    val = list(INTERNAL_ADD_2, Int64((std::uint64_t(1) << 63) - (std::uint64_t(1) << 17)), Int64(std::uint64_t(1) << 63));
     val = eval(*val);
     ex = i64(-Int64(std::uint64_t(1) << 17));
     EXPECT_EQ_VALS(*ex, *val);
 
-    val = list(PLUS, Int64(std::uint64_t(1) << 63), Int64((std::uint64_t(1) << 63) - (std::uint64_t(1) << 17)));
+    val = list(INTERNAL_ADD_2, Int64(std::uint64_t(1) << 63), Int64((std::uint64_t(1) << 63) - (std::uint64_t(1) << 17)));
     val = eval(*val);
     ex = i64(-Int64(std::uint64_t(1) << 17));
     EXPECT_EQ_VALS(*ex, *val);
