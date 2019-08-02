@@ -990,6 +990,69 @@ TEST_F(vm_test, bxi64)
     EXPECT_EQ_REFS(*TWO, stack[0]);
 }
 
+TEST_F(vm_test, addi64)
+{
+    const std::array<Byte, 9> bc{{LDL, 0, 0,
+                                  UBXI64,
+                                  LDL, 1, 0,
+                                  UBXI64,
+                                  ADDI64}};
+
+    stack_push(*TWO);
+    stack_push(*THREE);
+    eval_bytecode(nil, nil, 2, bc);
+
+    ASSERT_EQ(1u, int_stack.size());
+    EXPECT_EQ(5, int_stack[0]);
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_REFS(*THREE, stack[1]);
+    EXPECT_EQ_REFS(*TWO, stack[0]);
+
+    stack.clear();
+    int_stack.clear();
+    stack_push(create_int64(Int64(1) << 62));
+    stack_push(create_int64(Int64(1) << 62));
+    try
+    {
+        eval_bytecode(nil, nil, 2, bc);
+        FAIL() << "expected an exception";
+    }
+    catch (Exception const& )
+    {
+        Root e{catch_exception()};
+        EXPECT_EQ_REFS(*type::ArithmeticException, get_value_type(*e));
+    }
+}
+
+TEST_F(vm_test, catching_exceptions_from_addi64)
+{
+    const std::array<Byte, 21> bc{{LDL, 0, 0,
+                                   UBXI64,
+                                   LDL, 0, 0,
+                                   UBXI64,
+                                   LDL, 0, 0,
+                                   UBXI64,
+                                   LDL, 0, 0,
+                                   UBXI64,
+                                   ADDI64, // overflow
+                                   ADDI64,
+                                   ADDI64,
+                                   CNIL,
+                                   CNIL}};
+    std::array<Int64, 4> et{{16, 19, 20, 0}};
+    std::array<Value, 1> types{{*type::ArithmeticException}};
+    Root big{create_int64(Int64(1) << 62)};
+    stack_push(*big);
+
+    eval_bytecode(nil, nil, 1, et, types, bc);
+
+    EXPECT_EQ(0u, int_stack.size());
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[2]);
+    EXPECT_EQ_REFS(*type::ArithmeticException, get_value_type(stack[1]));
+    EXPECT_EQ_REFS(*big, stack[0]);
+}
+
 }
 }
 }

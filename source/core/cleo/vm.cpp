@@ -173,8 +173,9 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
         };
     auto handle_exception = [=](auto handler, const Byte *p, Value ex)
         {
-            stack[stack_base + locals_size + handler.stack_size] = ex;
-            stack_pop(stack.size() - stack_base - locals_size - 1 - handler.stack_size);
+            int_stack.clear();
+            stack_pop(stack.size() - stack_base - locals_size - handler.stack_size);
+            stack_push(ex);
             return bytecode + handler.offset;
         };
     auto maybe_throw_exception = [=](const Byte *p, Value ex)
@@ -184,6 +185,13 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
                 throw_exception(ex);
             return handle_exception(handler, p, ex);
         };
+    auto maybe_throw_integer_overflow = [=](const Byte *p)
+        {
+            Root s{create_string("Integer overflow")};
+            Root ex{new_arithmetic_exception(*s)};
+            return maybe_throw_exception(p, *ex);
+        };
+
     while (p != endp)
     {
         switch (*p)
@@ -356,6 +364,20 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             stack_pop();
             ++p;
             break;
+        }
+        case ADDI64:
+        {
+            auto x = std::uint64_t(int_stack.back());
+            int_stack_pop();
+            auto y = std::uint64_t(int_stack.back());
+            auto r = x + y;
+            if (std::int64_t((x ^ r) & (y ^ r)) < 0)
+            {
+                p = maybe_throw_integer_overflow(p);
+                break;
+            }
+            int_stack.back() = r;
+            ++p;
         }
         }
     }
