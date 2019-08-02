@@ -809,35 +809,35 @@ Force bit_clear(Value x, Value n)
 {
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
-    return create_int64(get_int64_value(x) & ~(Int64(1) << (get_int64_value(n) & 0x2f)));
+    return create_int64(get_int64_value(x) & ~(Int64(1) << (get_int64_value(n) & 0x3f)));
 }
 
 Force bit_set(Value x, Value n)
 {
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
-    return create_int64(get_int64_value(x) | (Int64(1) << (get_int64_value(n) & 0x2f)));
+    return create_int64(get_int64_value(x) | (Int64(1) << (get_int64_value(n) & 0x3f)));
 }
 
 Force bit_flip(Value x, Value n)
 {
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
-    return create_int64(get_int64_value(x) ^ (Int64(1) << (get_int64_value(n) & 0x2f)));
+    return create_int64(get_int64_value(x) ^ (Int64(1) << (get_int64_value(n) & 0x3f)));
 }
 
 Value bit_test(Value x, Value n)
 {
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
-    return (get_int64_value(x) & (Int64(1) << (get_int64_value(n) & 0x2f))) ? TRUE : nil;
+    return (get_int64_value(x) & (Int64(1) << (get_int64_value(n) & 0x3f))) ? TRUE : nil;
 }
 
 Force bit_shift_left(Value x, Value n)
 {
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
-    return create_int64(std::uint64_t(get_int64_value(x)) << (get_int64_value(n) & 0x2f));
+    return create_int64(std::uint64_t(get_int64_value(x)) << (get_int64_value(n) & 0x3f));
 }
 
 Force bit_shift_right(Value x, Value n)
@@ -845,14 +845,14 @@ Force bit_shift_right(Value x, Value n)
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
     static_assert(Int64(-2) >> 1 == Int64(-1), "arithmetic right shift needed");
-    return create_int64(get_int64_value(x) >> (get_int64_value(n) & 0x2f));
+    return create_int64(get_int64_value(x) >> (get_int64_value(n) & 0x3f));
 }
 
 Force unsigned_bit_shift_right(Value x, Value n)
 {
     check_type("x", x, *type::Int64);
     check_type("n", n, *type::Int64);
-    return create_int64(std::uint64_t(get_int64_value(x)) >> (get_int64_value(n) & 0x2f));
+    return create_int64(std::uint64_t(get_int64_value(x)) >> (get_int64_value(n) & 0x3f));
 }
 
 Force nil_conj(Value, Value x)
