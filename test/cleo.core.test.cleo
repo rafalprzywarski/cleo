@@ -1548,6 +1548,23 @@
                                           225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255)))))
 
 
+(defn identity-inline {:const :true} [x] x)
+
+
+(deftest translate-call-inline-identity
+  (assert= {:arity 0
+            :consts [20]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body '(cleo.core.test/identity-inline 20)))
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255]}
+           (translate-body '(fn [x] (cleo.core.test/identity-inline x))))
+  (assert= {:arity 0
+            :consts [cleo.core.test/identity-inline]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body '(cleo.core.test/identity-inline cleo.core.test/identity-inline))))
+
+
 (deftest translate-let
   (assert= {:arity 0
             :bytecode [vm/CNIL]}

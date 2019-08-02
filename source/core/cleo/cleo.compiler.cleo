@@ -573,7 +573,7 @@
   (assoc body :scope (-> body :scope :prev)))
 
 
-(defn translate-call! [body {:keys [fn args]}]
+(defn translate-regular-call! [body {:keys [fn args]}]
   (when (< 255 (count args))
     (fail "Too many arguments: " (count args)))
   (let [apply? (and (map? fn)
@@ -593,6 +593,31 @@
       (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))
     (update body :bytecode (fn [bc]
                              (-> bc (conj! opcode) (conj! (if apply? (dec (count args)) (count args))))))))
+
+
+(defn const-bytecode-fn-var [f]
+  (and (map? f)
+       (= :var (:tag f))
+       (let [v (resolve (:name f))]
+         (and (:const (meta v))
+              (identical? BytecodeFn (type @v))
+              @v))))
+
+
+(defn identity-call? [{f :fn args :args}]
+  (and (= 1 (count args))
+       (if-let [f (const-bytecode-fn-var f)]
+         (= (get-bytecode-fn-body f 1) [vm/LDL 255 255]))))
+
+
+(defn translate-identity-call! [body {[arg] :args}]
+  (translate-expr! body arg))
+
+
+(defn translate-call! [body {fn :fn :as call}]
+  (if (identity-call? call)
+    (translate-identity-call! body call)
+    (translate-regular-call! body call)))
 
 
 (defn- add-tlocal [{{:keys [locals locals-size] :as scope} :scope :as body} index]

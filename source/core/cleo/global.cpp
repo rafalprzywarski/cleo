@@ -334,6 +334,7 @@ const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
 const Value MULTI = create_symbol("cleo.core", "multi*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 const Value DISASM = create_symbol("cleo.core", "disasm*");
+const Value GET_BYTECODE_FN_BODY = create_symbol("cleo.core", "get-bytecode-fn-body");
 const Value META = create_symbol("cleo.core", "meta");
 const Value THE_NS = create_symbol("cleo.core", "the-ns");
 const Value FIND_NS = create_symbol("cleo.core", "find-ns");
@@ -1208,6 +1209,25 @@ Force disasm(Value fn)
     return *dfn;
 }
 
+Force get_bytecode_fn_body(Value fn, Value arity)
+{
+    check_type("fn", fn, *type::BytecodeFn);
+    check_type("arity", arity, *type::Int64);
+    auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
+    if (!body_arity.first || body_arity.second != get_int64_value(arity))
+        return nil;
+    Root bytes{transient_array(*EMPTY_VECTOR)}, b;
+    auto p = get_bytecode_fn_body_bytes(body_arity.first);
+    auto endp = p + get_bytecode_fn_body_bytes_size(body_arity.first);
+    for (; p < endp; ++p)
+    {
+        b = create_int64(std::uint8_t(*p));
+        bytes = transient_array_conj(*bytes, *b);
+    }
+    bytes = transient_array_persistent(*bytes);
+    return *bytes;
+}
+
 Value meta(Value x)
 {
     auto type = get_value_type(x);
@@ -1941,6 +1961,7 @@ struct Initialize
         define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());
 
         define_function(DISASM, create_native_function1<disasm, &DISASM>());
+        define_function(GET_BYTECODE_FN_BODY, create_native_function2<get_bytecode_fn_body, &GET_BYTECODE_FN_BODY>());
 
         define_function(SERIALIZE_FN, create_native_function1<serialize_fn, &SERIALIZE_FN>());
         define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
