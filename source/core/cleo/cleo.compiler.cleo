@@ -573,7 +573,7 @@
   (assoc body :scope (-> body :scope :prev)))
 
 
-(defn translate-regular-call! [body {:keys [fn args]}]
+(defn translate-call! [body {:keys [fn args]}]
   (when (< 255 (count args))
     (fail "Too many arguments: " (count args)))
   (let [apply? (and (map? fn)
@@ -593,31 +593,6 @@
       (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))
     (update body :bytecode (fn [bc]
                              (-> bc (conj! opcode) (conj! (if apply? (dec (count args)) (count args))))))))
-
-
-(defn const-bytecode-fn-var [f]
-  (and (map? f)
-       (= :var (:tag f))
-       (let [v (resolve (:name f))]
-         (and (:const (meta v))
-              (identical? BytecodeFn (type @v))
-              @v))))
-
-
-(defn identity-call? [{f :fn args :args}]
-  (and (= 1 (count args))
-       (if-let [f (const-bytecode-fn-var f)]
-         (= (get-bytecode-fn-body f 1) [vm/LDL 255 255]))))
-
-
-(defn translate-identity-call! [body {[arg] :args}]
-  (translate-expr! body arg))
-
-
-(defn translate-call! [body {fn :fn :as call}]
-  (if (identity-call? call)
-    (translate-identity-call! body call)
-    (translate-regular-call! body call)))
 
 
 (defn- add-tlocal [{{:keys [locals locals-size] :as scope} :scope :as body} index]
@@ -904,6 +879,114 @@
     f))
 
 
+(defn mapv-indexed [f coll]
+  (loop [s (seq coll)
+         i 0
+         out (transient [])]
+    (if s
+      (recur (next s) (inc i) (conj! out (f i (first s))))
+      (persistent! out))))
+
+
+(defn transform-expr
+  ([pred f expr]
+   (transform-expr pred f expr []))
+  ([pred f expr path]
+   (if (pred expr path)
+     (f expr path)
+     (if (map? expr)
+       (let [tag (:tag expr)
+             maybe-update (fn [m k f] (if (contains? m k) (update m k f) m))
+             transform-one (fn transform-one
+                             ([expr path k]
+                              (assoc expr k (transform-expr pred f (get expr k) (conj path k))))
+                             ([expr k]
+                              (transform-one expr path k)))
+             transform-many (fn [expr k]
+                              (assoc expr k (mapv-indexed (fn [i expr]
+                                                            (transform-expr pred f expr (conj path k i)))
+                                                          (get expr k))))
+             maybe-transform-one (fn [expr k]
+                                   (if (contains? expr k)
+                                     (transform-one expr k)
+                                     expr))
+             transform-many-nested (fn [expr k0 k1]
+                                     (assoc expr k0 (mapv-indexed (fn [i x]
+                                                                    (transform-one x (conj path k0 i) k1))
+                                                                  (get expr k0))))]
+         (cond (= tag :do) (transform-many expr :exprs)
+               (= tag :call) (-> expr
+                                 (transform-one :fn)
+                                 (transform-many :args))
+               (= tag :let) (-> expr
+                                (transform-many-nested :locals :expr)
+                                (transform-many :exprs))
+               (= tag :loop) (-> expr
+                                 (transform-many-nested :locals :expr)
+                                 (transform-many :exprs))
+               (= tag :throw) (transform-one expr :expr)
+               (= tag :if) (-> expr
+                               (transform-one :cond)
+                               (transform-one :then)
+                               (transform-one :else))
+               (= tag :dot) (transform-one expr :expr)
+               (= tag :def) (maybe-transform-one expr :expr)
+               (= tag :recur) (transform-many expr :args)
+               (= tag :try) (-> expr
+                                (transform-one :expr)
+                                (maybe-update :catch (fn [c] (transform-one c (conj path :catch) :expr)))
+                                (maybe-transform-one :finally))
+               (= tag :fn) (transform-many-nested expr :bodies :expr)
+               :else expr))
+       expr))))
+
+
+(defn const-bytecode-fn [f]
+  (and (map? f)
+       (= :var (:tag f))
+       (let [v (resolve (:name f))]
+         (and (:const (meta v))
+              (identical? BytecodeFn (type @v))
+              @v))))
+
+
+(defn identity-call? [{f :fn args :args}]
+  (and (= 1 (count args))
+       (if-let [f (const-bytecode-fn f)]
+         (= (get-bytecode-fn-body f 1) [vm/LDL 255 255]))))
+
+
+(defn no-arg-returning-const? [{f :fn args :args}]
+  (and (zero? (count args))
+       (if-let [f (const-bytecode-fn f)]
+         (= (get-bytecode-fn-body f 0) [vm/LDC 0 0]))))
+
+
+(defn inline-identity-calls [ast]
+  (transform-expr (fn [expr _]
+                   (and (map? expr)
+                        (= (:tag expr) :call)
+                        (identity-call? expr)))
+                  (fn [call _] (-> call :args first))
+                  ast))
+
+
+(defn inline-no-arg-returning-const [ast]
+  (transform-expr (fn [expr _]
+                   (and (map? expr)
+                        (= (:tag expr) :call)
+                        (no-arg-returning-const? expr)))
+                  (fn [call _]
+                    (-> call :fn const-bytecode-fn (get-bytecode-fn-consts 0) first))
+                  ast))
+
+
+(defn optimize [ast]
+  (-> ast
+      inline-identity-calls
+      inline-no-arg-returning-const))
+
+
 (defn translate [ast]
   (let [ast (if (or (not (map? ast))
                     (not= :fn (:tag ast)))
@@ -916,5 +999,6 @@
 (defn compile [form]
   (-> form
       parse
+      optimize
       translate
       serialize-fn))

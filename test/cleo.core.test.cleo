@@ -1042,6 +1042,7 @@
 (defn translate-body [form]
   (-> form
       cc/parse
+      cc/optimize
       cc/translate
       :bodies
       first))
@@ -1548,7 +1549,135 @@
                                           225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255)))))
 
 
-(defn identity-inline {:const :true} [x] x)
+(deftest transform-expr
+  (let [with-tag (fn with-tag [tag]
+                   (fn [x path] (and (map? x) (= tag (:tag x)))))
+        mark-path (fn mark-path [x path]
+                    (assoc x :marked-path path))]
+    (assert= {:tag :if
+              :cond {:tag :do
+                     :exprs [9]
+                     :marked-path [:cond]}
+              :then {:tag :do
+                     :exprs [1 2 3]
+                     :marked-path [:then]}
+              :else {:tag :do
+                     :exprs [5 6 7]
+                     :marked-path [:else]}}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(if (do 9) (do 1 2 3) (do 5 6 7)))))
+    (assert= {:tag :throw
+              :expr {:tag :dot
+                     :expr {:tag :var
+                            :name 'x}
+                     :member 'y
+                     :marked-path [:expr]}}
+             (cc/transform-expr (with-tag :dot) mark-path (cc/parse '(throw (. x -y)))))
+    (assert= {:tag :try
+              :expr {:fn {:tag :var
+                          :name 'f}
+                     :tag :call
+                     :args [10]
+                     :marked-path [:expr]}
+              :finally {:tag :call
+                        :fn {:tag :var
+                             :name 'f}
+                        :args [20]
+                        :marked-path [:finally]}}
+             (cc/transform-expr (with-tag :call) mark-path (cc/parse '(try* (f 10) (finally* (f 20))))))
+    (assert= {:tag :try
+              :expr {:fn {:tag :var
+                          :name 'f}
+                     :tag :call
+                     :args [10]
+                     :marked-path [:expr]}
+              :catch {:type 'Exception
+                      :local {:index 0
+                              :name 'e}
+                      :expr {:tag :call
+                             :fn {:tag :var
+                                  :name 'f}
+                             :args [20]
+                             :marked-path [:catch :expr]}}}
+             (cc/transform-expr (with-tag :call) mark-path (cc/parse '(try* (f 10) (catch* Exception e (f 20))))))
+    (assert= {:tag :call
+              :fn {:tag :if, :cond 1, :then 2, :else nil
+                   :marked-path [:fn]}
+              :args [{:tag :if, :cond 3, :then 4, :else nil
+                      :marked-path [:args 0]}
+                     {:tag :if, :cond 5, :then 6, :else nil
+                      :marked-path [:args 1]}]}
+             (cc/transform-expr (with-tag :if) mark-path (cc/parse '((if 1 2) (if 3 4) (if 5 6)))))
+    (assert= {:tag :do
+              :exprs [{:tag :if, :cond 1, :then 2, :else nil
+                       :marked-path [:exprs 0]}
+                      {:tag :if, :cond 3, :then 4, :else nil
+                       :marked-path [:exprs 1]}]}
+             (cc/transform-expr (with-tag :if) mark-path (cc/parse '(do (if 1 2) (if 3 4)))))
+    (assert= {:tag :let
+              :locals [{:index 0, :name 'x
+                        :expr {:tag :do
+                               :exprs [1]
+                               :marked-path [:locals 0 :expr]}}
+                       {:index 1, :name 'y
+                        :expr {:tag :do
+                               :exprs [2]
+                               :marked-path [:locals 1 :expr]}}]
+              :exprs [{:tag :do
+                       :exprs [3]
+                       :marked-path [:exprs 0]}
+                      {:tag :do
+                       :exprs [4]
+                       :marked-path [:exprs 1]}]}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(let* [x (do 1) y (do 2)] (do 3) (do 4)))))
+    (assert= {:tag :loop
+              :locals [{:index 0, :name 'x
+                        :expr {:tag :do
+                               :exprs [1]
+                               :marked-path [:locals 0 :expr]}}
+                       {:index 1, :name 'y
+                        :expr {:tag :do
+                               :exprs [2]
+                               :marked-path [:locals 1 :expr]}}]
+              :exprs [{:tag :do
+                       :exprs [3]
+                       :marked-path [:exprs 0]}
+                      {:tag :do
+                       :exprs [4]
+                       :marked-path [:exprs 1]}]}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(loop* [x (do 1) y (do 2)] (do 3) (do 4)))))
+    (assert= {:tag :fn
+              :bodies [{:params []
+                        :expr {:tag :do
+                               :exprs [10]
+                               :marked-path [:bodies 0 :expr]}}
+                       {:params [{:index 0, :name 'x}]
+                        :expr {:tag :do
+                               :exprs [20]
+                               :marked-path [:bodies 1 :expr]}}]}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(fn* ([] (do 10)) ([x] (do 20))))))
+    (assert= {:tag :loop
+              :locals [{:index 0, :name 'x, :expr 0}
+                       {:index 1, :name 'y, :expr 1}]
+              :exprs [{:tag :recur
+                       :args [{:tag :do
+                               :exprs [1]
+                               :marked-path [:exprs 0 :args 0]}
+                              {:tag :do
+                               :exprs [2]
+                               :marked-path [:exprs 0 :args 1]}]}]}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(loop* [x 0 y 1] (recur (do 1) (do 2))))))
+    (assert= {:tag :def
+              :name 'x}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x))))
+    (assert= {:tag :def
+              :name 'x
+              :expr {:tag :do
+                     :exprs [30]
+                     :marked-path [:expr]}}
+             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x (do 30)))))))
+
+
+(defn identity-inline {:const :true} ([x] x) ([] "ignored") ([x y] "ignored"))
 
 
 (deftest translate-call-inline-identity
@@ -1563,6 +1692,20 @@
             :consts [cleo.core.test/identity-inline]
             :bytecode [vm/LDC 0 0]}
            (translate-body '(cleo.core.test/identity-inline cleo.core.test/identity-inline))))
+
+
+(defn const-inline {:const :true} ([] "the const") ([x] "ignored"))
+
+
+(deftest translate-no-arg-returning-const
+  (assert= {:arity 0
+            :consts ["the const"]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body '(cleo.core.test/const-inline)))
+  (assert= {:arity 1
+            :consts ["the const"]
+            :bytecode [vm/LDC 0 0]}
+           (translate-body '(fn [x] (cleo.core.test/const-inline)))))
 
 
 (deftest translate-let
