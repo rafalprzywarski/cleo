@@ -89,11 +89,25 @@ Force array_map_dissoc(Value m, Value k)
 
 Force array_map_merge(Value l, Value r)
 {
-    Root m{l};
-    auto size = get_array_map_size(r);
-    for (decltype(size) i = 0; i != size; ++i)
-        m = array_map_assoc(*m, get_object_element(r, i * 2), get_object_element(r, i * 2 + 1));
-    return *m;
+    auto l_size = get_array_map_size(l);
+    auto r_size = get_array_map_size(r);
+    std::vector<Value> kvs;
+    kvs.reserve(l_size + r_size);
+    for (decltype(r_size) i = 0; i != r_size; ++i)
+    {
+        kvs.push_back(get_array_map_key(r, i));
+        kvs.push_back(get_array_map_val(r, i));
+    }
+    for (decltype(l_size) i = 0; i != l_size; ++i)
+    {
+        auto key = get_array_map_key(l, i);
+        if (array_map_contains(r, key))
+            continue;
+
+        kvs.push_back(key);
+        kvs.push_back(get_array_map_val(l, i));
+    }
+    return create_object(*type::ArrayMap, kvs.data(), kvs.size());
 }
 
 Value array_map_contains(Value m, Value k)
