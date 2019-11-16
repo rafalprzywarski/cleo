@@ -168,7 +168,7 @@ Int64 combine_maps(std::uint32_t value_map, std::uint32_t node_map)
     assert((value_map & node_map) == 0);
     return value_map | (std::uint64_t(node_map) << 32);
 }
-    
+
 Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash, Value val0, Value key1, std::uint32_t key1_hash, Value val1)
 {
     assert(key0_hash != key1_hash);
@@ -562,7 +562,7 @@ Force persistent_hash_map_dissoc(Value map, Value key)
     }
     Value key0 = get_object_element(map, 1);
     if (key0 == key)
-        return *EMPTY_MAP;
+        return *EMPTY_HASH_MAP;
     return map;
 }
 

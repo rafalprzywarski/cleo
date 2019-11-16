@@ -21,7 +21,7 @@ struct compile_test : Test
     compile_test() : Test("cleo.compile.test")
     {
         a_var = define(create_symbol("cleo.compile.test", "a-var"), nil);
-        Root meta{persistent_hash_map_assoc(*EMPTY_MAP, MACRO_KEY, TRUE)};
+        Root meta{map_assoc(*EMPTY_MAP, MACRO_KEY, TRUE)};
         macro_var = define(create_symbol("cleo.compile.test", "macro-var"), nil, *meta);
         refer(create_symbol("cleo.core"));
     }
@@ -1046,7 +1046,7 @@ TEST_F(compile_test, should_compile_hash_maps)
 
     fn = compile_fn("(fn* [x y] {3 4 5 6 x y})");
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::persistent_hash_map_assoc,
+                                         arrayv(*rt::map_assoc,
                                                 phmapv(3, 4, 5, 6)),
                                          b(vm::LDC, 0, 0,
                                            vm::LDC, 1, 0,
@@ -1059,7 +1059,7 @@ TEST_F(compile_test, should_compile_hash_maps)
     fn = cleo::compile_fn(*form);
 
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::persistent_hash_map_assoc,
+                                         arrayv(*rt::map_assoc,
                                                 phmapv(3, 4, 5, 6)),
                                          b(vm::LDC, 0, 0,
                                            vm::LDC, 1, 0,
@@ -1069,7 +1069,7 @@ TEST_F(compile_test, should_compile_hash_maps)
 
     fn = compile_fn("(fn* [x] {3 4 x 6})");
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::persistent_hash_map_assoc,
+                                         arrayv(*rt::map_assoc,
                                                 phmapv(3, 4),
                                                 6),
                                          b(vm::LDC, 0, 0,
@@ -1080,7 +1080,7 @@ TEST_F(compile_test, should_compile_hash_maps)
 
     fn = compile_fn("(fn* [x] {3 4 5 x})");
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::persistent_hash_map_assoc,
+                                         arrayv(*rt::map_assoc,
                                                 phmapv(3, 4),
                                                 5),
                                          b(vm::LDC, 0, 0,
@@ -1586,7 +1586,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
 
     fn = compile_fn("(fn* [x y] {3 4 (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))})");
     expect_body_with_consts_exception_table_locals_and_bytecode(*fn, 0,
-                                                                arrayv(*rt::persistent_hash_map_assoc,
+                                                                arrayv(*rt::map_assoc,
                                                                        phmapv(3, 4)),
                                                                 {6, 11, 14, 2, 20, 25, 28, 3},
                                                                 {*type::Exception, *type::Exception},

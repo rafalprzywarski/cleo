@@ -284,6 +284,11 @@ TEST_F(equality_test, should_compare_array_maps)
     m2 = amap(30, 40, 10, 20);
     EXPECT_FALSE(bool(are_equal(*m1, *m2)));
     EXPECT_FALSE(bool(are_equal(*m2, *m1)));
+
+    m1 = amap(10, 20, 30, nil);
+    m2 = amap(10, 20, 40, nil);
+    EXPECT_FALSE(bool(are_equal(*m1, *m2)));
+    EXPECT_FALSE(bool(are_equal(*m2, *m1)));
 }
 
 TEST_F(equality_test, should_compare_maps)

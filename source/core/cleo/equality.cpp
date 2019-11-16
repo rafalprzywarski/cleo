@@ -65,7 +65,7 @@ Value are_array_maps_equal(Value left, Value right)
 
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (!are_equal(array_map_get(right, get_array_map_key(left, i)), get_array_map_val(left, i)))
+        if (!are_equal(array_map_get(right, get_array_map_key(left, i), *SENTINEL), get_array_map_val(left, i)))
             return nil;
     }
 

@@ -238,7 +238,8 @@ const Value string = create_keyword("string");
 const ConstRoot EMPTY_LIST{create_list(nullptr, 0)};
 const ConstRoot EMPTY_VECTOR{create_array(nullptr, 0)};
 const ConstRoot EMPTY_SET{create_array_set()};
-const ConstRoot EMPTY_MAP{create_persistent_hash_map()};
+const ConstRoot EMPTY_MAP{create_array_map()};
+const ConstRoot EMPTY_HASH_MAP{create_persistent_hash_map()};
 
 Root namespaces{*EMPTY_MAP};
 Root bindings;
@@ -253,8 +254,9 @@ Int64 gen_id()
 namespace
 {
 
-const ConstRoot DYNAMIC_META{persistent_hash_map_assoc(*EMPTY_MAP, DYNAMIC_KEY, TRUE)};
-const ConstRoot CONST_META{persistent_hash_map_assoc(*EMPTY_MAP, CONST_KEY, TRUE)};
+const ConstRoot DYNAMIC_META{map_assoc(*EMPTY_MAP, DYNAMIC_KEY, TRUE)};
+const ConstRoot CONST_META{map_assoc(*EMPTY_MAP, CONST_KEY, TRUE)};
+const ConstRoot MACRO_META{map_assoc(*EMPTY_MAP, MACRO_KEY, TRUE)};
 
 }
 
@@ -265,7 +267,7 @@ const Root transient_array{create_native_function1<cleo::transient_array>()};
 const Root transient_array_conj{create_native_function2<cleo::transient_array_conj>()};
 const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent>()};
 const Root array_set_conj{create_native_function2<cleo::array_set_conj>()};
-const Root persistent_hash_map_assoc{create_native_function3<cleo::persistent_hash_map_assoc>()};
+const Root map_assoc{create_native_function3<cleo::map_assoc>()};
 
 const DynamicVar current_ns = define_var(CURRENT_NS, nil, *DYNAMIC_META);
 const DynamicVar lib_paths = define_var(LIB_PATHS, nil, *DYNAMIC_META);
@@ -388,7 +390,7 @@ void check_ints(Value l, Value r)
 {
     if (get_value_tag(l) != tag::INT64 || get_value_tag(r) != tag::INT64)
     {
-        Root msg{create_string("expected Int64")};
+        Root msg{create_string("expected Int64, got: " + to_string(l) + " " + to_string(r))};
         throw_exception(new_illegal_argument(*msg));
     }
 }
@@ -864,7 +866,7 @@ Force nil_conj(Value, Value x)
 
 Force nil_assoc(Value, Value k, Value v)
 {
-    return persistent_hash_map_assoc(*EMPTY_MAP, k, v);
+    return map_assoc(*EMPTY_MAP, k, v);
 }
 
 Value nil_dissoc(Value, Value)
@@ -1596,7 +1598,7 @@ struct Initialize
 
         define_multimethod(GET, *first_type, undefined);
 
-        f = create_native_function2<array_map_get, &GET>();
+        f = create_native_function2or3<array_map_get, array_map_get, &GET>();
         define_method(GET, *type::ArrayMap, *f);
 
         f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get, &GET>();
@@ -1659,11 +1661,12 @@ struct Initialize
         define_multimethod(ASSOC, *first_type, undefined);
 
         derive(*type::ArrayMap, *type::PersistentMap);
-        f = create_native_function3<array_map_assoc>();
+        f = create_native_function3<map_assoc>();
         define_method(ASSOC, *type::ArrayMap, *f);
 
         derive(*type::PersistentHashMap, *type::PersistentMap);
-        define_method(ASSOC, *type::PersistentHashMap, *rt::persistent_hash_map_assoc);
+        f = create_native_function3<persistent_hash_map_assoc>();
+        define_method(ASSOC, *type::PersistentHashMap, *f);
 
         define_multimethod(ASSOC_E, *first_type, undefined);
 
@@ -1674,6 +1677,9 @@ struct Initialize
         define_method(ASSOC, nil, *f);
 
         define_multimethod(DISSOC, *first_type, undefined);
+
+        f = create_native_function2<array_map_dissoc>();
+        define_method(DISSOC, *type::ArrayMap, *f);
 
         f = create_native_function2<persistent_hash_map_dissoc>();
         define_method(DISSOC, *type::PersistentHashMap, *f);
@@ -1691,6 +1697,11 @@ struct Initialize
         Root v{create_array(two_maps.data(), two_maps.size())};
         define_method(MERGE, *v, *f);
 
+        std::array<Value, 2> two_array_maps{{*type::ArrayMap, *type::ArrayMap}};
+        v = create_array(two_array_maps.data(), two_array_maps.size());
+        f = create_native_function2<array_map_merge>();
+        define_method(MERGE, *v, *f);
+
         define_multimethod(OBJ_CALL, *first_type, nil);
 
         derive(*type::ArraySet, *type::Callable);
@@ -1698,7 +1709,7 @@ struct Initialize
         define_method(OBJ_CALL, *type::ArraySet, *f);
 
         derive(*type::ArrayMap, *type::Callable);
-        f = create_native_function2<array_map_get>();
+        f = create_native_function2or3<array_map_get, array_map_get>();
         define_method(OBJ_CALL, *type::ArrayMap, *f);
 
         derive(*type::PersistentHashMap, *type::Callable);
@@ -1751,7 +1762,6 @@ struct Initialize
         f = create_native_function2<are_array_sets_equal>();
         define_method(OBJ_EQ, *v, *f);
 
-        std::array<Value, 2> two_array_maps{{*type::ArrayMap, *type::ArrayMap}};
         v = create_array(two_array_maps.data(), two_array_maps.size());
         f = create_native_function2<are_array_maps_equal>();
         define_method(OBJ_EQ, *v, *f);
@@ -1915,10 +1925,8 @@ struct Initialize
         f = create_native_function1<get_value_type, &TYPE>();
         define(TYPE, *f);
 
-        Root macro_meta{create_persistent_hash_map()};
-        macro_meta = persistent_hash_map_assoc(*macro_meta, MACRO_KEY, TRUE);
         f = create_ns_macro();
-        define(NS, *f, *macro_meta);
+        define(NS, *f, *MACRO_META);
 
         f = create_native_function4<import_c_fn, &IMPORT_C_FN>();
         define(IMPORT_C_FN, *f);

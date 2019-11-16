@@ -28,13 +28,18 @@ Value get_array_map_val(Value m, std::uint32_t index)
 
 Value array_map_get(Value m, Value k)
 {
+    return array_map_get(m, k, nil);
+}
+
+Value array_map_get(Value m, Value k, Value def_v)
+{
     auto size = get_array_map_size(m);
     for (decltype(size) i = 0; i != size; ++i)
     {
         if (k == get_object_element(m, i * 2))
             return get_object_element(m, i * 2 + 1);
     }
-    return nil;
+    return def_v;
 }
 
 Force array_map_assoc(Value m, Value k, Value v)
@@ -59,6 +64,25 @@ Force array_map_assoc(Value m, Value k, Value v)
     {
         kvs.push_back(k);
         kvs.push_back(v);
+    }
+    return create_object(*type::ArrayMap, kvs.data(), kvs.size());
+}
+
+Force array_map_dissoc(Value m, Value k)
+{
+    if (!array_map_contains(m, k))
+        return m;
+    auto size = get_array_map_size(m);
+    std::vector<Value> kvs;
+    kvs.reserve((size - 1) * 2);
+    for (decltype(size) i = 0; i != size; ++i)
+    {
+        auto ck = get_object_element(m, i * 2);
+        if (k != ck)
+        {
+            kvs.push_back(ck);
+            kvs.push_back(get_object_element(m, i * 2 + 1));
+        }
     }
     return create_object(*type::ArrayMap, kvs.data(), kvs.size());
 }

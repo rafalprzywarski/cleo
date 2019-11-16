@@ -210,7 +210,7 @@ Force read_map(Stream& s)
         Root v{read(s)};
         eat_ws(s);
 
-        m = persistent_hash_map_assoc(*m, *k, *v);
+        m = map_assoc(*m, *k, *v);
     }
     if (s.eos())
         throw_unexpected_end_of_input(s.pos());

@@ -334,6 +334,7 @@ extern const ConstRoot EMPTY_LIST;
 extern const ConstRoot EMPTY_VECTOR;
 extern const ConstRoot EMPTY_SET;
 extern const ConstRoot EMPTY_MAP;
+extern const ConstRoot EMPTY_HASH_MAP;
 
 extern Root namespaces;
 extern Root bindings;
@@ -349,7 +350,7 @@ extern const Root transient_array;
 extern const Root transient_array_conj;
 extern const Root transient_array_persistent;
 extern const Root array_set_conj;
-extern const Root persistent_hash_map_assoc;
+extern const Root map_assoc;
 
 extern const DynamicVar current_ns;
 extern const DynamicVar lib_paths;

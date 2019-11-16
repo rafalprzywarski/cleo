@@ -217,7 +217,7 @@ Force create_locals(Value name, Value params)
     if (name)
     {
         index = create_int64(-(total_arity + 1));
-        locals = persistent_hash_map_assoc(*locals, name, *index);
+        locals = map_assoc(*locals, name, *index);
     }
     for (Int64 i = 0; i < fixed_arity; ++i)
     {
@@ -227,18 +227,18 @@ Force create_locals(Value name, Value params)
         if (get_symbol_namespace(sym))
             throw_compilation_error("Can't use qualified name as parameter: " + to_string(sym));
         index = create_int64(i - total_arity);
-        locals = persistent_hash_map_assoc(*locals, sym, *index);
+        locals = map_assoc(*locals, sym, *index);
     }
     if (arity < 0)
-        locals = persistent_hash_map_assoc(*locals, get_array_elem(params, total_arity), *NEG_ONE);
+        locals = map_assoc(*locals, get_array_elem(params, total_arity), *NEG_ONE);
     return *locals;
 }
 
 void Compiler::compile_symbol(const Scope& scope, Value sym)
 {
-    if (auto index = persistent_hash_map_get(scope.locals, sym))
+    if (auto index = map_get(scope.locals, sym))
         return append_LDL(code, get_int64_value(index));
-    if (persistent_hash_map_contains(scope.parent_locals, sym))
+    if (map_contains(scope.parent_locals, sym))
         return compile_local_ref(sym);
 
     auto v = maybe_resolve_var(sym);
@@ -358,7 +358,7 @@ std::pair<Compiler::Scope, std::int16_t> add_local(Compiler::Scope scope, Value 
     if (scope.locals_size == MAX_LOCALS)
         throw_compilation_error("Too many locals: " + std::to_string(scope.locals_size + 1));
     Root index{create_int64(scope.locals_size)};
-    holder = persistent_hash_map_assoc(scope.locals, sym, *index);
+    holder = map_assoc(scope.locals, sym, *index);
     scope.locals = *holder;
     scope.locals_size++;
     return {scope, scope.locals_size - 1};
@@ -559,7 +559,7 @@ Force get_hash_map_const_submap(Value val)
         auto k = get_array_elem(*kv, 0);
         auto v = get_array_elem(*kv, 1);
         if (is_const(k) && is_const(v))
-            sm = persistent_hash_map_assoc(*sm, k, v);
+            sm = map_assoc(*sm, k, v);
     }
     return *sm;
 }
@@ -569,11 +569,11 @@ void Compiler::compile_hash_map(Scope scope, Value val)
     scope = no_recur(scope);
     Root submap{get_hash_map_const_submap(val)};
     auto size = count(val);
-    auto submap_size = get_persistent_hash_map_size(*submap);
+    auto submap_size = map_count(*submap);
     if (submap_size == size)
         return compile_const(val);
     for (Int64 i = submap_size; i < size; ++i)
-        compile_const(*rt::persistent_hash_map_assoc);
+        compile_const(*rt::map_assoc);
     compile_const(*submap);
     scope.stack_depth = size - submap_size + 1;
     for (Root s{seq(val)}; *s; s = seq_next(*s))
@@ -581,7 +581,7 @@ void Compiler::compile_hash_map(Scope scope, Value val)
         Root kv{seq_first(*s)};
         auto k = get_array_elem(*kv, 0);
         auto v = get_array_elem(*kv, 1);
-        if (!persistent_hash_map_contains(*submap, k))
+        if (!map_contains(*submap, k))
         {
             compile_value(scope, k);
             scope.stack_depth++;

@@ -76,6 +76,53 @@ TEST_F(array_map_test, contains_should_tell_if_a_map_contains_a_key)
     EXPECT_EQ_REFS(TRUE, array_map_contains(*m2, *k2));
 }
 
+TEST_F(array_map_test, dissoc_should_remove_elements_from_a_map)
+{
+    Root k1a{create_int64(10)};
+    Root k1b{create_int64(10)};
+    Root k2{create_int64(20)};
+    Root k3{create_int64(30)};
+    Root v1{create_int64(101)};
+    Root v2{nil};
+    Root v3{create_int64(103)};
+    Root m0{create_array_map()};
+    m0 = array_map_assoc(*m0, *k1a, *v1);
+    m0 = array_map_assoc(*m0, *k2, *v2);
+    m0 = array_map_assoc(*m0, *k3, *v3);
+    Root m1{array_map_dissoc(*m0, *k2)};
+    Root m2{array_map_dissoc(*m1, *k2)};
+    Root m3{array_map_dissoc(*m2, *k1b)};
+    Root m4{array_map_dissoc(*m3, *k3)};
+
+    EXPECT_EQ(3u, get_array_map_size(*m0));
+    EXPECT_EQ_REFS(*v1, array_map_get(*m0, *k1a));
+    EXPECT_EQ_REFS(*v1, array_map_get(*m0, *k1b));
+    EXPECT_EQ_REFS(*v2, array_map_get(*m0, *k2));
+    EXPECT_EQ_REFS(*v3, array_map_get(*m0, *k3));
+
+    EXPECT_EQ(2u, get_array_map_size(*m1));
+    EXPECT_EQ_REFS(*v1, array_map_get(*m1, *k1a));
+    EXPECT_EQ_REFS(*v1, array_map_get(*m1, *k1b));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m1, *k2));
+    EXPECT_EQ_REFS(*v3, array_map_get(*m1, *k3));
+
+    EXPECT_EQ(2u, get_array_map_size(*m2));
+    EXPECT_EQ_REFS(*v1, array_map_get(*m2, *k1a));
+    EXPECT_EQ_REFS(*v1, array_map_get(*m2, *k1b));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m2, *k2));
+    EXPECT_EQ_REFS(*v3, array_map_get(*m2, *k3));
+
+    EXPECT_EQ(1u, get_array_map_size(*m3));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m3, *k1a));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m3, *k2));
+    EXPECT_EQ_REFS(*v3, array_map_get(*m3, *k3));
+
+    EXPECT_EQ(0u, get_array_map_size(*m4));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m4, *k1a));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m4, *k2));
+    EXPECT_EQ_REFS(nil, array_map_contains(*m4, *k3));
+}
+
 TEST_F(array_map_test, should_merge_maps_with_values_from_the_second_map_overriding_values_from_the_first)
 {
     Root k1{create_int64(10)};

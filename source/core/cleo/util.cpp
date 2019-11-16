@@ -109,16 +109,37 @@ bool map_contains(Value m, Value k)
         return static_cast<bool>(array_map_contains(m, k));
     throw_illegal_argument("invalid map type: " + to_string(type));
 }
-    
+
+namespace
+{
+
+Force array_map_to_persistent_hash_map(Value m)
+{
+    Root pm{*EMPTY_HASH_MAP};
+    auto size = get_array_map_size(m);
+    for (decltype(size) i = 0; i != size; ++i)
+        pm = persistent_hash_map_assoc(*pm, get_array_map_key(m, i), get_array_map_val(m, i));
+    return *pm;
+}
+
+}
+
 Force map_assoc(Value m, Value k, Value v)
 {
     if (!m)
-        return nil;
+        m = *EMPTY_MAP;
     auto type = get_value_type(m);
     if (type.is(*type::PersistentHashMap))
         return persistent_hash_map_assoc(m, k, v);
     if (type.is(*type::ArrayMap))
+    {
+        if (get_array_map_size(m) >= 16)
+        {
+            Root pm{array_map_to_persistent_hash_map(m)};
+            return persistent_hash_map_assoc(*pm, k, v);
+        }
         return array_map_assoc(m, k, v);
+    }
     throw_illegal_argument("invalid map type: " + to_string(type));
 }
 
@@ -131,6 +152,18 @@ Value map_get(Value m, Value k)
         return persistent_hash_map_get(m, k);
     if (type.is(*type::ArrayMap))
         return array_map_get(m, k);
+    throw_illegal_argument("invalid map type: " + to_string(type));
+}
+
+Int64 map_count(Value m)
+{
+    if (!m)
+        return 0;
+    auto type = get_value_type(m);
+    if (type.is(*type::PersistentHashMap))
+        return get_persistent_hash_map_size(m);
+    if (type.is(*type::ArrayMap))
+        return get_array_map_size(m);
     throw_illegal_argument("invalid map type: " + to_string(type));
 }
 

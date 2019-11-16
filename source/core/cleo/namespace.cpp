@@ -44,7 +44,7 @@ Value get_or_create_ns(Value name, Value meta)
 {
     if (meta)
         check_type("meta", meta, *type::PersistentHashMap);
-    auto ns = persistent_hash_map_get(*namespaces, name);
+    auto ns = map_get(*namespaces, name);
     if (ns)
     {
         if (meta && get_ns_meta(ns) != meta)
@@ -74,7 +74,7 @@ Value define_ns(Value name, Value meta)
 {
     check_type("name", name, *type::Symbol);
     Root new_ns{create_namespace(name, meta)};
-    namespaces = persistent_hash_map_assoc(*namespaces, name, *new_ns);
+    namespaces = map_assoc(*namespaces, name, *new_ns);
     return *new_ns;
 }
 
@@ -86,7 +86,7 @@ Value ns_name(Value ns)
 
 Value find_ns(Value name)
 {
-    return persistent_hash_map_get(*namespaces, name);
+    return map_get(*namespaces, name);
 }
 
 Value get_ns(Value name)
@@ -162,16 +162,16 @@ Value maybe_resolve_var(Value ns, Value sym)
 {
     auto sym_ns = namespace_symbol(sym);
     auto sym_name = name_symbol(sym);
-    ns = persistent_hash_map_get(*namespaces, ns);
+    ns = map_get(*namespaces, ns);
     if (sym_ns)
     {
-        if (auto alias = persistent_hash_map_get(get_ns_aliases(ns), sym_ns))
+        if (auto alias = map_get(get_ns_aliases(ns), sym_ns))
             sym_ns = ns_name(alias);
-        ns = persistent_hash_map_get(*namespaces, sym_ns);
+        ns = map_get(*namespaces, sym_ns);
     }
     if (!ns)
         return nil;
-    auto var = persistent_hash_map_get(get_ns_mapping(ns), sym_name);
+    auto var = map_get(get_ns_mapping(ns), sym_name);
     if (!var || (sym_ns && sym_ns != namespace_symbol(get_var_name(var))))
         return nil;
     return var;
@@ -200,7 +200,7 @@ Value require(Value ns, Value opts)
         throw_exception(new_illegal_argument(*msg));
     }
     auto ns_name = get_symbol_name(ns);
-    if (ns != CLEO_CORE && persistent_hash_map_contains(*namespaces, ns) && !map_get(opts, *RELOAD))
+    if (ns != CLEO_CORE && map_contains(*namespaces, ns) && !map_get(opts, *RELOAD))
         return nil;
     std::string path = locate_source({get_string_ptr(ns_name), get_string_len(ns_name)});
     std::ifstream f(path);
@@ -218,7 +218,7 @@ Value require(Value ns, Value opts)
 Value alias(Value as, Value ns)
 {
     Root aliases{get_ns_aliases(*rt::current_ns)};
-    aliases = persistent_hash_map_assoc(*aliases, as, get_ns(ns));
+    aliases = map_assoc(*aliases, as, get_ns(ns));
     set_ns_aliseses(*rt::current_ns, *aliases);
     return nil;
 }
