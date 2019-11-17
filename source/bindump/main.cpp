@@ -24,7 +24,7 @@ std::int64_t CLEO_CDECL other(
 #define CLEO_ARG(n, type) \
     auto arg##n = *reinterpret_cast<type const*>(&args[n]); \
 
-cleo::Value CLEO_CDECL example(const std::uint64_t *args, std::uint8_t num_args)
+cleo::ValueBits CLEO_CDECL example(const std::uint64_t *args, std::uint8_t num_args)
 {
     CLEO_ARG(0, const char *)
     CLEO_ARG(1, const char *)
@@ -64,7 +64,7 @@ cleo::Value CLEO_CDECL example(const std::uint64_t *args, std::uint8_t num_args)
     //     arg4, arg5, arg6, arg7,
     //     arg8, arg9, arg10, arg11,
     //     arg12, arg13, arg14, arg15)).value();
-    auto addr = (cleo::Value(*)(std::int64_t))0x12345678;
+    auto addr = (cleo::ValueBits(*)(std::int64_t))0x12345678;
     // auto addr2 = (std::int64_t(*)(
     //     double, double, double, double,
     //     double, double, double, double,

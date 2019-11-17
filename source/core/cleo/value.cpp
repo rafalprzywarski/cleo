@@ -146,11 +146,16 @@ void set_keyword_hash(Value val, std::uint32_t h)
     get_ptr<Keyword>(val)->hashVal = h;
 }
 
-Force CLEO_CDECL create_int64(Int64 intVal)
+Force create_int64(Int64 intVal)
 {
     auto val = alloc<Int64>();
     *val = intVal;
     return tag_ptr(val, tag::INT64);
+}
+
+ValueBits CLEO_CDECL create_int64_unsafe(Int64 val)
+{
+    return create_int64(val).value().bits();
 }
 
 Force create_float64(Float64 floatVal)

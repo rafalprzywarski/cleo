@@ -13,17 +13,17 @@
 namespace cleo
 {
 
-using ValueBits = std::uintptr_t;
+using ValueBits = std::uint64_t;
 
 struct Value
 {
     ValueBits bits_{0};
     Value() = default;
-    explicit constexpr Value(std::uintptr_t bits) : bits_(bits) { }
+    explicit constexpr Value(ValueBits bits) : bits_(bits) { }
     explicit operator bool() const { return !is_nil(); }
     constexpr bool is(Value other) const { return bits_ == other.bits_; }
     constexpr bool is_nil() const { return bits_ == Value{}.bits_; }
-    constexpr std::uintptr_t bits() const { return bits_; }
+    constexpr ValueBits bits() const { return bits_; }
 };
 
 static_assert(sizeof(Value) == sizeof(Value().bits()), "Value should have no overhead");
@@ -130,6 +130,8 @@ std::uint32_t get_keyword_hash(Value val);
 void set_keyword_hash(Value val, std::uint32_t h);
 
 Force CLEO_CDECL create_int64(Int64 val);
+ValueBits CLEO_CDECL create_int64_unsafe(Int64 val);
+
 inline Int64 get_int64_value(Value val)
 {
     return *get_ptr<Int64>(val);

@@ -12,7 +12,7 @@ namespace cleo
 {
 
 constexpr std::uint8_t MAX_ARGS = 16;
-using CFunction = Value(*)(const std::uint64_t *args, std::uint8_t num_args);
+using CFunction = ValueBits(*)(const std::uint64_t *args, std::uint8_t num_args);
 
 char *code_alloc(std::size_t size)
 {
@@ -163,10 +163,10 @@ void generate_code(char *p, void *cfn, Value param_types)
 
     put(p,
         0x20, 0x48, 0xbd, 0xe8,                         // pop	{r5, fp, lr}
-        0x04, 0x20, 0x9f, 0xe5,                         // ldr	r2, [pc, #4]	; create_int64
+        0x04, 0x20, 0x9f, 0xe5,                         // ldr	r2, [pc, #4]	; create_int64_unsafe
         0x12, 0xff, 0x2f, 0xe1,                         // bx	r2
         abs_addr(cfn),                                  // .word
-        abs_addr(create_int64)                          // .word
+        abs_addr(create_int64_unsafe)                   // .word
     );
 
     __builtin___clear_cache(code, p);
@@ -275,7 +275,7 @@ Force call_c_function(const Value *args, std::uint8_t num_args)
     std::uint64_t raw_args[MAX_ARGS];
     for (decltype(num_args) i = 1; i < num_args; ++i)
         raw_args[i - 1] = get_arg_bit_value(param_types, i - 1, args[i]);
-    return reinterpret_cast<CFunction>(get_int64_value(addr))(raw_args, num_args - 1);
+    return Value{reinterpret_cast<CFunction>(get_int64_value(addr))(raw_args, num_args - 1)};
 }
 
 Force import_c_fn(Value libname, Value fnname, Value ret_type, Value param_types)

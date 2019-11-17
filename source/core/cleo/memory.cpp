@@ -14,7 +14,7 @@ namespace cleo
 namespace
 {
 
-constexpr auto OFFSET = tag::MASK + 1;
+constexpr std::uintptr_t OFFSET = tag::MASK + 1;
 
 char& tag_ref(void *ptr)
 {
@@ -174,10 +174,13 @@ void *mem_alloc(std::size_t size)
     }
     --gc_counter;
 #ifdef __APPLE__
-    auto ptr = reinterpret_cast<char *>(std::malloc(OFFSET + size)) + OFFSET;
+    auto ptr = reinterpret_cast<char *>(std::malloc(OFFSET + size));
 #else
-    auto ptr = reinterpret_cast<char *>(memalign(tag::MASK + 1, OFFSET + size)) + OFFSET;
+    auto ptr = reinterpret_cast<char *>(memalign(tag::MASK + 1, OFFSET + size));
 #endif
+    if (ptr == nullptr)
+        std::abort();
+    ptr += OFFSET;
     unmark(ptr);
     allocations.push_back({ptr, size + OFFSET});
     if ((reinterpret_cast<std::uintptr_t>(ptr) & tag::MASK) != 0)
