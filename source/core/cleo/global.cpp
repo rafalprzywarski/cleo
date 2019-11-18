@@ -169,7 +169,12 @@ Force create_type(const std::string& ns, const std::string& name)
     return create_object_type(ns, name);
 }
 
-Force create_type(const std::string& ns, const std::string& name, const std::initializer_list<std::string>& fields)
+Force create_basic_type(const std::string& ns, const std::string& name)
+{
+    return create_object_type(ns, name, nullptr, 0, false, false);
+}
+
+Force create_static_type(const std::string& ns, const std::string& name, const std::initializer_list<std::string>& fields)
 {
     std::vector<Value> field_names;
     field_names.reserve(fields.size());
@@ -181,17 +186,17 @@ Force create_type(const std::string& ns, const std::string& name, const std::ini
 
 namespace type
 {
-const ConstRoot Int64{create_type("cleo.core", "Int64")};
-const ConstRoot Float64{create_type("cleo.core", "Float64")};
-const ConstRoot String{create_type("cleo.core", "String")};
-const ConstRoot NativeFunction{create_type("cleo.core", "NativeFunction")};
+const ConstRoot Int64{create_basic_type("cleo.core", "Int64")};
+const ConstRoot Float64{create_basic_type("cleo.core", "Float64")};
+const ConstRoot String{create_basic_type("cleo.core", "String")};
+const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")};
 const ConstRoot CFunction{create_type("cleo.core", "CFunction")};
-const ConstRoot Symbol{create_type("cleo.core", "Symbol")};
-const ConstRoot Keyword{create_type("cleo.core", "Keyword")};
-const ConstRoot Var{create_type("cleo.core", "Var")};
+const ConstRoot Symbol{create_basic_type("cleo.core", "Symbol")};
+const ConstRoot Keyword{create_basic_type("cleo.core", "Keyword")};
+const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "meta"})};
 const ConstRoot List{create_type("cleo.core", "List")};
-const ConstRoot Cons{create_type("cleo.core", "Cons")};
-const ConstRoot LazySeq{create_type("cleo.core", "LazySeq")};
+const ConstRoot Cons{create_static_type("cleo.core", "Cons", {"first", "next"})};
+const ConstRoot LazySeq{create_static_type("cleo.core", "LazySeq", {"fn", "seq"})};
 const ConstRoot Array{create_type("cleo.core", "Array")};
 const ConstRoot TransientArray{create_type("cleo.core", "TransientArray")};
 const ConstRoot ArraySeq{create_type("cleo.core", "ArraySeq")};
@@ -199,34 +204,34 @@ const ConstRoot ArrayMap{create_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_type("cleo.core", "ArrayMapSeq")};
 const ConstRoot ArraySet{create_type("cleo.core", "ArraySet")};
 const ConstRoot ArraySetSeq{create_type("cleo.core", "ArraySetSeq")};
-const ConstRoot Multimethod{create_type("cleo.core", "Multimethod")};
-const ConstRoot Seqable{create_type("cleo.core", "Seqable")};
-const ConstRoot Sequence{create_type("cleo.core", "Sequence")};
-const ConstRoot Callable{create_type("cleo.core", "Callable")};
+const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"name"})};
+const ConstRoot Seqable{create_basic_type("cleo.core", "Seqable")};
+const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};
+const ConstRoot Callable{create_basic_type("cleo.core", "Callable")};
 const ConstRoot BytecodeFn{create_type("cleo.core", "BytecodeFn")};
 const ConstRoot BytecodeFnBody{create_type("cleo.core", "BytecodeFnBody")};
 const ConstRoot BytecodeFnExceptionTable{create_type("cleo.core", "BytecodeFnExceptionTable")};
 const ConstRoot Recur{create_type("cleo.core", "Recur")};
-const ConstRoot Atom{create_type("cleo.core", "Atom")};
-const ConstRoot PersistentMap{create_type("cleo.core", "PersistentMap")};
+const ConstRoot Atom{create_static_type("cleo.core", "Atom", {"value"})};
+const ConstRoot PersistentMap{create_basic_type("cleo.core", "PersistentMap")};
 const ConstRoot PersistentHashMap{create_type("cleo.core", "PersistentHashMap")};
 const ConstRoot PersistentHashMapSeq{create_type("cleo.core", "PersistentHashMapSeq")};
 const ConstRoot PersistentHashMapSeqParent{create_type("cleo.core", "PersistentHashMapSeqParent")};
 const ConstRoot PersistentHashMapCollisionNode(create_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_type("cleo.core", "PersistentHashMapArrayNode"));
-const ConstRoot Exception{create_type("cleo.core", "Exception")};
-const ConstRoot ReadError{create_type("cleo.core", "ReadError", {"msg", "line", "column"})};
-const ConstRoot CallError{create_type("cleo.core", "CallError", {"msg"})};
-const ConstRoot SymbolNotFound{create_type("cleo.core", "SymbolNotFound", {"msg"})};
-const ConstRoot IllegalArgument{create_type("cleo.core", "IllegalArgument", {"msg"})};
-const ConstRoot IllegalState{create_type("cleo.core", "IllegalState", {"msg"})};
-const ConstRoot UnexpectedEndOfInput{create_type("cleo.core", "UnexpectedEndOfInput", {"line", "column"})};
-const ConstRoot FileNotFound{create_type("cleo.core", "FileNotFound", {"msg"})};
-const ConstRoot ArithmeticException{create_type("cleo.core", "ArithmeticException", {"msg"})};
-const ConstRoot IndexOutOfBounds{create_type("cleo.core", "IndexOutOfBounds", {})};
-const ConstRoot CompilationError{create_type("cleo.core", "CompilationError", {"msg"})};
-const ConstRoot StackOverflow{create_type("cleo.core", "StackOverflow", {})};
-const ConstRoot Namespace{create_type("cleo.core", "Namespace")};
+const ConstRoot Exception{create_basic_type("cleo.core", "Exception")};
+const ConstRoot ReadError{create_static_type("cleo.core", "ReadError", {"msg", "line", "column"})};
+const ConstRoot CallError{create_static_type("cleo.core", "CallError", {"msg"})};
+const ConstRoot SymbolNotFound{create_static_type("cleo.core", "SymbolNotFound", {"msg"})};
+const ConstRoot IllegalArgument{create_static_type("cleo.core", "IllegalArgument", {"msg"})};
+const ConstRoot IllegalState{create_static_type("cleo.core", "IllegalState", {"msg"})};
+const ConstRoot UnexpectedEndOfInput{create_static_type("cleo.core", "UnexpectedEndOfInput", {"line", "column"})};
+const ConstRoot FileNotFound{create_static_type("cleo.core", "FileNotFound", {"msg"})};
+const ConstRoot ArithmeticException{create_static_type("cleo.core", "ArithmeticException", {"msg"})};
+const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBounds", {})};
+const ConstRoot CompilationError{create_static_type("cleo.core", "CompilationError", {"msg"})};
+const ConstRoot StackOverflow{create_static_type("cleo.core", "StackOverflow", {})};
+const ConstRoot Namespace{create_static_type("cleo.core", "Namespace", {"name", "meta", "mapping", "aliases"})};
 }
 
 namespace clib
