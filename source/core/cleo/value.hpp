@@ -71,7 +71,6 @@ struct Object
     Value type;
     std::uint32_t intCount, valCount;
     ValueBits firstVal;
-    static constexpr int VALS_PER_INT = sizeof(Int64) / sizeof(ValueBits);
 };
 
 // Top 16 bits are flipped, so that nil encoding is 0
@@ -210,7 +209,7 @@ inline Value get_object_element(Value obj, std::uint32_t index)
 {
     assert(index < get_object_size(obj));
     auto ptr = get_ptr<Object>(obj);
-    return Value{(&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index]};
+    return Value{(&ptr->firstVal)[ptr->intCount + index]};
 }
 
 }

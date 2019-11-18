@@ -219,16 +219,15 @@ void set_string_hash(Value val, std::uint32_t h)
 Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size)
 {
     assert(get_value_tag(type) == tag::OBJECT_TYPE);
-    auto int_vals_size = int_size * Object::VALS_PER_INT;
-    auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstVal) + (int_vals_size + size) * sizeof(Object::firstVal)));
+    auto val = static_cast<Object *>(mem_alloc(offsetof(Object, firstVal) + (int_size + size) * sizeof(Object::firstVal)));
     val->type = type;
     val->intCount = int_size;
     val->valCount = size;
     if (ints)
-        std::memcpy(&val->firstVal, ints, int_vals_size * sizeof(Object::firstVal));
+        std::memcpy(&val->firstVal, ints, int_size * sizeof(Object::firstVal));
     else
-        std::memset(&val->firstVal, 0, int_vals_size * sizeof(Object::firstVal));
-    auto first_obj = &val->firstVal + int_vals_size;
+        std::memset(&val->firstVal, 0, int_size * sizeof(Object::firstVal));
+    auto first_obj = &val->firstVal + int_size;
     if (elems)
         std::transform(elems, elems + size, first_obj, [](auto& v) { return v.bits(); });
     else
@@ -320,7 +319,7 @@ Int64 get_object_int(Value obj, std::uint32_t index)
 
 const void *get_object_int_ptr(Value obj, std::uint32_t index)
 {
-    return &get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT;
+    return &get_ptr<Object>(obj)->firstVal + index;
 }
 
 void set_object_type(Value obj, Value type)
@@ -331,14 +330,14 @@ void set_object_type(Value obj, Value type)
 void set_object_int(Value obj, std::uint32_t index, Int64 val)
 {
     assert(index < get_object_int_size(obj));
-    std::memcpy(&get_ptr<Object>(obj)->firstVal + index * Object::VALS_PER_INT, &val, sizeof(val));
+    std::memcpy(&get_ptr<Object>(obj)->firstVal + index, &val, sizeof(val));
 }
 
 void set_object_element(Value obj, std::uint32_t index, Value val)
 {
     assert(index < get_object_size(obj));
     auto ptr = get_ptr<Object>(obj);
-    (&ptr->firstVal)[ptr->intCount * Object::VALS_PER_INT + index] = val.bits();
+    (&ptr->firstVal)[ptr->intCount + index] = val.bits();
 }
 
 Force create_object_type(Value name, const Value *fields, std::uint32_t size, bool is_constructible)
