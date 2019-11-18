@@ -3,6 +3,7 @@
 #include "global.hpp"
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 namespace cleo
 {
@@ -40,9 +41,24 @@ struct ObjectType
     Value firstFieldName;
 };
 
+namespace
+{
+
+template <typename T, typename U>
+T bit_cast(const U& u)
+{
+    static_assert(sizeof(U) == sizeof(T), "types sizes should match");
+    T t;
+    std::memcpy(&t, &u, sizeof(u));
+    return t;
+}
+
 Value tag_ptr(void *ptr, Tag tag)
 {
-    return Value{reinterpret_cast<decltype(Value().bits())>(ptr) | tag};
+    auto tagged_ptr = reinterpret_cast<std::uintptr_t>(ptr) | tag;
+    return Value{tagged_ptr & ((std::uint64_t(1) << 48) - 1)};
+}
+
 }
 
 Force create_native_function(NativeFunction f, Value name)
@@ -160,14 +176,14 @@ ValueBits CLEO_CDECL create_int64_unsafe(Int64 val)
 
 Force create_float64(Float64 floatVal)
 {
-    auto val = alloc<Float64>();
-    *val = floatVal;
-    return tag_ptr(val, tag::FLOAT64);
+    if (std::isnan(floatVal))
+        return Value{(std::uint64_t(0xf) << 48) | 1};
+    return Value{bit_cast<ValueBits>(floatVal) ^ (ValueBits(0xffff) << 48)};
 }
 
 Float64 get_float64_value(Value val)
 {
-    return *get_ptr<Float64>(val);
+    return bit_cast<Float64>(val.bits() ^ (ValueBits(0xffff) << 48));
 }
 
 Force create_string(const std::string& str)

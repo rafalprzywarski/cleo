@@ -40,7 +40,7 @@ void mark_value(Value val)
     {
         val = vals.back();
         vals.pop_back();
-        if (val.is_nil() || is_ptr_marked(get_value_ptr(val)))
+        if (val.is_nil() || !is_value_ptr(val) || is_ptr_marked(get_value_ptr(val)))
             continue;
         tag_ref(get_value_ptr(val)) = 1;
 

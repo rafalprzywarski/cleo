@@ -90,20 +90,33 @@ constexpr Tag MASK = 7;
 constexpr Value nil{};
 
 
+inline bool is_value_ptr(Value val)
+{
+    return (val.bits() & (ValueBits(0xffff) << 48)) == 0;
+}
+
 inline Tag get_value_tag(Value val)
 {
+    if (!is_value_ptr(val))
+        return tag::FLOAT64;
     return val.bits() & tag::MASK;
 }
 
 inline void *get_value_ptr(Value val)
 {
+    assert(is_value_ptr(val));
+#ifdef __APPLE__
+    static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
+    return reinterpret_cast<void *>((std::int64_t(val.bits() << 16) >> 16) & ~tag::MASK);
+#else
     return reinterpret_cast<void *>(val.bits() & ~tag::MASK);
+#endif
 }
 
 template <typename T>
 T *get_ptr(Value val)
 {
-    return reinterpret_cast<T *>(val.bits() & ~tag::MASK);
+    return reinterpret_cast<T *>(get_value_ptr(val));
 }
 
 Force create_native_function(NativeFunction f, Value name);

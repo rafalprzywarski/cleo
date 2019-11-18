@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <array>
+#include <cmath>
 #include <gtest/gtest.h>
 #include "util.hpp"
 
@@ -130,13 +131,8 @@ TEST_F(value_test, should_store_float_values)
     ASSERT_EQ(std::numeric_limits<Float64>::min(), get_float64_value(*val));
     val = create_float64(std::numeric_limits<Float64>::max());
     ASSERT_EQ(std::numeric_limits<Float64>::max(), get_float64_value(*val));
-}
-
-TEST_F(value_test, should_create_a_new_instance_for_each_float)
-{
-    Root val{create_float64(7)};
-    Root val2{create_float64(7)};
-    ASSERT_FALSE(val->is(*val2));
+    val = create_float64(std::numeric_limits<Float64>::quiet_NaN());
+    ASSERT_TRUE(std::isnan(get_float64_value(*val)));
 }
 
 TEST_F(value_test, should_store_string_values)
