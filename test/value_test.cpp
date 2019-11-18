@@ -296,7 +296,7 @@ TEST_F(value_test, should_create_types_with_fields)
     auto z = create_symbol("z");
     auto o = create_symbol("o");
     std::array<Value, 3> fields{{x, y, z}};
-    Root type{create_object_type("some", "type", fields.data(), fields.size(), false)};
+    Root type{create_object_type("some", "type", fields.data(), fields.size(), false, false)};
     EXPECT_EQ(0, get_object_field_index(*type, x));
     EXPECT_EQ(1, get_object_field_index(*type, y));
     EXPECT_EQ(2, get_object_field_index(*type, z));
@@ -304,7 +304,15 @@ TEST_F(value_test, should_create_types_with_fields)
     EXPECT_EQ(3, get_object_type_field_count(*type));
     EXPECT_FALSE(is_object_type_constructible(*type));
 
-    type = create_object_type("some", "type", nullptr, 0, true);
+    type = create_object_type("some", "type", fields.data(), fields.size(), false, true);
+    EXPECT_EQ(0, get_object_field_index(*type, x));
+    EXPECT_EQ(1, get_object_field_index(*type, y));
+    EXPECT_EQ(2, get_object_field_index(*type, z));
+    EXPECT_LT(get_object_field_index(*type, o), 0);
+    EXPECT_EQ(3, get_object_type_field_count(*type));
+    EXPECT_FALSE(is_object_type_constructible(*type));
+
+    type = create_object_type("some", "type", nullptr, 0, true, false);
     EXPECT_LT(get_object_field_index(*type, x), 0);
     EXPECT_TRUE(is_object_type_constructible(*type));
 }

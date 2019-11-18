@@ -175,7 +175,7 @@ Force create_type(const std::string& ns, const std::string& name, const std::ini
     field_names.reserve(fields.size());
     for (auto& f : fields)
         field_names.push_back(create_symbol(f));
-    return create_object_type(ns, name, field_names.data(), field_names.size(), true);
+    return create_object_type(ns, name, field_names.data(), field_names.size(), true, false);
 }
 }
 
@@ -1002,7 +1002,7 @@ Force create_type(Value name, Value fields)
     std::vector<Value> field_names(size);
     for (Int64 i = 0; i < size; ++i)
         field_names[i] = get_array_elem(fields, i);
-    return create_object_type(name, field_names.data(), field_names.size(), true);
+    return create_object_type(name, field_names.data(), field_names.size(), true, false);
 }
 
 Force new_instance(const Value *args, std::uint8_t n)

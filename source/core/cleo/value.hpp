@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 #include <cassert>
@@ -66,7 +67,22 @@ using Int64 = std::int64_t;
 using Float64 = double;
 static_assert(sizeof(Float64) == 8, "Float64 should have 64 bits");
 
-struct Object
+struct ObjectType
+{
+    Value name;
+    std::uint32_t fieldCount;
+    bool isConstructible;
+    bool isDynamic;
+    Value firstFieldName;
+};
+
+struct StaticObject
+{
+    Value type;
+    ValueBits firstVal;
+};
+
+struct DynamicObject
 {
     Value type;
     std::uint32_t intCount, valCount;
@@ -209,9 +225,9 @@ void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
 
-Force create_object_type(Value name, const Value *fields, std::uint32_t size, bool is_constructible);
-Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size, bool is_constructible);
-inline Force create_object_type(const std::string& ns, const std::string& name) { return create_object_type(ns, name, nullptr, 0, false); }
+Force create_object_type(Value name, const Value *fields, std::uint32_t size, bool is_constructible, bool is_dynamic);
+Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size, bool is_constructible, bool is_dynamic);
+inline Force create_object_type(const std::string& ns, const std::string& name) { return create_object_type(ns, name, nullptr, 0, false, true); }
 Value get_object_type_name(Value type);
 Int64 get_object_type_field_count(Value type);
 bool is_object_type_constructible(Value type);
@@ -219,13 +235,22 @@ Int64 get_object_field_index(Value type, Value name);
 
 inline Value get_object_type(Value obj)
 {
-    return obj ? get_ptr<Object>(obj)->type : nil;
+    static_assert(offsetof(StaticObject, type) == 0, "type has to be first");
+    static_assert(offsetof(DynamicObject, type) == 0, "type has to be first");
+    return obj ? *get_ptr<Value>(obj) : nil;
+}
+
+inline bool is_object_dynamic(Value obj)
+{
+    return get_ptr<ObjectType>(*get_ptr<Value>(obj))->isDynamic;
 }
 
 inline Value get_object_element(Value obj, std::uint32_t index)
 {
     assert(index < get_object_size(obj));
-    auto ptr = get_ptr<Object>(obj);
+    if (!is_object_dynamic(obj))
+        return Value{(&get_ptr<StaticObject>(obj)->firstVal)[index]};
+    auto ptr = get_ptr<DynamicObject>(obj);
     return Value{(&ptr->firstVal)[ptr->intCount + index]};
 }
 

@@ -859,7 +859,7 @@ TEST_F(vm_test, catching_exceptions_from_apply)
 TEST_F(vm_test, lddf)
 {
     auto field = create_symbol("x");
-    Root type{create_object_type("cleo.vm.test", "X", &field, 1, true)};
+    Root type{create_object_type("cleo.vm.test", "X", &field, 1, true, false)};
     Root val{i64(17)};
     Root obj{create_object1(*type, *val)};
     const std::array<Byte, 7> bc1{{LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), LDDF}};
@@ -908,7 +908,7 @@ TEST_F(vm_test, catching_excpetions_from_lddf)
 {
     auto field = create_symbol("x");
     auto bad_field = create_symbol("bad");
-    Root type{create_object_type("cleo.vm.test", "X", &field, 1, true)};
+    Root type{create_object_type("cleo.vm.test", "X", &field, 1, true, false)};
     Root val{i64(17)};
     Root obj{create_object1(*type, *val)};
     const std::array<Byte, 12> bc1{{CNIL, CNIL, LDL, 0, 0, LDL, 1, 0, LDDF, CNIL, CNIL, CNIL}};
