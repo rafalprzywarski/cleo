@@ -9,4 +9,4 @@ matrix:
 
 install:
 
-script: CXX=${CMAKE_COMPILER} travis_wait 30 ./build_and_test.sh
+script: CXX=${CMAKE_COMPILER} travis_wait 45 ./build_and_test.sh
