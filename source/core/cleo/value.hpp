@@ -78,7 +78,8 @@ struct Object
 // Float64:      | not all 0 ||--- -------- ------- float bits ------- -------- -------|
 // Float64 QNaN: 00000000 00000111 00000000 00000000 00000000 00000000 00000000 00000000
 // No SNaNs
-// Pointer:      00000000 0000|tag||------- -------- 48 pointer bits - -------- -------| (tag != 0111)
+// Int48         00000000 00001101 |----------------  48 integer bits  -------- -------|
+// Pointer:      00000000 0000|tag||------- --------  48 pointer bits  -------- -------| (tag != 0111) && (tag != 1101)
 // nil:          00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
 
 namespace tag
@@ -92,6 +93,8 @@ constexpr Tag INT64 = ValueBits(5) << 48;
 constexpr Tag STRING = ValueBits(6) << 48;
 constexpr Tag FLOAT64 = ValueBits(7) << 48;
 
+constexpr Tag INT48 = ValueBits(13) << 48;
+
 constexpr Tag DATA_MASK = ~(ValueBits(0xffff) << 48);
 constexpr unsigned short DATA_SHIFT = 16;
 constexpr Tag TAG_MASK = ValueBits(0xf) << 48;
@@ -104,14 +107,25 @@ constexpr Value nil{};
 
 inline bool is_value_ptr(Value val)
 {
-    return (val.bits() & tag::NAN_MASK) == 0 && (val.bits() & tag::TAG_MASK) != tag::FLOAT64;
+    return
+        (val.bits() & tag::NAN_MASK) == 0 &&
+        (val.bits() & tag::TAG_MASK) != tag::FLOAT64 &&
+        (val.bits() & tag::TAG_MASK) != tag::INT48;
 }
 
 inline Tag get_value_tag(Value val)
 {
     if ((val.bits() & tag::NAN_MASK) != 0)
         return tag::FLOAT64;
-    return val.bits() & tag::TAG_MASK;
+    auto tag = val.bits() & tag::TAG_MASK;
+    if (tag == tag::INT48)
+        return tag::INT64;
+    return tag;
+}
+
+inline Int64 get_sign_extended_value_data(Value val)
+{
+    return Int64(val.bits() << tag::DATA_SHIFT) >> tag::DATA_SHIFT;
 }
 
 inline void *get_value_ptr(Value val)
@@ -119,7 +133,7 @@ inline void *get_value_ptr(Value val)
     assert(is_value_ptr(val));
 #ifdef __APPLE__
     static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
-    return reinterpret_cast<void *>(std::uintptr_t(std::uint64_t(std::int64_t(val.bits() << tag::DATA_SHIFT) >> tag::DATA_SHIFT)));
+    return reinterpret_cast<void *>(std::uintptr_t(std::uint64_t(get_sign_extended_value_data(val))));
 #else
     return reinterpret_cast<void *>(std::uintptr_t(std::uint64_t(val.bits())));
 #endif
@@ -159,6 +173,9 @@ ValueBits CLEO_CDECL create_int64_unsafe(Int64 val);
 
 inline Int64 get_int64_value(Value val)
 {
+    static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
+    if ((val.bits() & tag::TAG_MASK) == tag::INT48)
+        return get_sign_extended_value_data(val);
     return *get_ptr<Int64>(val);
 }
 

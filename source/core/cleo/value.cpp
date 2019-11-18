@@ -53,9 +53,14 @@ T bit_cast(const U& u)
     return t;
 }
 
+Value tag_data(ValueBits data, Tag tag)
+{
+    return Value{(data & tag::DATA_MASK) | tag};
+}
+
 Value tag_ptr(void *ptr, Tag tag)
 {
-    return Value{(reinterpret_cast<std::uintptr_t>(ptr) & tag::DATA_MASK) | tag};
+    return tag_data(reinterpret_cast<std::uintptr_t>(ptr), tag);
 }
 
 }
@@ -163,6 +168,9 @@ void set_keyword_hash(Value val, std::uint32_t h)
 
 Force create_int64(Int64 intVal)
 {
+    static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
+    if ((Int64(std::uint64_t(intVal) << tag::DATA_SHIFT) >> tag::DATA_SHIFT) == intVal)
+        return tag_data(std::uint64_t(intVal), tag::INT48);
     auto val = alloc<Int64>();
     *val = intVal;
     return tag_ptr(val, tag::INT64);

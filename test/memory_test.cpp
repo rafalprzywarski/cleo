@@ -14,6 +14,8 @@ struct memory_test : testing::Test
 {
     Override<decltype(gc_frequency)> ovf{gc_frequency, 10000};
     Override<decltype(gc_counter)> ovc{gc_counter, 10000};
+    const Int64 LARGE_INT_VAL = Int64(20) << 48;
+    const Int64 LARGE_INT_VAL2 = Int64(30) << 48;
 
     memory_test()
     {
@@ -31,11 +33,11 @@ TEST_F(memory_test, should_add_allocations)
 {
     auto num_allocations = allocations.size();
 
-    create_int64(20);
+    create_int64(LARGE_INT_VAL);
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
-    create_int64(20);
-    create_int64(20);
+    create_int64(LARGE_INT_VAL);
+    create_int64(LARGE_INT_VAL);
     ASSERT_EQ(num_allocations + 3, allocations.size());
 
     gc();
@@ -48,7 +50,7 @@ TEST_F(memory_test, Root_should_prevent_garbage_collection)
     auto num_allocations = allocations.size();
 
     Root root1;
-    root1 = create_int64(20);
+    root1 = create_int64(LARGE_INT_VAL);
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
     gc();
@@ -56,8 +58,8 @@ TEST_F(memory_test, Root_should_prevent_garbage_collection)
 
     {
         Root root2, root3;
-        root2 = create_int64(20);
-        root3 = create_int64(20);
+        root2 = create_int64(LARGE_INT_VAL);
+        root3 = create_int64(LARGE_INT_VAL);
         ASSERT_EQ(num_allocations + 3, allocations.size());
 
         gc();
@@ -151,20 +153,20 @@ TEST_F(memory_test, alloc_should_periodically_call_gc)
     auto num_allocations = allocations.size();
 
     gc_counter = 4;
-    create_int64(20);
+    create_int64(LARGE_INT_VAL);
 
     ASSERT_EQ(3u, gc_counter);
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
-    create_int64(20);
-    create_int64(20);
-    create_int64(20);
+    create_int64(LARGE_INT_VAL);
+    create_int64(LARGE_INT_VAL);
+    create_int64(LARGE_INT_VAL);
 
     ASSERT_EQ(0u, gc_counter);
     ASSERT_EQ(num_allocations + 4, allocations.size());
 
     gc_frequency = 16;
-    create_int64(20);
+    create_int64(LARGE_INT_VAL);
 
     ASSERT_EQ(15u, gc_counter);
     ASSERT_EQ(num_allocations + 1, allocations.size());
@@ -177,7 +179,7 @@ TEST_F(memory_test, should_trace_vars)
 
     auto num_allocations_before = allocations.size();
 
-    Root val1{create_int64(20)}, val2{create_int64(30)};
+    Root val1{create_int64(LARGE_INT_VAL)}, val2{create_int64(LARGE_INT_VAL2)};
     define_var(name1, *val1);
     define_var(name2, *val2);
     val1 = nil;
@@ -244,14 +246,14 @@ TEST_F(memory_test, should_trace_global_stack)
 {
     auto num_allocations = allocations.size();
 
-    stack_push(create_int64(20));
+    stack_push(create_int64(LARGE_INT_VAL));
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
     gc();
     ASSERT_EQ(num_allocations + 1, allocations.size());
 
-    stack_push(create_int64(20));
-    stack_push(create_int64(20));
+    stack_push(create_int64(LARGE_INT_VAL));
+    stack_push(create_int64(LARGE_INT_VAL));
     ASSERT_EQ(num_allocations + 3, allocations.size());
 
     gc();

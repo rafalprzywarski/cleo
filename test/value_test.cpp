@@ -109,17 +109,16 @@ TEST_F(value_test, should_store_int_values)
     Root val{create_int64(7)};
     ASSERT_EQ(tag::INT64, get_value_tag(*val));
     ASSERT_EQ(7, get_int64_value(*val));
+    val = create_int64(0);
+    ASSERT_EQ(0, get_int64_value(*val));
+    val = create_int64(-1);
+    ASSERT_EQ(-1, get_int64_value(*val));
+    val = create_int64(1);
+    ASSERT_EQ(1, get_int64_value(*val));
     val = create_int64(std::numeric_limits<Int64>::min());
     ASSERT_EQ(std::numeric_limits<Int64>::min(), get_int64_value(*val));
     val = create_int64(std::numeric_limits<Int64>::max());
     ASSERT_EQ(std::numeric_limits<Int64>::max(), get_int64_value(*val));
-}
-
-TEST_F(value_test, should_create_a_new_instance_for_each_int)
-{
-    Root val{create_int64(7)};
-    Root val2{create_int64(7)};
-    ASSERT_FALSE(val->is(*val2));
 }
 
 TEST_F(value_test, should_store_float_values)
