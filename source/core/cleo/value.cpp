@@ -55,8 +55,7 @@ T bit_cast(const U& u)
 
 Value tag_ptr(void *ptr, Tag tag)
 {
-    auto tagged_ptr = reinterpret_cast<std::uintptr_t>(ptr) | tag;
-    return Value{tagged_ptr & ((std::uint64_t(1) << 48) - 1)};
+    return Value{(reinterpret_cast<std::uintptr_t>(ptr) & tag::DATA_MASK) | tag};
 }
 
 }
@@ -177,13 +176,13 @@ ValueBits CLEO_CDECL create_int64_unsafe(Int64 val)
 Force create_float64(Float64 floatVal)
 {
     if (std::isnan(floatVal))
-        return Value{(std::uint64_t(0xf) << 48) | 1};
-    return Value{bit_cast<ValueBits>(floatVal) ^ (ValueBits(0xffff) << 48)};
+        return Value{tag::FLOAT64};
+    return Value{bit_cast<ValueBits>(floatVal) ^ tag::FLIP_MASK};
 }
 
 Float64 get_float64_value(Value val)
 {
-    return bit_cast<Float64>(val.bits() ^ (ValueBits(0xffff) << 48));
+    return bit_cast<Float64>(val.bits() ^ tag::FLIP_MASK);
 }
 
 Force create_string(const std::string& str)

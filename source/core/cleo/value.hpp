@@ -74,17 +74,30 @@ struct Object
     static constexpr int VALS_PER_INT = sizeof(Int64) / sizeof(ValueBits);
 };
 
+// Top 16 bits are flipped, so that nil encoding is 0
+//               SEEEEEEE EEEEMMMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM
+// Float64:      | not all 0 ||--- -------- ------- float bits ------- -------- -------|
+// Float64 QNaN: 00000000 00000111 00000000 00000000 00000000 00000000 00000000 00000000
+// No SNaNs
+// Pointer:      00000000 0000|tag||------- -------- 48 pointer bits - -------- -------| (tag != 0111)
+// nil:          00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+
 namespace tag
 {
-constexpr Tag OBJECT = 0;
-constexpr Tag NATIVE_FUNCTION = 1;
-constexpr Tag SYMBOL = 2;
-constexpr Tag KEYWORD = 3;
-constexpr Tag INT64 = 4;
-constexpr Tag FLOAT64 = 5;
-constexpr Tag STRING = 6;
-constexpr Tag OBJECT_TYPE = 7;
-constexpr Tag MASK = 7;
+constexpr Tag OBJECT = ValueBits(0) << 48;
+constexpr Tag OBJECT_TYPE = ValueBits(1) << 48;
+constexpr Tag NATIVE_FUNCTION = ValueBits(2) << 48;
+constexpr Tag SYMBOL = ValueBits(3) << 48;
+constexpr Tag KEYWORD = ValueBits(4) << 48;
+constexpr Tag INT64 = ValueBits(5) << 48;
+constexpr Tag STRING = ValueBits(6) << 48;
+constexpr Tag FLOAT64 = ValueBits(7) << 48;
+
+constexpr Tag DATA_MASK = ~(ValueBits(0xffff) << 48);
+constexpr unsigned short DATA_SHIFT = 16;
+constexpr Tag TAG_MASK = ValueBits(0xf) << 48;
+constexpr Tag NAN_MASK = ValueBits(0xfff) << 52;
+constexpr Tag FLIP_MASK = TAG_MASK | NAN_MASK;
 }
 
 constexpr Value nil{};
@@ -92,14 +105,14 @@ constexpr Value nil{};
 
 inline bool is_value_ptr(Value val)
 {
-    return (val.bits() & (ValueBits(0xffff) << 48)) == 0;
+    return (val.bits() & tag::NAN_MASK) == 0 && (val.bits() & tag::TAG_MASK) != tag::FLOAT64;
 }
 
 inline Tag get_value_tag(Value val)
 {
-    if (!is_value_ptr(val))
+    if ((val.bits() & tag::NAN_MASK) != 0)
         return tag::FLOAT64;
-    return val.bits() & tag::MASK;
+    return val.bits() & tag::TAG_MASK;
 }
 
 inline void *get_value_ptr(Value val)
@@ -107,9 +120,9 @@ inline void *get_value_ptr(Value val)
     assert(is_value_ptr(val));
 #ifdef __APPLE__
     static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
-    return reinterpret_cast<void *>((std::int64_t(val.bits() << 16) >> 16) & ~tag::MASK);
+    return reinterpret_cast<void *>(std::uintptr_t(std::uint64_t(std::int64_t(val.bits() << tag::DATA_SHIFT) >> tag::DATA_SHIFT)));
 #else
-    return reinterpret_cast<void *>(val.bits() & ~tag::MASK);
+    return reinterpret_cast<void *>(std::uintptr_t(std::uint64_t(val.bits())));
 #endif
 }
 
