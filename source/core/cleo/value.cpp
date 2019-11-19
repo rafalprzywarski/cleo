@@ -225,9 +225,9 @@ T *set_up_common_object(Value type, const ObjectType& otype, const Int64 *ints, 
     auto val = static_cast<T *>(mem_alloc(offsetof(T, firstVal) + (int_size + size) * sizeof(T::firstVal)));
     val->type = type;
     if (ints)
-        std::memcpy(&val->firstVal, ints, int_size * sizeof(DynamicObject::firstVal));
+        std::memcpy(&val->firstVal, ints, int_size * sizeof(val->firstVal));
     else
-        std::memset(&val->firstVal, 0, int_size * sizeof(DynamicObject::firstVal));
+        std::memset(&val->firstVal, 0, int_size * sizeof(val->firstVal));
     auto first_obj = &val->firstVal + int_size;
     if (elems)
         std::transform(elems, elems + size, first_obj, [](auto& v) { return v.bits(); });
