@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-MODE=DEBUG
-BUILD_DIR=Debug
+MODE=FASTDEBUG
+BUILD_DIR=FastDebug
 GTEST_FILTER=*
 if [ "$1" == "--local" ]; then
     source local_build_and_test

@@ -3,6 +3,7 @@
 !.gitignore
 !.travis.yml
 /Debug
+/FastDebug
 /Release
 /xcode
 /local_inst
