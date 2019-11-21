@@ -227,8 +227,7 @@ Force create_object1_2(Value type, Int64 i0, Value elem0, Value elem1);
 Force create_object1_3(Value type, Int64 i0, Value elem0, Value elem1, Value elem2);
 Force create_object1_4(Value type, Int64 i0, Value elem0, Value elem1, Value elem2, Value elem3);
 std::uint32_t get_dynamic_object_int_size(Value obj);
-std::uint32_t get_object_size(Value obj);
-void set_object_size(Value obj, std::uint32_t size);
+void set_dynamic_object_size(Value obj, std::uint32_t size);
 void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
@@ -254,6 +253,11 @@ inline Value get_object_type_unchecked(Value obj)
     return *get_ptr<Value>(obj);
 }
 
+inline bool is_object_type_dynamic(Value type)
+{
+    return get_ptr<ObjectType>(type)->isDynamic;
+}
+
 inline Value get_object_type(Value obj)
 {
     return obj ? get_object_type_unchecked(obj) : nil;
@@ -262,7 +266,24 @@ inline Value get_object_type(Value obj)
 inline bool is_object_dynamic(Value obj)
 {
     assert(obj);
-    return get_ptr<ObjectType>(get_object_type_unchecked(obj))->isDynamic;
+    return is_object_type_dynamic(get_object_type_unchecked(obj));
+}
+
+inline std::uint32_t get_dynamic_object_size(Value obj)
+{
+    if (!obj)
+        return 0;
+    assert(is_object_dynamic(obj));
+    return get_ptr<DynamicObject>(obj)->valCount;
+}
+
+inline std::uint32_t get_static_object_size(Value obj)
+{
+    if (!obj)
+        return 0;
+    auto type = get_object_type(obj);
+    assert(!is_object_type_dynamic(type));
+    return get_ptr<ObjectType>(type)->fieldCount;
 }
 
 inline Value get_object_element_type(Value obj, std::uint32_t index)
@@ -281,23 +302,23 @@ inline bool is_object_element_value(Value obj, std::uint32_t index)
 inline Value get_dynamic_object_element(Value obj, std::uint32_t index)
 {
     assert(is_object_dynamic(obj));
-    assert(index < get_object_size(obj));
+    assert(index < get_dynamic_object_size(obj));
     auto ptr = get_ptr<DynamicObject>(obj);
     return Value{(&ptr->firstVal)[ptr->intCount + index]};
 }
 
 inline Value get_static_object_element(Value obj, std::uint32_t index)
 {
-    assert(index < get_object_size(obj));
     assert(!is_object_dynamic(obj));
+    assert(index < get_static_object_size(obj));
     assert(is_object_element_value(obj, index));
     return Value{(&get_ptr<StaticObject>(obj)->firstVal)[index]};
 }
 
 inline Int64 get_static_object_int(Value obj, std::uint32_t index)
 {
-    assert(index < get_object_size(obj));
     assert(!is_object_dynamic(obj));
+    assert(index < get_static_object_size(obj));
     assert(get_object_element_type(obj, index).is(type::Int64));
     return Int64((&get_ptr<StaticObject>(obj)->firstVal)[index]);
 }
@@ -310,8 +331,8 @@ inline const void *get_dynamic_object_int_ptr(Value obj, std::uint32_t index)
 
 inline Int64 get_dynamic_object_int(Value obj, std::uint32_t index)
 {
-    assert(index < get_dynamic_object_int_size(obj));
     assert(is_object_dynamic(obj));
+    assert(index < get_dynamic_object_int_size(obj));
     return Int64((&get_ptr<DynamicObject>(obj)->firstVal)[index]);
 }
 

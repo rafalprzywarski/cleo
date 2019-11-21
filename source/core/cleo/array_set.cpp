@@ -11,12 +11,12 @@ Force create_array_set()
 
 std::uint32_t get_array_set_size(Value s)
 {
-    return get_object_size(s);
+    return get_dynamic_object_size(s);
 }
 
 Value get_array_set_elem(Value s, std::uint32_t index)
 {
-    return index < get_object_size(s) ? get_dynamic_object_element(s, index) : nil;
+    return index < get_dynamic_object_size(s) ? get_dynamic_object_element(s, index) : nil;
 }
 
 Value array_set_get(Value s, Value k)

@@ -187,7 +187,6 @@ TEST_F(memory_test, should_handle_cycles)
     root2 = create_object0(*type2);
     root3 = create_object2(*type3, *root1, *root2);
     set_object_element(*root1, 0, *root3);
-    set_object_type(*root2, *root3);
 
     auto num_allocations_after = allocations.size();
 

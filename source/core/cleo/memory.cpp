@@ -57,13 +57,19 @@ void mark_value(Value val)
             case tag::OBJECT:
                 {
                     vals.push_back(get_object_type(val));
-                    auto size = get_object_size(val);
-                    for (decltype(get_object_size(val)) i = 0; i != size; ++i)
-                        if (is_object_dynamic(val))
-                            vals.push_back(get_dynamic_object_element(val, i));
-                        else
+                    if (is_object_dynamic(val))
+                    {
+                        auto size = get_dynamic_object_size(val);
+                        for (decltype(size) i = 0; i != size; ++i)
+                                vals.push_back(get_dynamic_object_element(val, i));
+                    }
+                    else
+                    {
+                        auto size = get_static_object_size(val);
+                        for (decltype(size) i = 0; i != size; ++i)
                             if (is_object_element_value(val, i))
                                 vals.push_back(get_static_object_element(val, i));
+                    }
                 }
                 break;
             case tag::OBJECT_TYPE:

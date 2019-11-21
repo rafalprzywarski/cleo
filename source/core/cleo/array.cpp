@@ -69,7 +69,7 @@ Value get_transient_array_elem(Value v, std::uint32_t index)
 
 Force transient_array_conj(Value v, Value e)
 {
-    auto capacity = get_object_size(v);
+    auto capacity = get_dynamic_object_size(v);
     auto size = get_transient_array_size(v);
     auto new_size = size + 1;
     if (size < capacity)
@@ -98,7 +98,7 @@ Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e)
 
 Force transient_array_persistent(Value v)
 {
-    set_object_size(v, get_transient_array_size(v));
+    set_dynamic_object_size(v, get_transient_array_size(v));
     set_object_type(v, *type::Array);
     return v;
 }

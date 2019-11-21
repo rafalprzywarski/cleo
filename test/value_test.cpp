@@ -170,13 +170,13 @@ TEST_F(value_test, should_store_object_values)
     const std::array<Value, 3> elems{{*elem0, *elem1, *elem2}};
     Root obj{create_object(*type, elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
-    ASSERT_EQ(elems.size(), get_object_size(*obj));
+    ASSERT_EQ(elems.size(), get_dynamic_object_size(*obj));
     ASSERT_TRUE(elems[0].is(get_dynamic_object_element(*obj, 0)));
     ASSERT_TRUE(elems[1].is(get_dynamic_object_element(*obj, 1)));
     ASSERT_TRUE(elems[2].is(get_dynamic_object_element(*obj, 2)));
 
     obj = create_object(*type, nullptr, 0);
-    ASSERT_EQ(0u, get_object_size(*obj));
+    ASSERT_EQ(0u, get_dynamic_object_size(*obj));
 }
 
 TEST_F(value_test, should_store_int_values_in_dynamic_objects)
@@ -196,13 +196,13 @@ TEST_F(value_test, should_store_int_values_in_dynamic_objects)
     ASSERT_EQ(0, get_dynamic_object_int(*obj, 2));
     ASSERT_EQ(654, get_dynamic_object_int(*obj, 3));
     ASSERT_EQ(-1, get_dynamic_object_int(*obj, 4));
-    ASSERT_EQ(elems.size(), get_object_size(*obj));
+    ASSERT_EQ(elems.size(), get_dynamic_object_size(*obj));
     ASSERT_TRUE(elems[0].is(get_dynamic_object_element(*obj, 0)));
     ASSERT_TRUE(elems[1].is(get_dynamic_object_element(*obj, 1)));
     ASSERT_TRUE(elems[2].is(get_dynamic_object_element(*obj, 2)));
 
     obj = create_object(*type, nullptr, 0);
-    ASSERT_EQ(0u, get_object_size(*obj));
+    ASSERT_EQ(0u, get_dynamic_object_size(*obj));
 }
 
 TEST_F(value_test, should_store_int_and_ptr_values_in_static_objects)
@@ -218,7 +218,7 @@ TEST_F(value_test, should_store_int_and_ptr_values_in_static_objects)
     const std::array<Value, 4> elems{{*elem0, *elem1, *elem2, *elem3}};
     Root obj{create_object(*type, elems.data(), elems.size())};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
-    ASSERT_EQ(4u, get_object_size(*obj));
+    ASSERT_EQ(4u, get_static_object_size(*obj));
     ASSERT_TRUE(elems[0].is(get_static_object_element(*obj, 0)));
     ASSERT_EQ(10, get_static_object_int(*obj, 1));
     ASSERT_TRUE(elems[2].is(get_static_object_element(*obj, 2)));
@@ -233,7 +233,7 @@ TEST_F(value_test, should_initialize_dynamic_object_values_to_nil_or_0)
     ASSERT_EQ(2u, get_dynamic_object_int_size(*obj));
     ASSERT_EQ(0, get_dynamic_object_int(*obj, 0));
     ASSERT_EQ(0, get_dynamic_object_int(*obj, 1));
-    ASSERT_EQ(3u, get_object_size(*obj));
+    ASSERT_EQ(3u, get_dynamic_object_size(*obj));
     ASSERT_TRUE(get_dynamic_object_element(*obj, 0).is_nil());
     ASSERT_TRUE(get_dynamic_object_element(*obj, 1).is_nil());
     ASSERT_TRUE(get_dynamic_object_element(*obj, 2).is_nil());
@@ -246,7 +246,7 @@ TEST_F(value_test, should_initialize_static_object_values_to_nil_or_0)
     Root type{create_static_object_type("org", "xxx", names.data(), types.data(), names.size())};
     Root obj{create_object(*type, nullptr, 4)};
     ASSERT_EQ(tag::OBJECT, get_value_tag(*obj));
-    ASSERT_EQ(4u, get_object_size(*obj));
+    ASSERT_EQ(4u, get_static_object_size(*obj));
     ASSERT_TRUE(get_static_object_element(*obj, 0).is_nil());
     ASSERT_EQ(0, get_static_object_int(*obj, 1));
     ASSERT_TRUE(get_static_object_element(*obj, 2).is_nil());

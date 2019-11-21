@@ -34,7 +34,7 @@ Force create_bytecode_fn_exception_table(const Int64 *entries, const Value *type
 
 std::uint32_t get_bytecode_fn_exception_table_size(Value et)
 {
-    return get_object_size(et);
+    return get_dynamic_object_size(et);
 }
 
 Int64 get_bytecode_fn_exception_table_start_offset(Value et, std::uint32_t i)

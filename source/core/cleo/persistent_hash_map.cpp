@@ -66,7 +66,7 @@ Value collision_node_get(Value node, std::uint32_t size, Value key, Value def_va
 
 Value collision_node_get(Value node, Value key, Value def_val)
 {
-    return collision_node_get(node, get_object_size(node), key, def_val);
+    return collision_node_get(node, get_dynamic_object_size(node), key, def_val);
 }
 
 Value collision_node_get(Value node, Value key, std::uint32_t key_hash, Value def_val)
@@ -85,7 +85,7 @@ Force collision_node_assoc(Value node, std::uint8_t shift, Value key, std::uint3
     auto node_hash = get_dynamic_object_int(node, 0);
     if (key_hash != node_hash)
         return create_array_node(shift, key, key_hash, val, node_hash, node);
-    auto node_size = get_object_size(node);
+    auto node_size = get_dynamic_object_size(node);
     bool should_replace = !collision_node_get(node, key, *SENTINEL).is(*SENTINEL);
     if (should_replace)
     {
@@ -119,7 +119,7 @@ std::pair<Force, Value> collision_node_dissoc(Value node, Value key, std::uint32
     auto node_hash = get_dynamic_object_int(node, 0);
     if (node_hash != key_hash)
         return {node, *SENTINEL};
-    auto node_size = get_object_size(node);
+    auto node_size = get_dynamic_object_size(node);
     decltype(node_size) index = 0;
     while (index < node_size && get_dynamic_object_element(node, index) != key)
         index += 2;
@@ -137,8 +137,8 @@ Value collision_node_equal(Value left, Value right)
 {
     assert(get_value_type(left).is(*type::PersistentHashMapCollisionNode));
     assert(get_value_type(right).is(*type::PersistentHashMapCollisionNode));
-    auto size = get_object_size(left);
-    if (size != get_object_size(right))
+    auto size = get_dynamic_object_size(left);
+    if (size != get_dynamic_object_size(right))
         return nil;
     if (get_dynamic_object_int(left, 0) != get_dynamic_object_int(right, 0))
         return nil;
@@ -239,7 +239,7 @@ Value array_node_get(Value node, std::uint8_t shift, Value key, std::uint32_t ke
     }
     if (node_map & key_bit)
     {
-        auto node_index = map_node_index(node_map, get_object_size(node), key_bit);
+        auto node_index = map_node_index(node_map, get_dynamic_object_size(node), key_bit);
         auto child_node = get_dynamic_object_element(node, node_index);
         if (get_value_type(child_node).is(*type::PersistentHashMapCollisionNode))
             return collision_node_get(child_node, key, key_hash, def_val);
@@ -256,7 +256,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
     std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
     std::uint32_t key_bit = map_bit(shift, key_hash);
     auto key_index = map_key_index(value_map, key_bit);
-    auto node_size = get_object_size(node);
+    auto node_size = get_dynamic_object_size(node);
     if (value_map & key_bit)
     {
         auto key0 = get_dynamic_object_element(node, key_index);
@@ -333,7 +333,7 @@ std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value 
         auto key0 = get_dynamic_object_element(node, key_index);
         if (key0 != key)
             return {node, *SENTINEL};
-        auto node_size = get_object_size(node);
+        auto node_size = get_dynamic_object_size(node);
         auto value_count = popcount(value_map);
         if (value_count == 2 && node_map == 0)
             return {get_dynamic_object_element(node, 3 - key_index), get_dynamic_object_element(node, 2 - key_index)};
@@ -351,7 +351,7 @@ std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value 
     }
     else if (node_map & key_bit)
     {
-        auto node_size = get_object_size(node);
+        auto node_size = get_dynamic_object_size(node);
         auto node_index = map_node_index(node_map, node_size, key_bit);
         auto child_node = get_dynamic_object_element(node, node_index);
         std::pair<Root, Value> new_child{
@@ -397,7 +397,7 @@ Value array_node_equal(Value left, Value right)
     for (std::uint32_t i = 0; i < std::uint32_t(value_count * 2); ++i)
         if (get_dynamic_object_element(left, i) != get_dynamic_object_element(right, i))
             return nil;
-    auto node_size = get_object_size(left);
+    auto node_size = get_dynamic_object_size(left);
     for (std::uint32_t i = value_count * 2; i < node_size; ++i)
     {
         auto left_child = get_dynamic_object_element(left, i);
@@ -621,12 +621,12 @@ Value get_persistent_hash_map_seq_first(Value s)
 
 Force get_persistent_hash_map_seq_next(Value s)
 {
-    if (get_object_size(s) == 1)
+    if (get_dynamic_object_size(s) == 1)
         return nil;
     auto index = get_dynamic_object_int(s, 0);
     auto node = get_dynamic_object_element(s, 1);
     auto parent = get_dynamic_object_element(s, 2);
-    while (index == get_object_size(node))
+    while (index == get_dynamic_object_size(node))
     {
         if (!parent)
             return nil;

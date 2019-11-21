@@ -189,14 +189,14 @@ struct persistent_hash_map_test : Test
     {
         if (get_value_type(node).is(*type::PersistentHashMapCollisionNode))
         {
-            return get_object_size(node) / 2;
+            return get_dynamic_object_size(node) / 2;
         }
         if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
         {
             std::uint64_t value_node_map = get_dynamic_object_int(node, 0);
             std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
             std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
-            auto node_size = get_object_size(node);
+            auto node_size = get_dynamic_object_size(node);
             Int64 size = __builtin_popcount(value_map);
             for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)
                 size += branch_size(get_dynamic_object_element(node, node_size - i - 1));
@@ -213,7 +213,7 @@ struct persistent_hash_map_test : Test
         {
             std::uint64_t value_node_map = get_dynamic_object_int(node, 0);
             std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
-            auto node_size = get_object_size(node);
+            auto node_size = get_dynamic_object_size(node);
             for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)
                 check_node_invariant(get_dynamic_object_element(node, node_size - i - 1));
         }

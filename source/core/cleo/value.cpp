@@ -350,19 +350,9 @@ std::uint32_t get_dynamic_object_int_size(Value obj)
     return get_ptr<DynamicObject>(obj)->intCount;
 }
 
-std::uint32_t get_object_size(Value obj)
+void set_dynamic_object_size(Value obj, std::uint32_t size)
 {
-    if (!obj)
-        return 0;
-    auto type = get_ptr<ObjectType>(get_object_type(obj));
-    if (type->isDynamic)
-        return get_ptr<DynamicObject>(obj)->valCount;
-    return type->fieldCount;
-}
-
-void set_object_size(Value obj, std::uint32_t size)
-{
-    assert(size <= get_object_size(obj));
+    assert(size <= get_dynamic_object_size(obj));
     assert(is_object_dynamic(obj));
     get_ptr<DynamicObject>(obj)->valCount = size;
 }
@@ -371,6 +361,7 @@ void set_object_type(Value obj, Value type)
 {
     static_assert(offsetof(StaticObject, type) == 0, "type has to be first");
     static_assert(offsetof(DynamicObject, type) == 0, "type has to be first");
+    assert(is_object_dynamic(obj) == is_object_type_dynamic(type));
     *get_ptr<Value>(obj) = type;
 }
 
@@ -392,15 +383,16 @@ void set_object_int(Value obj, std::uint32_t index, Int64 val)
 
 void set_object_element(Value obj, std::uint32_t index, Value val)
 {
-    assert(index < get_object_size(obj));
     auto type = get_ptr<ObjectType>(get_object_type(obj));
     if (type->isDynamic)
     {
+        assert(index < get_dynamic_object_size(obj));
         auto ptr = get_ptr<DynamicObject>(obj);
         (&ptr->firstVal)[ptr->intCount + index] = val.bits();
     }
     else
     {
+        assert(index < get_static_object_size(obj));
         assert(index < type->fieldCount);
         if ((&type->firstField)[index].type.is(type::Int64))
         {

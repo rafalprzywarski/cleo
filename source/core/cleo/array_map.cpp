@@ -13,7 +13,7 @@ Force create_array_map()
 
 std::uint32_t get_array_map_size(Value m)
 {
-    return get_object_size(m) / 2;
+    return get_dynamic_object_size(m) / 2;
 }
 
 Value get_array_map_key(Value m, std::uint32_t index)
