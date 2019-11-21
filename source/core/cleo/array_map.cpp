@@ -132,19 +132,18 @@ Force array_map_seq(Value m)
 
 Value get_array_map_seq_first(Value s)
 {
-    return get_dynamic_object_element(s, 0);
+    return get_static_object_element(s, 0);
 }
 
 Force get_array_map_seq_next(Value s)
 {
-    auto index = get_int64_value(get_dynamic_object_element(s, 2));
-    auto m = get_dynamic_object_element(s, 1);
+    auto index = get_static_object_int(s, 2);
+    auto m = get_static_object_element(s, 1);
     if (index == get_array_map_size(m))
         return nil;
     std::array<Value, 2> kv{{get_array_map_key(m, index), get_array_map_val(m, index)}};
     Root kvv{create_array(kv.data(), kv.size())};
-    Root new_index{create_int64(index + 1)};
-    return create_object3(*type::ArrayMapSeq, *kvv, m, *new_index);
+    return create_static_object(*type::ArrayMapSeq, *kvv, m, index + 1);
 }
 
 }
