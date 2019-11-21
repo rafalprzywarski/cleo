@@ -242,8 +242,8 @@ Force create_c_fn(void *cfn, Value name, Value ret_type, Value param_types)
     generate_code(code, cfn, param_types);
 
     enable_execution(code, max_size);
-    Root caddr{create_int64(reinterpret_cast<Int64>(code))};
-    return create_object3(*type::CFunction, *caddr, name, param_types);
+    auto caddr = Int64(reinterpret_cast<std::uintptr_t>(code));
+    return create_static_object(*type::CFunction, caddr, name, param_types);
 }
 
 std::uint64_t get_arg_bit_value(Value param_types, std::uint8_t i, Value arg)
@@ -267,15 +267,15 @@ std::uint64_t get_arg_bit_value(Value param_types, std::uint8_t i, Value arg)
 Force call_c_function(const Value *args, std::uint8_t num_args)
 {
     auto fn = args[0];
-    auto addr = get_dynamic_object_element(fn, 0);
-    auto name = get_dynamic_object_element(fn, 1);
-    auto param_types = get_dynamic_object_element(fn, 2);
+    auto addr = std::uintptr_t(std::uint64_t(get_static_object_int(fn, 0)));
+    auto name = get_static_object_element(fn, 1);
+    auto param_types = get_static_object_element(fn, 2);
     if ((std::uint32_t(num_args) - 1) != get_array_size(param_types))
         throw_arity_error(name, num_args - 1);
     std::uint64_t raw_args[MAX_ARGS];
     for (decltype(num_args) i = 1; i < num_args; ++i)
         raw_args[i - 1] = get_arg_bit_value(param_types, i - 1, args[i]);
-    return Value{reinterpret_cast<CFunction>(get_int64_value(addr))(raw_args, num_args - 1)};
+    return Value{reinterpret_cast<CFunction>(addr)(raw_args, num_args - 1)};
 }
 
 Force import_c_fn(Value libname, Value fnname, Value ret_type, Value param_types)

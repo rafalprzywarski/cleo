@@ -203,7 +203,7 @@ const Value Int64{*Int64_root};
 const ConstRoot Float64{create_basic_type("cleo.core", "Float64")};
 const ConstRoot String{create_basic_type("cleo.core", "String")};
 const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")};
-const ConstRoot CFunction{create_type("cleo.core", "CFunction")};
+const ConstRoot CFunction{create_static_type("cleo.core", "CFunction", {{"addr", Int64}, "name", "param-types"})};
 const ConstRoot Symbol{create_basic_type("cleo.core", "Symbol")};
 const ConstRoot Keyword{create_basic_type("cleo.core", "Keyword")};
 const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "meta"})};
