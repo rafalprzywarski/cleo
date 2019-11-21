@@ -170,11 +170,6 @@ const ConstRoot Type{create_basic_type("cleo.core", "Type")};
 namespace
 {
 
-Force create_type(const std::string& ns, const std::string& name)
-{
-    return create_dynamic_object_type(ns, name);
-}
-
 Force create_dynamic_type(const std::string& ns, const std::string& name)
 {
     return create_dynamic_object_type(ns, name);
@@ -233,8 +228,8 @@ const ConstRoot BytecodeFnExceptionTable{create_dynamic_type("cleo.core", "Bytec
 const ConstRoot Atom{create_static_type("cleo.core", "Atom", {"value"})};
 const ConstRoot PersistentMap{create_basic_type("cleo.core", "PersistentMap")};
 const ConstRoot PersistentHashMap{create_dynamic_type("cleo.core", "PersistentHashMap")};
-const ConstRoot PersistentHashMapSeq{create_type("cleo.core", "PersistentHashMapSeq")};
-const ConstRoot PersistentHashMapSeqParent{create_type("cleo.core", "PersistentHashMapSeqParent")};
+const ConstRoot PersistentHashMapSeq{create_static_type("cleo.core", "PersistentHashMapSeq", {"first", "node", {"index", Int64}, "parent"})};
+const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "PersistentHashMapSeqParent", {{"index", Int64}, "node", "parent"})};
 const ConstRoot PersistentHashMapCollisionNode(create_dynamic_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_dynamic_type("cleo.core", "PersistentHashMapArrayNode"));
 const ConstRoot Exception{create_basic_type("cleo.core", "Exception")};
