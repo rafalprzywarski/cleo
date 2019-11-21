@@ -169,7 +169,13 @@ const ConstRoot Type{create_basic_type("cleo.core", "Type")};
 
 namespace
 {
+
 Force create_type(const std::string& ns, const std::string& name)
+{
+    return create_dynamic_object_type(ns, name);
+}
+
+Force create_dynamic_type(const std::string& ns, const std::string& name)
 {
     return create_dynamic_object_type(ns, name);
 }
@@ -210,9 +216,9 @@ const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "me
 const ConstRoot List{create_static_type("cleo.core", "List", {{"size", Int64}, "first", "next"})};
 const ConstRoot Cons{create_static_type("cleo.core", "Cons", {"first", "next"})};
 const ConstRoot LazySeq{create_static_type("cleo.core", "LazySeq", {"fn", "seq"})};
-const ConstRoot Array{create_type("cleo.core", "Array")};
-const ConstRoot TransientArray{create_type("cleo.core", "TransientArray")};
-const ConstRoot ArraySeq{create_type("cleo.core", "ArraySeq")};
+const ConstRoot Array{create_dynamic_type("cleo.core", "Array")};
+const ConstRoot TransientArray{create_dynamic_type("cleo.core", "TransientArray")};
+const ConstRoot ArraySeq{create_static_type("cleo.core", "ArraySeq", {"array", {"index", Int64}})};
 const ConstRoot ArrayMap{create_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_type("cleo.core", "ArrayMapSeq")};
 const ConstRoot ArraySet{create_type("cleo.core", "ArraySet")};

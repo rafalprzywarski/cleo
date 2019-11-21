@@ -15,21 +15,21 @@ Force array_seq(Value v)
 {
     if (get_array_size(v) == 0)
         return nil;
-    return create_object1_1(*type::ArraySeq, 0, v);
+    return create_static_object(*type::ArraySeq, v, 0);
 }
 
 Value get_array_seq_first(Value s)
 {
-    return get_array_elem(get_dynamic_object_element(s, 0), get_dynamic_object_int(s, 0));
+    return get_array_elem(get_static_object_element(s, 0), get_static_object_int(s, 1));
 }
 
 Force get_array_seq_next(Value s)
 {
-    auto v = get_dynamic_object_element(s, 0);
-    auto i = get_dynamic_object_int(s, 0) + 1;
+    auto v = get_static_object_element(s, 0);
+    auto i = get_static_object_int(s, 1) + 1;
     if (get_array_size(v) == i)
         return nil;
-    return create_object1_1(*type::ArraySeq, i, v);
+    return create_static_object(*type::ArraySeq, v, i);
 }
 
 Force array_conj(Value v, Value e)

@@ -216,6 +216,7 @@ void set_string_hash(Value val, std::uint32_t h);
 Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size);
 inline Force create_object(Value type, const Value *elems, std::uint32_t size) { return create_object(type, nullptr, 0, elems, size); }
 Force create_static_object(Value type, Int64 elem0, Value elem1, Value elem2);
+Force create_static_object(Value type, Value elem0, Int64 elem1);
 Force create_object0(Value type);
 Force create_object1(Value type, Value elem);
 Force create_object2(Value type, Value elem0, Value elem1);

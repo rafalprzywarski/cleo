@@ -219,13 +219,27 @@ void set_string_hash(Value val, std::uint32_t h)
 namespace
 {
 
+auto create_static_object_uninitialized(Value type)
+{
+    assert(get_value_tag(type) == tag::OBJECT_TYPE);
+    auto otype = get_ptr<const ObjectType>(type);
+    assert(!otype->isDynamic);
+    auto val = static_cast<StaticObject *>(mem_alloc(offsetof(StaticObject, firstVal) + otype->fieldCount * sizeof(StaticObject::firstVal)));
+    val->type = type;
+    struct
+    {
+        ValueBits *elems;
+        Value val;
+    } ret{&val->firstVal, tag_ptr(val, tag::OBJECT)};
+    return ret;
+}
+
 Force create_static_object(Value type, const ObjectType& otype, const Value *elems, std::uint32_t size)
 {
     assert(size == otype.fieldCount);
-    auto val = static_cast<StaticObject *>(mem_alloc(offsetof(StaticObject, firstVal) + size * sizeof(StaticObject::firstVal)));
-    val->type = type;
+    auto ev = create_static_object_uninitialized(type);
     if (elems)
-        std::transform(elems, elems + size, &otype.firstField, &val->firstVal,
+        std::transform(elems, elems + size, &otype.firstField, ev.elems,
                        [](auto& v, auto& f)
                        {
                            if (!f.type.is(type::Int64))
@@ -234,9 +248,9 @@ Force create_static_object(Value type, const ObjectType& otype, const Value *ele
                            return ValueBits(get_int64_value(v));
                        });
     else
-        std::fill_n(&val->firstVal, size, nil.bits());
+        std::fill_n(ev.elems, size, nil.bits());
     assert(nil.bits() == 0);
-    return tag_ptr(val, tag::OBJECT);
+    return ev.val;
 }
 
 Force create_dynamic_object(Value type, const ObjectType& otype, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size)
@@ -271,17 +285,20 @@ Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const
 
 Force create_static_object(Value type, Int64 elem0, Value elem1, Value elem2)
 {
-    assert(get_value_tag(type) == tag::OBJECT_TYPE);
-    auto otype = get_ptr<const ObjectType>(type);
-    assert(!otype->isDynamic);
-    auto val = static_cast<StaticObject *>(mem_alloc(offsetof(StaticObject, firstVal) + 3 * sizeof(StaticObject::firstVal)));
-    val->type = type;
-    auto elems = &val->firstVal;
-    elems[0] = ValueBits(elem0);
-    elems[1] = elem1.bits();
-    elems[2] = elem2.bits();
-    return tag_ptr(val, tag::OBJECT);
+    auto ev = create_static_object_uninitialized(type);
+    ev.elems[0] = ValueBits(elem0);
+    ev.elems[1] = elem1.bits();
+    ev.elems[2] = elem2.bits();
+    return ev.val;
 
+}
+
+Force create_static_object(Value type, Value elem0, Int64 elem1)
+{
+    auto ev = create_static_object_uninitialized(type);
+    ev.elems[0] = elem0.bits();
+    ev.elems[1] = ValueBits(elem1);
+    return ev.val;
 }
 
 Force create_object0(Value type)
