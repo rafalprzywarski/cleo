@@ -18,8 +18,8 @@ Value lazy_seq_seq(Value ls)
         return get_static_object_element(ls, 1);
     Root s{call(&fn, 1)};
     s = call_multimethod1(*rt::seq, *s);
-    set_object_element(ls, 1, *s);
-    set_object_element(ls, 0, nil);
+    set_static_object_element(ls, 1, *s);
+    set_static_object_element(ls, 0, nil);
     return *s;
 }
 

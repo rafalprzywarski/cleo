@@ -27,7 +27,7 @@ Value get_ns_mapping(Value ns)
 
 void set_ns_mapping(Value ns, Value mapping)
 {
-    set_object_element(ns, 2, mapping);
+    set_static_object_element(ns, 2, mapping);
 }
 
 Value get_ns_aliases(Value ns)
@@ -37,7 +37,7 @@ Value get_ns_aliases(Value ns)
 
 void set_ns_aliseses(Value ns, Value aliases)
 {
-    set_object_element(ns, 3, aliases);
+    set_static_object_element(ns, 3, aliases);
 }
 
 Value get_or_create_ns(Value name, Value meta)

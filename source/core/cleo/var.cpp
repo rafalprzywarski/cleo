@@ -62,7 +62,7 @@ void pop_bindings()
 
 void set_var_root_value(Value var, Value val)
 {
-    set_object_element(var, 1, val);
+    set_static_object_element(var, 1, val);
 }
 
 void set_var_meta(Value var, Value meta)
@@ -75,7 +75,7 @@ void set_var_meta(Value var, Value meta)
         nmeta = map_assoc(*nmeta, NAME_KEY, map_get(vmeta, NAME_KEY));
     if (!map_get(*nmeta, NS_KEY))
         nmeta = map_assoc(*nmeta, NS_KEY, map_get(vmeta, NS_KEY));
-    set_object_element(var, 2, *nmeta);
+    set_static_object_element(var, 2, *nmeta);
 }
 
 void set_var(Value sym, Value val)

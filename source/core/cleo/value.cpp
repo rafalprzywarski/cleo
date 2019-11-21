@@ -365,43 +365,42 @@ void set_object_type(Value obj, Value type)
     *get_ptr<Value>(obj) = type;
 }
 
-void set_object_int(Value obj, std::uint32_t index, Int64 val)
+void set_dynamic_object_int(Value obj, std::uint32_t index, Int64 val)
 {
-    auto type = get_ptr<ObjectType>(get_object_type(obj));
-    if (type->isDynamic)
-    {
-        assert(index < get_dynamic_object_int_size(obj));
-        std::memcpy(&get_ptr<DynamicObject>(obj)->firstVal + index, &val, sizeof(val));
-    }
-    else
-    {
-        assert(index < type->fieldCount);
-        assert((&type->firstField)[index].type.is(type::Int64));
-        (&get_ptr<StaticObject>(obj)->firstVal)[index] = ValueBits(val);
-    }
+    assert(is_object_dynamic(obj));
+    assert(index < get_dynamic_object_int_size(obj));
+    std::memcpy(&get_ptr<DynamicObject>(obj)->firstVal + index, &val, sizeof(val));
 }
 
-void set_object_element(Value obj, std::uint32_t index, Value val)
+void set_static_object_int(Value obj, std::uint32_t index, Int64 val)
 {
+    assert(!is_object_dynamic(obj));
     auto type = get_ptr<ObjectType>(get_object_type(obj));
-    if (type->isDynamic)
+    assert(index < type->fieldCount);
+    assert((&type->firstField)[index].type.is(type::Int64));
+    (&get_ptr<StaticObject>(obj)->firstVal)[index] = ValueBits(val);
+}
+
+void set_dynamic_object_element(Value obj, std::uint32_t index, Value val)
+{
+    assert(is_object_dynamic(obj));
+    assert(index < get_dynamic_object_size(obj));
+    auto ptr = get_ptr<DynamicObject>(obj);
+    (&ptr->firstVal)[ptr->intCount + index] = val.bits();
+}
+
+void set_static_object_element(Value obj, std::uint32_t index, Value val)
+{
+    assert(!is_object_dynamic(obj));
+    auto type = get_ptr<ObjectType>(get_object_type(obj));
+    assert(index < type->fieldCount);
+    if (get_static_object_element_type(obj, index).is(type::Int64))
     {
-        assert(index < get_dynamic_object_size(obj));
-        auto ptr = get_ptr<DynamicObject>(obj);
-        (&ptr->firstVal)[ptr->intCount + index] = val.bits();
+        assert(get_value_tag(val) == tag::INT64);
+        (&get_ptr<StaticObject>(obj)->firstVal)[index] = get_int64_value(val);
     }
     else
-    {
-        assert(index < get_static_object_size(obj));
-        assert(index < type->fieldCount);
-        if ((&type->firstField)[index].type.is(type::Int64))
-        {
-            assert(get_value_tag(val) == tag::INT64);
-            (&get_ptr<StaticObject>(obj)->firstVal)[index] = get_int64_value(val);
-        }
-        else
-            (&get_ptr<StaticObject>(obj)->firstVal)[index] = val.bits();
-    }
+        (&get_ptr<StaticObject>(obj)->firstVal)[index] = val.bits();
 }
 
 Force create_object_type(Value name, const Value *fields, const Value *types, std::uint32_t size, bool is_constructible, bool is_dynamic)

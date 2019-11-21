@@ -30,7 +30,7 @@ auto popcount(std::uint32_t b)
 void copy_object_elements(Value dst, std::uint32_t dst_index, Value src, std::uint32_t src_index, std::uint32_t src_end)
 {
     for (auto i = src_index, j = dst_index; i != src_end; ++i, ++j)
-        set_object_element(dst, j, get_dynamic_object_element(src, i));
+        set_dynamic_object_element(dst, j, get_dynamic_object_element(src, i));
 }
 
 Force create_collision_node(std::uint32_t hash, Value k0, Value v0, Value k1, Value v1)
@@ -93,11 +93,11 @@ Force collision_node_assoc(Value node, std::uint8_t shift, Value key, std::uint3
         for (decltype(node_size) i = 0; i < node_size; i += 2)
         {
             auto ek = get_dynamic_object_element(node, i);
-            set_object_element(*new_node, i, ek);
+            set_dynamic_object_element(*new_node, i, ek);
             if (ek != key)
-                set_object_element(*new_node, i + 1, get_dynamic_object_element(node, i + 1));
+                set_dynamic_object_element(*new_node, i + 1, get_dynamic_object_element(node, i + 1));
             else
-                set_object_element(*new_node, i + 1, val);
+                set_dynamic_object_element(*new_node, i + 1, val);
         }
         replaced = true;
         return *new_node;
@@ -106,8 +106,8 @@ Force collision_node_assoc(Value node, std::uint8_t shift, Value key, std::uint3
     {
         Root new_node{create_object(*type::PersistentHashMapCollisionNode, &node_hash, 1, nullptr, node_size + 2)};
         copy_object_elements(*new_node, 0, node, 0, node_size);
-        set_object_element(*new_node, node_size, key);
-        set_object_element(*new_node, node_size + 1, val);
+        set_dynamic_object_element(*new_node, node_size, key);
+        set_dynamic_object_element(*new_node, node_size + 1, val);
         replaced = false;
         return *new_node;
     }
@@ -265,8 +265,8 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
             Root new_node{create_array_node(value_node_map, node_size)};
 
             copy_object_elements(*new_node, 0, node, 0, key_index);
-            set_object_element(*new_node, key_index, key);
-            set_object_element(*new_node, key_index + 1, val);
+            set_dynamic_object_element(*new_node, key_index, key);
+            set_dynamic_object_element(*new_node, key_index + 1, val);
             copy_object_elements(*new_node, key_index + 2, node, key_index + 2, node_size);
 
             replaced = true;
@@ -286,7 +286,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
 
             copy_object_elements(*new_node, 0, node, 0, key_index);
             copy_object_elements(*new_node, key_index, node, key_index + 2, node_index + 1);
-            set_object_element(*new_node, node_index - 1, *new_child);
+            set_dynamic_object_element(*new_node, node_index - 1, *new_child);
             copy_object_elements(*new_node, node_index, node, node_index + 1, node_size);
 
             replaced = false;
@@ -303,7 +303,7 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
             collision_node_assoc(child_node, shift + 5, key, key_hash, val, replaced) :
             array_node_assoc(child_node, shift + 5, key, key_hash, val, replaced)};
         copy_object_elements(*new_node, 0, node, 0, node_index);
-        set_object_element(*new_node, node_index, *new_child);
+        set_dynamic_object_element(*new_node, node_index, *new_child);
         copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
         return *new_node;
     }
@@ -312,8 +312,8 @@ Value array_node_assoc(Value node, std::uint8_t shift, Value key, std::uint32_t 
         Int64 new_value_map = combine_maps(value_map | key_bit, node_map);
         Root new_node{create_array_node(new_value_map, node_size + 2)};
         copy_object_elements(*new_node, 0, node, 0, key_index);
-        set_object_element(*new_node, key_index, key);
-        set_object_element(*new_node, key_index + 1, val);
+        set_dynamic_object_element(*new_node, key_index, key);
+        set_dynamic_object_element(*new_node, key_index + 1, val);
         copy_object_elements(*new_node, key_index + 2, node, key_index, node_size);
 
         replaced = false;
@@ -368,15 +368,15 @@ std::pair<Force, Value> array_node_dissoc(Value node, std::uint8_t shift, Value 
             Root new_node{create_array_node(new_value_node_map, node_size + 1)};
             auto key_index = map_key_index(value_map, key_bit);
             copy_object_elements(*new_node, 0, node, 0, key_index);
-            set_object_element(*new_node, key_index, new_child.second);
-            set_object_element(*new_node, key_index + 1, *new_child.first);
+            set_dynamic_object_element(*new_node, key_index, new_child.second);
+            set_dynamic_object_element(*new_node, key_index + 1, *new_child.first);
             copy_object_elements(*new_node, key_index + 2, node, key_index, node_index);
             copy_object_elements(*new_node, node_index + 2, node, node_index + 1, node_size);
             return {*new_node, *SENTINEL};
         }
         Root new_node{create_array_node(value_node_map, node_size)};
         copy_object_elements(*new_node, 0, node, 0, node_index);
-        set_object_element(*new_node, node_index, *new_child.first);
+        set_dynamic_object_element(*new_node, node_index, *new_child.first);
         copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
         return {*new_node, *SENTINEL};
     }

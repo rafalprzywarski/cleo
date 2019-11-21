@@ -17,7 +17,7 @@ Value atom_deref(Value atom)
 Force atom_reset(Value atom, Value val)
 {
     Root oldval{atom_deref(atom)};
-    set_object_element(atom, 0, val);
+    set_static_object_element(atom, 0, val);
     return *oldval;
 }
 

@@ -228,7 +228,7 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             stack[stack.size() - 2] =
                 is_object_dynamic(obj) ?
                 get_dynamic_object_element(obj, index) :
-                (is_object_element_value(obj, index) ?
+                (is_static_object_element_value(obj, index) ?
                  get_static_object_element(obj, index) :
                  create_int64(get_static_object_int(obj, index)).value());
             stack_pop();

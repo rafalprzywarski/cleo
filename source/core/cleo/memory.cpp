@@ -67,7 +67,7 @@ void mark_value(Value val)
                     {
                         auto size = get_static_object_size(val);
                         for (decltype(size) i = 0; i != size; ++i)
-                            if (is_object_element_value(val, i))
+                            if (is_static_object_element_value(val, i))
                                 vals.push_back(get_static_object_element(val, i));
                     }
                 }

@@ -58,7 +58,7 @@ Force transient_array(Value v)
     auto capacity = (size < 16 ? 32 : (size * 2));
     Root t{create_object(*type::TransientArray, &size, 1, nullptr, capacity)};
     for (std::uint32_t i = 0; i < size; ++i)
-        set_object_element(*t, i, get_dynamic_object_element(v, i));
+        set_dynamic_object_element(*t, i, get_dynamic_object_element(v, i));
     return *t;
 }
 
@@ -74,14 +74,14 @@ Force transient_array_conj(Value v, Value e)
     auto new_size = size + 1;
     if (size < capacity)
     {
-        set_object_int(v, 0, new_size);
-        set_object_element(v, size, e);
+        set_dynamic_object_int(v, 0, new_size);
+        set_dynamic_object_element(v, size, e);
         return v;
     }
     Root t{create_object(*type::TransientArray, &new_size, 1, nullptr, capacity * 2)};
     for (std::uint32_t i = 0; i < size; ++i)
-        set_object_element(*t, i, get_dynamic_object_element(v, i));
-    set_object_element(*t, size, e);
+        set_dynamic_object_element(*t, i, get_dynamic_object_element(v, i));
+    set_dynamic_object_element(*t, size, e);
     return *t;
 }
 
@@ -92,7 +92,7 @@ Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e)
         throw_index_out_of_bounds();
     if (index == size)
         return transient_array_conj(v, e);
-    set_object_element(v, index, e);
+    set_dynamic_object_element(v, index, e);
     return v;
 }
 

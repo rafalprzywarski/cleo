@@ -266,35 +266,35 @@ TEST_F(value_test, should_modify_static_objects)
     const std::array<Value, 4> elems{{*elem0, *elem1, *elem2, *elem3}};
     Root obj{create_object(*type, elems.data(), elems.size())};
 
-    set_object_element(*obj, 0, *elem1);
+    set_static_object_element(*obj, 0, *elem1);
 
     EXPECT_TRUE(elems[1].is(get_static_object_element(*obj, 0)));
     EXPECT_EQ(10, get_static_object_int(*obj, 1));
     EXPECT_TRUE(elems[2].is(get_static_object_element(*obj, 2)));
     EXPECT_TRUE(elems[3].is(get_static_object_element(*obj, 3)));
 
-    set_object_element(*obj, 1, *elem0);
+    set_static_object_element(*obj, 1, *elem0);
 
     EXPECT_TRUE(elems[1].is(get_static_object_element(*obj, 0)));
     EXPECT_EQ(7, get_static_object_int(*obj, 1));
     EXPECT_TRUE(elems[2].is(get_static_object_element(*obj, 2)));
     EXPECT_TRUE(elems[3].is(get_static_object_element(*obj, 3)));
 
-    set_object_int(*obj, 1, 13);
+    set_static_object_int(*obj, 1, 13);
 
     EXPECT_TRUE(elems[1].is(get_static_object_element(*obj, 0)));
     EXPECT_EQ(13, get_static_object_int(*obj, 1));
     EXPECT_TRUE(elems[2].is(get_static_object_element(*obj, 2)));
     EXPECT_TRUE(elems[3].is(get_static_object_element(*obj, 3)));
 
-    set_object_element(*obj, 2, *elem3);
+    set_static_object_element(*obj, 2, *elem3);
 
     EXPECT_TRUE(elems[1].is(get_static_object_element(*obj, 0)));
     EXPECT_EQ(13, get_static_object_int(*obj, 1));
     EXPECT_TRUE(elems[3].is(get_static_object_element(*obj, 2)));
     EXPECT_TRUE(elems[3].is(get_static_object_element(*obj, 3)));
 
-    set_object_element(*obj, 3, *elem2);
+    set_static_object_element(*obj, 3, *elem2);
 
     EXPECT_TRUE(elems[1].is(get_static_object_element(*obj, 0)));
     EXPECT_EQ(13, get_static_object_int(*obj, 1));
@@ -313,27 +313,27 @@ TEST_F(value_test, should_modify_dynamic_objects)
     const std::array<Value, 2> elems{{*elem0, *elem1}};
     Root obj{create_object(*type, ints.data(), ints.size(), elems.data(), elems.size())};
 
-    set_object_element(*obj, 0, *elem2);
+    set_dynamic_object_element(*obj, 0, *elem2);
 
     ASSERT_EQ(7, get_dynamic_object_int(*obj, 0));
     ASSERT_EQ(8, get_dynamic_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_dynamic_object_element(*obj, 0)));
     ASSERT_TRUE(elem1->is(get_dynamic_object_element(*obj, 1)));
 
-    set_object_element(*obj, 1, *elem0);
+    set_dynamic_object_element(*obj, 1, *elem0);
 
     ASSERT_EQ(7, get_dynamic_object_int(*obj, 0));
     ASSERT_EQ(8, get_dynamic_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_dynamic_object_element(*obj, 0)));
     ASSERT_TRUE(elem0->is(get_dynamic_object_element(*obj, 1)));
 
-    set_object_int(*obj, 0, 10);
+    set_dynamic_object_int(*obj, 0, 10);
     ASSERT_EQ(10, get_dynamic_object_int(*obj, 0));
     ASSERT_EQ(8, get_dynamic_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_dynamic_object_element(*obj, 0)));
     ASSERT_TRUE(elem0->is(get_dynamic_object_element(*obj, 1)));
 
-    set_object_int(*obj, 1, 11);
+    set_dynamic_object_int(*obj, 1, 11);
     ASSERT_EQ(10, get_dynamic_object_int(*obj, 0));
     ASSERT_EQ(11, get_dynamic_object_int(*obj, 1));
     ASSERT_TRUE(elem2->is(get_dynamic_object_element(*obj, 0)));
