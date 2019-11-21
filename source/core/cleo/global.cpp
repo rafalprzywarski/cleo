@@ -222,7 +222,7 @@ const ConstRoot ArraySeq{create_static_type("cleo.core", "ArraySeq", {"array", {
 const ConstRoot ArrayMap{create_dynamic_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_static_type("cleo.core", "ArrayMapSeq", {"first", "map", {"index", Int64}})};
 const ConstRoot ArraySet{create_dynamic_type("cleo.core", "ArraySet")};
-const ConstRoot ArraySetSeq{create_type("cleo.core", "ArraySetSeq")};
+const ConstRoot ArraySetSeq{create_static_type("cleo.core", "ArraySetSeq", {"set", {"index", Int64}})};
 const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"name"})};
 const ConstRoot Seqable{create_basic_type("cleo.core", "Seqable")};
 const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};

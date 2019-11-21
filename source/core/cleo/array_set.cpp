@@ -57,21 +57,21 @@ Force array_set_seq(Value s)
 {
     if (get_array_set_size(s) == 0)
         return nil;
-    return create_object1_1(*type::ArraySetSeq, 0, s);
+    return create_static_object(*type::ArraySetSeq, s, 0);
 }
 
 Value get_array_set_seq_first(Value s)
 {
-    return get_array_set_elem(get_dynamic_object_element(s, 0), get_dynamic_object_int(s, 0));
+    return get_array_set_elem(get_static_object_element(s, 0), get_static_object_int(s, 1));
 }
 
 Force get_array_set_seq_next(Value s)
 {
-    auto set = get_dynamic_object_element(s, 0);
-    auto i = get_dynamic_object_int(s, 0) + 1;
+    auto set = get_static_object_element(s, 0);
+    auto i = get_static_object_int(s, 1) + 1;
     if (get_array_set_size(set) == i)
         return nil;
-    return create_object1_1(*type::ArraySetSeq, i, set);
+    return create_static_object(*type::ArraySetSeq, set, i);
 }
 
 }
