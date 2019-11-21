@@ -226,10 +226,18 @@
 
 
 (defmacro deftype [name fields]
-  `(do
-     (def ~name (cleo.core/type* '~name '~fields))
-     (defn ~(symbol nil (str "->" name)) ~fields (new ~name ~@fields))
-     ~name))
+  (let* [field-names (persistent! (reduce (fn* [r f]
+                                            (conj! r (if (identical? (type f) List) (first f) f)))
+                                          (transient [])
+                                          fields))
+         field-types (persistent! (reduce (fn* [r f]
+                                            (conj! r (if (identical? (type f) List) (second f) nil)))
+                                          (transient [])
+                                          fields))]
+    `(do
+       (def ~name (cleo.core/type* '~name '~field-names ~field-types))
+       (defn ~(symbol nil (str "->" name)) ~field-names (new ~name ~@field-names))
+       ~name)))
 
 
 (defmacro defmulti [name dispatch-fn & options]

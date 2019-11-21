@@ -1012,15 +1012,27 @@ Force get_time()
     return create_int64(duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count());
 }
 
-Force create_type(Value name, Value fields)
+Force create_type(Value name, Value field_names, Value field_types)
 {
     check_type("name", name, *type::Symbol);
-    check_type("fields", fields, *type::Array);
-    auto size = get_array_size(fields);
-    std::vector<Value> field_names(size);
+    check_type("field-names", field_names, *type::Array);
+    check_type("field-types", field_types, *type::Array);
+    auto size = get_array_size(field_names);
+    if (get_array_size(field_types) != size)
+        throw_illegal_argument("mismatched field names/types");
+    std::vector<Value> names(size);
+    std::vector<Value> types(size);
     for (Int64 i = 0; i < size; ++i)
-        field_names[i] = get_array_elem(fields, i);
-    return create_object_type(name, field_names.data(), nullptr, field_names.size(), true, false);
+    {
+        auto name = get_array_elem(field_names, i);
+        auto type = get_array_elem(field_types, i);
+        check_type("field-name", name, *type::Symbol);
+        if (type)
+            check_type("field-type", type, *type::Type);
+        names[i] = name;
+        types[i] = type;
+    }
+    return create_static_object_type(name, names.data(), types.data(), names.size());
 }
 
 Force new_instance(const Value *args, std::uint8_t n)
@@ -1422,7 +1434,7 @@ struct Initialize
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
 
-        define_function(CREATE_TYPE, create_native_function2<create_type>());
+        define_function(CREATE_TYPE, create_native_function3<create_type>());
 
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_zero);
