@@ -17,7 +17,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
 {
     Root fn{create_native_function([](const Value *, std::uint8_t) { return force(nil); })};
     auto sym = create_symbol("org.xyz", "eqsym");
-    Root t{create_object_type("org.xyz", "eqtype")};
+    Root t{create_dynamic_object_type("org.xyz", "eqtype")};
     auto kw = create_keyword("org.xyz", "eqkw");
     Root i{create_int64(7)};
     Root flt{create_float64(3.5)};
@@ -155,7 +155,7 @@ TEST_F(equality_test, should_compare_strings)
 
 TEST_F(equality_test, objects_should_not_be_equal)
 {
-    Root type{create_object_type("cleo.equality.test", "sometype")};
+    Root type{create_dynamic_object_type("cleo.equality.test", "sometype")};
     Root val1, val2;
     val1 = create_object0(*type);
     val2 = create_object0(*type);
@@ -169,7 +169,7 @@ TEST_F(equality_test, should_compare_arrays)
     n10 = i64(10);
     n11 = i64(11);
     n12 = i64(12);
-    Root type{create_object_type("cleo.equality.test", "not-vector")};
+    Root type{create_dynamic_object_type("cleo.equality.test", "not-vector")};
     val1 = array();
     val2 = create_object0(*type);
     EXPECT_FALSE(bool(are_equal(*val1, *val2)));
@@ -354,12 +354,12 @@ TEST_F(equality_test, should_compare_array_sets)
 
 TEST_F(equality_test, should_compare_types)
 {
-    EXPECT_TRUE(bool(are_equal(*type::Int64, *type::Int64)));
-    EXPECT_FALSE(bool(are_equal(*type::Int64, *type::Seqable)));
-    EXPECT_FALSE(bool(are_equal(*type::Seqable, *type::Int64)));
+    EXPECT_TRUE(bool(are_equal(type::Int64, type::Int64)));
+    EXPECT_FALSE(bool(are_equal(type::Int64, *type::Seqable)));
+    EXPECT_FALSE(bool(are_equal(*type::Seqable, type::Int64)));
     EXPECT_FALSE(bool(are_equal(*type::Seqable, create_symbol("cleo.core", "Seqable"))));
     EXPECT_FALSE(bool(are_equal(create_symbol("cleo.core", "Seqable"), *type::Seqable)));
-    EXPECT_FALSE(bool(are_equal(*type::Int64, *type::Type)));
+    EXPECT_FALSE(bool(are_equal(type::Int64, *type::Type)));
 }
 
 }

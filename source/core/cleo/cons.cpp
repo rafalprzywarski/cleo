@@ -12,12 +12,12 @@ Force create_cons(Value elem, Value next)
 
 Value cons_first(Value c)
 {
-    return get_object_element(c, 0);
+    return get_static_object_element(c, 0);
 }
 
 Force cons_next(Value c)
 {
-    return call_multimethod1(*rt::seq, get_object_element(c, 1));
+    return call_multimethod1(*rt::seq, get_static_object_element(c, 1));
 }
 
 Force cons_conj(Value c, Value elem)

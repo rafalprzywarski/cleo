@@ -22,7 +22,7 @@ Force create_namespace(Value name, Value meta)
 
 Value get_ns_mapping(Value ns)
 {
-    return get_object_element(ns, 2);
+    return get_static_object_element(ns, 2);
 }
 
 void set_ns_mapping(Value ns, Value mapping)
@@ -32,7 +32,7 @@ void set_ns_mapping(Value ns, Value mapping)
 
 Value get_ns_aliases(Value ns)
 {
-    return get_object_element(ns, 3);
+    return get_static_object_element(ns, 3);
 }
 
 void set_ns_aliseses(Value ns, Value aliases)
@@ -81,7 +81,7 @@ Value define_ns(Value name, Value meta)
 Value ns_name(Value ns)
 {
     check_type("ns", ns, *type::Namespace);
-    return get_object_element(ns, 0);
+    return get_static_object_element(ns, 0);
 }
 
 Value find_ns(Value name)
@@ -100,7 +100,7 @@ Value get_ns(Value name)
 
 Value get_ns_meta(Value ns)
 {
-    return get_object_element(ns, 1);
+    return get_static_object_element(ns, 1);
 }
 
 Value in_ns(Value ns, Value meta)

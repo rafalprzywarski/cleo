@@ -98,11 +98,11 @@ TEST_F(memory_test, should_trace_keywords)
     ASSERT_EQ(num_allocations, allocations.size());
 }
 
-TEST_F(memory_test, should_collect_objects)
+TEST_F(memory_test, should_collect_dynamic_objects)
 {
-    Root type1{create_object_type("cleo.memory.test", "obj1")};
-    Root type2{create_object_type("cleo.memory.test", "obj2")};
-    Root type3{create_object_type("cleo.memory.test", "obj3")};
+    Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};
+    Root type2{create_dynamic_object_type("cleo.memory.test", "obj2")};
+    Root type3{create_dynamic_object_type("cleo.memory.test", "obj3")};
     auto num_allocations_before = allocations.size();
 
     Root root1, root2, root3;
@@ -122,11 +122,64 @@ TEST_F(memory_test, should_collect_objects)
     ASSERT_EQ(num_allocations_before, allocations.size());
 }
 
+TEST_F(memory_test, should_collect_static_objects)
+{
+    Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};
+    Root type2{create_dynamic_object_type("cleo.memory.test", "obj2")};
+    std::array<Value, 3> names{{create_symbol("a"), create_symbol("b"), create_symbol("c")}};
+    std::array<Value, 3> types{{*type1, *type2, type::Int64}};
+    Root type4{create_static_object_type("cleo.memory.test", "obj4", names.data(), types.data(), names.size())};
+    auto num_allocations_before = allocations.size();
+
+    Root root1, root2, root3, root4;
+    root1 = create_object0(*type1);
+    root2 = create_object0(*type2);
+    root3 = create_int64(30);
+    root4 = create_object3(*type4, *root1, *root2, *root3);
+    root3 = nil;
+
+    auto num_allocations_after = allocations.size();
+
+    root1 = nil;
+    root2 = nil;
+    gc();
+    ASSERT_EQ(num_allocations_after, allocations.size());
+
+    root4 = nil;
+    gc();
+    ASSERT_EQ(num_allocations_before, allocations.size());
+}
+
+TEST_F(memory_test, should_trace_object_field_types)
+{
+    std::array<Value, 3> names{{create_symbol("a"), create_symbol("b"), create_symbol("c")}};
+
+    auto num_allocations_before = allocations.size();
+
+    Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};
+    Root type2{create_dynamic_object_type("cleo.memory.test", "obj2")};
+    std::array<Value, 3> types{{*type1, *type2, type::Int64}};
+    Root type3{create_static_object_type("cleo.memory.test", "obj4", names.data(), types.data(), names.size())};
+    types[0] = nil;
+    types[1] = nil;
+
+    auto num_allocations_after = allocations.size();
+
+    type1 = nil;
+    type2 = nil;
+    gc();
+    ASSERT_EQ(num_allocations_after, allocations.size());
+
+    type3 = nil;
+    gc();
+    ASSERT_EQ(num_allocations_before, allocations.size());
+}
+
 TEST_F(memory_test, should_handle_cycles)
 {
-    Root type1{create_object_type("cleo.memory.test", "obj1")};
-    Root type2{create_object_type("cleo.memory.test", "obj2")};
-    Root type3{create_object_type("cleo.memory.test", "obj3")};
+    Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};
+    Root type2{create_dynamic_object_type("cleo.memory.test", "obj2")};
+    Root type3{create_dynamic_object_type("cleo.memory.test", "obj3")};
     auto num_allocations_before = allocations.size();
 
     Root root1, root2, root3;

@@ -18,12 +18,12 @@ std::uint32_t get_array_map_size(Value m)
 
 Value get_array_map_key(Value m, std::uint32_t index)
 {
-    return get_object_element(m, index * 2);
+    return get_dynamic_object_element(m, index * 2);
 }
 
 Value get_array_map_val(Value m, std::uint32_t index)
 {
-    return get_object_element(m, index * 2 + 1);
+    return get_dynamic_object_element(m, index * 2 + 1);
 }
 
 Value array_map_get(Value m, Value k)
@@ -36,8 +36,8 @@ Value array_map_get(Value m, Value k, Value def_v)
     auto size = get_array_map_size(m);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (k == get_object_element(m, i * 2))
-            return get_object_element(m, i * 2 + 1);
+        if (k == get_dynamic_object_element(m, i * 2))
+            return get_dynamic_object_element(m, i * 2 + 1);
     }
     return def_v;
 }
@@ -50,7 +50,7 @@ Force array_map_assoc(Value m, Value k, Value v)
     bool replaced = false;
     for (decltype(size) i = 0; i != size; ++i)
     {
-        auto ck = get_object_element(m, i * 2);
+        auto ck = get_dynamic_object_element(m, i * 2);
         kvs.push_back(ck);
         if (ck == k)
         {
@@ -58,7 +58,7 @@ Force array_map_assoc(Value m, Value k, Value v)
             replaced = true;
         }
         else
-            kvs.push_back(get_object_element(m, i * 2 + 1));
+            kvs.push_back(get_dynamic_object_element(m, i * 2 + 1));
     }
     if (!replaced)
     {
@@ -77,11 +77,11 @@ Force array_map_dissoc(Value m, Value k)
     kvs.reserve((size - 1) * 2);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        auto ck = get_object_element(m, i * 2);
+        auto ck = get_dynamic_object_element(m, i * 2);
         if (k != ck)
         {
             kvs.push_back(ck);
-            kvs.push_back(get_object_element(m, i * 2 + 1));
+            kvs.push_back(get_dynamic_object_element(m, i * 2 + 1));
         }
     }
     return create_object(*type::ArrayMap, kvs.data(), kvs.size());
@@ -115,7 +115,7 @@ Value array_map_contains(Value m, Value k)
     auto size = get_array_map_size(m);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (k == get_object_element(m, i * 2))
+        if (k == get_dynamic_object_element(m, i * 2))
             return TRUE;
     }
     return nil;
@@ -132,13 +132,13 @@ Force array_map_seq(Value m)
 
 Value get_array_map_seq_first(Value s)
 {
-    return get_object_element(s, 0);
+    return get_dynamic_object_element(s, 0);
 }
 
 Force get_array_map_seq_next(Value s)
 {
-    auto index = get_int64_value(get_object_element(s, 2));
-    auto m = get_object_element(s, 1);
+    auto index = get_int64_value(get_dynamic_object_element(s, 2));
+    auto m = get_dynamic_object_element(s, 1);
     if (index == get_array_map_size(m))
         return nil;
     std::array<Value, 2> kv{{get_array_map_key(m, index), get_array_map_val(m, index)}};

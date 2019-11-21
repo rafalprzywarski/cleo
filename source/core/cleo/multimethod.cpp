@@ -111,13 +111,13 @@ Value get_method(Value multi, Value dispatchVal)
 
 Value get_multimethod_name(Value multi)
 {
-    return get_object_element(multi, 0);
+    return get_static_object_element(multi, 0);
 }
 
 Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     check_type("multimethod", multi, *type::Multimethod);
-    auto name = get_object_element(multi, 0);
+    auto name = get_static_object_element(multi, 0);
     auto& multimethod = multimethods.find(name)->second;
     std::vector<Value> fcall;
     fcall.reserve(numArgs + 1);

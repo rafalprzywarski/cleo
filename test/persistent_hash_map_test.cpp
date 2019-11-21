@@ -10,23 +10,23 @@ namespace test
 
 struct persistent_hash_map_test : Test
 {
-    Root HashString{create_object_type("cleo.persistent_hash_map.test", "HashString")};
+    Root HashString{create_dynamic_object_type("cleo.persistent_hash_map.test", "HashString")};
 
     static Force string_value(Value val)
     {
-        Value s = get_object_element(val, 0);
+        Value s = get_dynamic_object_element(val, 0);
         std::string ss{get_string_ptr(s), get_string_len(s)};
         return create_int64(std::uint32_t(std::strtoull(ss.c_str(), nullptr, 32)));
     }
 
     static Value are_hash_strings_equal(Value left, Value right)
     {
-        return are_equal(get_object_element(left, 0), get_object_element(right, 0));
+        return are_equal(get_dynamic_object_element(left, 0), get_dynamic_object_element(right, 0));
     }
 
     static Force pr_str_hash_string(Value val)
     {
-        return pr_str(get_object_element(val, 0));
+        return pr_str(get_dynamic_object_element(val, 0));
     }
 
     persistent_hash_map_test() : Test("cleo.persistent_hash_map.test")
@@ -175,14 +175,14 @@ struct persistent_hash_map_test : Test
     {
         if (!get_value_type(node).is(*type::PersistentHashMapArrayNode))
             return 0;
-        return __builtin_popcount(std::uint32_t(std::uint64_t(get_object_int(node, 0)) >> 32));
+        return __builtin_popcount(std::uint32_t(std::uint64_t(get_dynamic_object_int(node, 0)) >> 32));
     }
 
     Int64 payload_arity(Value node)
     {
         if (!get_value_type(node).is(*type::PersistentHashMapArrayNode))
             return 0;
-        return __builtin_popcount(std::uint32_t(get_object_int(node, 0)));
+        return __builtin_popcount(std::uint32_t(get_dynamic_object_int(node, 0)));
     }
 
     Int64 branch_size(Value node)
@@ -193,13 +193,13 @@ struct persistent_hash_map_test : Test
         }
         if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
         {
-            std::uint64_t value_node_map = get_object_int(node, 0);
+            std::uint64_t value_node_map = get_dynamic_object_int(node, 0);
             std::uint32_t value_map{static_cast<std::uint32_t>(value_node_map)};
             std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
             auto node_size = get_object_size(node);
             Int64 size = __builtin_popcount(value_map);
             for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)
-                size += branch_size(get_object_element(node, node_size - i - 1));
+                size += branch_size(get_dynamic_object_element(node, node_size - i - 1));
             return size;
         }
         return 1;
@@ -211,18 +211,18 @@ struct persistent_hash_map_test : Test
 
         if (get_value_type(node).is(*type::PersistentHashMapArrayNode))
         {
-            std::uint64_t value_node_map = get_object_int(node, 0);
+            std::uint64_t value_node_map = get_dynamic_object_int(node, 0);
             std::uint32_t node_map{static_cast<std::uint32_t>(value_node_map >> 32)};
             auto node_size = get_object_size(node);
             for (Int64 i = 0; i < __builtin_popcount(node_map); ++i)
-                check_node_invariant(get_object_element(node, node_size - i - 1));
+                check_node_invariant(get_dynamic_object_element(node, node_size - i - 1));
         }
     }
 
     void check_optimal_structure(Value map)
     {
         ASSERT_EQ_REFS(*type::PersistentHashMap, get_value_type(map));
-        check_node_invariant(get_object_element(map, 0));
+        check_node_invariant(get_dynamic_object_element(map, 0));
     }
 
     Force create_map(std::vector<std::pair<std::string, int>> kvs)

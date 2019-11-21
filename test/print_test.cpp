@@ -97,7 +97,7 @@ TEST_F(pr_str_test, should_print_strings)
 
 TEST_F(pr_str_test, should_print_objects)
 {
-    Root t{create_object_type("somewhere", "something")};
+    Root t{create_dynamic_object_type("somewhere", "something")};
     Root obj{create_object0(*t)};
     std::ostringstream os;
     os << std::hex << obj->bits();
@@ -106,7 +106,7 @@ TEST_F(pr_str_test, should_print_objects)
 
 TEST_F(pr_str_test, should_print_types)
 {
-    Root t{create_object_type("somewhere", "something")};
+    Root t{create_dynamic_object_type("somewhere", "something")};
     std::ostringstream os;
     EXPECT_EQ("somewhere/something", str(pr_str(*t)));
 }
@@ -287,7 +287,7 @@ TEST_F(print_str_test, should_print_strings)
 
 TEST_F(print_str_test, should_print_objects)
 {
-    Root t{create_object_type("somewhere", "something")};
+    Root t{create_dynamic_object_type("somewhere", "something")};
     Root obj{create_object0(*t)};
     std::ostringstream os;
     os << std::hex << obj->bits();

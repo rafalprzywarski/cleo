@@ -11,7 +11,7 @@ Force create_atom(Value val)
 
 Value atom_deref(Value atom)
 {
-    return get_object_element(atom, 0);
+    return get_static_object_element(atom, 0);
 }
 
 Force atom_reset(Value atom, Value val)

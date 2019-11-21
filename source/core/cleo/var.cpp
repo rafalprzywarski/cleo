@@ -93,7 +93,7 @@ void set_var(Value sym, Value val)
 
 Value get_var_name(Value var)
 {
-    return get_object_element(var, 0);
+    return get_static_object_element(var, 0);
 }
 
 Value get_var_value(Value var)
@@ -127,7 +127,7 @@ Value is_var_public(Value var)
 
 Value get_var_meta(Value var)
 {
-    return get_object_element(var, 2);
+    return get_static_object_element(var, 2);
 }
 
 }

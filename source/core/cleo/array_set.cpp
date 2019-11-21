@@ -16,7 +16,7 @@ std::uint32_t get_array_set_size(Value s)
 
 Value get_array_set_elem(Value s, std::uint32_t index)
 {
-    return index < get_object_size(s) ? get_object_element(s, index) : nil;
+    return index < get_object_size(s) ? get_dynamic_object_element(s, index) : nil;
 }
 
 Value array_set_get(Value s, Value k)
@@ -47,7 +47,7 @@ Value array_set_contains(Value s, Value k)
     auto size = get_array_set_size(s);
     for (decltype(size) i = 0; i != size; ++i)
     {
-        if (k == get_object_element(s, i))
+        if (k == get_dynamic_object_element(s, i))
             return TRUE;
     }
     return nil;
@@ -62,13 +62,13 @@ Force array_set_seq(Value s)
 
 Value get_array_set_seq_first(Value s)
 {
-    return get_array_set_elem(get_object_element(s, 0), get_object_int(s, 0));
+    return get_array_set_elem(get_dynamic_object_element(s, 0), get_dynamic_object_int(s, 0));
 }
 
 Force get_array_set_seq_next(Value s)
 {
-    auto set = get_object_element(s, 0);
-    auto i = get_object_int(s, 0) + 1;
+    auto set = get_dynamic_object_element(s, 0);
+    auto i = get_dynamic_object_int(s, 0) + 1;
     if (get_array_set_size(set) == i)
         return nil;
     return create_object1_1(*type::ArraySetSeq, i, set);

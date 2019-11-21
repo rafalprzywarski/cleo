@@ -13,9 +13,9 @@ Force create_lazy_seq(Value fn)
 
 Value lazy_seq_seq(Value ls)
 {
-    auto fn = get_object_element(ls, 0);
+    auto fn = get_static_object_element(ls, 0);
     if (!fn)
-        return get_object_element(ls, 1);
+        return get_static_object_element(ls, 1);
     Root s{call(&fn, 1)};
     s = call_multimethod1(*rt::seq, *s);
     set_object_element(ls, 1, *s);

@@ -39,27 +39,27 @@ std::uint32_t get_bytecode_fn_exception_table_size(Value et)
 
 Int64 get_bytecode_fn_exception_table_start_offset(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 4);
+    return get_dynamic_object_int(et, i * 4);
 }
 
 Int64 get_bytecode_fn_exception_table_end_offset(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 4 + 1);
+    return get_dynamic_object_int(et, i * 4 + 1);
 }
 
 Int64 get_bytecode_fn_exception_table_handler_offset(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 4 + 2);
+    return get_dynamic_object_int(et, i * 4 + 2);
 }
 
 Int64 get_bytecode_fn_exception_table_stack_size(Value et, std::uint32_t i)
 {
-    return get_object_int(et, i * 4 + 3);
+    return get_dynamic_object_int(et, i * 4 + 3);
 }
 
 Value get_bytecode_fn_exception_table_type(Value et, std::uint32_t i)
 {
-    return get_object_element(et, i);
+    return get_dynamic_object_element(et, i);
 }
 
 bytecode_fn_exception_handler bytecode_fn_find_exception_handler(Value et, Int64 offset, Value type)
@@ -91,37 +91,37 @@ Force create_bytecode_fn_body(Int64 arity, Value consts, Value vars, Value excep
 
 Int64 get_bytecode_fn_body_arity(Value body)
 {
-    return get_object_int(body, 0);
+    return get_dynamic_object_int(body, 0);
 }
 
 Value get_bytecode_fn_body_consts(Value body)
 {
-    return get_object_element(body, 0);
+    return get_dynamic_object_element(body, 0);
 }
 
 Value get_bytecode_fn_body_vars(Value body)
 {
-    return get_object_element(body, 1);
+    return get_dynamic_object_element(body, 1);
 }
 
 Value get_bytecode_fn_body_exception_table(Value body)
 {
-    return get_object_element(body, 2);
+    return get_dynamic_object_element(body, 2);
 }
 
 Int64 get_bytecode_fn_body_locals_size(Value body)
 {
-    return get_object_int(body, 1);
+    return get_dynamic_object_int(body, 1);
 }
 
 const vm::Byte *get_bytecode_fn_body_bytes(Value body)
 {
-    return reinterpret_cast<const vm::Byte *>(get_object_int_ptr(body, 3));
+    return reinterpret_cast<const vm::Byte *>(get_dynamic_object_int_ptr(body, 3));
 }
 
 Int64 get_bytecode_fn_body_bytes_size(Value body)
 {
-    return get_object_int(body, 2);
+    return get_dynamic_object_int(body, 2);
 }
 
 Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n)
@@ -136,22 +136,22 @@ Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n)
 
 Value get_bytecode_fn_name(Value fn)
 {
-    return get_object_element(fn, 0);
+    return get_dynamic_object_element(fn, 0);
 }
 
 std::uint8_t get_bytecode_fn_size(Value fn)
 {
-    return get_object_int_size(fn);
+    return get_dynamic_object_int_size(fn);
 }
 
 Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i)
 {
-    return get_object_int(fn, i);
+    return get_dynamic_object_int(fn, i);
 }
 
 Value get_bytecode_fn_body(Value fn, std::uint8_t i)
 {
-    return get_object_element(fn, i + 1);
+    return get_dynamic_object_element(fn, i + 1);
 }
 
 Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)

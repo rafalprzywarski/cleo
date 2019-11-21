@@ -20,13 +20,13 @@ Force array_seq(Value v)
 
 Value get_array_seq_first(Value s)
 {
-    return get_array_elem(get_object_element(s, 0), get_object_int(s, 0));
+    return get_array_elem(get_dynamic_object_element(s, 0), get_dynamic_object_int(s, 0));
 }
 
 Force get_array_seq_next(Value s)
 {
-    auto v = get_object_element(s, 0);
-    auto i = get_object_int(s, 0) + 1;
+    auto v = get_dynamic_object_element(s, 0);
+    auto i = get_dynamic_object_int(s, 0) + 1;
     if (get_array_size(v) == i)
         return nil;
     return create_object1_1(*type::ArraySeq, i, v);
@@ -58,13 +58,13 @@ Force transient_array(Value v)
     auto capacity = (size < 16 ? 32 : (size * 2));
     Root t{create_object(*type::TransientArray, &size, 1, nullptr, capacity)};
     for (std::uint32_t i = 0; i < size; ++i)
-        set_object_element(*t, i, get_object_element(v, i));
+        set_object_element(*t, i, get_dynamic_object_element(v, i));
     return *t;
 }
 
 Value get_transient_array_elem(Value v, std::uint32_t index)
 {
-    return index < get_transient_array_size(v) ? get_object_element(v, index) : nil;
+    return index < get_transient_array_size(v) ? get_dynamic_object_element(v, index) : nil;
 }
 
 Force transient_array_conj(Value v, Value e)
@@ -80,7 +80,7 @@ Force transient_array_conj(Value v, Value e)
     }
     Root t{create_object(*type::TransientArray, &new_size, 1, nullptr, capacity * 2)};
     for (std::uint32_t i = 0; i < size; ++i)
-        set_object_element(*t, i, get_object_element(v, i));
+        set_object_element(*t, i, get_dynamic_object_element(v, i));
     set_object_element(*t, size, e);
     return *t;
 }

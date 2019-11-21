@@ -277,7 +277,7 @@ extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 namespace type
 {
 extern const ConstRoot Type;
-extern const ConstRoot Int64;
+extern const Value Int64;
 extern const ConstRoot Float64;
 extern const ConstRoot String;
 extern const ConstRoot NativeFunction;
@@ -380,7 +380,7 @@ inline Value get_value_type(Value val)
     case tag::NATIVE_FUNCTION: return *type::NativeFunction;
     case tag::SYMBOL: return *type::Symbol;
     case tag::KEYWORD: return *type::Keyword;
-    case tag::INT64: return *type::Int64;
+    case tag::INT64: return type::Int64;
     case tag::FLOAT64: return *type::Float64;
     case tag::STRING: return *type::String;
     case tag::OBJECT_TYPE: return *type::Type;

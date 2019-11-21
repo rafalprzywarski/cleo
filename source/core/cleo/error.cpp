@@ -41,17 +41,17 @@ Force new_read_error(Value msg, Value line, Value column)
 
 Force read_error_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Value read_error_line(Value e)
 {
-    return get_object_element(e, 1);
+    return get_static_object_element(e, 1);
 }
 
 Value read_error_column(Value e)
 {
-    return get_object_element(e, 2);
+    return get_static_object_element(e, 2);
 }
 
 Force new_unexpected_end_of_input(Value line, Value column)
@@ -66,12 +66,12 @@ Force unexpected_end_of_input_message(Value)
 
 Value unexpected_end_of_input_line(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Value unexpected_end_of_input_column(Value e)
 {
-    return get_object_element(e, 1);
+    return get_static_object_element(e, 1);
 }
 
 Force new_call_error(Value msg)
@@ -81,7 +81,7 @@ Force new_call_error(Value msg)
 
 Force call_error_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_symbol_not_found(Value msg)
@@ -91,7 +91,7 @@ Force new_symbol_not_found(Value msg)
 
 Force symbol_not_found_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_illegal_argument(Value msg)
@@ -101,7 +101,7 @@ Force new_illegal_argument(Value msg)
 
 Force illegal_argument_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_illegal_state(Value msg)
@@ -111,7 +111,7 @@ Force new_illegal_state(Value msg)
 
 Force illegal_state_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_file_not_found(Value msg)
@@ -121,7 +121,7 @@ Force new_file_not_found(Value msg)
 
 Force file_not_found_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_arithmetic_exception(Value msg)
@@ -131,7 +131,7 @@ Force new_arithmetic_exception(Value msg)
 
 Force arithmetic_exception_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_index_out_of_bounds()
@@ -151,7 +151,7 @@ Force new_compilation_error(Value msg)
 
 Force compilation_error_message(Value e)
 {
-    return get_object_element(e, 0);
+    return get_static_object_element(e, 0);
 }
 
 Force new_stack_overflow()

@@ -859,10 +859,38 @@ TEST_F(vm_test, catching_exceptions_from_apply)
 TEST_F(vm_test, lddf)
 {
     auto field = create_symbol("x");
-    Root type{create_object_type("cleo.vm.test", "X", &field, 1, true, false)};
+    Root type{create_object_type("cleo.vm.test", "X", &field, nullptr, 1, false, true)};
     Root val{i64(17)};
     Root obj{create_object1(*type, *val)};
     const std::array<Byte, 7> bc1{{LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), LDDF}};
+    stack_push(*obj);
+    stack_push(field);
+
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(*val, stack[2]);
+    EXPECT_EQ_VALS(field, stack[1]);
+    EXPECT_EQ_VALS(*obj, stack[0]);
+    stack.clear();
+
+    type = create_static_object_type("cleo.vm.test", "X", &field, nullptr, 1);
+    obj = create_object1(*type, *val);
+
+    stack_push(*obj);
+    stack_push(field);
+
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(*val, stack[2]);
+    EXPECT_EQ_VALS(field, stack[1]);
+    EXPECT_EQ_VALS(*obj, stack[0]);
+    stack.clear();
+
+    type = create_static_object_type("cleo.vm.test", "X", &field, &type::Int64, 1);
+    obj = create_object1(*type, *val);
+
     stack_push(*obj);
     stack_push(field);
 
@@ -904,11 +932,11 @@ TEST_F(vm_test, lddf)
     }
 }
 
-TEST_F(vm_test, catching_excpetions_from_lddf)
+TEST_F(vm_test, catching_exceptions_from_lddf)
 {
     auto field = create_symbol("x");
     auto bad_field = create_symbol("bad");
-    Root type{create_object_type("cleo.vm.test", "X", &field, 1, true, false)};
+    Root type{create_object_type("cleo.vm.test", "X", &field, nullptr, 1, true, false)};
     Root val{i64(17)};
     Root obj{create_object1(*type, *val)};
     const std::array<Byte, 12> bc1{{CNIL, CNIL, LDL, 0, 0, LDL, 1, 0, LDDF, CNIL, CNIL, CNIL}};

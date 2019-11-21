@@ -141,16 +141,16 @@ TEST_F(reader_test, should_parse_a_sequence_of_digits_as_an_integer)
 {
     Root ex, val;
     ex = create_int64(1); val = read_str("1");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(23); val = read_str("23");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(32134); val = read_str("32134");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(9223372036854775807ull); val = read_str("9223372036854775807");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -158,10 +158,10 @@ TEST_F(reader_test, should_parse_negative_integers)
 {
     Root ex, val;
     ex = create_int64(-58); val = read_str("-58");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(9223372036854775808ull); val = read_str("-9223372036854775808");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -169,19 +169,19 @@ TEST_F(reader_test, should_parse_hexadecimal_integers)
 {
     Root ex, val;
     ex = create_int64(0x12345); val = read_str("0x12345");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(0xaaee); val = read_str("0xaaEe");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(0xaaee); val = read_str("0XaaEe");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(0x7fffffffffff); val = read_str("0x7fffffffffff");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
     ex = create_int64(-0x8000000000000000); val = read_str("-0x8000000000000000");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 
@@ -189,7 +189,7 @@ TEST_F(reader_test, should_parse_octal_integers)
 {
     Root ex, val;
     ex = create_int64(012345); val = read_str("012345");
-    EXPECT_EQ_REFS(*type::Int64, get_value_type(*val));
+    EXPECT_EQ_REFS(type::Int64, get_value_type(*val));
     EXPECT_EQ_VALS(*ex, *val);
 }
 

@@ -135,7 +135,12 @@ const Root TWO{create_int64(2)};
 const Root THREE{create_int64(3)};
 namespace
 {
-const ConstRoot SENTINEL_TYPE{create_object_type("cleo.core", "Sentinel")};
+Force create_basic_type(const std::string& ns, const std::string& name)
+{
+    return create_object_type(ns, name, nullptr, nullptr, 0, false, false);
+}
+
+const ConstRoot SENTINEL_TYPE{create_basic_type("cleo.core", "Sentinel")};
 }
 const Root SENTINEL{create_object0(*SENTINEL_TYPE)};
 const Root RELOAD{create_keyword("reload")};
@@ -159,34 +164,42 @@ const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
 
 namespace type
 {
-const ConstRoot Type{create_object_type("cleo.core", "Type")};
+const ConstRoot Type{create_basic_type("cleo.core", "Type")};
 }
 
 namespace
 {
 Force create_type(const std::string& ns, const std::string& name)
 {
-    return create_object_type(ns, name);
+    return create_dynamic_object_type(ns, name);
 }
 
-Force create_basic_type(const std::string& ns, const std::string& name)
+struct FieldDesc
 {
-    return create_object_type(ns, name, nullptr, 0, false, false);
-}
+    std::string name;
+    Value type;
 
-Force create_static_type(const std::string& ns, const std::string& name, const std::initializer_list<std::string>& fields)
+    FieldDesc(const char *name) : name(name) { }
+    FieldDesc(const char *name, Value type) : name(name), type(type) { }
+};
+
+Force create_static_type(const std::string& ns, const std::string& name, const std::initializer_list<FieldDesc>& fields)
 {
-    std::vector<Value> field_names;
+    std::vector<Value> field_names, field_types;
     field_names.reserve(fields.size());
     for (auto& f : fields)
-        field_names.push_back(create_symbol(f));
-    return create_object_type(ns, name, field_names.data(), field_names.size(), true, false);
+    {
+        field_names.push_back(create_symbol(f.name));
+        field_types.push_back(f.type);
+    }
+    return create_object_type(ns, name, field_names.data(), field_types.data(), field_names.size(), true, false);
 }
 }
 
 namespace type
 {
-const ConstRoot Int64{create_basic_type("cleo.core", "Int64")};
+const ConstRoot Int64_root{create_basic_type("cleo.core", "Int64")};
+const Value Int64{*Int64_root};
 const ConstRoot Float64{create_basic_type("cleo.core", "Float64")};
 const ConstRoot String{create_basic_type("cleo.core", "String")};
 const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")};
@@ -194,7 +207,7 @@ const ConstRoot CFunction{create_type("cleo.core", "CFunction")};
 const ConstRoot Symbol{create_basic_type("cleo.core", "Symbol")};
 const ConstRoot Keyword{create_basic_type("cleo.core", "Keyword")};
 const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "meta"})};
-const ConstRoot List{create_type("cleo.core", "List")};
+const ConstRoot List{create_static_type("cleo.core", "List", {{"size", Int64}, "first", "next"})};
 const ConstRoot Cons{create_static_type("cleo.core", "Cons", {"first", "next"})};
 const ConstRoot LazySeq{create_static_type("cleo.core", "LazySeq", {"fn", "seq"})};
 const ConstRoot Array{create_type("cleo.core", "Array")};
@@ -782,85 +795,85 @@ Force mem_allocs()
 
 Force bit_not(Value x)
 {
-    check_type("x", x, *type::Int64);
+    check_type("x", x, type::Int64);
     return create_int64(~get_int64_value(x));
 }
 
 Force bit_and(Value x, Value y)
 {
-    check_type("x", x, *type::Int64);
-    check_type("y", y, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("y", y, type::Int64);
     return create_int64(get_int64_value(x) & get_int64_value(y));
 }
 
 Force bit_or(Value x, Value y)
 {
-    check_type("x", x, *type::Int64);
-    check_type("y", y, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("y", y, type::Int64);
     return create_int64(get_int64_value(x) | get_int64_value(y));
 }
 
 Force bit_xor(Value x, Value y)
 {
-    check_type("x", x, *type::Int64);
-    check_type("y", y, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("y", y, type::Int64);
     return create_int64(get_int64_value(x) ^ get_int64_value(y));
 }
 
 Force bit_and_not(Value x, Value y)
 {
-    check_type("x", x, *type::Int64);
-    check_type("y", y, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("y", y, type::Int64);
     return create_int64(get_int64_value(x) & ~get_int64_value(y));
 }
 
 Force bit_clear(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     return create_int64(get_int64_value(x) & ~(Int64(1) << (get_int64_value(n) & 0x3f)));
 }
 
 Force bit_set(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     return create_int64(get_int64_value(x) | (Int64(1) << (get_int64_value(n) & 0x3f)));
 }
 
 Force bit_flip(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     return create_int64(get_int64_value(x) ^ (Int64(1) << (get_int64_value(n) & 0x3f)));
 }
 
 Value bit_test(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     return (get_int64_value(x) & (Int64(1) << (get_int64_value(n) & 0x3f))) ? TRUE : nil;
 }
 
 Force bit_shift_left(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     return create_int64(std::uint64_t(get_int64_value(x)) << (get_int64_value(n) & 0x3f));
 }
 
 Force bit_shift_right(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     static_assert(Int64(-2) >> 1 == Int64(-1), "arithmetic right shift needed");
     return create_int64(get_int64_value(x) >> (get_int64_value(n) & 0x3f));
 }
 
 Force unsigned_bit_shift_right(Value x, Value n)
 {
-    check_type("x", x, *type::Int64);
-    check_type("n", n, *type::Int64);
+    check_type("x", x, type::Int64);
+    check_type("n", n, type::Int64);
     return create_int64(std::uint64_t(get_int64_value(x)) >> (get_int64_value(n) & 0x3f));
 }
 
@@ -1007,7 +1020,7 @@ Force create_type(Value name, Value fields)
     std::vector<Value> field_names(size);
     for (Int64 i = 0; i < size; ++i)
         field_names[i] = get_array_elem(fields, i);
-    return create_object_type(name, field_names.data(), field_names.size(), true, false);
+    return create_object_type(name, field_names.data(), nullptr, field_names.size(), true, false);
 }
 
 Force new_instance(const Value *args, std::uint8_t n)
@@ -1220,7 +1233,7 @@ Force disasm(Value fn)
 Force get_bytecode_fn_body(Value fn, Value arity)
 {
     check_type("fn", fn, *type::BytecodeFn);
-    check_type("arity", arity, *type::Int64);
+    check_type("arity", arity, type::Int64);
     auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
     if (!body_arity.first || body_arity.second != get_int64_value(arity))
         return nil;
@@ -1239,7 +1252,7 @@ Force get_bytecode_fn_body(Value fn, Value arity)
 Force get_bytecode_fn_consts(Value fn, Value arity)
 {
     check_type("fn", fn, *type::BytecodeFn);
-    check_type("arity", arity, *type::Int64);
+    check_type("arity", arity, type::Int64);
     auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
     if (!body_arity.first || body_arity.second != get_int64_value(arity))
         return nil;
@@ -1266,14 +1279,14 @@ Value the_ns(Value ns)
 Force subs(Value s, Value start)
 {
     check_type("s", s, *type::String);
-    check_type("start", start, *type::Int64);
+    check_type("start", start, type::Int64);
     return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start)));
 }
 
 Force subs(Value s, Value start, Value end)
 {
     check_type("s", s, *type::String);
-    check_type("start", start, *type::Int64);
+    check_type("start", start, type::Int64);
     return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start), get_int64_value(end)));
 }
 
@@ -1300,7 +1313,7 @@ Value define_var_(Value name, Value meta)
 
 Force char_utf8(Value x)
 {
-    check_type("char", x, *type::Int64);
+    check_type("char", x, type::Int64);
     Int64 c = get_int64_value(x);
     std::string s;
     s.reserve(5);
@@ -1364,7 +1377,7 @@ struct Initialize
         core_meta = map_assoc(*core_meta, create_keyword("doc"), *core_doc);
         define_ns(CLEO_CORE, *core_meta);
 
-        define_type(*type::Int64);
+        define_type(type::Int64);
         define_type(*type::Float64);
         define_type(*type::String);
         define_type(*type::NativeFunction);

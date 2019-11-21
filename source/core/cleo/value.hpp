@@ -29,6 +29,11 @@ struct Value
 
 static_assert(sizeof(Value) == sizeof(Value().bits()), "Value should have no overhead");
 
+namespace type
+{
+extern const Value Int64;
+}
+
 }
 
 namespace std
@@ -73,7 +78,11 @@ struct ObjectType
     std::uint32_t fieldCount;
     bool isConstructible;
     bool isDynamic;
-    Value firstFieldName;
+    struct NameType
+    {
+        Value name;
+        Value type;
+    } firstField;
 };
 
 struct StaticObject
@@ -206,6 +215,7 @@ void set_string_hash(Value val, std::uint32_t h);
 
 Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const Value *elems, std::uint32_t size);
 inline Force create_object(Value type, const Value *elems, std::uint32_t size) { return create_object(type, nullptr, 0, elems, size); }
+Force create_static_object(Value type, Int64 elem0, Value elem1, Value elem2);
 Force create_object0(Value type);
 Force create_object1(Value type, Value elem);
 Force create_object2(Value type, Value elem0, Value elem1);
@@ -216,42 +226,93 @@ Force create_object1_1(Value type, Int64 i0, Value elem0);
 Force create_object1_2(Value type, Int64 i0, Value elem0, Value elem1);
 Force create_object1_3(Value type, Int64 i0, Value elem0, Value elem1, Value elem2);
 Force create_object1_4(Value type, Int64 i0, Value elem0, Value elem1, Value elem2, Value elem3);
-std::uint32_t get_object_int_size(Value obj);
+std::uint32_t get_dynamic_object_int_size(Value obj);
 std::uint32_t get_object_size(Value obj);
 void set_object_size(Value obj, std::uint32_t size);
-Int64 get_object_int(Value obj, std::uint32_t index);
-const void *get_object_int_ptr(Value obj, std::uint32_t index);
 void set_object_type(Value obj, Value type);
 void set_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_object_element(Value obj, std::uint32_t index, Value val);
 
-Force create_object_type(Value name, const Value *fields, std::uint32_t size, bool is_constructible, bool is_dynamic);
-Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, std::uint32_t size, bool is_constructible, bool is_dynamic);
-inline Force create_object_type(const std::string& ns, const std::string& name) { return create_object_type(ns, name, nullptr, 0, false, true); }
+Force create_object_type(Value name, const Value *fields, const Value *types, std::uint32_t size, bool is_constructible, bool is_dynamic);
+Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, const Value *types, std::uint32_t size, bool is_constructible, bool is_dynamic);
+inline Force create_dynamic_object_type(const std::string& ns, const std::string& name) { return create_object_type(ns, name, nullptr, nullptr, 0, false, true); }
+inline Force create_static_object_type(Value name, const Value *fields, const Value *types, std::uint32_t size)
+{ return create_object_type(name, fields, types, size, true, false); }
+inline Force create_static_object_type(const std::string& ns, const std::string& name, const Value *fields, const Value *types, std::uint32_t size)
+{ return create_object_type(ns, name, fields, types, size, true, false); }
 Value get_object_type_name(Value type);
 Int64 get_object_type_field_count(Value type);
+Value get_object_type_field_type(Value type, Int64 index);
 bool is_object_type_constructible(Value type);
 Int64 get_object_field_index(Value type, Value name);
 
-inline Value get_object_type(Value obj)
+inline Value get_object_type_unchecked(Value obj)
 {
     static_assert(offsetof(StaticObject, type) == 0, "type has to be first");
     static_assert(offsetof(DynamicObject, type) == 0, "type has to be first");
-    return obj ? *get_ptr<Value>(obj) : nil;
+    assert(obj);
+    return *get_ptr<Value>(obj);
+}
+
+inline Value get_object_type(Value obj)
+{
+    return obj ? get_object_type_unchecked(obj) : nil;
 }
 
 inline bool is_object_dynamic(Value obj)
 {
-    return get_ptr<ObjectType>(*get_ptr<Value>(obj))->isDynamic;
+    assert(obj);
+    return get_ptr<ObjectType>(get_object_type_unchecked(obj))->isDynamic;
 }
 
-inline Value get_object_element(Value obj, std::uint32_t index)
+inline Value get_object_element_type(Value obj, std::uint32_t index)
 {
+    auto type = get_ptr<ObjectType>(get_object_type_unchecked(obj));
+    if (type->isDynamic)
+        return nil;
+    return (&type->firstField)[index].type;
+}
+
+inline bool is_object_element_value(Value obj, std::uint32_t index)
+{
+    return !get_object_element_type(obj, index).is(type::Int64);
+}
+
+inline Value get_dynamic_object_element(Value obj, std::uint32_t index)
+{
+    assert(is_object_dynamic(obj));
     assert(index < get_object_size(obj));
-    if (!is_object_dynamic(obj))
-        return Value{(&get_ptr<StaticObject>(obj)->firstVal)[index]};
     auto ptr = get_ptr<DynamicObject>(obj);
     return Value{(&ptr->firstVal)[ptr->intCount + index]};
+}
+
+inline Value get_static_object_element(Value obj, std::uint32_t index)
+{
+    assert(index < get_object_size(obj));
+    assert(!is_object_dynamic(obj));
+    assert(is_object_element_value(obj, index));
+    return Value{(&get_ptr<StaticObject>(obj)->firstVal)[index]};
+}
+
+inline Int64 get_static_object_int(Value obj, std::uint32_t index)
+{
+    assert(index < get_object_size(obj));
+    assert(!is_object_dynamic(obj));
+    assert(get_object_element_type(obj, index).is(type::Int64));
+    return Int64((&get_ptr<StaticObject>(obj)->firstVal)[index]);
+}
+
+inline const void *get_dynamic_object_int_ptr(Value obj, std::uint32_t index)
+{
+    assert(is_object_dynamic(obj));
+    return &get_ptr<DynamicObject>(obj)->firstVal + index;
+}
+
+inline Int64 get_dynamic_object_int(Value obj, std::uint32_t index)
+{
+    assert(index < get_dynamic_object_int_size(obj));
+    assert(is_object_dynamic(obj));
+    return Int64((&get_ptr<DynamicObject>(obj)->firstVal)[index]);
 }
 
 }
