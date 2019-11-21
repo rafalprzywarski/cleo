@@ -230,7 +230,6 @@ const ConstRoot Callable{create_basic_type("cleo.core", "Callable")};
 const ConstRoot BytecodeFn{create_dynamic_type("cleo.core", "BytecodeFn")};
 const ConstRoot BytecodeFnBody{create_dynamic_type("cleo.core", "BytecodeFnBody")};
 const ConstRoot BytecodeFnExceptionTable{create_dynamic_type("cleo.core", "BytecodeFnExceptionTable")};
-const ConstRoot Recur{create_type("cleo.core", "Recur")};
 const ConstRoot Atom{create_static_type("cleo.core", "Atom", {"value"})};
 const ConstRoot PersistentMap{create_basic_type("cleo.core", "PersistentMap")};
 const ConstRoot PersistentHashMap{create_dynamic_type("cleo.core", "PersistentHashMap")};
