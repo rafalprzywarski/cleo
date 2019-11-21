@@ -44,14 +44,14 @@ Force read_error_message(Value e)
     return get_static_object_element(e, 0);
 }
 
-Value read_error_line(Value e)
+Int64 read_error_line(Value e)
 {
-    return get_static_object_element(e, 1);
+    return get_static_object_int(e, 1);
 }
 
-Value read_error_column(Value e)
+Int64 read_error_column(Value e)
 {
-    return get_static_object_element(e, 2);
+    return get_static_object_int(e, 2);
 }
 
 Force new_unexpected_end_of_input(Value line, Value column)
@@ -64,14 +64,14 @@ Force unexpected_end_of_input_message(Value)
     return create_string("unexpected end of input");
 }
 
-Value unexpected_end_of_input_line(Value e)
+Int64 unexpected_end_of_input_line(Value e)
 {
-    return get_static_object_element(e, 0);
+    return get_static_object_int(e, 0);
 }
 
-Value unexpected_end_of_input_column(Value e)
+Int64 unexpected_end_of_input_column(Value e)
 {
-    return get_static_object_element(e, 1);
+    return get_static_object_int(e, 1);
 }
 
 Force new_call_error(Value msg)

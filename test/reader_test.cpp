@@ -21,7 +21,7 @@ struct reader_test : Test
         return read(stream);
     }
 
-    static void assert_read_error(Value exType, const std::string& msg, std::uint32_t line, std::uint32_t col, const std::string& source)
+    static void assert_read_error(Value exType, const std::string& msg, Int64 line, Int64 col, const std::string& source)
     {
         try
         {
@@ -36,15 +36,13 @@ struct reader_test : Test
             EXPECT_EQ(msg, std::string(get_string_ptr(*exMsg), get_string_len(*exMsg)));
             if (get_value_type(*e).is(*type::ReadError))
             {
-                Root linev{i64(line)}, colv{i64(col)};
-                EXPECT_EQ_VALS(*linev, read_error_line(*e));
-                EXPECT_EQ_VALS(*colv, read_error_column(*e));
+                EXPECT_EQ(line, read_error_line(*e));
+                EXPECT_EQ(col, read_error_column(*e));
             }
             if (get_value_type(*e).is(*type::UnexpectedEndOfInput))
             {
-                Root linev{i64(line)}, colv{i64(col)};
-                EXPECT_EQ_VALS(*linev, unexpected_end_of_input_line(*e));
-                EXPECT_EQ_VALS(*colv, unexpected_end_of_input_column(*e));
+                EXPECT_EQ(line, unexpected_end_of_input_line(*e));
+                EXPECT_EQ(col, unexpected_end_of_input_column(*e));
             }
         }
         catch (std::exception const& e)
