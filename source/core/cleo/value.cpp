@@ -410,7 +410,6 @@ void set_dynamic_object_int(Value obj, std::uint32_t index, Int64 val)
 void set_static_object_int(Value obj, std::uint32_t index, Int64 val)
 {
     assert(!is_object_dynamic(obj));
-    auto type = get_ptr<ObjectType>(get_object_type(obj));
     assert(index < type->fieldCount);
     assert((&type->firstField)[index].type.is(type::Int64));
     (&get_ptr<StaticObject>(obj)->firstVal)[index] = ValueBits(val);
@@ -427,7 +426,6 @@ void set_dynamic_object_element(Value obj, std::uint32_t index, Value val)
 void set_static_object_element(Value obj, std::uint32_t index, Value val)
 {
     assert(!is_object_dynamic(obj));
-    auto type = get_ptr<ObjectType>(get_object_type(obj));
     assert(index < type->fieldCount);
     if (get_static_object_element_type(obj, index).is(type::Int64))
     {
@@ -489,6 +487,8 @@ bool is_object_type_constructible(Value type)
 
 Int64 get_object_field_index(Value type, Value name)
 {
+    if (type.is_nil())
+        return -1;
     auto ptr = get_ptr<ObjectType>(type);
     auto fields = &ptr->firstField;
     for (Int64 i = 0, size = ptr->fieldCount; i < size; ++i)

@@ -380,13 +380,11 @@ TEST_F(value_test, should_create_types_with_fields)
     auto x = create_symbol("x");
     auto y = create_symbol("y");
     auto z = create_symbol("z");
-    auto o = create_symbol("o");
     std::array<Value, 3> fields{{x, y, z}};
     Root type{create_object_type("some", "type", fields.data(), nullptr, fields.size(), false, false)};
     EXPECT_EQ(0, get_object_field_index(*type, x));
     EXPECT_EQ(1, get_object_field_index(*type, y));
     EXPECT_EQ(2, get_object_field_index(*type, z));
-    EXPECT_LT(get_object_field_index(*type, o), 0);
     EXPECT_EQ(3, get_object_type_field_count(*type));
     EXPECT_FALSE(is_object_type_constructible(*type));
 
@@ -394,13 +392,30 @@ TEST_F(value_test, should_create_types_with_fields)
     EXPECT_EQ(0, get_object_field_index(*type, x));
     EXPECT_EQ(1, get_object_field_index(*type, y));
     EXPECT_EQ(2, get_object_field_index(*type, z));
-    EXPECT_LT(get_object_field_index(*type, o), 0);
     EXPECT_EQ(3, get_object_type_field_count(*type));
     EXPECT_FALSE(is_object_type_constructible(*type));
 
     type = create_object_type("some", "type", nullptr, nullptr, 0, true, false);
-    EXPECT_LT(get_object_field_index(*type, x), 0);
     EXPECT_TRUE(is_object_type_constructible(*type));
+}
+
+TEST_F(value_test, get_object_field_index_should_return_a_negative_value_when_a_field_is_not_found)
+{
+    auto x = create_symbol("x");
+    auto y = create_symbol("y");
+    auto z = create_symbol("z");
+    auto o = create_symbol("o");
+    std::array<Value, 3> fields{{x, y, z}};
+    Root type{create_object_type("some", "type", fields.data(), nullptr, fields.size(), false, false)};
+    EXPECT_LT(get_object_field_index(*type, o), 0);
+
+    type = create_object_type("some", "type", fields.data(), nullptr, fields.size(), false, true);
+    EXPECT_LT(get_object_field_index(*type, o), 0);
+
+    type = create_object_type("some", "type", nullptr, nullptr, 0, true, false);
+    EXPECT_LT(get_object_field_index(*type, x), 0);
+
+    EXPECT_LT(get_object_field_index(nil, x), 0);
 }
 
 }
