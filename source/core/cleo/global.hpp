@@ -14,6 +14,8 @@
 #include <cassert>
 #include <ostream>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 namespace cleo
 {
@@ -189,6 +191,22 @@ extern std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimeth
 extern Hierachy global_hierarchy;
 
 extern Root current_exception;
+
+namespace prof
+{
+extern bool enabled;
+constexpr std::size_t MAX_CALLSTACK_SIZE = 2048;
+extern Value callstack[MAX_CALLSTACK_SIZE];
+extern volatile std::size_t callstack_size;
+extern Value callstack_copy[MAX_CALLSTACK_SIZE];
+extern std::size_t callstack_size_copy;
+extern std::atomic_bool callstack_copy_ready;
+extern std::atomic_bool callstack_copy_needed;
+extern std::atomic_bool finished;
+extern std::thread::id main_thread_id;
+extern std::vector<std::vector<Value>> callstacks;
+extern std::thread collector;
+}
 
 extern const Value TRUE;
 extern const Value SEQ;

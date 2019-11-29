@@ -11,6 +11,7 @@
 #include "bytecode_fn.hpp"
 #include "compile.hpp"
 #include "cons.hpp"
+#include "profiler.hpp"
 #include <vector>
 
 namespace cleo
@@ -62,13 +63,25 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
 Force call_fn(Value type, const Value *elems, std::uint32_t elems_size, std::uint8_t public_n)
 {
     if (type.is(*type::NativeFunction))
+    {
+        CLEO_PROF_TRACE(trace, get_native_function_name(elems[0]));
         return get_native_function_ptr(elems[0])(elems + 1, elems_size - 1);
+    }
     if (type.is(*type::Multimethod))
+    {
+        CLEO_PROF_TRACE(trace, get_multimethod_name(elems[0]));
         return call_multimethod(elems[0], elems + 1, elems_size - 1);
+    }
     if (type.is(*type::BytecodeFn))
+    {
+        CLEO_PROF_TRACE(trace, get_bytecode_fn_name(elems[0]));
         return call_bytecode_fn(elems, elems_size, public_n);
+    }
     if (isa(type, *type::Callable))
+    {
+        CLEO_PROF_TRACE(trace, get_object_type_name(type));
         return call_multimethod(*rt::obj_call, elems, elems_size);
+    }
     Root msg{create_string("call error " + to_string(type))};
     throw_exception(new_call_error(*msg));
 }

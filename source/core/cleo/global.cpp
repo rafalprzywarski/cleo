@@ -25,6 +25,7 @@
 #include <chrono>
 #include "bytecode_fn.hpp"
 #include "compile.hpp"
+#include "profiler.hpp"
 
 namespace cleo
 {
@@ -47,6 +48,21 @@ std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimethods;
 Hierachy global_hierarchy;
 
 Root current_exception;
+
+namespace prof
+{
+bool enabled = false;
+Value callstack[MAX_CALLSTACK_SIZE];
+volatile std::size_t callstack_size = 0;
+Value callstack_copy[MAX_CALLSTACK_SIZE];
+std::size_t callstack_size_copy;
+std::atomic_bool callstack_copy_ready;
+std::atomic_bool callstack_copy_needed;
+std::atomic_bool finished;
+std::thread::id main_thread_id{};
+std::vector<std::vector<Value>> callstacks;
+std::thread collector{};
+}
 
 const Value TRUE = create_keyword("true");
 const Value SEQ = create_symbol("cleo.core", "seq");
@@ -366,6 +382,8 @@ const Value DEFINE_VAR = create_symbol("cleo.core", "define-var");
 const Value SERIALIZE_FN = create_symbol("cleo.core", "serialize-fn");
 const Value DESERIALIZE_FN = create_symbol("cleo.core", "deserialize-fn");
 const Value CHAR_UTF8 = create_symbol("cleo.core", "char-utf8");
+const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
+const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -2021,6 +2039,9 @@ struct Initialize
         define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
 
         define_function(CHAR_UTF8, create_native_function1<char_utf8, &CHAR_UTF8>());
+
+        define_function(START_PROFILING, create_native_function0<prof::start, &START_PROFILING>());
+        define_function(FINISH_PROFILING, create_native_function0<prof::finish, &FINISH_PROFILING>());
     }
 } initialize;
 

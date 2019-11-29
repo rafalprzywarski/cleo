@@ -9,6 +9,7 @@
 #include "multimethod.hpp"
 #include "cons.hpp"
 #include "util.hpp"
+#include "profiler.hpp"
 
 namespace cleo
 {
@@ -67,6 +68,7 @@ void call_bytecode_fn(std::uint32_t n)
 {
     auto elems = &stack[stack.size() - n];
     auto fn = elems[0];
+    CLEO_PROF_TRACE(trace, get_bytecode_fn_name(fn));
     auto body_and_arity = find_bytecode_fn_body(fn, n - 1);
     auto body = body_and_arity.first;
     auto arity = body_and_arity.second;

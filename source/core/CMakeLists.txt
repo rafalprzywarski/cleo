@@ -21,6 +21,7 @@ add_library(cleo_core
   cleo/namespace.cpp
   cleo/persistent_hash_map.cpp
   cleo/print.cpp
+  cleo/profiler.cpp
   cleo/reader.cpp
   cleo/util.cpp
   cleo/value.cpp
