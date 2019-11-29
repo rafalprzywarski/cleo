@@ -873,9 +873,7 @@
         f (if (empty? closed-parent-locals)
             f
             (assoc f :closed-parent-locals (serialize closed-parent-locals)))
-        f (if name
-            (assoc f :name name)
-            f)]
+        f (assoc f :name (or name (gensym "anonfn--")))]
     f))
 
 

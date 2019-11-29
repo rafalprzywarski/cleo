@@ -23,6 +23,7 @@
 #include <fstream>
 #include <limits>
 #include <chrono>
+#include <cstring>
 #include "bytecode_fn.hpp"
 #include "compile.hpp"
 #include "profiler.hpp"
@@ -384,6 +385,7 @@ const Value DESERIALIZE_FN = create_symbol("cleo.core", "deserialize-fn");
 const Value CHAR_UTF8 = create_symbol("cleo.core", "char-utf8");
 const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
 const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
+const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -1314,6 +1316,10 @@ Force subs(Value s, Value start)
 {
     check_type("s", s, *type::String);
     check_type("start", start, type::Int64);
+    auto start_ = get_int64_value(start);
+    if (start_ < 0 ||
+        start_ > get_string_len(s))
+        throw_illegal_argument("Invalid substring start: " + std::to_string(start_));
     return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start)));
 }
 
@@ -1321,7 +1327,16 @@ Force subs(Value s, Value start, Value end)
 {
     check_type("s", s, *type::String);
     check_type("start", start, type::Int64);
-    return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start), get_int64_value(end)));
+    auto start_ = get_int64_value(start);
+    auto end_ = get_int64_value(end);
+    if (start_ < 0 ||
+        end_ < 0 ||
+        start_ > get_string_len(s) ||
+        end_ > get_string_len(s) ||
+        start_ > end_)
+        throw_illegal_argument("Invalid substring bounds: " + std::to_string(start_) + " " + std::to_string(end_));
+
+    return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(start_, end_));
 }
 
 Force string_get(Value s, Value idx, Value def)
@@ -1374,6 +1389,13 @@ Force char_utf8(Value x)
         s += 0x80 | (c & 0x3f);
     }
     return create_string(s);
+}
+
+Value str_starts_with(Value s, Value ss)
+{
+    check_type("s", s, *type::String);
+    check_type("ss", ss, *type::String);
+    return std::strncmp(get_string_ptr(s), get_string_ptr(ss), get_string_len(ss)) == 0 ? TRUE : nil;
 }
 
 template <std::uint32_t f(Value)>
@@ -2042,6 +2064,8 @@ struct Initialize
 
         define_function(START_PROFILING, create_native_function0<prof::start, &START_PROFILING>());
         define_function(FINISH_PROFILING, create_native_function0<prof::finish, &FINISH_PROFILING>());
+
+        define_function(STR_STARTS_WITH, create_native_function2<str_starts_with, &STR_STARTS_WITH>());
     }
 } initialize;
 

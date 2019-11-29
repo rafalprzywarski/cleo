@@ -1051,9 +1051,13 @@
 
 
 (deftest translate-fn
-  (assert= {:bodies [{:arity 0
-                      :bytecode [vm/CNIL]}]}
-           (cc/translate (cc/parse '(fn* []))))
+  (let [f (cc/translate (cc/parse '(fn* [])))]
+    (assert= 2 (count f))
+    (assert= (:bodies f) [{:arity 0
+                           :bytecode [vm/CNIL]}])
+    (assert-not (-> f :name namespace))
+    (assert (str-starts-with? (-> f :name name) "anonfn--"))
+    (assert= Int64 (-> f :name name (subs 8) read-string type)))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/CNIL]}]}
@@ -1079,13 +1083,14 @@
                                  vm/POP
                                  vm/LDL 253 255]}]}
            (cc/translate (cc/parse '(fn* abc [x & y] (do x y abc)))))
-  (assert= {:bodies [{:arity 0
+  (assert= {:name 'abc
+            :bodies [{:arity 0
                       :bytecode [vm/CNIL]}
                      {:arity 1
                       :bytecode [vm/CNIL]}
                      {:arity 3
                       :bytecode [vm/CNIL]}]}
-           (cc/translate (cc/parse '(fn* ([]) ([x]) ([x y z])))))
+           (cc/translate (cc/parse '(fn* abc ([]) ([x]) ([x y z])))))
   (when slow-tests
     (assert-compilation-error "Too many params: 32768" (translate-body (list 'fn*
                                                                              (loop [i 0 bindings (transient [])]
@@ -2395,10 +2400,11 @@
               :bytecode [vm/LDC 0 0]}
              (dissoc f :consts))
     (assert= 1 (-> f :consts count))
-    (assert= {:bodies [{:arity 0,
-                        :consts [10],
-                        :bytecode [vm/LDC 0 0]}]}
-             (-> f :consts first deserialize-fn)))
+    (assert= [{:arity 0,
+               :consts [10],
+               :bytecode [vm/LDC 0 0]}]
+             (-> f :consts first deserialize-fn :bodies))
+    (assert (str-starts-with? (-> f :consts first deserialize-fn :name name) "anonfn--")))
   (let [f (translate-body '(fn* [x y] (fn* [] (x y))))]
     (assert= {:arity 2
               :bytecode [vm/LDC 0 0
