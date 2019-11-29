@@ -46,7 +46,7 @@
 
 (def {:arglists '([coll])}
   rest
-  (fn* [coll]
+  (fn* rest [coll]
     (let* [n (next coll)]
       (if n n ()))))
 
@@ -93,7 +93,7 @@
 
 
 (def {:arglists '([pred coll])} every?
-  (fn* [pred coll]
+  (fn* every? [pred coll]
        (let* [s (seq coll)]
          (if s
            (if (pred (first s))
