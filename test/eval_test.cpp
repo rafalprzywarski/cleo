@@ -755,8 +755,8 @@ Force on_finally(Value)
 TEST_F(eval_test, should_eval_try_finally)
 {
     in_ns(create_symbol("cleo.eval.try.finally.test"));
-    Root call_me{create_native_function1<on_finally>()};
-    Root call_me_before{create_native_function1<on_before_finally>()};
+    Root call_me{create_native_function1<on_finally, nullptr>()};
+    Root call_me_before{create_native_function1<on_before_finally, nullptr>()};
     define(create_symbol("cleo.eval.try.finally.test", "call-me"), *call_me);
     define(create_symbol("cleo.eval.try.finally.test", "call-me-before"), *call_me_before);
 

@@ -295,14 +295,21 @@ const ConstRoot MACRO_META{map_assoc(*EMPTY_MAP, MACRO_KEY, TRUE)};
 
 }
 
+namespace
+{
+const Value TRANSIENT = create_symbol("cleo.core", "transient");
+const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
+const Value CONJ_E = create_symbol("cleo.core", "conj!");
+}
+
 namespace rt
 {
 
-const Root transient_array{create_native_function1<cleo::transient_array>()};
-const Root transient_array_conj{create_native_function2<cleo::transient_array_conj>()};
-const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent>()};
-const Root array_set_conj{create_native_function2<cleo::array_set_conj>()};
-const Root map_assoc{create_native_function3<cleo::map_assoc>()};
+const Root transient_array{create_native_function1<cleo::transient_array, &TRANSIENT>()};
+const Root transient_array_conj{create_native_function2<cleo::transient_array_conj, &CONJ_E>()};
+const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent, &PERSISTENT>()};
+const Root array_set_conj{create_native_function2<cleo::array_set_conj, &CONJ>()};
+const Root map_assoc{create_native_function3<cleo::map_assoc, &ASSOC>()};
 
 const DynamicVar current_ns = define_var(CURRENT_NS, nil, *DYNAMIC_META);
 const DynamicVar lib_paths = define_var(LIB_PATHS, nil, *DYNAMIC_META);
@@ -364,9 +371,6 @@ const Value QUOT = create_symbol("cleo.core", "quot");
 const Value REM = create_symbol("cleo.core", "rem");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
 const Value GET_TIME = create_symbol("cleo.core", "get-time");
-const Value TRANSIENT = create_symbol("cleo.core", "transient");
-const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
-const Value CONJ_E = create_symbol("cleo.core", "conj!");
 const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
 const Value MULTI = create_symbol("cleo.core", "multi*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
@@ -387,32 +391,36 @@ const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
 const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
 const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
 
+const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
+const Value FIRST_ARG = create_symbol("first-arg");
+const Value EQUAL_DISPATCH = create_symbol("equal-dispatch");
+
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
     return (num_args < 1) ? nil : get_value_type(args[0]);
-})};
+}, FIRST_ARG_TYPE)};
 
 const Root first_arg{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
     return (num_args < 1) ? nil : args[0];
-})};
+}, FIRST_ARG)};
 
 const Root equal_dispatch{create_native_function([](const Value *args, std::uint8_t num_args)
 {
     check_arity(OBJ_EQ, 2, num_args);
     std::array<Value, 2> types{{get_value_type(args[0]), get_value_type(args[1])}};
     return create_array(types.data(), types.size());
-})};
+}, EQUAL_DISPATCH)};
 
-const Root ret_nil{create_native_function([](const Value *, std::uint8_t)
+const Root ret_eq_nil{create_native_function([](const Value *, std::uint8_t)
 {
     return force(nil);
-})};
+}, OBJ_EQ)};
 
-const Root ret_zero{create_native_function([](const Value *, std::uint8_t)
+const Root ret_hash_zero{create_native_function([](const Value *, std::uint8_t)
 {
     return force(*ZERO);
-})};
+}, HASH_OBJ)};
 
 Value identity(Value val)
 {
@@ -1478,10 +1486,10 @@ struct Initialize
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
 
-        define_function(CREATE_TYPE, create_native_function3<create_type>());
+        define_function(CREATE_TYPE, create_native_function3<create_type, &CREATE_TYPE>());
 
         define_multimethod(HASH_OBJ, *first_type, nil);
-        define_method(HASH_OBJ, nil, *ret_zero);
+        define_method(HASH_OBJ, nil, *ret_hash_zero);
 
         define_function(NEW, create_native_function(new_instance, NEW));
 
@@ -1497,7 +1505,7 @@ struct Initialize
 
         Root f;
 
-        f = create_native_function1<array_hash>();
+        f = create_native_function1<array_hash, &HASH_OBJ>();
         define_method(HASH_OBJ, *type::Array, *f);
 
         define(CURRENT_NS, get_ns(CLEO_CORE), *DYNAMIC_META);
@@ -1565,74 +1573,74 @@ struct Initialize
         define_multimethod(NEXT, *first_type, undefined);
         define_multimethod(PEEK, *first_type, undefined);
 
-        f = create_native_function1<nil_seq>();
+        f = create_native_function1<nil_seq, &SEQ>();
         define_method(SEQ, nil, *f);
-        f = create_native_function1<nil_seq>();
+        f = create_native_function1<nil_seq, &FIRST>();
         define_method(FIRST, nil, *f);
-        f = create_native_function1<nil_seq>();
+        f = create_native_function1<nil_seq, &NEXT>();
         define_method(NEXT, nil, *f);
 
         derive(*type::List, *type::Sequence);
-        f = create_native_function1<list_seq>();
+        f = create_native_function1<list_seq, &SEQ>();
         define_method(SEQ, *type::List, *f);
-        f = create_native_function1<get_list_first>();
+        f = create_native_function1<get_list_first, &FIRST>();
         define_method(FIRST, *type::List, *f);
-        f = create_native_function1<get_list_next>();
+        f = create_native_function1<get_list_next, &NEXT>();
         define_method(NEXT, *type::List, *f);
-        f = create_native_function1<get_list_first>();
+        f = create_native_function1<get_list_first, &PEEK>();
         define_method(PEEK, *type::List, *f);
 
         derive(*type::Cons, *type::Sequence);
-        f = create_native_function1<identity>();
+        f = create_native_function1<identity, &SEQ>();
         define_method(SEQ, *type::Cons, *f);
-        f = create_native_function1<cons_first>();
+        f = create_native_function1<cons_first, &FIRST>();
         define_method(FIRST, *type::Cons, *f);
-        f = create_native_function1<cons_next>();
+        f = create_native_function1<cons_next, &NEXT>();
         define_method(NEXT, *type::Cons, *f);
 
         derive(*type::LazySeq, *type::Sequence);
-        f = create_native_function1<lazy_seq_seq>();
+        f = create_native_function1<lazy_seq_seq, &SEQ>();
         define_method(SEQ, *type::LazySeq, *f);
-        f = create_native_function1<lazy_seq_first>();
+        f = create_native_function1<lazy_seq_first, &FIRST>();
         define_method(FIRST, *type::LazySeq, *f);
-        f = create_native_function1<lazy_seq_next>();
+        f = create_native_function1<lazy_seq_next, &NEXT>();
         define_method(NEXT, *type::LazySeq, *f);
 
         derive(*type::Array, *type::Seqable);
-        f = create_native_function1<array_seq>();
+        f = create_native_function1<array_seq, &SEQ>();
         define_method(SEQ, *type::Array, *f);
-        f = create_native_function1<get_array_seq_first>();
+        f = create_native_function1<get_array_seq_first, &FIRST>();
         define_method(FIRST, *type::ArraySeq, *f);
-        f = create_native_function1<get_array_seq_next>();
+        f = create_native_function1<get_array_seq_next, &NEXT>();
         define_method(NEXT, *type::ArraySeq, *f);
-        f = create_native_function1<array_peek>();
+        f = create_native_function1<array_peek, &PEEK>();
         define_method(PEEK, *type::Array, *f);
 
-        f = create_native_function1<transient_array_peek>();
+        f = create_native_function1<transient_array_peek, &PEEK>();
         define_method(PEEK, *type::TransientArray, *f);
 
         derive(*type::ArraySet, *type::Seqable);
-        f = create_native_function1<array_set_seq>();
+        f = create_native_function1<array_set_seq, &SEQ>();
         define_method(SEQ, *type::ArraySet, *f);
-        f = create_native_function1<get_array_set_seq_first>();
+        f = create_native_function1<get_array_set_seq_first, &FIRST>();
         define_method(FIRST, *type::ArraySetSeq, *f);
-        f = create_native_function1<get_array_set_seq_next>();
+        f = create_native_function1<get_array_set_seq_next, &NEXT>();
         define_method(NEXT, *type::ArraySetSeq, *f);
 
         derive(*type::ArrayMap, *type::Seqable);
-        f = create_native_function1<array_map_seq>();
+        f = create_native_function1<array_map_seq, &SEQ>();
         define_method(SEQ, *type::ArrayMap, *f);
-        f = create_native_function1<get_array_map_seq_first>();
+        f = create_native_function1<get_array_map_seq_first, &FIRST>();
         define_method(FIRST, *type::ArrayMapSeq, *f);
-        f = create_native_function1<get_array_map_seq_next>();
+        f = create_native_function1<get_array_map_seq_next, &NEXT>();
         define_method(NEXT, *type::ArrayMapSeq, *f);
 
         derive(*type::PersistentHashMap, *type::Seqable);
-        f = create_native_function1<persistent_hash_map_seq>();
+        f = create_native_function1<persistent_hash_map_seq, &SEQ>();
         define_method(SEQ, *type::PersistentHashMap, *f);
-        f = create_native_function1<get_persistent_hash_map_seq_first>();
+        f = create_native_function1<get_persistent_hash_map_seq_first, &FIRST>();
         define_method(FIRST, *type::PersistentHashMapSeq, *f);
-        f = create_native_function1<get_persistent_hash_map_seq_next>();
+        f = create_native_function1<get_persistent_hash_map_seq_next, &NEXT>();
         define_method(NEXT, *type::PersistentHashMapSeq, *f);
 
         derive(*type::ArraySeq, *type::Sequence);
@@ -1640,34 +1648,34 @@ struct Initialize
         derive(*type::ArrayMapSeq, *type::Sequence);
         derive(*type::PersistentHashMapSeq, *type::Sequence);
         derive(*type::Sequence, *type::Seqable);
-        f = create_native_function1<identity>();
+        f = create_native_function1<identity, &SEQ>();
         define_method(SEQ, *type::Sequence, *f);
 
-        f = create_native_function1<get_seqable_first>();
+        f = create_native_function1<get_seqable_first, &FIRST>();
         define_method(FIRST, *type::Seqable, *f);
-        f = create_native_function1<get_seqable_next>();
+        f = create_native_function1<get_seqable_next, &NEXT>();
         define_method(NEXT, *type::Seqable, *f);
 
         define_multimethod(COUNT, *first_type, undefined);
-        f = create_native_function1<WrapUInt32Fn<get_array_map_size>::fn>();
+        f = create_native_function1<WrapUInt32Fn<get_array_map_size>::fn, &COUNT>();
         define_method(COUNT, *type::ArrayMap, *f);
-        f = create_native_function1<WrapInt64Fn<get_persistent_hash_map_size>::fn>();
+        f = create_native_function1<WrapInt64Fn<get_persistent_hash_map_size>::fn, &COUNT>();
         define_method(COUNT, *type::PersistentHashMap, *f);
-        f = create_native_function1<WrapUInt32Fn<get_array_set_size>::fn>();
+        f = create_native_function1<WrapUInt32Fn<get_array_set_size>::fn, &COUNT>();
         define_method(COUNT, *type::ArraySet, *f);
-        f = create_native_function1<WrapInt64Fn<get_list_size>::fn>();
+        f = create_native_function1<WrapInt64Fn<get_list_size>::fn, &COUNT>();
         define_method(COUNT, *type::List, *f);
-        f = create_native_function1<cons_size>();
+        f = create_native_function1<cons_size, &COUNT>();
         define_method(COUNT, *type::Cons, *f);
-        f = create_native_function1<seq_count>();
+        f = create_native_function1<seq_count, &COUNT>();
         define_method(COUNT, *type::Sequence, *f);
-        f = create_native_function1<WrapUInt32Fn<get_array_size>::fn>();
+        f = create_native_function1<WrapUInt32Fn<get_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::Array, *f);
-        f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn>();
+        f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::TransientArray, *f);
-        f = create_native_function1<WrapUInt32Fn<get_string_len>::fn>();
+        f = create_native_function1<WrapUInt32Fn<get_string_len>::fn, &COUNT>();
         define_method(COUNT, *type::String, *f);
-        f = create_native_function1<nil_count>();
+        f = create_native_function1<nil_count, &COUNT>();
         define_method(COUNT, nil, *f);
 
         define_multimethod(GET, *first_type, undefined);
@@ -1681,10 +1689,10 @@ struct Initialize
         f = create_native_function2or3<array_set_get, array_set_get, &GET>();
         define_method(GET, *type::ArraySet, *f);
 
-        f = create_native_function2<array_get>();
+        f = create_native_function2<array_get, &GET>();
         define_method(GET, *type::Array, *f);
 
-        f = create_native_function2<transient_array_get>();
+        f = create_native_function2<transient_array_get, &GET>();
         define_method(GET, *type::TransientArray, *f);
 
         f = create_native_function2or3<nil_get, nil_get, &GET>();
@@ -1706,24 +1714,24 @@ struct Initialize
 
         define_multimethod(CONJ, *first_type, undefined);
 
-        f = create_native_function2<array_conj>();
+        f = create_native_function2<array_conj, &CONJ>();
         define_method(CONJ, *type::Array, *f);
 
-        f = create_native_function2<cons_conj>();
+        f = create_native_function2<cons_conj, &CONJ>();
         define_method(CONJ, *type::ArraySeq, *f);
 
         define_method(CONJ, *type::ArraySet, *rt::array_set_conj);
 
-        f = create_native_function2<list_conj>();
+        f = create_native_function2<list_conj, &CONJ>();
         define_method(CONJ, *type::List, *f);
 
-        f = create_native_function2<cons_conj>();
+        f = create_native_function2<cons_conj, &CONJ>();
         define_method(CONJ, *type::Cons, *f);
 
-        f = create_native_function2<lazy_seq_conj>();
+        f = create_native_function2<lazy_seq_conj, &CONJ>();
         define_method(CONJ, *type::LazySeq, *f);
 
-        f = create_native_function2<nil_conj>();
+        f = create_native_function2<nil_conj, &CONJ>();
         define_method(CONJ, nil, *f);
 
         f = create_native_function2<cons, &CONS>();
@@ -1735,30 +1743,30 @@ struct Initialize
         define_multimethod(ASSOC, *first_type, undefined);
 
         derive(*type::ArrayMap, *type::PersistentMap);
-        f = create_native_function3<map_assoc>();
+        f = create_native_function3<map_assoc, &ASSOC>();
         define_method(ASSOC, *type::ArrayMap, *f);
 
         derive(*type::PersistentHashMap, *type::PersistentMap);
-        f = create_native_function3<persistent_hash_map_assoc>();
+        f = create_native_function3<persistent_hash_map_assoc, &ASSOC>();
         define_method(ASSOC, *type::PersistentHashMap, *f);
 
         define_multimethod(ASSOC_E, *first_type, undefined);
 
-        f = create_native_function3<transient_array_assoc>();
+        f = create_native_function3<transient_array_assoc, &ASSOC_E>();
         define_method(ASSOC_E, *type::TransientArray, *f);
 
-        f = create_native_function3<nil_assoc>();
+        f = create_native_function3<nil_assoc, &ASSOC>();
         define_method(ASSOC, nil, *f);
 
         define_multimethod(DISSOC, *first_type, undefined);
 
-        f = create_native_function2<array_map_dissoc>();
+        f = create_native_function2<array_map_dissoc, &DISSOC>();
         define_method(DISSOC, *type::ArrayMap, *f);
 
-        f = create_native_function2<persistent_hash_map_dissoc>();
+        f = create_native_function2<persistent_hash_map_dissoc, &DISSOC>();
         define_method(DISSOC, *type::PersistentHashMap, *f);
 
-        f = create_native_function2<nil_dissoc>();
+        f = create_native_function2<nil_dissoc, &DISSOC>();
         define_method(DISSOC, nil, *f);
 
         f = create_native_function0<create_array_map, &ARRAY_MAP>();
@@ -1773,21 +1781,21 @@ struct Initialize
 
         std::array<Value, 2> two_array_maps{{*type::ArrayMap, *type::ArrayMap}};
         v = create_array(two_array_maps.data(), two_array_maps.size());
-        f = create_native_function2<array_map_merge>();
+        f = create_native_function2<array_map_merge, &MERGE>();
         define_method(MERGE, *v, *f);
 
         define_multimethod(OBJ_CALL, *first_type, nil);
 
         derive(*type::ArraySet, *type::Callable);
-        f = create_native_function2or3<array_set_get, array_set_get>();
+        f = create_native_function2or3<array_set_get, array_set_get, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::ArraySet, *f);
 
         derive(*type::ArrayMap, *type::Callable);
-        f = create_native_function2or3<array_map_get, array_map_get>();
+        f = create_native_function2or3<array_map_get, array_map_get, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::ArrayMap, *f);
 
         derive(*type::PersistentHashMap, *type::Callable);
-        f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get>();
+        f = create_native_function2or3<persistent_hash_map_get, persistent_hash_map_get, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::PersistentHashMap, *f);
 
         derive(*type::Keyword, *type::Callable);
@@ -1795,29 +1803,29 @@ struct Initialize
         define_method(OBJ_CALL, *type::Keyword, *f);
 
         derive(*type::Array, *type::Callable);
-        f = create_native_function2<array_call>();
+        f = create_native_function2<array_call, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::Array, *f);
 
         derive(*type::TransientArray, *type::Callable);
-        f = create_native_function2<transient_array_call>();
+        f = create_native_function2<transient_array_call, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::TransientArray, *f);
 
         derive(*type::CFunction, *type::Callable);
-        f = create_native_function(call_c_function);
+        f = create_native_function(call_c_function, OBJ_CALL);
         define_method(OBJ_CALL, *type::CFunction, *f);
 
         derive(*type::Var, *type::Callable);
-        f = create_native_function(var_call);
+        f = create_native_function(var_call, OBJ_CALL);
         define_method(OBJ_CALL, *type::Var, *f);
 
         define_multimethod(OBJ_EQ, *equal_dispatch, nil);
-        define_method(OBJ_EQ, nil, *ret_nil);
+        define_method(OBJ_EQ, nil, *ret_eq_nil);
 
         auto define_seq_eq = [&](auto type1, auto type2)
         {
             std::array<Value, 2> two{{type1, type2}};
             Root v{create_array(two.data(), two.size())};
-            Root f{create_native_function2<are_seqables_equal>()};
+            Root f{create_native_function2<are_seqables_equal, &OBJ_EQ>()};
             define_method(OBJ_EQ, *v, *f);
         };
 
@@ -1833,46 +1841,46 @@ struct Initialize
 
         std::array<Value, 2> two_sets{{*type::ArraySet, *type::ArraySet}};
         v = create_array(two_sets.data(), two_sets.size());
-        f = create_native_function2<are_array_sets_equal>();
+        f = create_native_function2<are_array_sets_equal, &OBJ_EQ>();
         define_method(OBJ_EQ, *v, *f);
 
         v = create_array(two_array_maps.data(), two_array_maps.size());
-        f = create_native_function2<are_array_maps_equal>();
+        f = create_native_function2<are_array_maps_equal, &OBJ_EQ>();
         define_method(OBJ_EQ, *v, *f);
 
         std::array<Value, 2> two_hash_maps{{*type::PersistentHashMap, *type::PersistentHashMap}};
         v = create_array(two_hash_maps.data(), two_hash_maps.size());
-        f = create_native_function2<are_persistent_hash_maps_equal>();
+        f = create_native_function2<are_persistent_hash_maps_equal, &OBJ_EQ>();
         define_method(OBJ_EQ, *v, *f);
 
         v = create_array(two_maps.data(), two_maps.size());
-        f = create_native_function2<are_maps_equal>();
+        f = create_native_function2<are_maps_equal, &OBJ_EQ>();
         define_method(OBJ_EQ, *v, *f);
 
         define(PRINT_READABLY, TRUE, *DYNAMIC_META);
 
         define_multimethod(PR_STR_OBJ, *first_type, nil);
 
-        f = create_native_function1<pr_str_array>();
+        f = create_native_function1<pr_str_array, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Array, *f);
-        f = create_native_function1<pr_str_array_set>();
+        f = create_native_function1<pr_str_array_set, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::ArraySet, *f);
-        f = create_native_function1<pr_str_array_map>();
+        f = create_native_function1<pr_str_array_map, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::ArrayMap, *f);
-        f = create_native_function1<pr_str_persistent_hash_map>();
+        f = create_native_function1<pr_str_persistent_hash_map, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::PersistentHashMap, *f);
-        f = create_native_function1<pr_str_seqable>();
+        f = create_native_function1<pr_str_seqable, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Seqable, *f);
-        f = create_native_function1<pr_str_object>();
+        f = create_native_function1<pr_str_object, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, nil, *f);
 
-        f = create_native_function1<pr_str_var>();
+        f = create_native_function1<pr_str_var, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Var, *f);
 
-        f = create_native_function1<pr_str_bytecode_fn>();
+        f = create_native_function1<pr_str_bytecode_fn, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::BytecodeFn, *f);
 
-        f = create_native_function1<pr_str_multimethod>();
+        f = create_native_function1<pr_str_multimethod, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Multimethod, *f);
 
         f = create_native_function2<add2, &INTERNAL_ADD_2>();
@@ -1890,53 +1898,53 @@ struct Initialize
         f = create_native_function2<are_equal, &EQ>();
         define(EQ, *f);
 
-        f = create_native_function1<pr_str_exception>();
+        f = create_native_function1<pr_str_exception, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Exception, *f);
 
         define_multimethod(GET_MESSAGE, *first_type, nil);
 
         derive(*type::ReadError, *type::Exception);
-        f = create_native_function1<read_error_message>();
+        f = create_native_function1<read_error_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::ReadError, *f);
 
         derive(*type::UnexpectedEndOfInput, *type::ReadError);
-        f = create_native_function1<unexpected_end_of_input_message>();
+        f = create_native_function1<unexpected_end_of_input_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::UnexpectedEndOfInput, *f);
 
         derive(*type::CallError, *type::Exception);
-        f = create_native_function1<call_error_message>();
+        f = create_native_function1<call_error_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::CallError, *f);
 
         derive(*type::SymbolNotFound, *type::Exception);
-        f = create_native_function1<symbol_not_found_message>();
+        f = create_native_function1<symbol_not_found_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::SymbolNotFound, *f);
 
         derive(*type::IllegalArgument, *type::Exception);
-        f = create_native_function1<illegal_argument_message>();
+        f = create_native_function1<illegal_argument_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::IllegalArgument, *f);
 
         derive(*type::IllegalState, *type::Exception);
-        f = create_native_function1<illegal_state_message>();
+        f = create_native_function1<illegal_state_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::IllegalState, *f);
 
         derive(*type::FileNotFound, *type::Exception);
-        f = create_native_function1<file_not_found_message>();
+        f = create_native_function1<file_not_found_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::FileNotFound, *f);
 
         derive(*type::ArithmeticException, *type::Exception);
-        f = create_native_function1<arithmetic_exception_message>();
+        f = create_native_function1<arithmetic_exception_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::ArithmeticException, *f);
 
         derive(*type::IndexOutOfBounds, *type::Exception);
-        f = create_native_function1<index_out_of_bounds_message>();
+        f = create_native_function1<index_out_of_bounds_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::IndexOutOfBounds, *f);
 
         derive(*type::CompilationError, *type::Exception);
-        f = create_native_function1<compilation_error_message>();
+        f = create_native_function1<compilation_error_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::CompilationError, *f);
 
         derive(*type::StackOverflow, *type::Exception);
-        f = create_native_function1<stack_overflow_message>();
+        f = create_native_function1<stack_overflow_message, &GET_MESSAGE>();
         define_method(GET_MESSAGE, *type::StackOverflow, *f);
 
         f = create_native_function1<macroexpand1_noenv, &MACROEXPAND1>();
@@ -1963,14 +1971,14 @@ struct Initialize
         define(ATOM, *f);
 
         define_multimethod(DEREF, *first_type, nil);
-        f = create_native_function1<atom_deref>();
+        f = create_native_function1<atom_deref, &DEREF>();
         define_method(DEREF, *type::Atom, *f);
 
-        f = create_native_function1<get_var_value>();
+        f = create_native_function1<get_var_value, &DEREF>();
         define_method(DEREF, *type::Var, *f);
 
         define_multimethod(RESET, *first_type, nil);
-        f = create_native_function2<atom_reset>();
+        f = create_native_function2<atom_reset, &RESET>();
         define_method(RESET, *type::Atom, *f);
 
         f = create_swap_fn();

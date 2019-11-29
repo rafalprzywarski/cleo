@@ -31,14 +31,14 @@ struct persistent_hash_map_test : Test
 
     persistent_hash_map_test() : Test("cleo.persistent_hash_map.test")
     {
-        Root f{create_native_function1<string_value>()};
+        Root f{create_native_function1<string_value, &OBJ_EQ>()};
         define_method(HASH_OBJ, *HashString, *f);
 
-        f = create_native_function2<are_hash_strings_equal>();
+        f = create_native_function2<are_hash_strings_equal, &OBJ_EQ>();
         Root args{array(*HashString, *HashString)};
         define_method(OBJ_EQ, *args, *f);
 
-        f = create_native_function1<pr_str_hash_string>();
+        f = create_native_function1<pr_str_hash_string, &OBJ_EQ>();
         define_method(PR_STR_OBJ, *HashString, *f);
     }
 

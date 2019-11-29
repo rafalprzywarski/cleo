@@ -57,7 +57,7 @@ Force create_native_new0()
     }, deref_name<name>());
 }
 
-template <Force f(Value), const Value *name = nullptr>
+template <Force f(Value), const Value *name>
 Force create_native_function1()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -68,7 +68,7 @@ Force create_native_function1()
     }, deref_name<name>());
 }
 
-template <Value f(Value), const Value *name = nullptr>
+template <Value f(Value), const Value *name>
 Force create_native_function1()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -79,7 +79,7 @@ Force create_native_function1()
     }, deref_name<name>());
 }
 
-template <Value f1(Value), Value f2(Value, Value), const Value *name = nullptr>
+template <Value f1(Value), Value f2(Value, Value), const Value *name>
 Force create_native_function1or2()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -92,7 +92,7 @@ Force create_native_function1or2()
     }, deref_name<name>());
 }
 
-template <Force f(Value), const Value *name = nullptr>
+template <Force f(Value), const Value *name>
 Force create_native_new1()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -103,7 +103,7 @@ Force create_native_new1()
     }, deref_name<name>());
 }
 
-template <Force f(Value, Value), const Value *name = nullptr>
+template <Force f(Value, Value), const Value *name>
 Force create_native_function2()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -114,7 +114,7 @@ Force create_native_function2()
     }, deref_name<name>());
 }
 
-template <Value f(Value, Value), const Value *name = nullptr>
+template <Value f(Value, Value), const Value *name>
 Force create_native_function2()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -125,7 +125,7 @@ Force create_native_function2()
     }, deref_name<name>());
 }
 
-template <Force f(Value, Value), const Value *name = nullptr>
+template <Force f(Value, Value), const Value *name>
 Force create_native_new2()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -136,7 +136,7 @@ Force create_native_new2()
     }, deref_name<name>());
 }
 
-template <Force f(Value, Value, Value), const Value *name = nullptr>
+template <Force f(Value, Value, Value), const Value *name>
 Force create_native_function3()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -147,7 +147,7 @@ Force create_native_function3()
     }, deref_name<name>());
 }
 
-template <Value f(Value, Value, Value), const Value *name = nullptr>
+template <Value f(Value, Value, Value), const Value *name>
 Force create_native_function3()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -158,7 +158,7 @@ Force create_native_function3()
     }, deref_name<name>());
 }
 
-template <Value f2(Value, Value), Value f3(Value, Value, Value), const Value *name = nullptr>
+template <Value f2(Value, Value), Value f3(Value, Value, Value), const Value *name>
 Force create_native_function2or3()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -171,7 +171,7 @@ Force create_native_function2or3()
     }, deref_name<name>());
 }
 
-template <Force f2(Value, Value), Force f3(Value, Value, Value), const Value *name = nullptr>
+template <Force f2(Value, Value), Force f3(Value, Value, Value), const Value *name>
 Force create_native_function2or3()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args) -> Force
@@ -184,7 +184,7 @@ Force create_native_function2or3()
     }, deref_name<name>());
 }
 
-template <Force f(Value, Value, Value), const Value *name = nullptr>
+template <Force f(Value, Value, Value), const Value *name>
 Force create_native_new3()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -195,7 +195,7 @@ Force create_native_new3()
     }, deref_name<name>());
 }
 
-template <Force f(Value, Value, Value, Value), const Value *name = nullptr>
+template <Force f(Value, Value, Value, Value), const Value *name>
 Force create_native_function4()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
@@ -206,7 +206,7 @@ Force create_native_function4()
     }, deref_name<name>());
 }
 
-template <Force f(Value, Value, Value, Value, Value), const Value *name = nullptr>
+template <Force f(Value, Value, Value, Value, Value), const Value *name>
 Force create_native_function5()
 {
     return create_native_function([](const Value *args, std::uint8_t num_args)
