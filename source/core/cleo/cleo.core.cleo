@@ -502,12 +502,13 @@
 
 (defn filter [pred coll]
   (lazy-seq
-    (when-let [s (seq coll)]
-      (let [v (first s)
-            n (next s)]
-        (if (pred v)
-          (cons v (filter pred n))
-          (filter pred n))))))
+   (loop [s (seq coll)]
+     (when s
+       (let [v (first s)
+             n (next s)]
+         (if (pred v)
+           (cons v (filter pred n))
+           (recur n)))))))
 
 
 (defn drop [n coll]
