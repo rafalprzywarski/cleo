@@ -11,14 +11,15 @@
                                       (assoc g f0 (conj (get g f0 []) fk))))
                                   {}
                                   callstacks)]
-             (mapv (fn [[f0 fks]]
-                     (let [call {:fn f0
-                                 :hits (count fks)}
-                           subcalls (filter seq fks)]
-                       (if (empty? subcalls)
-                         call
-                         (assoc call :subcalls (group-callstacks subcalls)))))
-                   groupped)))
+             (->> groupped
+                  (mapv (fn [[f0 fks]]
+                          (let [call {:fn f0
+                                      :hits (count fks)}
+                                subcalls (filter seq fks)]
+                            (if (empty? subcalls)
+                              call
+                              (assoc call :subcalls (group-callstacks subcalls))))))
+                  (sort (fn [{lhits :hits} {rhits :hits}] (> lhits rhits))))))
          groupped (group-callstacks callstacks)
          total-hits (reduce + (map :hits groupped))
          print-indented
