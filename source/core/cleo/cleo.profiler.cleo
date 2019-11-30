@@ -1,0 +1,42 @@
+(ns cleo.profiler)
+
+
+(defn print-callstacks
+  ([callstacks]
+   (let [group-callstacks
+         (fn group-callstacks [callstacks]
+           (let [groupped (reduce (fn [g c]
+                                    (let [f0 (first c)
+                                          fk (rest c)]
+                                      (assoc g f0 (conj (get g f0 []) fk))))
+                                  {}
+                                  callstacks)]
+             (mapv (fn [[f0 fks]]
+                     (let [call {:fn f0
+                                 :hits (count fks)}
+                           subcalls (filter seq fks)]
+                       (if (empty? subcalls)
+                         call
+                         (assoc call :subcalls (group-callstacks subcalls)))))
+                   groupped)))
+         groupped (group-callstacks callstacks)
+         total-hits (reduce + (map :hits groupped))
+         print-indented
+         (fn print-indented [gcs indent]
+           (let [last-fn (:fn (peek gcs))]
+             (doseq [{call-fn :fn :keys [hits subcalls]} gcs]
+               (let [last? (= call-fn last-fn)]
+                 (println (str indent (if last? "\\->" "|->") call-fn ": " (quot (* 100 hits) total-hits) "%, " hits " hits"))
+                 (when subcalls
+                   (print-indented subcalls (str indent (if last? "   " "|  "))))))))]
+     (print-indented groupped ""))))
+
+
+(defmacro profile [& body]
+  `(do
+     (start-profiling)
+     (try*
+       ~@body
+       (catch* Exception e#
+         nil))
+     (finish-profiling)))

@@ -31,4 +31,4 @@ add_library(cleo_core
 
 target_link_libraries(cleo_core dl)
 
-install(FILES cleo/cleo.core.cleo cleo/cleo.compiler.cleo cleo/cleo.vm.cleo DESTINATION share/cleo/lib)
+install(FILES cleo/cleo.core.cleo cleo/cleo.compiler.cleo cleo/cleo.vm.cleo cleo/cleo.profiler.cleo DESTINATION share/cleo/lib)

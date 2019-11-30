@@ -634,16 +634,6 @@
   (map second (namespaces*)))
 
 
-(defmacro profile [& body]
-  `(do
-     (start-profiling)
-     (try*
-       ~@body
-       (catch* Exception e#
-         nil))
-     (finish-profiling)))
-
-
 (require 'cleo.compiler)
 
 
