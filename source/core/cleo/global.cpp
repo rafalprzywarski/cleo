@@ -24,6 +24,7 @@
 #include <limits>
 #include <chrono>
 #include <cstring>
+#include <algorithm>
 #include "bytecode_fn.hpp"
 #include "compile.hpp"
 #include "profiler.hpp"
@@ -390,6 +391,7 @@ const Value CHAR_UTF8 = create_symbol("cleo.core", "char-utf8");
 const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
 const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
 const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
+const Value SORT_E = create_symbol("cleo.core", "sort!");
 
 const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
 const Value FIRST_ARG = create_symbol("first-arg");
@@ -1406,6 +1408,26 @@ Value str_starts_with(Value s, Value ss)
     return std::strncmp(get_string_ptr(s), get_string_ptr(ss), get_string_len(ss)) == 0 ? TRUE : nil;
 }
 
+Force sort_transient(Value pred, Value array)
+{
+    check_type("array", array, *type::TransientArray);
+    auto size = get_transient_array_size(array);
+    std::vector<Value> vals;
+    vals.reserve(size);
+    for (decltype(size) i = 0; i != size; ++i)
+        vals.push_back(get_transient_array_elem(array, i));
+    std::sort(begin(vals), end(vals),
+              [pred](Value l, Value r)
+                  {
+                      Value predlr[] = {pred, l, r};
+                      return !call(predlr, 3).value().is_nil();
+                  });
+    Root ret{array};
+    for (decltype(size) i = 0; i != size; ++i)
+        ret = transient_array_assoc_elem(*ret, i, vals[i]);
+    return *ret;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -2074,6 +2096,8 @@ struct Initialize
         define_function(FINISH_PROFILING, create_native_function0<prof::finish, &FINISH_PROFILING>());
 
         define_function(STR_STARTS_WITH, create_native_function2<str_starts_with, &STR_STARTS_WITH>());
+
+        define_function(SORT_E, create_native_function2<sort_transient, &SORT_E>());
     }
 } initialize;
 

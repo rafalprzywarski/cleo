@@ -319,6 +319,7 @@
 (defn int? [x] (identical? (type x) Int64))
 (defn even? [x] (zero? (bit-and* x 1)))
 (defn odd? [x] (not (even? x)))
+(defn > [x y] (< y x))
 
 
 (defn max
@@ -559,6 +560,17 @@
 
 (defn update [m k f]
   (assoc m k (f (get m k))))
+
+
+(defn sort
+  ([coll] (sort < coll))
+  ([pred coll]
+   (let [tarray (loop [s (seq coll)
+                       out (transient [])]
+                  (if s
+                    (recur (next s) (conj! out (first s)))
+                    out))]
+     (persistent! (sort! pred tarray)))))
 
 
 (defn disasm [fn]
