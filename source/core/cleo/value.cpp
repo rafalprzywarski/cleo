@@ -195,13 +195,12 @@ Float64 get_float64_value(Value val)
     return bit_cast<Float64>(val.bits() ^ tag::FLIP_MASK);
 }
 
-Force create_string(const std::string& str)
+Force create_string(const char* str, std::uint32_t len)
 {
-    auto len = str.length();
     auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len + 1));
     val->len = len;
     val->hashVal = 0;
-    std::memcpy(&val->firstChar, str.data(), str.length());
+    std::memcpy(&val->firstChar, str, len);
     (&val->firstChar)[len] = 0;
     return tag_ptr(val, tag::STRING);
 }

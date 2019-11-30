@@ -35,6 +35,42 @@ TEST_F(pr_str_test, should_print_integers)
     EXPECT_EQ("-15442", str(pr_str(*val)));
 }
 
+TEST_F(pr_str_test, should_print_chars)
+{
+    EXPECT_EQ("\\backspace", str(pr_str(create_char32(8))));
+    EXPECT_EQ("\\tab", str(pr_str(create_char32(9))));
+    EXPECT_EQ("\\newline", str(pr_str(create_char32(10))));
+    EXPECT_EQ("\\formfeed", str(pr_str(create_char32(12))));
+    EXPECT_EQ("\\return", str(pr_str(create_char32(13))));
+    EXPECT_EQ("\\space", str(pr_str(create_char32(32))));
+
+    EXPECT_EQ("\\a", str(pr_str(create_char32('a'))));
+    EXPECT_EQ("\\b", str(pr_str(create_char32('b'))));
+    EXPECT_EQ("\\y", str(pr_str(create_char32('y'))));
+    EXPECT_EQ("\\z", str(pr_str(create_char32('z'))));
+    EXPECT_EQ("\\A", str(pr_str(create_char32('A'))));
+    EXPECT_EQ("\\Z", str(pr_str(create_char32('Z'))));
+    EXPECT_EQ("\\7", str(pr_str(create_char32('7'))));
+    EXPECT_EQ("\\$", str(pr_str(create_char32('$'))));
+    EXPECT_EQ("\\!", str(pr_str(create_char32(33))));
+    EXPECT_EQ("\\~", str(pr_str(create_char32(126))));
+
+    EXPECT_EQ("\\u00", str(pr_str(create_char32(0))));
+    EXPECT_EQ("\\u01", str(pr_str(create_char32(1))));
+    EXPECT_EQ("\\u0f", str(pr_str(create_char32(15))));
+    EXPECT_EQ("\\u1f", str(pr_str(create_char32(31))));
+    EXPECT_EQ("\\u7f", str(pr_str(create_char32(127))));
+    EXPECT_EQ("\\uff", str(pr_str(create_char32(255))));
+
+    EXPECT_EQ("\\u0100", str(pr_str(create_char32(0x100))));
+    EXPECT_EQ("\\u1234", str(pr_str(create_char32(0x1234))));
+    EXPECT_EQ("\\uffff", str(pr_str(create_char32(0xffff))));
+
+    EXPECT_EQ("\\u010000", str(pr_str(create_char32(0x10000))));
+    EXPECT_EQ("\\u123456", str(pr_str(create_char32(0x123456))));
+    EXPECT_EQ("\\uffffff", str(pr_str(create_char32(0xffffff))));
+}
+
 TEST_F(pr_str_test, should_print_floats)
 {
     Root val;
@@ -91,8 +127,8 @@ TEST_F(pr_str_test, should_print_strings)
     EXPECT_EQ("\"\\nabc\\rdef\\t\\n\"", str(pr_str(*val)));
     val = create_string("\"x\\\'y\\");
     EXPECT_EQ("\"\\\"x\\\\\\\'y\\\\\"", str(pr_str(*val)));
-    val = create_string(std::string("\x80\xff\x97\x01\0\x1f", 6));
-    EXPECT_EQ("\"\\x80\\xff\\x97\\x01\\0\\x1f\"", str(pr_str(*val)));
+    val = create_string(std::string("\x7f\x80\xff\x97\x01\0\x1f", 7));
+    EXPECT_EQ("\"\\x7f\\x80\\xff\\x97\\x01\\0\\x1f\"", str(pr_str(*val)));
 }
 
 TEST_F(pr_str_test, should_print_objects)
@@ -225,6 +261,84 @@ TEST_F(print_str_test, should_print_integers)
     Root val;
     val = create_int64(-15442);
     EXPECT_EQ("-15442", str(print_str(*val)));
+}
+
+TEST_F(print_str_test, should_print_chars)
+{
+    EXPECT_EQ("\x08", str(print_str(create_char32(8))));
+    EXPECT_EQ("\x09", str(print_str(create_char32(9))));
+    EXPECT_EQ("\n", str(print_str(create_char32(10))));
+    EXPECT_EQ("\x0c", str(print_str(create_char32(12))));
+    EXPECT_EQ("\r", str(print_str(create_char32(13))));
+    EXPECT_EQ(" ", str(print_str(create_char32(32))));
+
+    EXPECT_EQ("a", str(print_str(create_char32('a'))));
+    EXPECT_EQ("b", str(print_str(create_char32('b'))));
+    EXPECT_EQ("y", str(print_str(create_char32('y'))));
+    EXPECT_EQ("z", str(print_str(create_char32('z'))));
+    EXPECT_EQ("A", str(print_str(create_char32('A'))));
+    EXPECT_EQ("Z", str(print_str(create_char32('Z'))));
+    EXPECT_EQ("7", str(print_str(create_char32('7'))));
+    EXPECT_EQ("$", str(print_str(create_char32('$'))));
+    EXPECT_EQ("!", str(print_str(create_char32(33))));
+    EXPECT_EQ("~", str(print_str(create_char32(126))));
+
+    EXPECT_EQ(std::string("\0", 1), str(print_str(create_char32(0))));
+    EXPECT_EQ("\x01", str(print_str(create_char32(1))));
+    EXPECT_EQ("\x0f", str(print_str(create_char32(15))));
+    EXPECT_EQ("\x1f", str(print_str(create_char32(31))));
+    EXPECT_EQ("\x7f", str(print_str(create_char32(127))));
+    EXPECT_EQ("\xc2\x80", str(print_str(create_char32(0x80))));
+    EXPECT_EQ("\xc2\x81", str(print_str(create_char32(0x81))));
+    EXPECT_EQ("\xc2\x82", str(print_str(create_char32(0x82))));
+    EXPECT_EQ("\xc2\x84", str(print_str(create_char32(0x84))));
+    EXPECT_EQ("\xc2\x88", str(print_str(create_char32(0x88))));
+    EXPECT_EQ("\xc2\x90", str(print_str(create_char32(0x90))));
+    EXPECT_EQ("\xc2\xa0", str(print_str(create_char32(0xa0))));
+    EXPECT_EQ("\xc3\x80", str(print_str(create_char32(0xc0))));
+    EXPECT_EQ("\xc4\x80", str(print_str(create_char32(0x100))));
+    EXPECT_EQ("\xc8\x80", str(print_str(create_char32(0x200))));
+    EXPECT_EQ("\xd0\x80", str(print_str(create_char32(0x400))));
+    EXPECT_EQ("\xdf\xbf", str(print_str(create_char32(0x7ff))));
+    EXPECT_EQ("\xe0\xa0\x80", str(print_str(create_char32(0x800))));
+    EXPECT_EQ("\xe0\xa0\x81", str(print_str(create_char32(0x801))));
+    EXPECT_EQ("\xe0\xa0\x82", str(print_str(create_char32(0x802))));
+    EXPECT_EQ("\xe0\xa0\x84", str(print_str(create_char32(0x804))));
+    EXPECT_EQ("\xe0\xa0\x88", str(print_str(create_char32(0x808))));
+    EXPECT_EQ("\xe0\xa0\x90", str(print_str(create_char32(0x810))));
+    EXPECT_EQ("\xe0\xa0\xa0", str(print_str(create_char32(0x820))));
+    EXPECT_EQ("\xe0\xa1\x80", str(print_str(create_char32(0x840))));
+    EXPECT_EQ("\xe0\xa2\x80", str(print_str(create_char32(0x880))));
+    EXPECT_EQ("\xe0\xa4\x80", str(print_str(create_char32(0x900))));
+    EXPECT_EQ("\xe0\xa8\x80", str(print_str(create_char32(0xa00))));
+    EXPECT_EQ("\xe0\xb0\x80", str(print_str(create_char32(0xc00))));
+    EXPECT_EQ("\xe1\x80\x80", str(print_str(create_char32(0x1000))));
+    EXPECT_EQ("\xe2\x80\x80", str(print_str(create_char32(0x2000))));
+    EXPECT_EQ("\xe4\x80\x80", str(print_str(create_char32(0x4000))));
+    EXPECT_EQ("\xe8\x80\x80", str(print_str(create_char32(0x8000))));
+    EXPECT_EQ("\xef\xbf\xbf", str(print_str(create_char32(0xffff))));
+    EXPECT_EQ("\xf0\x90\x80\x80", str(print_str(create_char32(0x10000))));
+    EXPECT_EQ("\xf0\x90\x80\x81", str(print_str(create_char32(0x10001))));
+    EXPECT_EQ("\xf0\x90\x80\x82", str(print_str(create_char32(0x10002))));
+    EXPECT_EQ("\xf0\x90\x80\x84", str(print_str(create_char32(0x10004))));
+    EXPECT_EQ("\xf0\x90\x80\x88", str(print_str(create_char32(0x10008))));
+    EXPECT_EQ("\xf0\x90\x80\x90", str(print_str(create_char32(0x10010))));
+    EXPECT_EQ("\xf0\x90\x80\xa0", str(print_str(create_char32(0x10020))));
+    EXPECT_EQ("\xf0\x90\x81\x80", str(print_str(create_char32(0x10040))));
+    EXPECT_EQ("\xf0\x90\x82\x80", str(print_str(create_char32(0x10080))));
+    EXPECT_EQ("\xf0\x90\x84\x80", str(print_str(create_char32(0x10100))));
+    EXPECT_EQ("\xf0\x90\x88\x80", str(print_str(create_char32(0x10200))));
+    EXPECT_EQ("\xf0\x90\x90\x80", str(print_str(create_char32(0x10400))));
+    EXPECT_EQ("\xf0\x90\xa0\x80", str(print_str(create_char32(0x10800))));
+    EXPECT_EQ("\xf0\x91\x80\x80", str(print_str(create_char32(0x11000))));
+    EXPECT_EQ("\xf0\x92\x80\x80", str(print_str(create_char32(0x12000))));
+    EXPECT_EQ("\xf0\x94\x80\x80", str(print_str(create_char32(0x14000))));
+    EXPECT_EQ("\xf0\x98\x80\x80", str(print_str(create_char32(0x18000))));
+    EXPECT_EQ("\xf0\xa0\x80\x80", str(print_str(create_char32(0x20000))));
+    EXPECT_EQ("\xf1\x80\x80\x80", str(print_str(create_char32(0x40000))));
+    EXPECT_EQ("\xf2\x80\x80\x80", str(print_str(create_char32(0x80000))));
+    EXPECT_EQ("\xf4\x80\x80\x80", str(print_str(create_char32(0x100000))));
+    EXPECT_EQ("\xf4\x8f\xbf\xbf", str(print_str(create_char32(0x10ffff))));
 }
 
 TEST_F(print_str_test, should_print_floats)

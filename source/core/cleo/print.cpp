@@ -53,6 +53,72 @@ Force pr_str_keyword(Value kw)
     return create_string(s);
 }
 
+char hex_digit(int x)
+{
+    return "0123456789abcdef"[x & 0xf];
+}
+
+Force print_utf_char(Char32 ch)
+{
+    if (ch < 0x80)
+    {
+        char c = static_cast<unsigned char>(ch);
+        return create_string(&c, 1);
+    }
+    if (ch < 0x800)
+    {
+        std::array<char, 2> s{{char(static_cast<unsigned char>(0xc0 | (ch >> 6))),
+                               char(static_cast<unsigned char>(0x80 | (ch & 0x3f)))}};
+        return create_string(s.data(), s.size());
+    }
+    if (ch < 0x10000)
+    {
+        std::array<char, 3> s{{char(static_cast<unsigned char>(0xe0 | (ch >> 12))),
+                               char(static_cast<unsigned char>(0x80 | ((ch >> 6) & 0x3f))),
+                               char(static_cast<unsigned char>(0x80 | (ch & 0x3f)))}};
+        return create_string(s.data(), s.size());
+    }
+
+    std::array<char, 4> s{{char(static_cast<unsigned char>(0xf0 | (ch >> 18))),
+                char(static_cast<unsigned char>(0x80 | ((ch >> 12) & 0x3f))),
+                char(static_cast<unsigned char>(0x80 | ((ch >> 6) & 0x3f))),
+                char(static_cast<unsigned char>(0x80 | (ch & 0x3f)))}};
+    return create_string(s.data(), s.size());
+}
+
+Force pr_str_char(Value val)
+{
+    auto ch = get_char32_value(val);
+    if (!*rt::print_readably)
+        return print_utf_char(ch);
+    if (ch >= 0x10000)
+    {
+        std::array<char, 8> hex{{'\\', 'u', hex_digit(ch >> 20), hex_digit(ch >> 16), hex_digit(ch >> 12), hex_digit(ch >> 8), hex_digit(ch >> 4), hex_digit(ch)}};
+        return create_string(hex.data(), hex.size());
+    }
+    if (ch >= 0x100)
+    {
+        std::array<char, 6> hex{{'\\', 'u', hex_digit(ch >> 12), hex_digit(ch >> 8), hex_digit(ch >> 4), hex_digit(ch)}};
+        return create_string(hex.data(), hex.size());
+    }
+    switch (ch)
+    {
+    case 8: return create_string("\\backspace");
+    case 9: return create_string("\\tab");
+    case 10: return create_string("\\newline");
+    case 12: return create_string("\\formfeed");
+    case 13: return create_string("\\return");
+    case 32: return create_string("\\space");
+    }
+    if (ch < 32 || ch >= 127)
+    {
+        std::array<char, 4> hex{{'\\', 'u', hex_digit(ch >> 4), hex_digit(ch)}};
+        return create_string(hex.data(), hex.size());
+    }
+    std::array<char, 2> escaped{{'\\', char(static_cast<unsigned char>(ch))}};
+    return create_string(escaped.data(), escaped.size());
+}
+
 Force pr_str_float(Value val)
 {
     std::ostringstream os;
@@ -61,11 +127,6 @@ Force pr_str_float(Value val)
     if (s.find('.') == std::string::npos && s.find('e') == std::string::npos)
         s += ".0";
     return create_string(s);
-}
-
-char hex_digit(int x)
-{
-    return "0123456789abcdef"[x & 0xf];
 }
 
 Force pr_str_string(Value val)
@@ -91,7 +152,7 @@ Force pr_str_string(Value val)
                 break;
             case '\0': s += "\\0"; break;
             default:
-                if (*p < 0x20 || std::uint8_t(*p) >= 0x80)
+                if (*p < 0x20 || std::uint8_t(*p) >= 0x7f)
                 {
                     s += "\\x";
                     s += hex_digit(*p >> 4);
@@ -222,6 +283,7 @@ Force pr_str(Value val)
         case tag::SYMBOL: return pr_str_symbol(val);
         case tag::KEYWORD: return pr_str_keyword(val);
         case tag::INT64: return create_string(std::to_string(get_int64_value(val)));
+        case tag::CHAR32: return pr_str_char(val);
         case tag::FLOAT64: return pr_str_float(val);
         case tag::STRING: return pr_str_string(val);
         case tag::OBJECT_TYPE: return pr_str_object_type(val);
