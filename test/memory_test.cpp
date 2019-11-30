@@ -122,6 +122,20 @@ TEST_F(memory_test, should_collect_dynamic_objects)
     ASSERT_EQ(num_allocations_before, allocations.size());
 }
 
+TEST_F(memory_test, should_not_collect_chars_in_objects)
+{
+    Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};
+    Root c{create_char32(123)};
+
+    auto num_allocations_before = allocations.size();
+
+    Root r{create_object1(*type1, *c)};
+    r = nil;
+    gc();
+
+    ASSERT_EQ(num_allocations_before, allocations.size());
+}
+
 TEST_F(memory_test, should_collect_static_objects)
 {
     Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};

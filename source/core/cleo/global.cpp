@@ -219,6 +219,7 @@ namespace type
 {
 const ConstRoot Int64_root{create_basic_type("cleo.core", "Int64")};
 const Value Int64{*Int64_root};
+const ConstRoot Char32{create_basic_type("cleo.core", "Char32")};
 const ConstRoot Float64{create_basic_type("cleo.core", "Float64")};
 const ConstRoot String{create_basic_type("cleo.core", "String")};
 const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")};
@@ -387,6 +388,7 @@ const Value ASSOC_E = create_symbol("cleo.core", "assoc!");
 const Value DEFINE_VAR = create_symbol("cleo.core", "define-var");
 const Value SERIALIZE_FN = create_symbol("cleo.core", "serialize-fn");
 const Value DESERIALIZE_FN = create_symbol("cleo.core", "deserialize-fn");
+const Value CHAR = create_symbol("cleo.core", "char");
 const Value CHAR_UTF8 = create_symbol("cleo.core", "char-utf8");
 const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
 const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
@@ -1370,6 +1372,15 @@ Value define_var_(Value name, Value meta)
     return define(name, nil, meta);
 }
 
+Value create_char(Value val)
+{
+    check_type("char", val, type::Int64);
+    Int64 c = get_int64_value(val);
+    if (c < 0 || c >= 0x110000)
+        throw_illegal_argument("Character value out of range for UTF-8: " + std::to_string(c));
+    return create_char32(c);
+}
+
 Force char_utf8(Value x)
 {
     check_type("char", x, type::Int64);
@@ -2090,6 +2101,7 @@ struct Initialize
         define_function(SERIALIZE_FN, create_native_function1<serialize_fn, &SERIALIZE_FN>());
         define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
 
+        define_function(CHAR, create_native_function1<create_char, &CHAR>());
         define_function(CHAR_UTF8, create_native_function1<char_utf8, &CHAR_UTF8>());
 
         define_function(START_PROFILING, create_native_function0<prof::start, &START_PROFILING>());
