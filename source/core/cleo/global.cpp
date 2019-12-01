@@ -389,7 +389,6 @@ const Value DEFINE_VAR = create_symbol("cleo.core", "define-var");
 const Value SERIALIZE_FN = create_symbol("cleo.core", "serialize-fn");
 const Value DESERIALIZE_FN = create_symbol("cleo.core", "deserialize-fn");
 const Value CHAR = create_symbol("cleo.core", "char");
-const Value CHAR_UTF8 = create_symbol("cleo.core", "char-utf8");
 const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
 const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
 const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
@@ -1381,37 +1380,6 @@ Value create_char(Value val)
     return create_char32(c);
 }
 
-Force char_utf8(Value x)
-{
-    check_type("char", x, type::Int64);
-    Int64 c = get_int64_value(x);
-    std::string s;
-    s.reserve(5);
-    if (c < 0 || c >= 0x110000)
-        throw_illegal_argument("Character value out of range for UTF-8: " + std::to_string(c));
-    if (c < 0x80)
-        s = char(c);
-    else if (c < 0x800)
-    {
-        s += 0xc0 | (c >> 6);
-        s += 0x80 | (c & 0x3f);
-    }
-    else if (c < 0x10000)
-    {
-        s += 0xe0 | (c >> 12);
-        s += 0x80 | ((c >> 6) & 0x3f);
-        s += 0x80 | (c & 0x3f);
-    }
-    else
-    {
-        s += 0xf0 | (c >> 18);
-        s += 0x80 | ((c >> 12) & 0x3f);
-        s += 0x80 | ((c >> 6) & 0x3f);
-        s += 0x80 | (c & 0x3f);
-    }
-    return create_string(s);
-}
-
 Value str_starts_with(Value s, Value ss)
 {
     check_type("s", s, *type::String);
@@ -2102,7 +2070,6 @@ struct Initialize
         define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
 
         define_function(CHAR, create_native_function1<create_char, &CHAR>());
-        define_function(CHAR_UTF8, create_native_function1<char_utf8, &CHAR_UTF8>());
 
         define_function(START_PROFILING, create_native_function0<prof::start, &START_PROFILING>());
         define_function(FINISH_PROFILING, create_native_function0<prof::finish, &FINISH_PROFILING>());
