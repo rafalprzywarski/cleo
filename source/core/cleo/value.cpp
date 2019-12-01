@@ -173,12 +173,12 @@ ValueBits CLEO_CDECL create_int64_unsafe(Int64 val)
     return create_int64(val).value().bits();
 }
 
-Value create_char32(Char32 val)
+Value create_uchar(Char32 val)
 {
-    return tag_data(std::uint64_t(val), tag::CHAR32);
+    return tag_data(std::uint64_t(val), tag::UCHAR);
 }
 
-Char32 get_char32_value(Value val)
+Char32 get_uchar_value(Value val)
 {
     return Char32(val.bits());
 }

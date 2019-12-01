@@ -312,31 +312,31 @@ Value read_char(Stream& s)
         ch += s.next();
     }
     if (ch.length() == 1)
-        return create_char32(ch[0]);
+        return create_uchar(ch[0]);
     if (ch == "newline")
-        return create_char32('\n');
+        return create_uchar('\n');
     if (ch == "space")
-        return create_char32(' ');
+        return create_uchar(' ');
     if (ch == "tab")
-        return create_char32('\t');
+        return create_uchar('\t');
     if (ch == "formfeed")
-        return create_char32('\f');
+        return create_uchar('\f');
     if (ch == "backspace")
-        return create_char32('\b');
+        return create_uchar('\b');
     if (ch == "return")
-        return create_char32('\r');
+        return create_uchar('\r');
     if (ch[0] == 'u')
     {
         try
         {
             if (ch.length() == 3)
-                return create_char32((parse_hex_digit(ch[1]) << 4) |
-                                     parse_hex_digit(ch[2]));
+                return create_uchar((parse_hex_digit(ch[1]) << 4) |
+                                    parse_hex_digit(ch[2]));
             if (ch.length() == 5)
-                return create_char32((parse_hex_digit(ch[1]) << 12) |
-                                     (parse_hex_digit(ch[2]) << 8) |
-                                     (parse_hex_digit(ch[3]) << 4) |
-                                     parse_hex_digit(ch[4]));
+                return create_uchar((parse_hex_digit(ch[1]) << 12) |
+                                    (parse_hex_digit(ch[2]) << 8) |
+                                    (parse_hex_digit(ch[3]) << 4) |
+                                    parse_hex_digit(ch[4]));
             if (ch.length() == 7)
             {
                 auto code =
@@ -347,7 +347,7 @@ Value read_char(Stream& s)
                     (parse_hex_digit(ch[5]) << 4) |
                     parse_hex_digit(ch[6]);
                 if (code < 0x110000)
-                    return create_char32(code);
+                    return create_uchar(code);
             }
         }
         catch (const std::invalid_argument& ) { }

@@ -88,7 +88,7 @@ Force print_utf_char(Char32 ch)
 
 Force pr_str_char(Value val)
 {
-    auto ch = get_char32_value(val);
+    auto ch = get_uchar_value(val);
     if (!*rt::print_readably)
         return print_utf_char(ch);
     if (ch >= 0x10000)
@@ -283,7 +283,7 @@ Force pr_str(Value val)
         case tag::SYMBOL: return pr_str_symbol(val);
         case tag::KEYWORD: return pr_str_keyword(val);
         case tag::INT64: return create_string(std::to_string(get_int64_value(val)));
-        case tag::CHAR32: return pr_str_char(val);
+        case tag::UCHAR: return pr_str_char(val);
         case tag::FLOAT64: return pr_str_float(val);
         case tag::UTF8STRING: return pr_str_string(val);
         case tag::OBJECT_TYPE: return pr_str_object_type(val);

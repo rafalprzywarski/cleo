@@ -20,7 +20,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     Root t{create_dynamic_object_type("org.xyz", "eqtype")};
     auto kw = create_keyword("org.xyz", "eqkw");
     Root i{create_int64(7)};
-    Value ch = create_char32(28);
+    Value ch = create_uchar(28);
     Root flt{create_float64(3.5)};
     Root s{create_string("abcd")};
     Root o{create_object0(*t)};
@@ -148,10 +148,10 @@ TEST_F(equality_test, should_compare_integers)
 
 TEST_F(equality_test, should_compare_chars)
 {
-    Value val1 = create_char32(10);
-    Value val2 = create_char32(10);
+    Value val1 = create_uchar(10);
+    Value val2 = create_uchar(10);
     ASSERT_TRUE(bool(are_equal(val1, val2)));
-    val2 = create_char32(20);
+    val2 = create_uchar(20);
     ASSERT_FALSE(bool(are_equal(val1, val2)));
 }
 

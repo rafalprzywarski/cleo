@@ -136,13 +136,13 @@ TEST_F(value_test, should_store_float_values)
 
 TEST_F(value_test, should_store_char_values)
 {
-    Value val{create_char32(7)};
-    ASSERT_EQ(tag::CHAR32, get_value_tag(val));
-    ASSERT_EQ(7u, get_char32_value(val));
-    val = create_char32(std::numeric_limits<Char32>::min());
-    ASSERT_EQ(std::numeric_limits<Char32>::min(), get_char32_value(val));
-    val = create_char32(std::numeric_limits<Char32>::max());
-    ASSERT_EQ(std::numeric_limits<Char32>::max(), get_char32_value(val));
+    Value val{create_uchar(7)};
+    ASSERT_EQ(tag::UCHAR, get_value_tag(val));
+    ASSERT_EQ(7u, get_uchar_value(val));
+    val = create_uchar(std::numeric_limits<Char32>::min());
+    ASSERT_EQ(std::numeric_limits<Char32>::min(), get_uchar_value(val));
+    val = create_uchar(std::numeric_limits<Char32>::max());
+    ASSERT_EQ(std::numeric_limits<Char32>::max(), get_uchar_value(val));
 }
 
 TEST_F(value_test, should_store_string_values)
@@ -374,8 +374,8 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     ASSERT_TRUE(type::Keyword->is(get_value_type(*val)));
     val = create_int64(11);
     ASSERT_TRUE(type::Int64.is(get_value_type(*val)));
-    val = create_char32(48);
-    ASSERT_TRUE(type::Char32->is(get_value_type(*val)));
+    val = create_uchar(48);
+    ASSERT_TRUE(type::UChar->is(get_value_type(*val)));
     val = create_float64(3.5);
     ASSERT_TRUE(type::Float64->is(get_value_type(*val)));
     val = create_string("abc");

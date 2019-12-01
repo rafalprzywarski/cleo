@@ -49,8 +49,8 @@ Int64 hash_value(Value val)
             return hash_memoized<get_keyword_hash, set_keyword_hash, hash_keyword>(val);
         case tag::INT64:
             return std::hash<Int64>{}(get_int64_value(val));
-        case tag::CHAR32:
-            return std::hash<Char32>{}(get_char32_value(val));
+        case tag::UCHAR:
+            return std::hash<Char32>{}(get_uchar_value(val));
         case tag::FLOAT64:
             return std::hash<Float64>{}(get_float64_value(val));
         case tag::UTF8STRING:

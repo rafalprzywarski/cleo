@@ -219,7 +219,7 @@ namespace type
 {
 const ConstRoot Int64_root{create_basic_type("cleo.core", "Int64")};
 const Value Int64{*Int64_root};
-const ConstRoot Char32{create_basic_type("cleo.core", "Char32")};
+const ConstRoot UChar{create_basic_type("cleo.core", "UChar")};
 const ConstRoot Float64{create_basic_type("cleo.core", "Float64")};
 const ConstRoot UTF8String{create_basic_type("cleo.core", "UTF8String")};
 const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")};
@@ -1377,7 +1377,7 @@ Value create_char(Value val)
     Int64 c = get_int64_value(val);
     if (c < 0 || c >= 0x110000)
         throw_illegal_argument("Character value out of range for UTF-8: " + std::to_string(c));
-    return create_char32(c);
+    return create_uchar(c);
 }
 
 Value str_starts_with(Value s, Value ss)

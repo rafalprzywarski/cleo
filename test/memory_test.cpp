@@ -125,7 +125,7 @@ TEST_F(memory_test, should_collect_dynamic_objects)
 TEST_F(memory_test, should_not_collect_chars_in_objects)
 {
     Root type1{create_dynamic_object_type("cleo.memory.test", "obj1")};
-    Root c{create_char32(123)};
+    Root c{create_uchar(123)};
 
     auto num_allocations_before = allocations.size();
 

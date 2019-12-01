@@ -42,7 +42,7 @@ TEST_F(hash_test, should_hash_values)
     EXPECT_EQ(std::uint32_t(std::uint32_t(std::hash<std::string>{}("org.xyz")) * 31 + std::hash<std::string>{}("eqkw")), hash(kw));
     val = create_int64(55);
     EXPECT_EQ(Int64(std::hash<Int64>{}(55)), hash(*val));
-    EXPECT_EQ(Int64(std::hash<Char32>{}(123456)), hash(create_char32(123456)));
+    EXPECT_EQ(Int64(std::hash<Char32>{}(123456)), hash(create_uchar(123456)));
     val = create_float64(5.5);
     EXPECT_EQ(Int64(std::hash<Float64>{}(5.5)), hash(*val));
     val = create_string("hamster");

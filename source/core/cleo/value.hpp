@@ -118,7 +118,7 @@ constexpr Tag KEYWORD = ValueBits(4) << 48;
 constexpr Tag INT64 = ValueBits(5) << 48;
 constexpr Tag UTF8STRING = ValueBits(6) << 48;
 constexpr Tag FLOAT64 = ValueBits(7) << 48;
-constexpr Tag CHAR32 = ValueBits(8) << 48;
+constexpr Tag UCHAR = ValueBits(8) << 48;
 
 constexpr Tag INT48 = ValueBits(13) << 48;
 
@@ -213,8 +213,8 @@ inline Int64 get_int64_value(Value val)
     return *get_ptr<Int64>(val);
 }
 
-Value create_char32(Char32 val);
-Char32 get_char32_value(Value val);
+Value create_uchar(Char32 val);
+Char32 get_uchar_value(Value val);
 
 Force create_float64(Float64 val);
 Float64 get_float64_value(Value val);
