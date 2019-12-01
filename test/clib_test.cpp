@@ -389,7 +389,7 @@ TEST_F(clib_test, one_int64_param_function_should_fail_on_invalid_type)
     Root fn{create_c_fn((void *)add<Int64>, name, clib::int64, *params)};
     Root bad{create_string("bad")};
     Root call{list(*fn, *bad)};
-    expect_call_error(*call, "Wrong arg 0 type: cleo.core/String");
+    expect_call_error(*call, "Wrong arg 0 type: cleo.core/UTF8String");
 }
 
 TEST_F(clib_test, one_string_param_function_should_fail_on_invalid_type)
@@ -409,9 +409,9 @@ TEST_F(clib_test, two_param_function_should_fail_on_invalid_type)
     Root fn{create_c_fn((void *)add<Int64, Int64>, name, clib::int64, *params)};
     Root bad{create_string("bad")};
     Root call{list(*fn, *bad, 7)};
-    expect_call_error(*call, "Wrong arg 0 type: cleo.core/String");
+    expect_call_error(*call, "Wrong arg 0 type: cleo.core/UTF8String");
     call = list(*fn, 7, *bad);
-    expect_call_error(*call, "Wrong arg 1 type: cleo.core/String");
+    expect_call_error(*call, "Wrong arg 1 type: cleo.core/UTF8String");
 }
 
 }

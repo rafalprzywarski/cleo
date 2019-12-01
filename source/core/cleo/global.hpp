@@ -298,7 +298,7 @@ extern const ConstRoot Type;
 extern const Value Int64;
 extern const ConstRoot Char32;
 extern const ConstRoot Float64;
-extern const ConstRoot String;
+extern const ConstRoot UTF8String;
 extern const ConstRoot NativeFunction;
 extern const ConstRoot CFunction;
 extern const ConstRoot Symbol;
@@ -402,7 +402,7 @@ inline Value get_value_type(Value val)
     case tag::INT64: return type::Int64;
     case tag::CHAR32: return *type::Char32;
     case tag::FLOAT64: return *type::Float64;
-    case tag::STRING: return *type::String;
+    case tag::UTF8STRING: return *type::UTF8String;
     case tag::OBJECT_TYPE: return *type::Type;
     default: return nil;
     }

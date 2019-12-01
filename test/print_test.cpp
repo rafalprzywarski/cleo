@@ -17,7 +17,7 @@ struct pr_str_test : Test
     static std::string str(Force f)
     {
         Root val{f};
-        return get_value_tag(*val) == tag::STRING ?
+        return get_value_tag(*val) == tag::UTF8STRING ?
             std::string{get_string_ptr(*val), get_string_len(*val)} :
             "## invalid type ##";
     }
@@ -245,7 +245,7 @@ struct print_str_test : Test
     static std::string str(Force f)
     {
         Root val{f};
-        return get_value_tag(*val) == tag::STRING ?
+        return get_value_tag(*val) == tag::UTF8STRING ?
             std::string{get_string_ptr(*val), get_string_len(*val)} :
             "## invalid type ##";
     }

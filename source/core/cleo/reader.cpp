@@ -619,7 +619,7 @@ Force read(ReaderStream& stream)
 
 Force read(Value source)
 {
-    if (get_value_tag(source) != tag::STRING)
+    if (get_value_tag(source) != tag::UTF8STRING)
     {
         Root msg{create_string("expected a string")};
         throw_exception(new_illegal_argument(*msg));

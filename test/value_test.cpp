@@ -45,10 +45,10 @@ TEST_F(value_test, should_store_symbols_with_namespaces)
     Value sym = create_symbol("org.xxx", "thing");
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
     auto ns = get_symbol_namespace(sym);
-    ASSERT_EQ(tag::STRING, get_value_tag(ns));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(ns));
     ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_len(ns)));
     auto name = get_symbol_name(sym);
-    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
@@ -58,7 +58,7 @@ TEST_F(value_test, should_store_symbols_without_namespaces)
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
     ASSERT_TRUE(get_symbol_namespace(sym).is_nil());
     auto name = get_symbol_name(sym);
-    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
@@ -77,10 +77,10 @@ TEST_F(value_test, should_store_keywords_with_namespaces)
     Value kw = create_keyword("org.xxx", "thing");
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
     auto ns = get_keyword_namespace(kw);
-    ASSERT_EQ(tag::STRING, get_value_tag(ns));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(ns));
     ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_len(ns)));
     auto name = get_keyword_name(kw);
-    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
@@ -90,7 +90,7 @@ TEST_F(value_test, should_store_keywords_without_namespaces)
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
     ASSERT_TRUE(get_keyword_namespace(kw).is_nil());
     auto name = get_keyword_name(kw);
-    ASSERT_EQ(tag::STRING, get_value_tag(name));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
     ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
 }
 
@@ -151,7 +151,7 @@ TEST_F(value_test, should_store_string_values)
     std::string exampleCopy = example;
     Root val{create_string(exampleCopy)};
     exampleCopy.clear();
-    ASSERT_EQ(tag::STRING, get_value_tag(*val));
+    ASSERT_EQ(tag::UTF8STRING, get_value_tag(*val));
     ASSERT_EQ(example, std::string(get_string_ptr(*val), get_string_len(*val)));
     ASSERT_STREQ(example.c_str(), get_string_ptr(*val));
 }
@@ -379,7 +379,7 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     val = create_float64(3.5);
     ASSERT_TRUE(type::Float64->is(get_value_type(*val)));
     val = create_string("abc");
-    ASSERT_TRUE(type::String->is(get_value_type(*val)));
+    ASSERT_TRUE(type::UTF8String->is(get_value_type(*val)));
     val = create_object(*dtype, nullptr, 0);
     ASSERT_TRUE(dtype->is(get_value_type(*val)));
     val = create_object(*stype, nullptr, 0);

@@ -208,7 +208,7 @@ Force eval(Value val)
 
 Force load(Value source)
 {
-    if (get_value_tag(source) != tag::STRING)
+    if (get_value_tag(source) != tag::UTF8STRING)
         throw_illegal_argument("expected a string");
 
     Root bindings{map_assoc(*EMPTY_MAP, CURRENT_NS, *rt::current_ns)};

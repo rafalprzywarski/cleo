@@ -258,7 +258,7 @@ std::uint64_t get_arg_bit_value(Value param_types, std::uint8_t i, Value arg)
     }
     else
     {
-        if (arg_tag != tag::STRING)
+        if (arg_tag != tag::UTF8STRING)
             throw_arg_type_error(arg, i);
         return reinterpret_cast<std::uint64_t>(get_string_ptr(arg));
     }
@@ -280,8 +280,8 @@ Force call_c_function(const Value *args, std::uint8_t num_args)
 
 Force import_c_fn(Value libname, Value fnname, Value ret_type, Value param_types)
 {
-    check_type("lib-name", libname, *type::String);
-    check_type("fn-name", fnname, *type::String);
+    check_type("lib-name", libname, *type::UTF8String);
+    check_type("fn-name", fnname, *type::UTF8String);
     std::string slibname{get_string_ptr(libname), get_string_len(libname)};
     std::string sfnname{get_string_ptr(fnname), get_string_len(fnname)};
     auto lib = dlopen(slibname.c_str(), RTLD_NOW);

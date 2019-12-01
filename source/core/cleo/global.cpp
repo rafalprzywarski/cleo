@@ -221,7 +221,7 @@ const ConstRoot Int64_root{create_basic_type("cleo.core", "Int64")};
 const Value Int64{*Int64_root};
 const ConstRoot Char32{create_basic_type("cleo.core", "Char32")};
 const ConstRoot Float64{create_basic_type("cleo.core", "Float64")};
-const ConstRoot String{create_basic_type("cleo.core", "String")};
+const ConstRoot UTF8String{create_basic_type("cleo.core", "UTF8String")};
 const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")};
 const ConstRoot CFunction{create_static_type("cleo.core", "CFunction", {{"addr", Int64}, "name", "param-types"})};
 const ConstRoot Symbol{create_basic_type("cleo.core", "Symbol")};
@@ -745,7 +745,7 @@ Value set_q(Value x)
 
 Value string_q(Value x)
 {
-    return get_value_tag(x) == tag::STRING ? TRUE : nil;
+    return get_value_tag(x) == tag::UTF8STRING ? TRUE : nil;
 }
 
 Value map_q(Value x)
@@ -988,7 +988,7 @@ Force mk_keyword(Value val)
             auto name = get_symbol_name(val);
             return create_keyword(std::string(get_string_ptr(name), get_string_len(name)));
         }
-        case tag::STRING: return create_keyword(std::string(get_string_ptr(val), get_string_len(val)));
+        case tag::UTF8STRING: return create_keyword(std::string(get_string_ptr(val), get_string_len(val)));
         default: return nil;
     }
 }
@@ -996,8 +996,8 @@ Force mk_keyword(Value val)
 Force mk_symbol(Value ns, Value name)
 {
     if (ns)
-        check_type("ns", ns, *type::String);
-    check_type("name", name, *type::String);
+        check_type("ns", ns, *type::UTF8String);
+    check_type("name", name, *type::UTF8String);
     if (ns)
         return create_symbol(
             std::string(get_string_ptr(ns), get_string_len(ns)),
@@ -1013,7 +1013,7 @@ Force get_name(Value val)
     {
         case tag::KEYWORD: return get_keyword_name(val);
         case tag::SYMBOL: return get_symbol_name(val);
-        case tag::STRING: return val;
+        case tag::UTF8STRING: return val;
         default: return nil;
     }
 }
@@ -1325,7 +1325,7 @@ Value the_ns(Value ns)
 
 Force subs(Value s, Value start)
 {
-    check_type("s", s, *type::String);
+    check_type("s", s, *type::UTF8String);
     check_type("start", start, type::Int64);
     auto start_ = get_int64_value(start);
     if (start_ < 0 ||
@@ -1336,7 +1336,7 @@ Force subs(Value s, Value start)
 
 Force subs(Value s, Value start, Value end)
 {
-    check_type("s", s, *type::String);
+    check_type("s", s, *type::UTF8String);
     check_type("start", start, type::Int64);
     auto start_ = get_int64_value(start);
     auto end_ = get_int64_value(end);
@@ -1352,7 +1352,7 @@ Force subs(Value s, Value start, Value end)
 
 Force string_get(Value s, Value idx, Value def)
 {
-    check_type("s", s, *type::String);
+    check_type("s", s, *type::UTF8String);
     if (get_value_tag(idx) != tag::INT64)
         return def;
     Int64 i = get_int64_value(idx);
@@ -1382,8 +1382,8 @@ Value create_char(Value val)
 
 Value str_starts_with(Value s, Value ss)
 {
-    check_type("s", s, *type::String);
-    check_type("ss", ss, *type::String);
+    check_type("s", s, *type::UTF8String);
+    check_type("ss", ss, *type::UTF8String);
     return std::strncmp(get_string_ptr(s), get_string_ptr(ss), get_string_len(ss)) == 0 ? TRUE : nil;
 }
 
@@ -1444,7 +1444,7 @@ struct Initialize
 
         define_type(type::Int64);
         define_type(*type::Float64);
-        define_type(*type::String);
+        define_type(*type::UTF8String);
         define_type(*type::NativeFunction);
         define_type(*type::CFunction);
         define_type(*type::Keyword);
@@ -1675,7 +1675,7 @@ struct Initialize
         f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::TransientArray, *f);
         f = create_native_function1<WrapUInt32Fn<get_string_len>::fn, &COUNT>();
-        define_method(COUNT, *type::String, *f);
+        define_method(COUNT, *type::UTF8String, *f);
         f = create_native_function1<nil_count, &COUNT>();
         define_method(COUNT, nil, *f);
 
@@ -1700,7 +1700,7 @@ struct Initialize
         define_method(GET, nil, *f);
 
         f = create_native_function2or3<string_get, string_get, &GET>();
-        define_method(GET, *type::String, *f);
+        define_method(GET, *type::UTF8String, *f);
 
         define_multimethod(CONTAINS, *first_type, undefined);
 

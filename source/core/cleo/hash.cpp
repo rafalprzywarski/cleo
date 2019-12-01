@@ -53,7 +53,7 @@ Int64 hash_value(Value val)
             return std::hash<Char32>{}(get_char32_value(val));
         case tag::FLOAT64:
             return std::hash<Float64>{}(get_float64_value(val));
-        case tag::STRING:
+        case tag::UTF8STRING:
             return hash_memoized<get_string_hash, set_string_hash, hash_string>(val);
         case tag::OBJECT_TYPE:
             return hash_value(get_object_type_name(val));

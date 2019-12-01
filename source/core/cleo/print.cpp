@@ -285,7 +285,7 @@ Force pr_str(Value val)
         case tag::INT64: return create_string(std::to_string(get_int64_value(val)));
         case tag::CHAR32: return pr_str_char(val);
         case tag::FLOAT64: return pr_str_float(val);
-        case tag::STRING: return pr_str_string(val);
+        case tag::UTF8STRING: return pr_str_string(val);
         case tag::OBJECT_TYPE: return pr_str_object_type(val);
         default: // tag::OBJECT
             if (val.is_nil())

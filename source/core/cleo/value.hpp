@@ -116,7 +116,7 @@ constexpr Tag NATIVE_FUNCTION = ValueBits(2) << 48;
 constexpr Tag SYMBOL = ValueBits(3) << 48;
 constexpr Tag KEYWORD = ValueBits(4) << 48;
 constexpr Tag INT64 = ValueBits(5) << 48;
-constexpr Tag STRING = ValueBits(6) << 48;
+constexpr Tag UTF8STRING = ValueBits(6) << 48;
 constexpr Tag FLOAT64 = ValueBits(7) << 48;
 constexpr Tag CHAR32 = ValueBits(8) << 48;
 
@@ -144,7 +144,7 @@ inline bool is_value_ptr(Value val)
          tag == tag::SYMBOL ||
          tag == tag::KEYWORD ||
          tag == tag::INT64 ||
-         tag == tag::STRING);
+         tag == tag::UTF8STRING);
 }
 
 inline Tag get_value_tag(Value val)

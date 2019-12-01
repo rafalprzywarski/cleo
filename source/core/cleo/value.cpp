@@ -202,7 +202,7 @@ Force create_string(const char* str, std::uint32_t len)
     val->hashVal = 0;
     std::memcpy(&val->firstChar, str, len);
     (&val->firstChar)[len] = 0;
-    return tag_ptr(val, tag::STRING);
+    return tag_ptr(val, tag::UTF8STRING);
 }
 
 const char *get_string_ptr(Value val)

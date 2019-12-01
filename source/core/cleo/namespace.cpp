@@ -59,7 +59,7 @@ std::string locate_source(const std::string& ns_name)
     for (Root s{call_multimethod1(*rt::seq, *rt::lib_paths)}; *s; s = call_multimethod1(*rt::next, *s))
     {
         Root dir{call_multimethod1(*rt::first, *s)};
-        check_type("library path", *dir, *type::String);
+        check_type("library path", *dir, *type::UTF8String);
         auto path = std::string(get_string_ptr(*dir), get_string_len(*dir)) + "/" + ns_name + ".cleo";
         if (std::ifstream(path))
             return path;
