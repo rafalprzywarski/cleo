@@ -20,6 +20,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     Root t{create_dynamic_object_type("org.xyz", "eqtype")};
     auto kw = create_keyword("org.xyz", "eqkw");
     Root i{create_int64(7)};
+    Value ch = create_char32(28);
     Root flt{create_float64(3.5)};
     Root s{create_string("abcd")};
     Root o{create_object0(*t)};
@@ -29,6 +30,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(nil, sym)));
     ASSERT_FALSE(bool(are_equal(nil, kw)));
     ASSERT_FALSE(bool(are_equal(nil, *i)));
+    ASSERT_FALSE(bool(are_equal(nil, ch)));
     ASSERT_FALSE(bool(are_equal(nil, *flt)));
     ASSERT_FALSE(bool(are_equal(nil, *s)));
     ASSERT_FALSE(bool(are_equal(nil, *o)));
@@ -39,6 +41,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*fn, sym)));
     ASSERT_FALSE(bool(are_equal(*fn, kw)));
     ASSERT_FALSE(bool(are_equal(*fn, *i)));
+    ASSERT_FALSE(bool(are_equal(*fn, ch)));
     ASSERT_FALSE(bool(are_equal(*fn, *flt)));
     ASSERT_FALSE(bool(are_equal(*fn, *s)));
     ASSERT_FALSE(bool(are_equal(*fn, *o)));
@@ -49,6 +52,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_TRUE(bool(are_equal(sym, sym)));
     ASSERT_FALSE(bool(are_equal(sym, kw)));
     ASSERT_FALSE(bool(are_equal(sym, *i)));
+    ASSERT_FALSE(bool(are_equal(sym, ch)));
     ASSERT_FALSE(bool(are_equal(sym, *flt)));
     ASSERT_FALSE(bool(are_equal(sym, *s)));
     ASSERT_FALSE(bool(are_equal(sym, *o)));
@@ -59,6 +63,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(kw, sym)));
     ASSERT_TRUE(bool(are_equal(kw, kw)));
     ASSERT_FALSE(bool(are_equal(kw, *i)));
+    ASSERT_FALSE(bool(are_equal(kw, ch)));
     ASSERT_FALSE(bool(are_equal(kw, *flt)));
     ASSERT_FALSE(bool(are_equal(kw, *s)));
     ASSERT_FALSE(bool(are_equal(kw, *o)));
@@ -69,16 +74,29 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*i, sym)));
     ASSERT_FALSE(bool(are_equal(*i, kw)));
     ASSERT_TRUE(bool(are_equal(*i, *i)));
+    ASSERT_FALSE(bool(are_equal(*i, ch)));
     ASSERT_FALSE(bool(are_equal(*i, *flt)));
     ASSERT_FALSE(bool(are_equal(*i, *s)));
     ASSERT_FALSE(bool(are_equal(*i, *o)));
     ASSERT_FALSE(bool(are_equal(*i, *t)));
+
+    ASSERT_FALSE(bool(are_equal(ch, nil)));
+    ASSERT_FALSE(bool(are_equal(ch, *fn)));
+    ASSERT_FALSE(bool(are_equal(ch, sym)));
+    ASSERT_FALSE(bool(are_equal(ch, kw)));
+    ASSERT_FALSE(bool(are_equal(ch, *i)));
+    ASSERT_TRUE(bool(are_equal(ch, ch)));
+    ASSERT_FALSE(bool(are_equal(ch, *flt)));
+    ASSERT_FALSE(bool(are_equal(ch, *s)));
+    ASSERT_FALSE(bool(are_equal(ch, *o)));
+    ASSERT_FALSE(bool(are_equal(ch, *t)));
 
     ASSERT_FALSE(bool(are_equal(*flt, nil)));
     ASSERT_FALSE(bool(are_equal(*flt, *fn)));
     ASSERT_FALSE(bool(are_equal(*flt, sym)));
     ASSERT_FALSE(bool(are_equal(*flt, kw)));
     ASSERT_FALSE(bool(are_equal(*flt, *i)));
+    ASSERT_FALSE(bool(are_equal(*flt, ch)));
     ASSERT_TRUE(bool(are_equal(*flt, *flt)));
     ASSERT_FALSE(bool(are_equal(*flt, *s)));
     ASSERT_FALSE(bool(are_equal(*flt, *o)));
@@ -89,6 +107,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*s, sym)));
     ASSERT_FALSE(bool(are_equal(*s, kw)));
     ASSERT_FALSE(bool(are_equal(*s, *i)));
+    ASSERT_FALSE(bool(are_equal(*s, ch)));
     ASSERT_FALSE(bool(are_equal(*s, *flt)));
     ASSERT_TRUE(bool(are_equal(*s, *s)));
     ASSERT_FALSE(bool(are_equal(*s, *o)));
@@ -99,6 +118,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*o, sym)));
     ASSERT_FALSE(bool(are_equal(*o, kw)));
     ASSERT_FALSE(bool(are_equal(*o, *i)));
+    ASSERT_FALSE(bool(are_equal(*o, ch)));
     ASSERT_FALSE(bool(are_equal(*o, *flt)));
     ASSERT_FALSE(bool(are_equal(*o, *s)));
     ASSERT_TRUE(bool(are_equal(*o, *o)));
@@ -109,6 +129,7 @@ TEST_F(equality_test, same_instances_should_be_equal)
     ASSERT_FALSE(bool(are_equal(*t, sym)));
     ASSERT_FALSE(bool(are_equal(*t, kw)));
     ASSERT_FALSE(bool(are_equal(*t, *i)));
+    ASSERT_FALSE(bool(are_equal(*t, ch)));
     ASSERT_FALSE(bool(are_equal(*t, *flt)));
     ASSERT_FALSE(bool(are_equal(*t, *s)));
     ASSERT_FALSE(bool(are_equal(*t, *o)));
@@ -123,6 +144,15 @@ TEST_F(equality_test, should_compare_integers)
     ASSERT_TRUE(bool(are_equal(*val1, *val2)));
     val2 = create_int64(20);
     ASSERT_FALSE(bool(are_equal(*val1, *val2)));
+}
+
+TEST_F(equality_test, should_compare_chars)
+{
+    Value val1 = create_char32(10);
+    Value val2 = create_char32(10);
+    ASSERT_TRUE(bool(are_equal(val1, val2)));
+    val2 = create_char32(20);
+    ASSERT_FALSE(bool(are_equal(val1, val2)));
 }
 
 TEST_F(equality_test, should_compare_floats)
