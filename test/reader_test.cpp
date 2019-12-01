@@ -67,7 +67,7 @@ struct reader_test : Test
 };
 
 
-TEST_F(reader_test, should_parse_a_sequence_of_characters_as_an_symbol)
+TEST_F(reader_test, should_parse_a_sequence_of_characters_as_a_symbol)
 {
     Root val;
     val = read_str("abc123");
@@ -359,6 +359,76 @@ TEST_F(reader_test, should_parse_escaped_unicode_characters)
     assert_read_error("invalid character length: 2", "\" \\u00", 1, 7);
     assert_read_error("invalid character length: 3", "\"\\u000z\"", 1, 7);
     assert_read_error("invalid character length: 3", "\" \\u000", 1, 8);
+}
+
+TEST_F(reader_test, should_parse_characters)
+{
+    Root val;
+    val = read_str("\\a");
+    EXPECT_EQ_VALS(create_char32('a'), *val);
+    val = read_str("\\?");
+    EXPECT_EQ_VALS(create_char32('?'), *val);
+    val = read_str("\\7");
+    EXPECT_EQ_VALS(create_char32('7'), *val);
+    val = read_str("\\\\");
+    EXPECT_EQ_VALS(create_char32('\\'), *val);
+    val = read_str("\\\'");
+    EXPECT_EQ_VALS(create_char32('\''), *val);
+    val = read_str("\\\"");
+    EXPECT_EQ_VALS(create_char32('\"'), *val);
+    val = read_str("\\(");
+    EXPECT_EQ_VALS(create_char32('('), *val);
+    val = read_str("\\(()");
+    EXPECT_EQ_VALS(create_char32('('), *val);
+    val = read_str("\\#");
+    EXPECT_EQ_VALS(create_char32('#'), *val);
+    val = read_str("\\##");
+    EXPECT_EQ_VALS(create_char32('#'), *val);
+
+    val = read_str("\\newline");
+    EXPECT_EQ_VALS(create_char32('\n'), *val);
+    val = read_str("\\space");
+    EXPECT_EQ_VALS(create_char32(' '), *val);
+    val = read_str("\\tab");
+    EXPECT_EQ_VALS(create_char32('\t'), *val);
+    val = read_str("\\formfeed");
+    EXPECT_EQ_VALS(create_char32('\f'), *val);
+    val = read_str("\\backspace");
+    EXPECT_EQ_VALS(create_char32('\b'), *val);
+    val = read_str("\\return");
+    EXPECT_EQ_VALS(create_char32('\r'), *val);
+
+    val = read_str("\\u00");
+    EXPECT_EQ_VALS(create_char32(0), *val);
+    val = read_str("\\ua7(");
+    EXPECT_EQ_VALS(create_char32(0xa7), *val);
+    val = read_str("\\ufF\n");
+    EXPECT_EQ_VALS(create_char32(0xff), *val);
+    val = read_str("\\u0000");
+    EXPECT_EQ_VALS(create_char32(0), *val);
+    val = read_str("\\ua5b7#");
+    EXPECT_EQ_VALS(create_char32(0xa5b7), *val);
+    val = read_str("\\uffff ");
+    EXPECT_EQ_VALS(create_char32(0xffff), *val);
+    val = read_str("\\u000000");
+    EXPECT_EQ_VALS(create_char32(0), *val);
+    val = read_str("\\u10b7c8$");
+    EXPECT_EQ_VALS(create_char32(0x10b7c8), *val);
+    val = read_str("\\u10ffff ");
+    EXPECT_EQ_VALS(create_char32(0x10ffff), *val);
+
+    assert_unexpected_end_of_input("\\", 1, 2);
+    assert_unexpected_end_of_input("  \\", 1, 4);
+    assert_read_error("invalid character: \\bad", "\n\\bad", 2, 1);
+    assert_read_error("invalid character: \\x1234", "\\x1234", 1, 1);
+    assert_read_error("invalid character: \\y123456", "\\y123456", 1, 1);
+    assert_read_error("invalid character: \\u1z", "\\u1z", 1, 1);
+    assert_read_error("invalid character: \\u12z", "\\u12z", 1, 1);
+    assert_read_error("invalid character: \\u123z", "\\u123z", 1, 1);
+    assert_read_error("invalid character: \\u1234z", "\\u1234z", 1, 1);
+    assert_read_error("invalid character: \\u12345z", "\\u12345z", 1, 1);
+    assert_read_error("invalid character: \\u10ffffz", "\\u10ffffz", 1, 1);
+    assert_read_error("invalid character: \\u110000", "\\u110000", 1, 1);
 }
 
 TEST_F(reader_test, should_parse_a_sequence_of_characters_beginning_with_a_colon_as_a_keyword)

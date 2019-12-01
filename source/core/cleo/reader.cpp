@@ -35,6 +35,11 @@ bool is_symbol_char(char c)
         c == '!' || c == '?' || c == '#' || c == '_';
 }
 
+bool is_char_char(char c)
+{
+    return std::isalnum(c);
+}
+
 bool is_ws(char c)
 {
     return c <= ' ' || c == ',';
@@ -218,17 +223,28 @@ Force read_map(Stream& s)
     return *m;
 }
 
-std::uint32_t read_hex_digit(Stream& s, int n)
+std::uint32_t parse_hex_digit(char c)
 {
-    auto pos = s.pos();
-    auto c = s.next();
     if (c >= '0' && c <= '9')
         return c - '0';
     if (c >= 'a' && c <= 'f')
         return c - ('a' - 10);
     if (c >= 'A' && c <= 'F')
         return c - ('A' - 10);
-    throw_read_error(std::string("invalid character length: ") + std::to_string(n), pos);
+    throw std::invalid_argument("Invalid hex digit");
+}
+
+std::uint32_t read_hex_digit(Stream& s, int n)
+{
+    auto pos = s.pos();
+    try
+    {
+        return parse_hex_digit(s.next());
+    }
+    catch (const std::invalid_argument& )
+    {
+        throw_read_error(std::string("invalid character length: ") + std::to_string(n), pos);
+    }
 }
 
 void append_utf8(std::string& s, std::uint32_t c)
@@ -281,6 +297,62 @@ Force read_string(Stream& s)
         throw_unexpected_end_of_input(s.pos());
     s.next();
     return create_string(str);
+}
+
+Value read_char(Stream& s)
+{
+    auto pos = s.pos();
+    s.next();
+    if (s.eos())
+        throw_unexpected_end_of_input(s.pos());
+    std::string ch;
+    ch += s.next();
+    while (!s.eos() && is_char_char(s.peek()))
+    {
+        ch += s.next();
+    }
+    if (ch.length() == 1)
+        return create_char32(ch[0]);
+    if (ch == "newline")
+        return create_char32('\n');
+    if (ch == "space")
+        return create_char32(' ');
+    if (ch == "tab")
+        return create_char32('\t');
+    if (ch == "formfeed")
+        return create_char32('\f');
+    if (ch == "backspace")
+        return create_char32('\b');
+    if (ch == "return")
+        return create_char32('\r');
+    if (ch[0] == 'u')
+    {
+        try
+        {
+            if (ch.length() == 3)
+                return create_char32((parse_hex_digit(ch[1]) << 4) |
+                                     parse_hex_digit(ch[2]));
+            if (ch.length() == 5)
+                return create_char32((parse_hex_digit(ch[1]) << 12) |
+                                     (parse_hex_digit(ch[2]) << 8) |
+                                     (parse_hex_digit(ch[3]) << 4) |
+                                     parse_hex_digit(ch[4]));
+            if (ch.length() == 7)
+            {
+                auto code =
+                    (parse_hex_digit(ch[1]) << 20) |
+                    (parse_hex_digit(ch[2]) << 16) |
+                    (parse_hex_digit(ch[3]) << 12) |
+                    (parse_hex_digit(ch[4]) << 8) |
+                    (parse_hex_digit(ch[5]) << 4) |
+                    parse_hex_digit(ch[6]);
+                if (code < 0x110000)
+                    return create_char32(code);
+            }
+        }
+        catch (const std::invalid_argument& ) { }
+    }
+    throw_read_error("invalid character: \\" + ch, pos);
 }
 
 Force quote(Value val)
@@ -517,6 +589,7 @@ Force read_form(Stream& s)
         case '[': return read_vector(s);
         case '{': return read_map(s);
         case '\"': return read_string(s);
+        case '\\': return read_char(s);
         case '\'': return read_quote(s);
         case '@': return read_deref(s);
         case '~': return (s.peek(1) == '@') ? read_unquote_splicing(s) : read_unquote(s);
