@@ -60,7 +60,7 @@ std::string locate_source(const std::string& ns_name)
     {
         Root dir{call_multimethod1(*rt::first, *s)};
         check_type("library path", *dir, *type::UTF8String);
-        auto path = std::string(get_string_ptr(*dir), get_string_len(*dir)) + "/" + ns_name + ".cleo";
+        auto path = std::string(get_string_ptr(*dir), get_string_size(*dir)) + "/" + ns_name + ".cleo";
         if (std::ifstream(path))
             return path;
     }
@@ -149,7 +149,7 @@ Value resolve_var(Value ns, Value sym)
     if (auto var = maybe_resolve_var(ns, sym))
         return var;
     Root ss{pr_str(sym)};
-    Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_len(*ss)))};
+    Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_size(*ss)))};
     throw_exception(new_symbol_not_found(*msg));
 }
 
@@ -202,7 +202,7 @@ Value require(Value ns, Value opts)
     auto ns_name = get_symbol_name(ns);
     if (ns != CLEO_CORE && map_contains(*namespaces, ns) && !map_get(opts, *RELOAD))
         return nil;
-    std::string path = locate_source({get_string_ptr(ns_name), get_string_len(ns_name)});
+    std::string path = locate_source({get_string_ptr(ns_name), get_string_size(ns_name)});
     std::ifstream f(path);
     if (!f)
     {

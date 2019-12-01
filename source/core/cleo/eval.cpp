@@ -104,19 +104,19 @@ Force macroexpand1(Value form, Value env)
     if (SPECIAL_SYMBOLS.count(*m))
         return form;
     auto sym_name = get_symbol_name(*m);
-    auto sym_name_len = get_string_len(sym_name);
-    if (sym_name_len > 1)
+    auto sym_name_size = get_string_size(sym_name);
+    if (sym_name_size > 1)
     {
-        if (get_string_ptr(sym_name)[sym_name_len - 1] == '.')
+        if (get_string_ptr(sym_name)[sym_name_size - 1] == '.')
         {
-            auto new_name = create_symbol(std::string(get_string_ptr(sym_name), get_string_len(sym_name) - 1));
+            auto new_name = create_symbol(std::string(get_string_ptr(sym_name), sym_name_size - 1));
             Root expanded{seq_next(form)};
             expanded = create_cons(new_name, *expanded);
             return create_cons(NEW, *expanded);
         }
         if (get_string_ptr(sym_name)[0] == '.')
         {
-            auto field = create_symbol(std::string(get_string_ptr(sym_name) + 1, get_string_len(sym_name) - 1));
+            auto field = create_symbol(std::string(get_string_ptr(sym_name) + 1, sym_name_size - 1));
             Root expanded{seq_next(form)};
             if (expanded->is_nil())
                 throw_illegal_argument("Malformed member expression, expecting (.member target ...)");

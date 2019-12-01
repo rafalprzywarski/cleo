@@ -123,7 +123,7 @@ Force read_keyword(Stream& s)
         auto ns = rs.first.empty() ?
             get_symbol_name(ns_name(*rt::current_ns)) :
             get_symbol_name(ns_name(map_get(ns_aliases(ns_name(*rt::current_ns)), create_symbol(rs.first))));
-        return create_keyword({get_string_ptr(ns), get_string_len(ns)}, rs.second);
+        return create_keyword({get_string_ptr(ns), get_string_size(ns)}, rs.second);
     }
     auto rs = read_raw_symbol(s);
     if (rs.first.empty())
@@ -400,8 +400,8 @@ bool is_generating(Value sym)
     auto name = get_symbol_name(sym);
     return
         !get_symbol_namespace(sym) &&
-        get_string_len(name) > 0 &&
-        get_string_ptr(name)[get_string_len(name) - 1] == '#';
+        get_string_size(name) > 0 &&
+        get_string_ptr(name)[get_string_size(name) - 1] == '#';
 }
 
 Force generate_symbol(Root& generated, Value sym)
@@ -411,7 +411,7 @@ Force generate_symbol(Root& generated, Value sym)
         return *found;
     auto name = get_symbol_name(sym);
     auto id = gen_id();
-    Root g{create_symbol(std::string(get_string_ptr(name), get_string_len(name) - 1) + "__" + std::to_string(id) + "__auto__")};
+    Root g{create_symbol(std::string(get_string_ptr(name), get_string_size(name) - 1) + "__" + std::to_string(id) + "__auto__")};
     generated = map_assoc(*generated, sym, *g);
     return *g;
 }
@@ -430,7 +430,7 @@ Force syntax_quote_resolve_symbol(Root& generated, Value sym)
         return get_var_name(var);
     auto sym_ns = get_symbol_name(ns);
     auto sym_name = get_symbol_name(sym);
-    return create_symbol({get_string_ptr(sym_ns), get_string_len(sym_ns)}, {get_string_ptr(sym_name), get_string_len(sym_name)});
+    return create_symbol({get_string_ptr(sym_ns), get_string_size(sym_ns)}, {get_string_ptr(sym_name), get_string_size(sym_name)});
 }
 
 Force syntax_quote_symbol(Root& generated, Value sym)
@@ -544,7 +544,7 @@ Force read_set(Stream& s)
         if (array_set_contains(*set, *e))
         {
             Root text{pr_str(*e)};
-            throw_read_error("duplicate key: " + std::string(get_string_ptr(*text), get_string_len(*text)), key_pos);
+            throw_read_error("duplicate key: " + std::string(get_string_ptr(*text), get_string_size(*text)), key_pos);
         }
         set = array_set_conj(*set, *e);
         eat_ws(s);

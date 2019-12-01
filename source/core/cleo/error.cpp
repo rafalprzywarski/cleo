@@ -12,7 +12,7 @@ const char *Exception::what() const noexcept
     try
     {
         Root text{pr_str(*current_exception)};
-        buffer = std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
+        buffer = std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text));
     }
     catch (...)
     {

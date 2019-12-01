@@ -517,8 +517,8 @@ Force pr_str_exception(Value e)
     msg = print_str(*msg);
 
     return create_string(
-        std::string(get_string_ptr(*type), get_string_len(*type)) + ": " +
-        std::string(get_string_ptr(*msg), get_string_len(*msg)));
+        std::string(get_string_ptr(*type), get_string_size(*type)) + ": " +
+        std::string(get_string_ptr(*msg), get_string_size(*msg)));
 }
 
 Force create_ns_macro()
@@ -611,7 +611,7 @@ Force pr(const Value *args, std::uint8_t n)
         s = pr_str(args[i]);
         if (i > 0)
             std::cout << ' ';
-        std::cout << std::string(get_string_ptr(*s), get_string_len(*s));
+        std::cout << std::string(get_string_ptr(*s), get_string_size(*s));
     }
     std::cout << std::flush;
     return force(nil);
@@ -632,7 +632,7 @@ Force print(const Value *args, std::uint8_t n)
         s = print_str(args[i]);
         if (i > 0)
             std::cout << ' ';
-        std::cout << std::string(get_string_ptr(*s), get_string_len(*s));
+        std::cout << std::string(get_string_ptr(*s), get_string_size(*s));
     }
     std::cout << std::flush;
     return nil;
@@ -653,7 +653,7 @@ Force str(const Value *args, std::uint8_t n)
         if (auto arg = args[i])
         {
             s = print_str(arg);
-            str.append(get_string_ptr(*s), get_string_len(*s));
+            str.append(get_string_ptr(*s), get_string_size(*s));
         }
     return create_string(str);
 }
@@ -807,7 +807,7 @@ Force gensym(const Value *args, std::uint8_t n)
     std::ostringstream os;
     Root prefix{n > 0 ? print_str(args[0]) : nil};
     if (*prefix)
-        os.write(get_string_ptr(*prefix), get_string_len(*prefix));
+        os.write(get_string_ptr(*prefix), get_string_size(*prefix));
     else
         os << "G__";
     os << gen_id();
@@ -986,9 +986,9 @@ Force mk_keyword(Value val)
         case tag::SYMBOL:
         {
             auto name = get_symbol_name(val);
-            return create_keyword(std::string(get_string_ptr(name), get_string_len(name)));
+            return create_keyword(std::string(get_string_ptr(name), get_string_size(name)));
         }
-        case tag::UTF8STRING: return create_keyword(std::string(get_string_ptr(val), get_string_len(val)));
+        case tag::UTF8STRING: return create_keyword(std::string(get_string_ptr(val), get_string_size(val)));
         default: return nil;
     }
 }
@@ -1000,10 +1000,10 @@ Force mk_symbol(Value ns, Value name)
     check_type("name", name, *type::UTF8String);
     if (ns)
         return create_symbol(
-            std::string(get_string_ptr(ns), get_string_len(ns)),
-            std::string(get_string_ptr(name), get_string_len(name)));
+            std::string(get_string_ptr(ns), get_string_size(ns)),
+            std::string(get_string_ptr(name), get_string_size(name)));
     else
-        return create_symbol(std::string(get_string_ptr(name), get_string_len(name)));
+        return create_symbol(std::string(get_string_ptr(name), get_string_size(name)));
 }
 
 Force get_name(Value val)
@@ -1329,9 +1329,9 @@ Force subs(Value s, Value start)
     check_type("start", start, type::Int64);
     auto start_ = get_int64_value(start);
     if (start_ < 0 ||
-        start_ > get_string_len(s))
+        start_ > get_string_size(s))
         throw_illegal_argument("Invalid substring start: " + std::to_string(start_));
-    return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(get_int64_value(start)));
+    return create_string(std::string{get_string_ptr(s), get_string_size(s)}.substr(get_int64_value(start)));
 }
 
 Force subs(Value s, Value start, Value end)
@@ -1342,12 +1342,12 @@ Force subs(Value s, Value start, Value end)
     auto end_ = get_int64_value(end);
     if (start_ < 0 ||
         end_ < 0 ||
-        start_ > get_string_len(s) ||
-        end_ > get_string_len(s) ||
+        start_ > get_string_size(s) ||
+        end_ > get_string_size(s) ||
         start_ > end_)
         throw_illegal_argument("Invalid substring bounds: " + std::to_string(start_) + " " + std::to_string(end_));
 
-    return create_string(std::string{get_string_ptr(s), get_string_len(s)}.substr(start_, end_));
+    return create_string(std::string{get_string_ptr(s), get_string_size(s)}.substr(start_, end_));
 }
 
 Force string_get(Value s, Value idx, Value def)
@@ -1356,7 +1356,7 @@ Force string_get(Value s, Value idx, Value def)
     if (get_value_tag(idx) != tag::INT64)
         return def;
     Int64 i = get_int64_value(idx);
-    if (i < 0 || i >= get_string_len(s))
+    if (i < 0 || i >= get_string_size(s))
         return def;
     return create_string(std::string(1, get_string_ptr(s)[i]));
 }
@@ -1384,7 +1384,7 @@ Value str_starts_with(Value s, Value ss)
 {
     check_type("s", s, *type::UTF8String);
     check_type("ss", ss, *type::UTF8String);
-    return std::strncmp(get_string_ptr(s), get_string_ptr(ss), get_string_len(ss)) == 0 ? TRUE : nil;
+    return std::strncmp(get_string_ptr(s), get_string_ptr(ss), get_string_size(ss)) == 0 ? TRUE : nil;
 }
 
 Force sort_transient(Value pred, Value array)
@@ -1674,7 +1674,7 @@ struct Initialize
         define_method(COUNT, *type::Array, *f);
         f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::TransientArray, *f);
-        f = create_native_function1<WrapUInt32Fn<get_string_len>::fn, &COUNT>();
+        f = create_native_function1<WrapUInt32Fn<get_string_size>::fn, &COUNT>();
         define_method(COUNT, *type::UTF8String, *f);
         f = create_native_function1<nil_count, &COUNT>();
         define_method(COUNT, nil, *f);

@@ -219,10 +219,10 @@ Char32 get_uchar_value(Value val);
 Force create_float64(Float64 val);
 Float64 get_float64_value(Value val);
 
-Force create_string(const char* str, std::uint32_t len);
+Force create_string(const char* str, std::uint32_t size);
 inline Force create_string(const std::string& str) { return create_string(str.c_str(), str.length()); }
 const char *get_string_ptr(Value val);
-std::uint32_t get_string_len(Value val);
+std::uint32_t get_string_size(Value val);
 std::uint32_t get_string_hash(Value val);
 void set_string_hash(Value val, std::uint32_t h);
 

@@ -625,8 +625,8 @@ void Compiler::compile_def(Scope scope, Value form_)
                                 "Can't refer to qualified var that doesn't exist");
     auto sym_name = get_symbol_name(*name);
     name = create_symbol(
-        {get_string_ptr(current_ns_name), get_string_len(current_ns_name)},
-        {get_string_ptr(sym_name), get_string_len(sym_name)});
+        {get_string_ptr(current_ns_name), get_string_size(current_ns_name)},
+        {get_string_ptr(sym_name), get_string_size(sym_name)});
     if (!var)
         var = define(*name, nil, *meta);
     compile_const(var);
@@ -761,7 +761,7 @@ void Compiler::compile_dot(Scope scope, Value form)
     if (*next || get_value_tag(*field) != tag::SYMBOL)
         throw_compilation_error("Malformed member expression");
     auto field_name = get_symbol_name(*field);
-    if (get_string_len(field_name) < 2 || get_string_ptr(field_name)[0] != '-')
+    if (get_string_size(field_name) < 2 || get_string_ptr(field_name)[0] != '-')
         throw_compilation_error("Malformed member expression");
     field_name = create_symbol(get_string_ptr(field_name) + 1);
     compile_value(scope, *obj);

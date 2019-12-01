@@ -33,7 +33,7 @@ Value get_var(Value sym)
     if (it == end(vars))
     {
         Root ss{pr_str(sym)};
-        Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_len(*ss)))};
+        Root msg{create_string("unable to resolve symbol " + std::string(get_string_ptr(*ss), get_string_size(*ss)))};
         throw_exception(new_symbol_not_found(*msg));
     }
     return it->second;
@@ -83,7 +83,7 @@ void set_var(Value sym, Value val)
     if (!*bindings || !map_contains(get_list_first(*bindings), sym))
     {
         Root ss{pr_str(sym)};
-        throw_illegal_state("Can't change/establish root binding of: " + std::string(get_string_ptr(*ss), get_string_len(*ss)));
+        throw_illegal_state("Can't change/establish root binding of: " + std::string(get_string_ptr(*ss), get_string_size(*ss)));
     }
     Root latest{get_list_first(*bindings)};
     latest = map_assoc(*latest, sym, val);

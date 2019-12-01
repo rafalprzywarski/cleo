@@ -27,13 +27,13 @@ Force pr_str_symbol(Value sym)
     auto ns = get_keyword_namespace(sym);
     auto name = get_keyword_name(sym);
     std::string s;
-    s.reserve(1 + (!ns ? 0 : get_string_len(ns)) + get_string_len(name));
+    s.reserve(1 + (!ns ? 0 : get_string_size(ns)) + get_string_size(name));
     if (ns)
     {
-        s.append(get_string_ptr(ns), get_string_len(ns));
+        s.append(get_string_ptr(ns), get_string_size(ns));
         s += '/';
     }
-    s.append(get_string_ptr(name), get_string_len(name));
+    s.append(get_string_ptr(name), get_string_size(name));
     return create_string(s);
 }
 
@@ -42,14 +42,14 @@ Force pr_str_keyword(Value kw)
     auto ns = get_keyword_namespace(kw);
     auto name = get_keyword_name(kw);
     std::string s;
-    s.reserve(1 + (!ns ? 0 : get_string_len(ns)) + get_string_len(name));
+    s.reserve(1 + (!ns ? 0 : get_string_size(ns)) + get_string_size(name));
     s += ':';
     if (ns)
     {
-        s.append(get_string_ptr(ns), get_string_len(ns));
+        s.append(get_string_ptr(ns), get_string_size(ns));
         s += '/';
     }
-    s.append(get_string_ptr(name), get_string_len(name));
+    s.append(get_string_ptr(name), get_string_size(name));
     return create_string(s);
 }
 
@@ -134,10 +134,10 @@ Force pr_str_string(Value val)
     if (!*rt::print_readably)
         return val;
     std::string s;
-    s.reserve(2 * get_string_len(val) + 2);
+    s.reserve(2 * get_string_size(val) + 2);
     s += '\"';
     auto p = get_string_ptr(val);
-    auto e = p + get_string_len(val);
+    auto e = p + get_string_size(val);
     for (; p != e; ++p)
         switch (*p)
         {
@@ -176,7 +176,7 @@ Force pr_str_object(Value val)
     }
     Root type{pr_str(get_object_type(val))};
     std::ostringstream os;
-    os << '#' << std::string(get_string_ptr(*type), get_string_len(*type)) << "[0x" << std::hex << val.bits() << "]";
+    os << '#' << std::string(get_string_ptr(*type), get_string_size(*type)) << "[0x" << std::hex << val.bits() << "]";
     return create_string(os.str());
 }
 
@@ -190,7 +190,7 @@ Force pr_str_array(Value v)
         if (i > 0)
             str += ' ';
         Root s{pr_str(get_array_elem(v, i))};
-        str.append(get_string_ptr(*s), get_string_len(*s));
+        str.append(get_string_ptr(*s), get_string_size(*s));
     }
     str += ']';
     return create_string(str);
@@ -206,7 +206,7 @@ Force pr_str_array_set(Value s)
         if (i > 0)
             str += ' ';
         Root ss{pr_str(get_array_set_elem(s, i))};
-        str.append(get_string_ptr(*ss), get_string_len(*ss));
+        str.append(get_string_ptr(*ss), get_string_size(*ss));
     }
     str += '}';
     return create_string(str);
@@ -222,10 +222,10 @@ Force pr_str_array_map(Value m)
         if (i > 0)
             str += ", ";
         Root s{pr_str(get_array_map_key(m, i))};
-        str.append(get_string_ptr(*s), get_string_len(*s));
+        str.append(get_string_ptr(*s), get_string_size(*s));
         str += ' ';
         s = pr_str(get_array_map_val(m, i));
-        str.append(get_string_ptr(*s), get_string_len(*s));
+        str.append(get_string_ptr(*s), get_string_size(*s));
     }
     str += '}';
     return create_string(str);
@@ -241,10 +241,10 @@ Force pr_str_persistent_hash_map(Value val)
         if (str.back() != '{')
             str += ", ";
         Root s{pr_str(get_array_elem(kv, 0))};
-        str.append(get_string_ptr(*s), get_string_len(*s));
+        str.append(get_string_ptr(*s), get_string_size(*s));
         str += ' ';
         s = pr_str(get_array_elem(kv, 1));
-        str.append(get_string_ptr(*s), get_string_len(*s));
+        str.append(get_string_ptr(*s), get_string_size(*s));
     }
     str += '}';
     return create_string(str);
@@ -264,7 +264,7 @@ Force pr_str_seqable(Value v)
 
         Root f{call_multimethod1(*rt::first, *s)};
         Root ss{pr_str(*f)};
-        str.append(get_string_ptr(*ss), get_string_len(*ss));
+        str.append(get_string_ptr(*ss), get_string_size(*ss));
     }
     str += ')';
     return create_string(str);

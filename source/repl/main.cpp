@@ -16,7 +16,7 @@ std::string get_current_ns()
 {
     auto ns = ns_name(*cleo::rt::current_ns);
     cleo::Root text{cleo::pr_str(ns)};
-    return std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text));
+    return std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text));
 }
 
 bool eval_source(const std::string& line)
@@ -44,14 +44,14 @@ bool eval_source(const std::string& line)
             cleo::Root expr{cleo::read(stream)};
             cleo::Root result{cleo::eval(*expr)};
             cleo::Root text{cleo::pr_str(*result)};
-            std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+            std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text)) << std::endl;
         }
     }
     catch (const cleo::Exception& )
     {
         cleo::Root e{cleo::catch_exception()};
         cleo::Root text{cleo::pr_str(*e)};
-        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text)) << std::endl;
     }
     catch (std::exception const& e)
     {

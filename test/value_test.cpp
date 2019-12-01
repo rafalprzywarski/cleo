@@ -46,10 +46,10 @@ TEST_F(value_test, should_store_symbols_with_namespaces)
     ASSERT_EQ(tag::SYMBOL, get_value_tag(sym));
     auto ns = get_symbol_namespace(sym);
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(ns));
-    ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_len(ns)));
+    ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_size(ns)));
     auto name = get_symbol_name(sym);
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
-    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_size(name)));
 }
 
 TEST_F(value_test, should_store_symbols_without_namespaces)
@@ -59,7 +59,7 @@ TEST_F(value_test, should_store_symbols_without_namespaces)
     ASSERT_TRUE(get_symbol_namespace(sym).is_nil());
     auto name = get_symbol_name(sym);
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
-    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_size(name)));
 }
 
 TEST_F(value_test, should_return_same_instances_for_symbols_with_same_namespace_and_names)
@@ -78,10 +78,10 @@ TEST_F(value_test, should_store_keywords_with_namespaces)
     ASSERT_EQ(tag::KEYWORD, get_value_tag(kw));
     auto ns = get_keyword_namespace(kw);
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(ns));
-    ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_len(ns)));
+    ASSERT_EQ("org.xxx", std::string(get_string_ptr(ns), get_string_size(ns)));
     auto name = get_keyword_name(kw);
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
-    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_size(name)));
 }
 
 TEST_F(value_test, should_store_keywords_without_namespaces)
@@ -91,7 +91,7 @@ TEST_F(value_test, should_store_keywords_without_namespaces)
     ASSERT_TRUE(get_keyword_namespace(kw).is_nil());
     auto name = get_keyword_name(kw);
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(name));
-    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_len(name)));
+    ASSERT_EQ("thing", std::string(get_string_ptr(name), get_string_size(name)));
 }
 
 TEST_F(value_test, should_return_same_instances_for_keywords_with_same_namespace_and_names)
@@ -152,7 +152,7 @@ TEST_F(value_test, should_store_string_values)
     Root val{create_string(exampleCopy)};
     exampleCopy.clear();
     ASSERT_EQ(tag::UTF8STRING, get_value_tag(*val));
-    ASSERT_EQ(example, std::string(get_string_ptr(*val), get_string_len(*val)));
+    ASSERT_EQ(example, std::string(get_string_ptr(*val), get_string_size(*val)));
     ASSERT_STREQ(example.c_str(), get_string_ptr(*val));
 }
 

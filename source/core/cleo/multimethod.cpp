@@ -132,10 +132,10 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
         std::string sname;
         if (mns)
         {
-            sname.assign(get_string_ptr(mns), get_string_len(mns));
+            sname.assign(get_string_ptr(mns), get_string_size(mns));
             sname += '/';
         }
-        sname.append(get_string_ptr(mname), get_string_len(mname));
+        sname.append(get_string_ptr(mname), get_string_size(mname));
         Root msg{create_string("multimethod not matched: " + sname)};
         throw_exception(new_illegal_argument(*msg));
     }

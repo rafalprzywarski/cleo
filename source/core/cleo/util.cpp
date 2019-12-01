@@ -12,7 +12,7 @@ namespace cleo
 std::string to_string(Value val)
 {
     Root text{pr_str(val)};
-    return {get_string_ptr(*text), get_string_len(*text)};
+    return {get_string_ptr(*text), get_string_size(*text)};
 }
 
 Force CLEO_CDECL create_arity_error(Value name, std::uint8_t n)
@@ -178,7 +178,7 @@ Value namespace_symbol(Value sym)
     auto ns = get_symbol_namespace(sym);
     if (!ns)
         return nil;
-    return create_symbol({get_string_ptr(ns), get_string_len(ns)});
+    return create_symbol({get_string_ptr(ns), get_string_size(ns)});
 }
 
 Value name_symbol(Value sym)
@@ -187,7 +187,7 @@ Value name_symbol(Value sym)
     if (!get_symbol_namespace(sym))
         return sym;
     auto name = get_symbol_name(sym);
-    return create_symbol({get_string_ptr(name), get_string_len(name)});
+    return create_symbol({get_string_ptr(name), get_string_size(name)});
 }
 
 bool is_seq(Value val)

@@ -16,7 +16,7 @@ public:
     ReaderStream(Value text) : text(text) { }
 
     char peek(std::uint32_t n = 0) const { return eos(n) ? 0 : get_string_ptr(text)[index + n]; }
-    bool eos(std::uint32_t n = 0) const { return (index + n) >= get_string_len(text); }
+    bool eos(std::uint32_t n = 0) const { return (index + n) >= get_string_size(text); }
     char next()
     {
         char c = peek();

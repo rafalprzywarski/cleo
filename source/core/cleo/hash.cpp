@@ -22,7 +22,7 @@ std::uint32_t hash_memoized(Value val)
 
 std::uint32_t hash_string(Value s)
 {
-    return std::uint32_t(std::hash<std::string>{}({get_string_ptr(s), get_string_len(s)}));
+    return std::uint32_t(std::hash<std::string>{}({get_string_ptr(s), get_string_size(s)}));
 }
 
 std::uint32_t hash_symbol(Value s)

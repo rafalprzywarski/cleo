@@ -16,7 +16,7 @@ struct NativeFunctionWithName
 
 struct String
 {
-    std::uint32_t len;
+    std::uint32_t size;
     std::uint32_t hashVal;
     char firstChar;
 };
@@ -195,13 +195,13 @@ Float64 get_float64_value(Value val)
     return bit_cast<Float64>(val.bits() ^ tag::FLIP_MASK);
 }
 
-Force create_string(const char* str, std::uint32_t len)
+Force create_string(const char* str, std::uint32_t size)
 {
-    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + len + 1));
-    val->len = len;
+    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + size + 1));
+    val->size = size;
     val->hashVal = 0;
-    std::memcpy(&val->firstChar, str, len);
-    (&val->firstChar)[len] = 0;
+    std::memcpy(&val->firstChar, str, size);
+    (&val->firstChar)[size] = 0;
     return tag_ptr(val, tag::UTF8STRING);
 }
 
@@ -210,9 +210,9 @@ const char *get_string_ptr(Value val)
     return &get_ptr<String>(val)->firstChar;
 }
 
-std::uint32_t get_string_len(Value val)
+std::uint32_t get_string_size(Value val)
 {
-    return get_ptr<String>(val)->len;
+    return get_ptr<String>(val)->size;
 }
 
 std::uint32_t get_string_hash(Value val)

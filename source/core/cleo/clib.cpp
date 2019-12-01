@@ -282,8 +282,8 @@ Force import_c_fn(Value libname, Value fnname, Value ret_type, Value param_types
 {
     check_type("lib-name", libname, *type::UTF8String);
     check_type("fn-name", fnname, *type::UTF8String);
-    std::string slibname{get_string_ptr(libname), get_string_len(libname)};
-    std::string sfnname{get_string_ptr(fnname), get_string_len(fnname)};
+    std::string slibname{get_string_ptr(libname), get_string_size(libname)};
+    std::string sfnname{get_string_ptr(fnname), get_string_size(fnname)};
     auto lib = dlopen(slibname.c_str(), RTLD_NOW);
     if (!lib)
         return nil;

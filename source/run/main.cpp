@@ -62,7 +62,7 @@ int main(int argc, const char *const* argv)
     {
         cleo::Root e{cleo::catch_exception()};
         cleo::Root text{cleo::pr_str(*e)};
-        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_len(*text)) << std::endl;
+        std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text)) << std::endl;
         return 2;
     }
     catch (std::exception const& e)

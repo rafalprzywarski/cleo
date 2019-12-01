@@ -15,7 +15,7 @@ struct persistent_hash_map_test : Test
     static Force string_value(Value val)
     {
         Value s = get_dynamic_object_element(val, 0);
-        std::string ss{get_string_ptr(s), get_string_len(s)};
+        std::string ss{get_string_ptr(s), get_string_size(s)};
         return create_int64(std::uint32_t(std::strtoull(ss.c_str(), nullptr, 32)));
     }
 
