@@ -169,7 +169,7 @@
         form (next form)
         member (if form (name (first form)) (fail))]
     (when (or (< (count member) 2)
-              (not (= "-" (get member 0)))
+              (not (= \- (get member 0)))
               (next form))
       (fail))
     {:tag :dot

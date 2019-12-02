@@ -225,6 +225,7 @@ const char *get_string_ptr(Value val);
 std::uint32_t get_string_size(Value val);
 std::uint32_t get_string_len(Value val);
 Char32 get_string_char(Value val, std::uint32_t index);
+Char32 get_string_char_offset(Value val, std::uint32_t index);
 Char32 get_string_char_at_offset(Value val, std::uint32_t offset);
 std::uint32_t get_string_next_offset(Value val, std::uint32_t offset);
 std::uint32_t get_string_hash(Value val);

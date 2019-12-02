@@ -227,11 +227,16 @@ std::uint32_t get_string_len(Value val)
 
 Char32 get_string_char(Value val, std::uint32_t index)
 {
-    assert(index < get_string_len(val));
+    return get_string_char_at_offset(val, get_string_char_offset(val, index));
+}
+
+Char32 get_string_char_offset(Value val, std::uint32_t index)
+{
+    assert(index <= get_string_len(val));
     auto offset = 0;
     for (; index; --index)
         offset = get_string_next_offset(val, offset);
-    return get_string_char_at_offset(val, offset);
+    return offset;
 }
 
 Char32 get_string_char_at_offset(Value val, std::uint32_t offset)

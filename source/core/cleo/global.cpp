@@ -1329,9 +1329,10 @@ Force subs(Value s, Value start)
     check_type("start", start, type::Int64);
     auto start_ = get_int64_value(start);
     if (start_ < 0 ||
-        start_ > get_string_size(s))
+        start_ > get_string_len(s))
         throw_illegal_argument("Invalid substring start: " + std::to_string(start_));
-    return create_string(std::string{get_string_ptr(s), get_string_size(s)}.substr(get_int64_value(start)));
+    auto start_offset = get_string_char_offset(s, start_);
+    return create_string(get_string_ptr(s) + start_offset, get_string_size(s) - start_offset);
 }
 
 Force subs(Value s, Value start, Value end)
@@ -1342,26 +1343,27 @@ Force subs(Value s, Value start, Value end)
     auto end_ = get_int64_value(end);
     if (start_ < 0 ||
         end_ < 0 ||
-        start_ > get_string_size(s) ||
-        end_ > get_string_size(s) ||
+        start_ > get_string_len(s) ||
+        end_ > get_string_len(s) ||
         start_ > end_)
         throw_illegal_argument("Invalid substring bounds: " + std::to_string(start_) + " " + std::to_string(end_));
-
-    return create_string(std::string{get_string_ptr(s), get_string_size(s)}.substr(start_, end_));
+    auto start_offset = get_string_char_offset(s, start_);
+    auto end_offset = get_string_char_offset(s, end_);
+    return create_string(get_string_ptr(s) + start_offset, end_offset - start_offset);
 }
 
-Force string_get(Value s, Value idx, Value def)
+Value string_get(Value s, Value idx, Value def)
 {
     check_type("s", s, *type::UTF8String);
     if (get_value_tag(idx) != tag::INT64)
         return def;
     Int64 i = get_int64_value(idx);
-    if (i < 0 || i >= get_string_size(s))
+    if (i < 0 || i >= get_string_len(s))
         return def;
-    return create_string(std::string(1, get_string_ptr(s)[i]));
+    return create_uchar(get_string_char(s, i));
 }
 
-Force string_get(Value s, Value idx)
+Value string_get(Value s, Value idx)
 {
     return string_get(s, idx, nil);
 }
@@ -1674,7 +1676,7 @@ struct Initialize
         define_method(COUNT, *type::Array, *f);
         f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::TransientArray, *f);
-        f = create_native_function1<WrapUInt32Fn<get_string_size>::fn, &COUNT>();
+        f = create_native_function1<WrapUInt32Fn<get_string_len>::fn, &COUNT>();
         define_method(COUNT, *type::UTF8String, *f);
         f = create_native_function1<nil_count, &COUNT>();
         define_method(COUNT, nil, *f);
