@@ -164,6 +164,73 @@ TEST_F(value_test, should_null_terminate_strings)
     ASSERT_STREQ(example.c_str(), get_string_ptr(*val));
 }
 
+TEST_F(value_test, should_replace_invalid_utf8_values_in_strings_with_U_FFFD)
+{
+    Root tmp;
+    auto str = [&](const char *s)
+                   {
+                       tmp = create_string(s);
+                       return std::string(get_string_ptr(*tmp), get_string_size(*tmp));
+                   };
+    std::string FFFD = "\xef\xbf\xbd";
+
+    EXPECT_EQ("A\xc2\x80", str("A\xc2\x80")) << "valid";
+    EXPECT_EQ("A\xdf\xbf", str("A\xdf\xbf")) << "valid";
+    EXPECT_EQ("A\xe0\xa0\x80", str("A\xe0\xa0\x80")) << "valid";
+    EXPECT_EQ("A\xef\xbf\xbf", str("A\xef\xbf\xbf")) << "valid";
+    EXPECT_EQ("A\xf0\x90\x80\x80", str("A\xf0\x90\x80\x80")) << "valid";
+    EXPECT_EQ("A\xf3\x90\x80\x80", str("A\xf3\x90\x80\x80")) << "valid";
+    EXPECT_EQ("A\xf4\x8f\xbf\xbf", str("A\xf4\x8f\xbf\xbf")) << "valid";
+
+    EXPECT_EQ(FFFD + "z", str("\xf5z")) << "invalid first byte";
+    EXPECT_EQ(FFFD + "z", str("\xf6z")) << "invalid first byte";
+    EXPECT_EQ(FFFD, str("\xf7")) << "invalid first byte";
+    EXPECT_EQ(FFFD, str("\xff")) << "invalid first byte";
+
+    EXPECT_EQ(FFFD, str("\x80")) << "invalid first byte";
+    EXPECT_EQ(FFFD, str("\x81")) << "invalid first byte";
+    EXPECT_EQ(FFFD + FFFD + FFFD, str("\x80\x82\x8f")) << "invalid bytes";
+    EXPECT_EQ(FFFD, str("\xbf")) << "invalid first byte";
+    EXPECT_EQ("AB" + FFFD, str("AB\xbf")) << "invalid first byte";
+
+    EXPECT_EQ("A" + FFFD, str("A\xc2")) << "missing second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + "Z", str("A\xc2\xc0Z")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + "\x01Z", str("A\xc2\x01Z")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + "\x7fZ", str("A\xc2\x7fZ")) << "invalid second byte";
+    EXPECT_EQ(FFFD + "\x7f", str("\xc2\x7f")) << "invalid second byte";
+
+    EXPECT_EQ("A" + FFFD, str("A\xe0")) << "missing second byte";
+    EXPECT_EQ(FFFD + FFFD, str("\xe0\xa0")) << "missing third byte";
+    EXPECT_EQ("A" + FFFD + "\x70" + FFFD + "Z", str("A\xe0\x70\x80Z")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + "Z", str("A\xe0\xf7\x80Z")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + "\x03" + FFFD + "Z", str("A\xe0\x03\x80Z")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + "\x70Z", str("A\xe0\xb0\x70Z")) << "invalid third byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + "Z", str("A\xe0\xb0\xf7Z")) << "invalid third byte";
+    EXPECT_EQ("A" + FFFD + FFFD + "\x03Z", str("A\xe0\xb0\x03Z")) << "invalid third byte";
+
+    EXPECT_EQ("A" + FFFD, str("A\xf0")) << "missing second byte";
+    EXPECT_EQ("A" + FFFD + FFFD, str("A\xf0\x90")) << "missing third byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD, str("A\xf0\x90\x80")) << "missing fourth byte";
+    EXPECT_EQ("A" + FFFD + "\x70" + FFFD + FFFD, str("A\xf0\x70\x80\x80")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + FFFD + "X", str("A\xf0\xf0\x80\x80X")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + "\x70" + FFFD + "X", str("A\xf0\x90\x70\x80X")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + FFFD, str("A\xf0\x90\xf0\x80")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + "\x70", str("A\xf0\x90\x80\x70")) << "invalid second byte";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + FFFD + "X", str("A\xf0\x90\x80\xf0X")) << "invalid second byte";
+
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xc0\x80Z")) << "overlong encoding";
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xc1\xbfZ")) << "overlong encoding";
+
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xe0\x80\x80Z")) << "overlong encoding";
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xe0\x9f\xbfZ")) << "overlong encoding";
+
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xf0\x80\x80\x80Z")) << "overlong encoding";
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xf0\x8f\xbf\xbfZ")) << "overlong encoding";
+
+    EXPECT_EQ("A" + FFFD + "Z", str("A\xf4\x90\x80\x80Z")) << "0x110000, too large";
+    EXPECT_EQ("A" + FFFD + FFFD + FFFD + FFFD + "Z", str("A\xf7\xbf\xbf\xbfZ")) << "0x1fffff, too large";
+}
+
 TEST_F(value_test, should_provide_offsets_of_code_points)
 {
     Root val{create_string("\x73\x63\x53\x43\x33\x23\x13\x03")};

@@ -195,13 +195,110 @@ Float64 get_float64_value(Value val)
     return bit_cast<Float64>(val.bits() ^ tag::FLIP_MASK);
 }
 
+namespace
+{
+
+auto valid_utf8_code_point_length(const char* str, const char *endp)
+{
+    struct R
+    {
+        std::uint32_t len{}, str_len{};
+        bool valid{};
+    };
+    auto valid = [](std::uint32_t len) { return R{len, len, true}; };
+    auto invalid = [](std::uint32_t len = 1) { return R{3, len, false}; };
+
+    if ((*str & 0x80) == 0)
+        return valid(1);
+    if ((*str & 0xc0) == 0x80)
+        return invalid();
+    if ((*str & 0xe0) == 0xc0)
+    {
+        if ((endp - str) == 1 ||
+            (str[1] & 0xc0) != 0x80)
+            return invalid();
+        if ((*str & 0x1e) == 0)
+            return invalid(2);
+        return valid(2);
+    }
+    if ((*str & 0xf0) == 0xe0)
+    {
+        if ((endp - str) < 3 ||
+            (str[1] & 0xc0) != 0x80 ||
+            (str[2] & 0xc0) != 0x80)
+            return invalid();
+        if ((str[0] & 0x0f) == 0 &&
+            (str[1] & 0x20) == 0)
+            return invalid(3);
+        return valid(3);
+    }
+    if (static_cast<unsigned char>(*str) <= 0xf4)
+    {
+        if ((endp - str) < 4 ||
+            (str[1] & 0xc0) != 0x80 ||
+            (str[2] & 0xc0) != 0x80 ||
+            (str[3] & 0xc0) != 0x80)
+            return invalid();
+        if ((str[0] & 0x7) == 0 &&
+            (str[1] & 0x30) == 0)
+            return invalid(4);
+        if (static_cast<unsigned char>(*str) == 0xf4 &&
+            (str[1] & 0x30) != 0)
+            return invalid(4);
+        return valid(4);
+    }
+    return invalid();
+}
+
+std::pair<std::uint32_t, bool> valid_utf8_string_size(const char* str, std::uint32_t size)
+{
+    std::uint32_t valid_size = 0;
+    auto endp = str + size;
+    bool valid = true;
+    while (str != endp)
+    {
+        auto cpl = valid_utf8_code_point_length(str, endp);
+        valid_size += cpl.len;
+        str += cpl.str_len;
+        valid = valid && cpl.valid;
+    }
+    return {valid_size, valid};
+}
+
+void fix_utf8_string(const char* str, std::uint32_t size, char *out)
+{
+    auto endp = str + size;
+    while (str != endp)
+    {
+        auto cpl = valid_utf8_code_point_length(str, endp);
+        if (!cpl.valid)
+        {
+            assert(cpl.len == 3);
+            *out++ = 0xef;
+            *out++ = 0xbf;
+            *out++ = 0xbd;
+            str += cpl.str_len;
+            continue;
+        }
+        std::memcpy(out, str, cpl.len);
+        out += cpl.len;
+        str += cpl.len;
+    }
+}
+
+}
+
 Force create_string(const char* str, std::uint32_t size)
 {
-    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + size + 1));
-    val->size = size;
+    auto valid_size = valid_utf8_string_size(str, size);
+    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + valid_size.first + 1));
+    val->size = valid_size.first;
     val->hashVal = 0;
-    std::memcpy(&val->firstChar, str, size);
-    (&val->firstChar)[size] = 0;
+    if (valid_size.second)
+        std::memcpy(&val->firstChar, str, size);
+    else
+        fix_utf8_string(str, size, &val->firstChar);
+    (&val->firstChar)[valid_size.first] = 0;
     return tag_ptr(val, tag::UTF8STRING);
 }
 
