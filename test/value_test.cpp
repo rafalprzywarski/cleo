@@ -164,6 +164,81 @@ TEST_F(value_test, should_null_terminate_strings)
     ASSERT_STREQ(example.c_str(), get_string_ptr(*val));
 }
 
+TEST_F(value_test, should_provide_offsets_of_code_points)
+{
+    Root val{create_string("\x73\x63\x53\x43\x33\x23\x13\x03")};
+    ASSERT_EQ(1u, get_string_next_offset(*val, 0));
+    ASSERT_EQ(2u, get_string_next_offset(*val, 1));
+    ASSERT_EQ(3u, get_string_next_offset(*val, 2));
+    ASSERT_EQ(4u, get_string_next_offset(*val, 3));
+    ASSERT_EQ(5u, get_string_next_offset(*val, 4));
+    ASSERT_EQ(6u, get_string_next_offset(*val, 5));
+    ASSERT_EQ(7u, get_string_next_offset(*val, 6));
+    ASSERT_EQ(8u, get_string_next_offset(*val, 7));
+    val = create_string("\xc2\xa0Z\xdf\xbf");
+    ASSERT_EQ(2u, get_string_next_offset(*val, 0));
+    ASSERT_EQ(3u, get_string_next_offset(*val, 2));
+    ASSERT_EQ(5u, get_string_next_offset(*val, 3));
+    val = create_string("\xe0\xa0\x80N\xef\xbf\xbf");
+    ASSERT_EQ(3u, get_string_next_offset(*val, 0));
+    ASSERT_EQ(4u, get_string_next_offset(*val, 3));
+    ASSERT_EQ(7u, get_string_next_offset(*val, 4));
+    val = create_string("\xf0\x90\x80\x80X\xf4\x8f\xbf\xbf");
+    ASSERT_EQ(4u, get_string_next_offset(*val, 0));
+    ASSERT_EQ(5u, get_string_next_offset(*val, 4));
+    ASSERT_EQ(9u, get_string_next_offset(*val, 5));
+}
+
+TEST_F(value_test, should_provide_code_points_at_given_offsets)
+{
+    Root val{create_string("\x32" "\x7f"
+                           "\xc2\x80" "\xd5\xa2" "\xdf\xbf"
+                           "\xe0\xa0\x80" "\xe5\x9e\x9e" "\xef\xbf\xbf"
+                           "\xf0\x90\x80\x80" "\xf2\x97\x8c\xa4" "\xf4\x8f\xbf\xbf")};
+    EXPECT_EQ(0x32u, get_string_char_at_offset(*val, 0));
+    EXPECT_EQ(0x7fu, get_string_char_at_offset(*val, 1));
+    EXPECT_EQ(0x80u, get_string_char_at_offset(*val, 2));
+    EXPECT_EQ(0x562u, get_string_char_at_offset(*val, 4));
+    EXPECT_EQ(0x7ffu, get_string_char_at_offset(*val, 6));
+    EXPECT_EQ(0x800u, get_string_char_at_offset(*val, 8));
+    EXPECT_EQ(0x579eu, get_string_char_at_offset(*val, 11));
+    EXPECT_EQ(0xffffu, get_string_char_at_offset(*val, 14));
+    EXPECT_EQ(0x10000u, get_string_char_at_offset(*val, 17));
+    EXPECT_EQ(0x97324u, get_string_char_at_offset(*val, 21));
+    EXPECT_EQ(0x10ffffu, get_string_char_at_offset(*val, 25));
+}
+
+TEST_F(value_test, should_provide_code_points_at_given_indices)
+{
+    Root val{create_string("\x32" "\x7f"
+                           "\xc2\x80" "\xd5\xa2" "\xdf\xbf"
+                           "\xe0\xa0\x80" "\xe5\x9e\x9e" "\xef\xbf\xbf"
+                           "\xf0\x90\x80\x80" "\xf2\x97\x8c\xa4" "\xf4\x8f\xbf\xbf")};
+    EXPECT_EQ(0x32u, get_string_char(*val, 0));
+    EXPECT_EQ(0x7fu, get_string_char(*val, 1));
+    EXPECT_EQ(0x80u, get_string_char(*val, 2));
+    EXPECT_EQ(0x562u, get_string_char(*val, 3));
+    EXPECT_EQ(0x7ffu, get_string_char(*val, 4));
+    EXPECT_EQ(0x800u, get_string_char(*val, 5));
+    EXPECT_EQ(0x579eu, get_string_char(*val, 6));
+    EXPECT_EQ(0xffffu, get_string_char(*val, 7));
+    EXPECT_EQ(0x10000u, get_string_char(*val, 8));
+    EXPECT_EQ(0x97324u, get_string_char(*val, 9));
+    EXPECT_EQ(0x10ffffu, get_string_char(*val, 10));
+}
+
+TEST_F(value_test, should_provide_string_length)
+{
+    Root val{create_string("\x73\x63\x53\x43\x33\x23\x13\x03")};
+    EXPECT_EQ(8u, get_string_len(*val));
+    val = create_string("\xc2\xa0Z\xdf\xbf");
+    EXPECT_EQ(3u, get_string_len(*val));
+    val = create_string("\xe0\xa0\x80N\xef\xbf\xbf");
+    EXPECT_EQ(3u, get_string_len(*val));
+    val = create_string("\xf0\x90\x80\x80X\xf4\x8f\xbf\xbf");
+    EXPECT_EQ(3u, get_string_len(*val));
+}
+
 TEST_F(value_test, should_create_a_new_instance_for_each_string)
 {
     Root val{create_string("abc")};

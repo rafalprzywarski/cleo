@@ -215,6 +215,45 @@ std::uint32_t get_string_size(Value val)
     return get_ptr<String>(val)->size;
 }
 
+std::uint32_t get_string_len(Value val)
+{
+    auto p = get_string_ptr(val);
+    auto endp = p + get_string_size(val);
+    std::uint32_t n = 0;
+    for (; p != endp; ++p)
+        n += ((*p & 0xc0) != 0x80);
+    return n;
+}
+
+Char32 get_string_char(Value val, std::uint32_t index)
+{
+    assert(index < get_string_len(val));
+    auto offset = 0;
+    for (; index; --index)
+        offset = get_string_next_offset(val, offset);
+    return get_string_char_at_offset(val, offset);
+}
+
+Char32 get_string_char_at_offset(Value val, std::uint32_t offset)
+{
+    assert(offset < get_string_size(val));
+    auto p = get_string_ptr(val) + offset;
+    if ((*p & 0x80) == 0)
+        return *p;
+    if ((*p & 0x20) == 0)
+        return (p[1] & 0x3f) | (Char32(p[0] & 0x1f) << 6);
+    if ((*p & 0x10) == 0)
+        return (p[2] & 0x3f) | (Char32(p[1] & 0x3f) << 6) | (Char32(p[0] & 0xf) << 12);
+    return (p[3] & 0x3f) | (Char32(p[2] & 0x3f) << 6) | (Char32(p[1] & 0x3f) << 12) | (Char32(p[0] & 7) << 18);
+}
+
+std::uint32_t get_string_next_offset(Value val, std::uint32_t offset)
+{
+    assert(offset < get_string_size(val));
+    unsigned char ch = get_string_ptr(val)[offset];
+    return offset + ((0x43221111 >> (((ch & 0x80) >> 3) | ((ch & 0x30) >> 2))) & 0xf);
+}
+
 std::uint32_t get_string_hash(Value val)
 {
     return get_ptr<String>(val)->hashVal;
