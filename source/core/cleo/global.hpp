@@ -341,6 +341,7 @@ extern const ConstRoot IndexOutOfBounds;
 extern const ConstRoot CompilationError;
 extern const ConstRoot StackOverflow;
 extern const ConstRoot Namespace;
+extern const ConstRoot UTF8StringSeq;
 }
 
 namespace clib

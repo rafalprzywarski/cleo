@@ -28,6 +28,7 @@
 #include "bytecode_fn.hpp"
 #include "compile.hpp"
 #include "profiler.hpp"
+#include "string_seq.hpp"
 
 namespace cleo
 {
@@ -264,6 +265,7 @@ const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBoun
 const ConstRoot CompilationError{create_static_type("cleo.core", "CompilationError", {"msg"})};
 const ConstRoot StackOverflow{create_static_type("cleo.core", "StackOverflow", {})};
 const ConstRoot Namespace{create_static_type("cleo.core", "Namespace", {"name", "meta", "mapping", "aliases"})};
+const ConstRoot UTF8StringSeq{create_static_type("cleo.core", "UTF8StringSeq", {"str", {"offset", Int64}})};
 }
 
 namespace clib
@@ -1646,10 +1648,19 @@ struct Initialize
         f = create_native_function1<get_persistent_hash_map_seq_next, &NEXT>();
         define_method(NEXT, *type::PersistentHashMapSeq, *f);
 
+        derive(*type::UTF8String, *type::Seqable);
+        f = create_native_function1<string_seq, &SEQ>();
+        define_method(SEQ, *type::UTF8String, *f);
+        f = create_native_function1<string_seq_first, &FIRST>();
+        define_method(FIRST, *type::UTF8StringSeq, *f);
+        f = create_native_function1<string_seq_next, &NEXT>();
+        define_method(NEXT, *type::UTF8StringSeq, *f);
+
         derive(*type::ArraySeq, *type::Sequence);
         derive(*type::ArraySetSeq, *type::Sequence);
         derive(*type::ArrayMapSeq, *type::Sequence);
         derive(*type::PersistentHashMapSeq, *type::Sequence);
+        derive(*type::UTF8StringSeq, *type::Sequence);
         derive(*type::Sequence, *type::Seqable);
         f = create_native_function1<identity, &SEQ>();
         define_method(SEQ, *type::Sequence, *f);
