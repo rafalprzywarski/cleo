@@ -533,6 +533,14 @@
    (cons x (iterate f (f x)))))
 
 
+(defn cycle [coll]
+  (if-let [s (seq coll)]
+    (let [lazy-cycle (fn lazy-cycle [s]
+                       (cons (first s) (lazy-seq (lazy-cycle (or (next s) (seq coll))))))]
+      (lazy-seq (lazy-cycle s)))
+    ()))
+
+
 (defn empty? [coll]
   (not (seq coll)))
 

@@ -596,6 +596,17 @@
   (assert= '(7 6 5) (take 3 (iterate dec 7))))
 
 
+(deftest cycle
+  (assert= '() (cycle []))
+  (assert= '(7) (take 1 (cycle [7])))
+  (assert= '(3) (take 1 (cycle [3 4 5])))
+  (assert= '(3 4) (take 2 (cycle [3 4 5])))
+  (assert= '(3 4 5) (take 3 (cycle [3 4 5])))
+  (assert= '(7 7 7) (take 3 (cycle [7])))
+  (assert= '(3 4 5 3 4) (take 5 (cycle [3 4 5])))
+  (assert= '(3 4 5 3 4 5 3 4 5) (take 9 (cycle [3 4 5]))))
+
+
 (deftest ns
   (assert= '(do (cleo.core/in-ns 'some.thing nil) (cleo.core/refer 'cleo.core)) (macroexpand '(ns some.thing)))
   (assert= '(do (cleo.core/in-ns 'abc nil) (cleo.core/refer 'cleo.core) (cleo.core/require '[xyz] '[rst]))
