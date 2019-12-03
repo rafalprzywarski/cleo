@@ -395,6 +395,7 @@ const Value START_PROFILING = create_symbol("cleo.core", "start-profiling");
 const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
 const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
 const Value SORT_E = create_symbol("cleo.core", "sort!");
+const Value DERIVE = create_symbol("cleo.core", "derive");
 
 const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
 const Value FIRST_ARG = create_symbol("first-arg");
@@ -1411,6 +1412,12 @@ Force sort_transient(Value pred, Value array)
     return *ret;
 }
 
+Value derive_type(Value x, Value parent)
+{
+    derive(x, parent);
+    return nil;
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -2090,6 +2097,8 @@ struct Initialize
         define_function(STR_STARTS_WITH, create_native_function2<str_starts_with, &STR_STARTS_WITH>());
 
         define_function(SORT_E, create_native_function2<sort_transient, &SORT_E>());
+
+        define_function(DERIVE, create_native_function2<derive_type, &DERIVE>());
     }
 } initialize;
 

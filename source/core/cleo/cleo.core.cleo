@@ -533,11 +533,22 @@
    (cons x (iterate f (f x)))))
 
 
+(deftype CycleSeq [seq coll])
+
+
+(defmethod seq CycleSeq [c] c)
+(defmethod first CycleSeq [c] (first (.-seq c)))
+(defmethod next CycleSeq [c]
+  (let [coll (.-coll c)]
+    (CycleSeq. (or (next (.-seq c)) (seq coll)) coll)))
+
+
+(derive CycleSeq Sequence)
+
+
 (defn cycle [coll]
   (if-let [s (seq coll)]
-    (let [lazy-cycle (fn lazy-cycle [s]
-                       (cons (first s) (lazy-seq (lazy-cycle (or (next s) (seq coll))))))]
-      (lazy-seq (lazy-cycle s)))
+    (CycleSeq. s coll)
     ()))
 
 
