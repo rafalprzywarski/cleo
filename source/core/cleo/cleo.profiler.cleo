@@ -22,15 +22,22 @@
                   (sort (fn [{lhits :hits} {rhits :hits}] (> lhits rhits))))))
          groupped (group-callstacks callstacks)
          total-hits (reduce + (map :hits groupped))
+         color-wrap
+         (fn color-wrap [s color]
+           (str \u1b "[" color "m" s \u1b "[0m"))
          print-indented
-         (fn print-indented [gcs indent]
+         (fn print-indented [gcs indent colors]
            (let [last-fn (:fn (peek gcs))]
              (doseq [{call-fn :fn :keys [hits subcalls]} gcs]
                (let [last? (= call-fn last-fn)]
-                 (println (str indent (if last? "\\->" "|->") call-fn ": " (quot (* 100 hits) total-hits) "%, " hits " hits"))
+                 (println (str indent
+                               (color-wrap (if last? "\\->" "|->") (first colors))
+                               (color-wrap (str call-fn ": " (quot (* 100 hits) total-hits) "%, " hits " hits") (second colors))))
                  (when subcalls
-                   (print-indented subcalls (str indent (if last? "   " "|  "))))))))]
-     (print-indented groupped ""))))
+                   (print-indented subcalls
+                                   (str indent (if last? "   " (color-wrap "|  " (first colors))))
+                                   (next colors)))))))]
+     (print-indented groupped "" (cycle ["33" "32" "36" "34" "35" "31"])))))
 
 
 (defmacro profile [& body]
