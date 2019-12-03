@@ -17,6 +17,7 @@ struct NativeFunctionWithName
 struct String
 {
     std::uint32_t size;
+    std::uint32_t len;
     std::uint32_t hashVal;
     char firstChar;
 };
@@ -286,6 +287,15 @@ void fix_utf8_string(const char* str, std::uint32_t size, char *out)
     }
 }
 
+std::uint32_t get_utf8_string_len(const char* str, std::uint32_t size)
+{
+    auto endp = str + size;
+    std::uint32_t n = 0;
+    for (; str != endp; ++str)
+        n += ((*str & 0xc0) != 0x80);
+    return n;
+}
+
 }
 
 Force create_string(const char* str, std::uint32_t size)
@@ -299,6 +309,7 @@ Force create_string(const char* str, std::uint32_t size)
     else
         fix_utf8_string(str, size, &val->firstChar);
     (&val->firstChar)[valid_size.first] = 0;
+    val->len = get_utf8_string_len(&val->firstChar, val->size);
     return tag_ptr(val, tag::UTF8STRING);
 }
 
@@ -314,12 +325,7 @@ std::uint32_t get_string_size(Value val)
 
 std::uint32_t get_string_len(Value val)
 {
-    auto p = get_string_ptr(val);
-    auto endp = p + get_string_size(val);
-    std::uint32_t n = 0;
-    for (; p != endp; ++p)
-        n += ((*p & 0xc0) != 0x80);
-    return n;
+    return get_ptr<String>(val)->len;
 }
 
 Char32 get_string_char(Value val, std::uint32_t index)
