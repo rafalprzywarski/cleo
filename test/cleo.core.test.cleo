@@ -121,6 +121,19 @@
       (if (= 0 (count @failed-tests)) 0 1))))
 
 
+(deftest cast
+  (let [x "abc"]
+    (assert (identical? x (cast UTF8String x))))
+  (let [x 10]
+    (assert (identical? x (cast Int64 x))))
+  (let [x '(1 2 3)]
+    (assert (identical? x (cast List x))))
+  (assert= nil (cast nil nil))
+  (assert-throws CastError (cast Int64 "abc"))
+  (assert-throws CastError (cast List [1 2]))
+  (assert-throws CastError (cast List nil)))
+
+
 (deftest addition
   (assert= 0 (+))
   (assert= 7 (+ 7))

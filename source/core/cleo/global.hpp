@@ -329,6 +329,7 @@ extern const ConstRoot PersistentHashMapSeqParent;
 extern const ConstRoot PersistentHashMapCollisionNode;
 extern const ConstRoot PersistentHashMapArrayNode;
 extern const ConstRoot Exception;
+extern const ConstRoot CastError;
 extern const ConstRoot ReadError;
 extern const ConstRoot CallError;
 extern const ConstRoot SymbolNotFound;

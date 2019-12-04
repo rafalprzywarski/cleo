@@ -253,6 +253,7 @@ const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "Pers
 const ConstRoot PersistentHashMapCollisionNode(create_dynamic_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_dynamic_type("cleo.core", "PersistentHashMapArrayNode"));
 const ConstRoot Exception{create_basic_type("cleo.core", "Exception")};
+const ConstRoot CastError{create_static_type("cleo.core", "CastError", {"msg"})};
 const ConstRoot ReadError{create_static_type("cleo.core", "ReadError", {"msg", {"line", Int64}, {"column", Int64}})};
 const ConstRoot CallError{create_static_type("cleo.core", "CallError", {"msg"})};
 const ConstRoot SymbolNotFound{create_static_type("cleo.core", "SymbolNotFound", {"msg"})};
@@ -1484,6 +1485,7 @@ struct Initialize
         define_type(*type::PersistentHashMapArrayNode);
         define_type(*type::PersistentHashMapSeqParent);
         define_type(*type::Exception);
+        define_type(*type::CastError);
         define_type(*type::ReadError);
         define_type(*type::CallError);
         define_type(*type::SymbolNotFound);
@@ -1923,6 +1925,10 @@ struct Initialize
         define_method(PR_STR_OBJ, *type::Exception, *f);
 
         define_multimethod(GET_MESSAGE, *first_type, nil);
+
+        derive(*type::CastError, *type::Exception);
+        f = create_native_function1<cast_error_message, &GET_MESSAGE>();
+        define_method(GET_MESSAGE, *type::CastError, *f);
 
         derive(*type::ReadError, *type::Exception);
         f = create_native_function1<read_error_message, &GET_MESSAGE>();

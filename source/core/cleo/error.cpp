@@ -34,6 +34,11 @@ Force catch_exception()
     return *e;
 }
 
+Force cast_error_message(Value e)
+{
+    return get_static_object_element(e, 0);
+}
+
 Force new_read_error(Value msg, Value line, Value column)
 {
     return create_object3(*type::ReadError, msg, line, column);

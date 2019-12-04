@@ -16,6 +16,8 @@ private:
 [[noreturn]] void throw_exception(Force e);
 Force catch_exception();
 
+Force cast_error_message(Value e);
+
 Force new_read_error(Value msg, Value line, Value column);
 Force read_error_message(Value e);
 Int64 read_error_line(Value e);

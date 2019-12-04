@@ -1,6 +1,15 @@
 (ns cleo.core)
 
 
+(def {:arglists '([type val])
+      :const :true}
+  cast
+  (fn* cast [vtype val]
+       (if (identical? (type val) vtype)
+         val
+         (throw (CastError. (str "Cannot cast " (type val) " to " vtype))))))
+
+
 (def {:arglists '([f coll] [f val coll])} reduce
   (fn* reduce
        ([f coll]
