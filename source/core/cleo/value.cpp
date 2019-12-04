@@ -439,6 +439,14 @@ Force create_object(Value type, const Int64 *ints, std::uint32_t int_size, const
     return create_static_object(type, *otype, elems, size);
 }
 
+Force create_static_object(Value type, Value elem0, Value elem1)
+{
+    auto ev = create_static_object_uninitialized(type);
+    ev.elems[0] = elem0.bits();
+    ev.elems[1] = elem1.bits();
+    return ev.val;
+}
+
 Force create_static_object(Value type, Int64 elem0, Value elem1, Value elem2)
 {
     auto ev = create_static_object_uninitialized(type);

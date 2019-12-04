@@ -237,6 +237,16 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             ++p;
             break;
         }
+        case LDSF:
+        {
+            auto& top = stack.back();
+            auto index = read_u16(p + 1);
+            top = is_static_object_element_value(top, index) ?
+                get_static_object_element(top, index) :
+                create_int64(get_static_object_int(top, index)).value();
+            p += 3;
+            break;
+        }
         case STL:
         {
             stack[stack_base + read_i16(p + 1)] = stack.back();

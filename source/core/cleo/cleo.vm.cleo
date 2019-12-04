@@ -9,6 +9,7 @@
 (def {:const :true} LDDV 0x12)
 (def {:const :true} LDV 0x13)
 (def {:const :true} LDDF 0x14)
+(def {:const :true} LDSF 0x15)
 
 (def {:const :true} STL 0x20)
 (def {:const :true} STVV 0x21)

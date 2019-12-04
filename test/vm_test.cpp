@@ -956,6 +956,70 @@ TEST_F(vm_test, catching_exceptions_from_lddf)
     EXPECT_EQ_REFS(*THREE, stack[0]);
 }
 
+TEST_F(vm_test, ldsf)
+{
+    auto field_x = create_symbol("x");
+    auto field_y = create_symbol("y");
+    std::array<Value, 2> fields{{field_x, field_y}};
+    Root type{create_static_object_type("cleo.vm.test", "SX", fields.data(), nullptr, fields.size())};
+    Root val{i64(17)};
+    Root obj{create_static_object(*type, *val, nil)};
+    const std::array<Byte, 12> bc1{{LDL, Byte(-1), Byte(-1),
+                                    LDSF, 0, 0,
+                                    LDL, Byte(-1), Byte(-1),
+                                    LDSF, 1, 0}};
+    stack_push(*obj);
+
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[2]);
+    EXPECT_EQ_VALS(*val, stack[1]);
+    EXPECT_EQ_VALS(*obj, stack[0]);
+    stack.clear();
+
+    obj = create_static_object(*type, nil, *val);
+    stack_push(*obj);
+
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(*val, stack[2]);
+    EXPECT_EQ_VALS(nil, stack[1]);
+    EXPECT_EQ_VALS(*obj, stack[0]);
+    stack.clear();
+
+    std::array<Value, 2> types{{nil, type::Int64}};
+    type = create_static_object_type("cleo.vm.test", "SX", fields.data(), types.data(), fields.size());
+    obj = create_static_object(*type, nil, get_int64_value(*val));
+    stack_push(*obj);
+
+    eval_bytecode(nil, nil, 0, bc1);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(*val, stack[2]);
+    EXPECT_EQ_VALS(nil, stack[1]);
+    EXPECT_EQ_VALS(*obj, stack[0]);
+    stack.clear();
+
+    const std::array<Byte, 6> bc257{{LDL, Byte(-1), Byte(-1), LDSF, 0, 1}};
+    std::array<Value, 257> more_fields;
+    for (auto i = 0; i < 257; ++i)
+        more_fields[i] = create_symbol("f" + std::to_string(i));
+    type = create_static_object_type("cleo.vm.test", "SX257", more_fields.data(), 0, more_fields.size());
+    obj = create_object(*type, nullptr, 0, nullptr, 257);
+    set_static_object_element(*obj, 256, *val);
+
+    stack_push(*obj);
+
+    eval_bytecode(nil, nil, 0, bc257);
+
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_VALS(*val, stack[1]);
+    EXPECT_EQ_VALS(*obj, stack[0]);
+    stack.clear();
+}
+
 TEST_F(vm_test, ubxi64)
 {
     const std::array<Byte, 4> bc{{LDL, 0, 0, UBXI64}};

@@ -20,6 +20,7 @@ constexpr Byte LDL = 0x11;
 constexpr Byte LDDV = 0x12;
 constexpr Byte LDV = 0x13;
 constexpr Byte LDDF = 0x14;
+constexpr Byte LDSF = 0x15;
 
 constexpr Byte STL = 0x20;
 constexpr Byte STVV = 0x21;
