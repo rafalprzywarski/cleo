@@ -142,9 +142,18 @@
 
 
 (deftest deftype
-  (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[a b c] [nil nil nil])) (cleo.core/defn ->Xyz [a b c] (cleo.core/new Xyz a b c)) Xyz) (macroexpand '(deftype Xyz [a b c])))
-  (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[] [])) (cleo.core/defn ->Xyz [] (cleo.core/new Xyz)) Xyz) (macroexpand '(deftype Xyz [])))
-  (assert= '(do (def Xyz (cleo.core/type* 'Xyz '[a b c] [Int64 nil UTF8String])) (cleo.core/defn ->Xyz [a b c] (cleo.core/new Xyz a b c)) Xyz) (macroexpand '(deftype Xyz [(a Int64) b (c UTF8String)]))))
+  (assert= '(do
+              (def {:const :true} Xyz (cleo.core/type* 'Xyz '[a b c] [nil nil nil]))
+              (cleo.core/defn ->Xyz {:const :true} [a b c] (cleo.core/new Xyz a b c)) Xyz)
+           (macroexpand '(deftype Xyz [a b c])))
+  (assert= '(do
+              (def {:const :true} Xyz (cleo.core/type* 'Xyz '[] []))
+              (cleo.core/defn ->Xyz {:const :true} []  (cleo.core/new Xyz)) Xyz)
+           (macroexpand '(deftype Xyz [])))
+  (assert= '(do
+              (def {:const :true} Xyz (cleo.core/type* 'Xyz '[a b c] [Int64 nil UTF8String]))
+              (cleo.core/defn ->Xyz {:const :true} [a b c] (cleo.core/new Xyz a b c)) Xyz)
+           (macroexpand '(deftype Xyz [(a Int64) b (c UTF8String)]))))
 
 
 (deftest defmulti

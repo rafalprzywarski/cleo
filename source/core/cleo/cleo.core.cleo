@@ -244,8 +244,8 @@
                                           (transient [])
                                           fields))]
     `(do
-       (def ~name (cleo.core/type* '~name '~field-names ~field-types))
-       (defn ~(symbol nil (str "->" name)) ~field-names (new ~name ~@field-names))
+       (def {:const :true} ~name (cleo.core/type* '~name '~field-names ~field-types))
+       (defn ~(symbol nil (str "->" name)) {:const :true} ~field-names (new ~name ~@field-names))
        ~name)))
 
 

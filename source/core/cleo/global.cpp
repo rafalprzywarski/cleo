@@ -686,7 +686,7 @@ Force get_seqable_next(Value val)
 
 void define_type(Value type)
 {
-    define(get_object_type_name(type), type);
+    define(get_object_type_name(type), type, *CONST_META);
 }
 
 Force pr_str_var(Value var)
