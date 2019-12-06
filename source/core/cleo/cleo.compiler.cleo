@@ -528,16 +528,25 @@
   (translate-exprs! body exprs))
 
 
+(defn- maybe-resolve-var [name]
+  (when-let [v (resolve name)]
+    (let [vmeta (meta v)]
+      (when (:macro vmeta)
+        (fail "Can't take value of a macro: " v))
+      (when (and (:private vmeta)
+                 (not (identical? *ns* (:ns vmeta))))
+        (fail "var: " name " is not public"))
+      v)))
+
+
+(defn- resolve-var [name]
+  (or (maybe-resolve-var name)
+      (fail "unable to resolve symbol: " name)))
+
+
 (defn translate-var! [{:keys [vars consts] :as body} {name :name}]
-  (let [v (resolve name)
+  (let [v (resolve-var name)
         vmeta (meta v)]
-    (when (not v)
-      (fail "unable to resolve symbol: " name))
-    (when (:macro vmeta)
-      (fail "Can't take value of a macro: " v))
-    (when (and (:private vmeta)
-               (not (identical? *ns* (:ns vmeta))))
-      (fail "var: " name " is not public"))
     (if (:const vmeta)
       (let [consts (intern-strict consts @v)]
         (assoc body
@@ -654,11 +663,21 @@
     body))
 
 
+(defn- find-expr-type [expr]
+  (if (map? expr)
+    (:value-type expr)
+    (type expr)))
+
+
 (defn- translate-dot! [body {:keys [expr member]}]
-  (let [body (translate-expr! body expr)
-        body (translate-const! body member)
-        body (assoc body :bytecode (conj! (:bytecode body) vm/LDDF))]
-    body))
+  (let [body (translate-expr! body expr)]
+    (if-let [expr-type (find-expr-type expr)]
+      (if-let [field-index (get-type-field-index expr-type member)]
+        (assoc body :bytecode (-> (:bytecode body) (conj! vm/LDSF) (conj-u16! field-index)))
+        (fail "Field: " member " not present in type: " expr-type))
+      (let [body (translate-const! body member)
+            body (assoc body :bytecode (conj! (:bytecode body) vm/LDDF))]
+        body))))
 
 
 (defn- translate-def! [body {:keys [meta name expr] :as def-expr}]
@@ -979,8 +998,59 @@
                   ast))
 
 
+(defn- check-resolve-var-expr [expr]
+  (and (map? expr)
+       (= (:tag expr) :var)
+       (maybe-resolve-var (:name expr))))
+
+
+(defn- type-expr? [expr]
+  (when-let [v (check-resolve-var-expr expr)]
+    (and (:const (meta v))
+         (identical? (type @v) cleo.core/Type))))
+
+
+(defn- const-var? [expr]
+  (when-let [v (check-resolve-var-expr expr)]
+    (:const (meta v))))
+
+
+(defn- cast-expr? [expr]
+  (when (map? expr)
+    (let [{tag :tag f :fn args :args} expr]
+      (and (= tag :call)
+           (identical? #'cleo.core/cast (check-resolve-var-expr f))
+           (= (count args) 2)
+           (or (type-expr? (first args))
+               (fail "First argument to cast must be a type"))))))
+
+
+(defn- new-expr? [expr]
+  (when (map? expr)
+    (let [{tag :tag f :fn args :args} expr]
+      (and (= tag :call)
+           (identical? #'cleo.core/new (check-resolve-var-expr f))
+           (< 1 (count args))
+           (or (type-expr? (first args))
+               ;(fail "First argument to new must be a type") ;this breaks deftype
+               )))))
+
+
+(defn- compute-types [ast]
+  (transform-expr (fn [expr _]
+                    (or (const-var? expr)
+                        (cast-expr? expr)
+                        (new-expr? expr)))
+                  (fn [expr _]
+                    (assoc expr :value-type (if (const-var? expr)
+                                              (-> expr :name resolve-var deref type)
+                                              (-> expr :args first :name resolve-var deref))))
+                  ast))
+
+
 (defn optimize [ast]
   (-> ast
+      compute-types
       inline-identity-calls
       inline-no-arg-returning-const))
 

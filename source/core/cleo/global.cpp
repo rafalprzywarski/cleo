@@ -397,6 +397,7 @@ const Value FINISH_PROFILING = create_symbol("cleo.core", "finish-profiling");
 const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
 const Value SORT_E = create_symbol("cleo.core", "sort!");
 const Value DERIVE = create_symbol("cleo.core", "derive");
+const Value GET_TYPE_FIELD_INDEX = create_symbol("cleo.core", "get-type-field-index");
 
 const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
 const Value FIRST_ARG = create_symbol("first-arg");
@@ -1158,6 +1159,12 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             dbs = transient_array_conj(*dbs, *oc);
             ++p;
             break;
+        case vm::LDSF:
+            x = create_int64(read_u16(p + 1));
+            oc = mk("LDSF", 3, *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
         case vm::STL:
             x = create_int64(read_i16(p + 1));
             oc = mk("STL", 3, *x);
@@ -1419,6 +1426,14 @@ Value derive_type(Value x, Value parent)
     return nil;
 }
 
+Force get_type_field_index(Value type, Value field)
+{
+    check_type("type", type, *type::Type);
+    check_type("field", field, *type::Symbol);
+    auto index = get_object_field_index(type, field);
+    return index < 0 ? nil : create_int64(index);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1437,10 +1452,10 @@ struct WrapInt64Fn
     }
 };
 
-void define_function(Value name, Force f)
+void define_function(Value name, Force f, Value meta = nil)
 {
     Root fr{f};
-    define(name, *fr);
+    define(name, *fr, meta);
 }
 
 struct Initialize
@@ -1454,6 +1469,7 @@ struct Initialize
         core_meta = map_assoc(*core_meta, create_keyword("doc"), *core_doc);
         define_ns(CLEO_CORE, *core_meta);
 
+        define_type(*type::Type);
         define_type(type::Int64);
         define_type(*type::Float64);
         define_type(*type::UTF8String);
@@ -1505,7 +1521,7 @@ struct Initialize
         define_multimethod(HASH_OBJ, *first_type, nil);
         define_method(HASH_OBJ, nil, *ret_hash_zero);
 
-        define_function(NEW, create_native_function(new_instance, NEW));
+        define_function(NEW, create_native_function(new_instance, NEW), *CONST_META);
 
         define_function(META, create_native_function1<meta, &META>());
 
@@ -2105,6 +2121,8 @@ struct Initialize
         define_function(SORT_E, create_native_function2<sort_transient, &SORT_E>());
 
         define_function(DERIVE, create_native_function2<derive_type, &DERIVE>());
+
+        define_function(GET_TYPE_FIELD_INDEX, create_native_function2<get_type_field_index, &GET_TYPE_FIELD_INDEX>());
     }
 } initialize;
 
