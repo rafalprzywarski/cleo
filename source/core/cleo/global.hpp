@@ -282,6 +282,7 @@ extern const Value NAME_KEY;
 extern const Value NS_KEY;
 extern const Value DOT;
 extern const Value COMPILE;
+extern const Value SHOULD_RECOMPILE;
 extern const Root ZERO;
 extern const Root ONE;
 extern const Root NEG_ONE;

@@ -144,6 +144,7 @@ const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 const Value COMPILE = create_symbol("cleo.core", "compile");
+const Value SHOULD_RECOMPILE = create_symbol("cleo.core", "should-recompile");
 const Value PEEK = create_symbol("cleo.core", "peek");
 const Value VAR_NAME = create_symbol("cleo.core", "var-name");
 
@@ -1515,6 +1516,8 @@ struct Initialize
         define_type(*type::StackOverflow);
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
+
+        define(SHOULD_RECOMPILE, TRUE);
 
         define_function(CREATE_TYPE, create_native_function3<create_type, &CREATE_TYPE>());
 

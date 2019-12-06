@@ -678,12 +678,7 @@
 (require 'cleo.compiler)
 
 
-(def compile cleo.compiler/compile)
-
-
-(def self-compiled)
-
-
-(when (not self-compiled)
-  (def self-compiled :true)
+(when should-recompile
+  (def should-recompile nil)
+  (def compile cleo.compiler/compile)
   (require 'cleo.core))

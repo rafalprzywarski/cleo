@@ -8,26 +8,26 @@
 #include <cleo/util.hpp>
 #include <iostream>
 
-cleo::Force create_command_line_args(int argc, const char *const* argv)
+cleo::Force create_command_line_args(const std::vector<std::string>& args)
 {
-    cleo::Root command_line_args{argc > 4 ? *cleo::EMPTY_VECTOR : cleo::nil};
+    cleo::Root command_line_args{args.size() > 4 ? *cleo::EMPTY_VECTOR : cleo::nil};
     cleo::Root arg;
-    for (int i = 4; i < argc; ++i)
+    for (std::size_t i = 3; i < args.size(); ++i)
     {
-        arg = cleo::create_string(argv[i]);
+        arg = cleo::create_string(args[i]);
         command_line_args = cleo::array_conj(*command_line_args, *arg);
     }
     return *command_line_args;
 }
 
-cleo::Force create_ns_bindings(int argc, const char *const* argv)
+cleo::Force create_ns_bindings(const std::vector<std::string>& args)
 {
     cleo::Root ns_bindings{cleo::map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
-    cleo::Root command_line_args{create_command_line_args(argc, argv)};
+    cleo::Root command_line_args{create_command_line_args(args)};
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::COMMAND_LINE_ARGS, *command_line_args);
 
-    cleo::Root root_lib_path{cleo::create_string(argv[1])};
-    cleo::Root project_lib_path{cleo::create_string(argv[2])};
+    cleo::Root root_lib_path{cleo::create_string(args[0])};
+    cleo::Root project_lib_path{cleo::create_string(args[1])};
     std::array<cleo::Value, 2> paths{{*root_lib_path, *project_lib_path}};
     cleo::Root lib_paths{cleo::create_array(paths.data(), paths.size())};
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::LIB_PATHS, *lib_paths);
@@ -36,17 +36,23 @@ cleo::Force create_ns_bindings(int argc, const char *const* argv)
 
 int main(int argc, const char *const* argv)
 {
-    if (argc < 4)
+    std::vector<std::string> args{argv + 1, argv + argc};
+    if (args.size() == 4 && args[1] == "--not-self-hosting")
     {
-        std::cout << "usage: cleo <project_lib_path> <project_namespace>" << std::endl;
+        define(cleo::SHOULD_RECOMPILE, cleo::nil);
+        args.erase(begin(args) + 1);
+    }
+    if (args.size() != 3)
+    {
+        std::cout << "usage: cleo [--not-self-hosting] <project_lib_path> <project_namespace>" << std::endl;
         return 1;
     }
 
     try
     {
-        std::string ns_name = argv[3];
+        std::string ns_name = args[2];
         auto ns = cleo::create_symbol(ns_name);
-        cleo::Root ns_bindings{create_ns_bindings(argc, argv)};
+        cleo::Root ns_bindings{create_ns_bindings(args)};
         cleo::PushBindingsGuard bindings_guard{*ns_bindings};
         cleo::require(cleo::CLEO_CORE, cleo::nil);
         cleo::in_ns(cleo::create_symbol("cleo.core.run"));
