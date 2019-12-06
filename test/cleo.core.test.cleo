@@ -2016,8 +2016,8 @@
 
 (deftype ABC [a b c])
 
-; it breaks deftype
-'(deftest translate-new
+
+(deftest translate-new
   (assert= {:arity 3
             :consts [new ABC]
             :bytecode [vm/LDC 0 0

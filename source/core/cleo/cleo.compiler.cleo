@@ -1032,8 +1032,7 @@
            (identical? #'cleo.core/new (check-resolve-var-expr f))
            (< 1 (count args))
            (or (type-expr? (first args))
-               ;(fail "First argument to new must be a type") ;this breaks deftype
-               )))))
+               (fail "First argument to new must be a type"))))))
 
 
 (defn- compute-types [ast]
