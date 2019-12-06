@@ -3,7 +3,7 @@
 (alias 'vm 'cleo.vm)
 
 
-(def compile)
+(def eval)
 (def parse-form)
 
 
@@ -691,7 +691,7 @@
                (not= (namespace (var-name the-var)) cur-ns-name))
       (fail (cleo.core/name name) " already refers to: " the-var " in namespace: " cur-ns-name))
     (let [meta (when meta
-                 ((compile meta)))
+                 (eval meta))
           the-var (if the-var the-var (define-var (symbol cur-ns-name (str name)) meta))
           body (translate-const! body the-var)
           body (inc-stack-depth body)
@@ -1062,14 +1062,6 @@
                :bodies [{:params [], :expr ast}]}
               ast)]
     (translate-fn nil ast)))
-
-
-(defn compile [form]
-  (-> form
-      parse
-      optimize
-      translate
-      serialize-fn))
 
 
 (defn- fn-wrap [expr]

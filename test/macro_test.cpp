@@ -2,7 +2,6 @@
 #include <cleo/error.hpp>
 #include <cleo/var.hpp>
 #include <cleo/reader.hpp>
-#include <cleo/compile.hpp>
 #include <gtest/gtest.h>
 #include "util.hpp"
 

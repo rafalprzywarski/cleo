@@ -182,26 +182,17 @@ Force call(const Value *vals, std::uint32_t size)
     return call_fn(get_value_type(vals[0]), vals, size);
 }
 
-Force compile(Value val)
-{
-    if (*rt::compile)
-    {
-        assert(get_value_type(*rt::compile).is(*type::BytecodeFn));
-        std::array<Value, 2> call{{*rt::compile, val}};
-        return call_bytecode_fn(call.data(), call.size(), call.size() - 1);
-    }
-    if (get_value_type(val).is(*type::List) && get_list_first(val) == FN)
-        return compile_fn(val);
-    std::array<Value, 3> awrap{{FN, *EMPTY_VECTOR, val}};
-    Root rwrap{create_list(awrap.data(), awrap.size())};
-    return compile_fn(*rwrap);
-}
-
 Force eval(Value val)
 {
-    if (get_value_type(val).is(*type::List) && get_list_first(val) == FN)
-        return compile(val);
-    Root rwrap{compile(val)};
+    if (*rt::eval)
+    {
+        assert(get_value_type(*rt::eval).is(*type::BytecodeFn));
+        std::array<Value, 2> call{{*rt::eval, val}};
+        return call_bytecode_fn(call.data(), call.size(), call.size() - 1);
+    }
+    std::array<Value, 3> awrap{{FN, *EMPTY_VECTOR, val}};
+    Root rwrap{create_list(awrap.data(), awrap.size())};
+    rwrap = compile_fn(*rwrap);
     auto wrap = *rwrap;
     return call_bytecode_fn(&wrap, 1, 0);
 }

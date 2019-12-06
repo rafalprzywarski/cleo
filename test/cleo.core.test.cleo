@@ -2672,31 +2672,6 @@
              (-> f :consts first deserialize-fn :bodies first))))
 
 
-(deftest compile-fn
-  (let [f (binding-ns 'cleo.core.test
-                      (cc/compile '(fn dummy [x & xs] (reduce + x xs))))]
-    (assert= 4 (f 4))
-    (assert= 10 (f 4 6))
-    (assert= 19 (f 4 6 9)))
-  (let [f (binding-ns 'cleo.core.test
-                      (cc/compile '(fn dummy
-                                     ([x y z] (+ x (- y z)))
-                                     ([a b c & d] [a b c d])
-                                     ([x] 10))))]
-    (assert= 7 (f 8 4 5))
-    (assert= 10 (f 8))
-    (assert= '(1 2 3 (4)) (f 1 2 3 4)))
-  (let [f (binding-ns 'cleo.core.test
-                      (cc/compile '(fn dummy
-                                     ([a] (try* (throw (IllegalArgument. "Bad")) (finally* (reset! a 5))))
-                                     ([_ x] (try* (throw x) (catch* IllegalArgument e e))))))
-        a (atom 1)]
-    (assert-throws IllegalArgument (f a))
-    (assert= 5 @a)
-    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds.)))
-    (assert= IllegalArgument (type (f 0 (IllegalArgument. "x"))))))
-
-
 (deftest eval-fn
   (let [f (binding-ns 'cleo.core.test
                       (cc/eval '(fn dummy [x & xs] (reduce + x xs))))]

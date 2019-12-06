@@ -143,7 +143,7 @@ const Value PRIVATE_KEY = create_keyword("private");
 const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
-const Value COMPILE = create_symbol("cleo.core", "compile");
+const Value EVAL = create_symbol("cleo.core", "eval");
 const Value SHOULD_RECOMPILE = create_symbol("cleo.core", "should-recompile");
 const Value PEEK = create_symbol("cleo.core", "peek");
 const Value VAR_NAME = create_symbol("cleo.core", "var-name");
@@ -333,7 +333,7 @@ const StaticVar assoc = define_var(ASSOC, nil);
 const StaticVar merge = define_var(MERGE, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
-const StaticVar compile = define_var(COMPILE, nil);
+const StaticVar eval = define_var(EVAL, nil);
 
 }
 
