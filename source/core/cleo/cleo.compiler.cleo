@@ -1080,7 +1080,7 @@
 
 (defn eval [form]
   (let [form (macroexpand form)]
-    (if (and (seq form) (= (first form) 'do))
+    (if (and (seq? form) (= (first form) 'do))
       (reduce (fn [_ expr] (eval expr)) nil (next form))
       ((->> form
             parse

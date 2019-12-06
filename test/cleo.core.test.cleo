@@ -2734,6 +2734,11 @@
   (cons 'do forms))
 
 
+(deftest eval
+  (assert= 10 (cc/eval 10))
+  (assert= 'abc (cc/eval ''abc)))
+
+
 (deftest eval-do
   (assert= nil (cc/eval '(do)))
 
