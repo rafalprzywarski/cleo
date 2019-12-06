@@ -2695,3 +2695,71 @@
     (assert= 5 @a)
     (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds.)))
     (assert= IllegalArgument (type (f 0 (IllegalArgument. "x"))))))
+
+
+(deftest eval-fn
+  (let [f (binding-ns 'cleo.core.test
+                      (cc/eval '(fn dummy [x & xs] (reduce + x xs))))]
+    (assert= 4 (f 4))
+    (assert= 10 (f 4 6))
+    (assert= 19 (f 4 6 9)))
+  (let [f (binding-ns 'cleo.core.test
+                      (cc/eval '(fn dummy
+                                  ([x y z] (+ x (- y z)))
+                                  ([a b c & d] [a b c d])
+                                  ([x] 10))))]
+    (assert= 7 (f 8 4 5))
+    (assert= 10 (f 8))
+    (assert= '(1 2 3 (4)) (f 1 2 3 4)))
+  (let [f (binding-ns 'cleo.core.test
+                      (cc/eval '(fn dummy
+                                  ([a] (try* (throw (IllegalArgument. "Bad")) (finally* (reset! a 5))))
+                                  ([_ x] (try* (throw x) (catch* IllegalArgument e e))))))
+        a (atom 1)]
+    (assert-throws IllegalArgument (f a))
+    (assert= 5 @a)
+    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds.)))
+    (assert= IllegalArgument (type (f 0 (IllegalArgument. "x"))))))
+
+
+(defmacro get-var-value-at-macroexpansion [name]
+  @(resolve name))
+
+
+(def eval-var-value (atom nil))
+(def eval-test-var1 :not-defined)
+(def eval-test-var2 :not-defined)
+(def eval-test-var3 :not-defined)
+(defmacro make-do [& forms]
+  (cons 'do forms))
+
+
+(deftest eval-do
+  (assert= nil (cc/eval '(do)))
+
+  (assert= (resolve 'cleo.core.test/eval-test-var1)
+           (binding-ns 'cleo.core.test
+                       (cc/eval '(do
+                                   (def eval-test-var1 :before-expansion)
+                                   (reset! eval-var-value (get-var-value-at-macroexpansion eval-test-var1))
+                                   (def eval-test-var1 :after-expansion)))))
+  (assert= :after-expansion @(resolve 'cleo.core.test/eval-test-var1))
+  (assert= :before-expansion @eval-var-value)
+
+  (assert= (resolve 'cleo.core.test/eval-test-var2)
+           (binding-ns 'cleo.core.test
+                       (cc/eval '(make-do
+                                   (def eval-test-var2 :before-expansion)
+                                   (reset! eval-var-value (get-var-value-at-macroexpansion eval-test-var2))
+                                   (def eval-test-var2 :after-expansion)))))
+  (assert= :after-expansion @(resolve 'cleo.core.test/eval-test-var2))
+  (assert= :before-expansion @eval-var-value)
+
+  (assert= (resolve 'cleo.core.test/eval-test-var3)
+           (binding-ns 'cleo.core.test
+                       (cc/eval '((fn* [] (do
+                                            (def eval-test-var3 :before-expansion)
+                                            (reset! eval-var-value (get-var-value-at-macroexpansion eval-test-var3))
+                                            (def eval-test-var3 :after-expansion)))))))
+  (assert= :after-expansion @(resolve 'cleo.core.test/eval-test-var3))
+  (assert= :not-defined @eval-var-value))

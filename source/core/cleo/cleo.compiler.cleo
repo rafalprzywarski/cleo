@@ -1070,3 +1070,21 @@
       optimize
       translate
       serialize-fn))
+
+
+(defn- fn-wrap [expr]
+  {:tag :fn
+   :bodies [{:params []
+             :expr expr}]})
+
+
+(defn eval [form]
+  (let [form (macroexpand form)]
+    (if (and (seq form) (= (first form) 'do))
+      (reduce (fn [_ expr] (eval expr)) nil (next form))
+      ((->> form
+            parse
+            fn-wrap
+            optimize
+            translate
+            serialize-fn)))))
