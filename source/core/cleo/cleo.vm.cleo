@@ -1,31 +1,126 @@
 (ns cleo.vm)
 
-(def {:const :true} CNIL 0x00)
+(def {:const :true
+      :arglists '([])
+      :doc "Push nil onto the value stack"}
+  CNIL 0x00)
 
-(def {:const :true} POP 0x01)
 
-(def {:const :true} LDC 0x10)
-(def {:const :true} LDL 0x11)
-(def {:const :true} LDDV 0x12)
-(def {:const :true} LDV 0x13)
-(def {:const :true} LDDF 0x14)
-(def {:const :true} LDSF 0x15)
+(def {:const :true
+      :arglists '([])
+      :doc "Pop and discard a value from the value stack"}
+  POP 0x01)
 
-(def {:const :true} STL 0x20)
-(def {:const :true} STVV 0x21)
-(def {:const :true} STVM 0x22)
 
-(def {:const :true} BR 0x30)
-(def {:const :true} BNIL 0x31)
-(def {:const :true} BNNIL 0x32)
+(def {:const :true
+      :arglists '([(index UInt16)])
+      :doc "Load a constant from the constant table onto the value stack"}
+  LDC 0x10)
 
-(def {:const :true} CALL 0x40)
-(def {:const :true} APPLY 0x41)
 
-(def {:const :true} THROW 0x48)
+(def {:const :true
+      :arglists '([(index Int16)])
+      :doc "LoaD Local - load a local value (if index is nonnegative) or a fn argument (if index is negative) onto the value stack"}
+  LDL 0x11)
 
-(def {:const :true} IFN 0x50)
 
-(def {:cont :true} UBXI64 0x80)
-(def {:cont :true} BXI64 0x81)
-(def {:cont :true} ADDI64 0x82)
+(def {:const :true
+      :arglists '([(index UInt16)])
+      :doc "LoaD Dynamic Var - Load a dynamic var (at index in the var table) value onto the value stack"}
+  LDDV 0x12)
+
+
+(def {:const :true
+      :arglists '([(index UInt16)])
+      :doc "LoaD Var - Load a var (at index in the var table) value onto the value stack"}
+  LDV 0x13)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "LoaD Dynamic Field - Pop a field name and an object from the value stack and push the value of the field in the object or throw an exception if the field does not exist"}
+  LDDF 0x14)
+
+
+(def {:const :true
+      :arglists '([(index UInt16)])
+      :doc "LoaD Static Field - Pop and object from the value stack and push the value of the field in the object at index"}
+  LDSF 0x15)
+
+
+(def {:const :true
+      :arglists '([(index Int8)])
+      :doc "STore Local - pop a value from the value stack and store it as a local (if index is nonnegative) or a fn argument (if index is negative)"}
+  STL 0x20)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "STore Var Value - pop a value and a var from the value stack and set the value as the root value of the var"}
+  STVV 0x21)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "STore Var Meta - pop a value and a var from the value stack and set the value as meta of the var"}
+  STVM 0x22)
+
+
+(def {:const :true
+      :arglists '([(offset Int16)])
+      :doc "BRanch - do a relative branch starting from after the instruction"}
+  BR 0x30)
+
+
+(def {:const :true
+      :arglists '([(offset Int16)])
+      :doc "Branch if NIL - pop a value from the value stack and do a relative branch if the value is nil"}
+  BNIL 0x31)
+
+
+(def {:const :true
+      :arglists '([(offset Int16)])
+      :doc "Branch if Not NIL - pop a value from the value stack and do a relative branch if the value is not nil"}
+  BNNIL 0x32)
+
+
+(def {:const :true
+      :arglists '([(num-args UInt8)])
+      :doc "Pop num-args args (in reverse order) and a callable from the value stack and call it passing the args"}
+  CALL 0x40)
+
+
+(def {:const :true
+      :arglists '([(num-args UInt8)])
+      :doc "Pop a sequence, num-args args (in reverse order) and a callable from the value stack call it passing the args and the values from the sequence"}
+  APPLY 0x41)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "Pop a value from the value stack and throw it"}
+  THROW 0x48)
+
+
+(def {:const :true
+      :arglists '([(num-locals UInt8)])
+      :doc "Instantiate FN - pop num-locals values (in reverse order) and a BytecodeFn from the value stack and create a new BytecodeFn with the popped values as closed locals"}
+  IFN 0x50)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "UnBoX Int64 - pop a value from the value stack and push it onto the int stack"}
+  UBXI64 0x80)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "BoX Int64 - pop a value from the int stack and push it onto the value stack"}
+  BXI64 0x81)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "Add Int64 - pop two values from and push their sum onto the int stack"}
+  ADDI64 0x82)
