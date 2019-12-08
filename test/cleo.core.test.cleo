@@ -36,8 +36,8 @@
          (let* [actual-val# ~actual]
            (fail-unless (= expected-val# actual-val#)
                         "assertion failed: " ~(pr-str actual)
-                        " expected to equal: " (pr-str expected-val#)
-                        " actual: " (pr-str actual-val#)))
+                        "\n expected to equal: " (pr-str expected-val#)
+                        "\n            actual: " (pr-str actual-val#)))
          (catch* Exception ~'e
            (fail "assertion failed: " ~(pr-str actual)
                  " expected to equal: " (pr-str expected-val#)
@@ -2091,7 +2091,223 @@
                        vm/CALL 4
                        vm/LDSF 1 0]}
            (translate-body '(fn* [x y z] (. (new cleo.core.test/ABC x y z) -b))))
-)
+  (assert= {:arity 3
+            :locals-size 2
+            :consts [cast ABC]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 253 255
+                       vm/CALL 2
+                       vm/STL 0 0
+
+                       vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 254 255
+                       vm/CALL 2
+                       vm/STL 1 0
+
+                       vm/LDL 255 255
+                       vm/LDL 0 0
+                       vm/LDSF 1 0
+                       vm/LDL 1 0
+                       vm/LDSF 0 0
+                       vm/CALL 2]}
+           (translate-body '(fn* [x y f]
+                                 (let* [x (cast cleo.core.test/ABC x)]
+                                   (let* [y (cast cleo.core.test/ABC y)]
+                                     (f (. x -b) (. y -a)))))))
+  (assert= {:arity 1
+            :locals-size 1
+            :consts [cast ABC 'b]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 255 255
+                       vm/CALL 2
+                       vm/STL 0 0
+                       vm/LDL 0 0
+                       vm/LDC 2 0
+                       vm/LDDF]} ; the type in a loop is not fixed
+           (translate-body '(fn* [x]
+                                 (loop* [x (cast cleo.core.test/ABC x)]
+                                        (. x -b)))))
+  (assert= {:arity 2
+            :locals-size 2
+            :consts [cast ABC]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 254 255
+                       vm/CALL 2
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/STL 1 0
+                       vm/LDL 0 0
+                       vm/LDSF 2 0]}
+           (translate-body '(fn* [x y]
+                                 (let* [x (cast cleo.core.test/ABC x)]
+                                   (do
+                                     (let* [z y]
+                                       (. x -c)))))))
+  (assert= {:arity 1
+            :locals-size 4
+            :consts [10 20 cast ABC 30]
+            :bytecode [vm/LDC 0 0
+                       vm/STL 0 0
+                       vm/LDC 1 0
+                       vm/STL 1 0
+                       vm/LDC 2 0
+                       vm/LDC 3 0
+                       vm/LDL 255 255
+                       vm/CALL 2
+                       vm/STL 2 0
+                       vm/LDC 4 0
+                       vm/STL 3 0
+                       vm/LDL 2 0
+                       vm/LDSF 0 0]}
+           (translate-body '(fn* [x]
+                                 (let* [a 10
+                                        b 20
+                                        x (cast cleo.core.test/ABC x)
+                                        c 30]
+                                   (. x -a)))))
+  (assert= {:arity 3
+            :locals-size 2
+            :consts [cast ABC 'b]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 253 255
+                       vm/CALL 2
+                       vm/STL 0 0
+
+                       vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 0 0
+                       vm/CALL 2
+                       vm/STL 1 0
+
+                       vm/LDL 1 0
+                       vm/STL 0 0
+
+                       vm/LDL 254 255
+                       vm/STL 1 0
+
+                       vm/LDL 255 255
+                       vm/LDL 0 0
+                       vm/LDSF 0 0
+                       vm/LDL 1 0
+                       vm/LDC 2 0
+                       vm/LDDF
+                       vm/CALL 2]}
+           (translate-body '(fn* [x w f]
+                                 (let* [x (let [x (cast cleo.core.test/ABC x)
+                                                y (cast cleo.core.test/ABC x)]
+                                            y)
+                                        z w] ; z has the same index as y
+                                   (f (. x -a) (. z -b))))))
+  (assert= {:arity 1
+            :locals-size 2
+            :consts [cast ABC]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 255 255
+                       vm/CALL 2
+                       vm/STL 0 0
+
+                       vm/LDL 0 0
+                       vm/STL 1 0
+
+                       vm/LDL 1 0
+                       vm/LDSF 0 0]}
+           (translate-body '(fn* [x]
+                                 (let* [x (cast cleo.core.test/ABC x)
+                                        y x]
+                                   (. y -a))))))
+
+(deftest let-and-local-type-computation
+  (assert= {:params [{:name 'x, :index 0}]
+            :expr {:tag :let
+                   :locals [{:name 'x
+                             :index 1
+                             :expr {:tag :call
+                                    :fn {:tag :var, :name 'cast}
+                                    :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 0}]
+                                    :value-type ABC}
+                             :value-type ABC}
+                            {:name 'y
+                             :index 2
+                             :expr {:tag :local, :index 1, :value-type ABC}
+                             :value-type ABC}]
+                   :exprs [{:tag :dot
+                            :expr {:tag :local, :index 2, :value-type ABC}
+                            :member 'a}]}}
+           (first (:bodies (cc/compute-types (cc/parse '(fn* [x]
+                                                             (let* [x (cast cleo.core.test/ABC x)
+                                                                    y x]
+                                                               (. y -a))))))))
+  (assert= {:params [{:name 'x, :index 0} {:name 'y, :index 1}]
+            :expr {:tag :let
+                   :locals [{:name 'x
+                             :index '2
+                             :expr {:tag :call
+                                    :fn {:tag :var, :name 'cast}
+                                    :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 0}]
+                                    :value-type ABC}
+                             :value-type ABC}]
+                   :exprs [{:tag :do
+                            :exprs [{:tag :let
+                                     :locals [{:name 'z
+                                               :index 3
+                                               :expr {:tag :local, :index 1}}]
+                                     :exprs [{:tag :dot
+                                              :expr {:tag :local
+                                                     :index 2
+                                                     :value-type ABC}
+                                              :member 'c}]}]}]}}
+           (first (:bodies (cc/compute-types (cc/parse '(fn* [x y]
+                                                             (let* [x (cast cleo.core.test/ABC x)]
+                                                               (do
+                                                                 (let* [z y]
+                                                                   (. x -c))))))))))
+  (assert= {:params [{:name 'x, :index 0} {:name 'w, :index 1} {:name 'f, :index 2}]
+            :expr {:tag :let
+                   :locals [{:name 'x
+                             :index 3
+                             :expr {:tag :let
+                                    :locals [{:name 'x
+                                              :index 3
+                                              :expr {:tag :call
+                                                     :fn {:tag :var, :name 'cast}
+                                                     :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 0}]
+                                                     :value-type ABC}
+                                              :value-type ABC}
+                                             {:name 'y
+                                              :index 4
+                                              :expr {:tag :call
+                                                     :fn {:tag :var, :name 'cast}
+                                                     :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 3, :value-type ABC}]
+                                                     :value-type ABC}
+                                              :value-type ABC}]
+                                    :exprs [{:tag :local, :index 4, :value-type ABC}]
+                                    :value-type ABC}
+                             :value-type ABC}
+                            {:name 'z
+                             :index 4
+                             :expr {:tag :local, :index 1}}]
+                   :exprs [{:tag :call
+                            :fn {:tag :local, :index 2}
+                            :args [{:tag :dot
+                                    :expr {:tag :local
+                                           :index 3
+                                           :value-type ABC}
+                                    :member 'a}
+                                   {:tag :dot
+                                    :expr {:tag :local, :index 4}
+                                    :member 'b}]}]}}
+           (first (:bodies (cc/compute-types (cc/parse '(fn* [x w f]
+                                                             (let* [x (let [x (cast cleo.core.test/ABC x)
+                                                                            y (cast cleo.core.test/ABC x)]
+                                                                        y)
+                                                                    z w] ; z has the same index as y
+                                                               (f (. x -a) (. z -b))))))))))
 
 
 (deftest translate-apply

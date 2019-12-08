@@ -1024,7 +1024,20 @@
              (fail "First argument to new must be a type")))))
 
 
-(defn- compute-types [ast]
+(defn- find-local-type [ast path index]
+  (loop [path (pop path)]
+    (when (seq path)
+      (let [expr (reduce get ast path)]
+        (if-let [local (and (= (get expr :tag) :let)
+                            (some (fn [l]
+                                    (and (= (:index l) index)
+                                         l))
+                                  (:locals expr)))]
+          (:value-type local)
+          (recur (pop path)))))))
+
+
+(defn- annotate-const-cast-new [ast]
   (transform-expr (fn [expr _]
                     (or (const-var? expr)
                         (cast-expr? expr)
@@ -1034,6 +1047,46 @@
                                               (-> expr :name resolve-var deref type)
                                               (-> expr :args first :name resolve-var deref))))
                   ast))
+
+
+(defn- annotate-locals [ast]
+  (let [let? (fn let? [{tag :tag}]
+               (= tag :let))
+        let-or-local? (fn let-or-local? [{tag :tag} _]
+                        (or (= tag :let)
+                            (= tag :local)))
+        annotate (fn annotate [ll-expr _ local-types]
+                   (cond
+                     (let? ll-expr)
+                     (let [[locals local-types] (reduce (fn [[locals local-types] {:keys [expr index] :as local-def}]
+                                                          (let [expr (transform-expr let-or-local? (fn [expr _] (annotate expr _ local-types)) expr)
+                                                                local-def (assoc local-def :expr expr)
+                                                                local-def (if-let [etype (find-expr-type expr)]
+                                                                            (assoc local-def :value-type etype)
+                                                                            local-def)]
+                                                            [(conj! locals local-def)
+                                                             (assoc local-types index (:value-type local-def))]))
+                                                        [(transient []) local-types]
+                                                        (:locals ll-expr))
+                           locals (persistent! locals)
+                           ll-expr (assoc ll-expr :locals locals)
+                           ll-expr (update ll-expr :exprs (fn [exprs]
+                                                            (mapv (fn [expr]
+                                                                    (transform-expr let-or-local? (fn [expr _] (annotate expr _ local-types)) expr))
+                                                                  exprs)))]
+                       (if-let [etype (find-expr-type (peek (:exprs ll-expr)))]
+                         (assoc ll-expr :value-type etype)
+                         ll-expr))
+                     :local (if-let [ltype (get local-types (:index ll-expr))]
+                              (assoc ll-expr :value-type ltype)
+                              ll-expr)))]
+    (transform-expr let-or-local? (fn [expr _] (annotate expr _ {})) ast)))
+
+
+(defn compute-types [ast]
+  (-> ast
+      annotate-const-cast-new
+      annotate-locals))
 
 
 (defn optimize [ast]
