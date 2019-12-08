@@ -28,10 +28,9 @@
 
 
 (defn- parse-const [form]
-  (if (map? form)
+  (when form
     {:tag :const
-     :value form}
-    form))
+     :value form}))
 
 
 (defn- parse-symbol [scope s]
@@ -328,7 +327,7 @@
         (= f 'fn*) (parse-fn scope form)
         (= f 'recur) (parse-recur scope form)
         :else (parse-call scope form)))
-    ()))
+    (parse-const ())))
 
 
 (defn- is-const [form]
@@ -358,7 +357,7 @@
                    (reduce (fn [call elem] (list 'cleo.core/conj! call elem))
                            (list 'cleo.core/transient prefix)
                            more)))
-      form)))
+      (parse-const form))))
 
 
 (defn- split-set-by-const [s]
@@ -381,7 +380,7 @@
              (reduce (fn [call elem] (list 'cleo.core/conj call elem))
                      subset
                      more))
-      form)))
+      (parse-const form))))
 
 
 (defn- split-map-by-const [m]
@@ -585,8 +584,7 @@
 (defn translate-call! [body {:keys [fn args]}]
   (when (< 255 (count args))
     (fail "Too many arguments: " (count args)))
-  (let [apply? (and (map? fn)
-                    (= (:tag fn) :var)
+  (let [apply? (and (= (:tag fn) :var)
                     (= (resolve (:name fn)) #'cleo.core/apply))
         arg-count (count args)
         fn (if apply? (first args) fn)
@@ -664,9 +662,9 @@
 
 
 (defn- find-expr-type [expr]
-  (if (map? expr)
-    (:value-type expr)
-    (type expr)))
+  (if (= (:tag expr) :const)
+    (type (:value expr))
+    (:value-type expr)))
 
 
 (defn- translate-dot! [body {:keys [expr member]}]
@@ -789,23 +787,21 @@
 
 
 (defn- translate-expr! [body expr]
-  (if (map? expr)
-    (let [tag (:tag expr)]
-      (cond (= tag :do) (translate-do! body expr)
-            (= tag :var) (translate-var! body expr)
-            (= tag :local) (translate-local! body expr)
-            (= tag :call) (translate-call! body expr)
-            (= tag :let) (translate-let! body expr)
-            (= tag :loop) (translate-loop! body expr)
-            (= tag :throw) (translate-throw! body expr)
-            (= tag :if) (translate-if! body expr)
-            (= tag :dot) (translate-dot! body expr)
-            (= tag :def) (translate-def! body expr)
-            (= tag :recur) (translate-recur! body expr)
-            (= tag :try) (translate-try! body expr)
-            (= tag :fn) (translate-ifn! body expr)
-            :else (translate-const! body (:value expr))))
-    (translate-const! body expr)))
+  (let [tag (:tag expr)]
+    (cond (= tag :do) (translate-do! body expr)
+          (= tag :var) (translate-var! body expr)
+          (= tag :local) (translate-local! body expr)
+          (= tag :call) (translate-call! body expr)
+          (= tag :let) (translate-let! body expr)
+          (= tag :loop) (translate-loop! body expr)
+          (= tag :throw) (translate-throw! body expr)
+          (= tag :if) (translate-if! body expr)
+          (= tag :dot) (translate-dot! body expr)
+          (= tag :def) (translate-def! body expr)
+          (= tag :recur) (translate-recur! body expr)
+          (= tag :try) (translate-try! body expr)
+          (= tag :fn) (translate-ifn! body expr)
+          :else (translate-const! body (:value expr)))))
 
 
 (defn- make-locals [name-index params]
@@ -911,56 +907,53 @@
   ([pred f expr path]
    (if (pred expr path)
      (f expr path)
-     (if (map? expr)
-       (let [tag (:tag expr)
-             maybe-update (fn [m k f] (if (contains? m k) (update m k f) m))
-             transform-one (fn transform-one
-                             ([expr path k]
-                              (assoc expr k (transform-expr pred f (get expr k) (conj path k))))
-                             ([expr k]
-                              (transform-one expr path k)))
-             transform-many (fn [expr k]
-                              (assoc expr k (mapv-indexed (fn [i expr]
-                                                            (transform-expr pred f expr (conj path k i)))
-                                                          (get expr k))))
-             maybe-transform-one (fn [expr k]
-                                   (if (contains? expr k)
-                                     (transform-one expr k)
-                                     expr))
-             transform-many-nested (fn [expr k0 k1]
-                                     (assoc expr k0 (mapv-indexed (fn [i x]
-                                                                    (transform-one x (conj path k0 i) k1))
-                                                                  (get expr k0))))]
-         (cond (= tag :do) (transform-many expr :exprs)
-               (= tag :call) (-> expr
-                                 (transform-one :fn)
-                                 (transform-many :args))
-               (= tag :let) (-> expr
-                                (transform-many-nested :locals :expr)
-                                (transform-many :exprs))
-               (= tag :loop) (-> expr
-                                 (transform-many-nested :locals :expr)
-                                 (transform-many :exprs))
-               (= tag :throw) (transform-one expr :expr)
-               (= tag :if) (-> expr
-                               (transform-one :cond)
-                               (transform-one :then)
-                               (transform-one :else))
-               (= tag :dot) (transform-one expr :expr)
-               (= tag :def) (maybe-transform-one expr :expr)
-               (= tag :recur) (transform-many expr :args)
-               (= tag :try) (-> expr
-                                (transform-one :expr)
-                                (maybe-update :catch (fn [c] (transform-one c (conj path :catch) :expr)))
-                                (maybe-transform-one :finally))
-               (= tag :fn) (transform-many-nested expr :bodies :expr)
-               :else expr))
-       expr))))
+     (let [tag (:tag expr)
+           maybe-update (fn [m k f] (if (contains? m k) (update m k f) m))
+           transform-one (fn transform-one
+                           ([expr path k]
+                            (assoc expr k (transform-expr pred f (get expr k) (conj path k))))
+                           ([expr k]
+                            (transform-one expr path k)))
+           transform-many (fn [expr k]
+                            (assoc expr k (mapv-indexed (fn [i expr]
+                                                          (transform-expr pred f expr (conj path k i)))
+                                                        (get expr k))))
+           maybe-transform-one (fn [expr k]
+                                 (if (contains? expr k)
+                                   (transform-one expr k)
+                                   expr))
+           transform-many-nested (fn [expr k0 k1]
+                                   (assoc expr k0 (mapv-indexed (fn [i x]
+                                                                  (transform-one x (conj path k0 i) k1))
+                                                                (get expr k0))))]
+       (cond (= tag :do) (transform-many expr :exprs)
+             (= tag :call) (-> expr
+                               (transform-one :fn)
+                               (transform-many :args))
+             (= tag :let) (-> expr
+                              (transform-many-nested :locals :expr)
+                              (transform-many :exprs))
+             (= tag :loop) (-> expr
+                               (transform-many-nested :locals :expr)
+                               (transform-many :exprs))
+             (= tag :throw) (transform-one expr :expr)
+             (= tag :if) (-> expr
+                             (transform-one :cond)
+                             (transform-one :then)
+                             (transform-one :else))
+             (= tag :dot) (transform-one expr :expr)
+             (= tag :def) (maybe-transform-one expr :expr)
+             (= tag :recur) (transform-many expr :args)
+             (= tag :try) (-> expr
+                              (transform-one :expr)
+                              (maybe-update :catch (fn [c] (transform-one c (conj path :catch) :expr)))
+                              (maybe-transform-one :finally))
+             (= tag :fn) (transform-many-nested expr :bodies :expr)
+             :else expr)))))
 
 
 (defn const-bytecode-fn [f]
-  (and (map? f)
-       (= :var (:tag f))
+  (and (= :var (:tag f))
        (let [v (resolve (:name f))]
          (and (:const (meta v))
               (identical? BytecodeFn (type @v))
@@ -981,8 +974,7 @@
 
 (defn inline-identity-calls [ast]
   (transform-expr (fn [expr _]
-                   (and (map? expr)
-                        (= (:tag expr) :call)
+                   (and (= (:tag expr) :call)
                         (identity-call? expr)))
                   (fn [call _] (-> call :args first))
                   ast))
@@ -990,17 +982,16 @@
 
 (defn inline-no-arg-returning-const [ast]
   (transform-expr (fn [expr _]
-                   (and (map? expr)
-                        (= (:tag expr) :call)
+                   (and (= (:tag expr) :call)
                         (no-arg-returning-const? expr)))
                   (fn [call _]
-                    (-> call :fn const-bytecode-fn (get-bytecode-fn-consts 0) first))
+                    {:tag :const
+                     :value (-> call :fn const-bytecode-fn (get-bytecode-fn-consts 0) first)})
                   ast))
 
 
 (defn- check-resolve-var-expr [expr]
-  (and (map? expr)
-       (= (:tag expr) :var)
+  (and (= (:tag expr) :var)
        (maybe-resolve-var (:name expr))))
 
 
@@ -1016,23 +1007,21 @@
 
 
 (defn- cast-expr? [expr]
-  (when (map? expr)
-    (let [{tag :tag f :fn args :args} expr]
-      (and (= tag :call)
-           (identical? #'cleo.core/cast (check-resolve-var-expr f))
-           (= (count args) 2)
-           (or (type-expr? (first args))
-               (fail "First argument to cast must be a type"))))))
+  (let [{tag :tag f :fn args :args} expr]
+    (and (= tag :call)
+         (identical? #'cleo.core/cast (check-resolve-var-expr f))
+         (= (count args) 2)
+         (or (type-expr? (first args))
+             (fail "First argument to cast must be a type")))))
 
 
 (defn- new-expr? [expr]
-  (when (map? expr)
-    (let [{tag :tag f :fn args :args} expr]
-      (and (= tag :call)
-           (identical? #'cleo.core/new (check-resolve-var-expr f))
-           (< 1 (count args))
-           (or (type-expr? (first args))
-               (fail "First argument to new must be a type"))))))
+  (let [{tag :tag f :fn args :args} expr]
+    (and (= tag :call)
+         (identical? #'cleo.core/new (check-resolve-var-expr f))
+         (< 1 (count args))
+         (or (type-expr? (first args))
+             (fail "First argument to new must be a type")))))
 
 
 (defn- compute-types [ast]
@@ -1055,8 +1044,7 @@
 
 
 (defn translate [ast]
-  (let [ast (if (or (not (map? ast))
-                    (not= :fn (:tag ast)))
+  (let [ast (if (not= :fn (:tag ast))
               {:tag :fn
                :bodies [{:params [], :expr ast}]}
               ast)]

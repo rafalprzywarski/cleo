@@ -712,12 +712,12 @@
 
 
 (deftest parse-const
-  (assert= 10 (cc/parse 10))
-  (assert= 3.5 (cc/parse 3.5))
-  (assert= "abc" (cc/parse "abc"))
-  (assert= :abc (cc/parse :abc))
+  (assert= {:tag :const, :value 10} (cc/parse 10))
+  (assert= {:tag :const, :value 3.5} (cc/parse 3.5))
+  (assert= {:tag :const, :value "abc"} (cc/parse "abc"))
+  (assert= {:tag :const, :value :abc} (cc/parse :abc))
   (assert= nil (cc/parse nil))
-  (assert= () (cc/parse ()))
+  (assert= {:tag :const, :value ()} (cc/parse ()))
   (assert= {:tag :const, :value {:a 10}} (cc/parse {:a 10})))
 
 
@@ -732,13 +732,13 @@
 
 
 (deftest parse-call
-  (assert= {:tag :call, :fn [7], :args []} (cc/parse '([7])))
-  (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [10 {:tag :var, :name 'x}]} (cc/parse '(f 10 x))))
+  (assert= {:tag :call, :fn {:tag :const, :value [7]}, :args []} (cc/parse '([7])))
+  (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [{:tag :const, :value 10} {:tag :var, :name 'x}]} (cc/parse '(f 10 x))))
 
 
 (deftest parse-quote
-  (assert= 10 (cc/parse ''10))
-  (assert= '(10 20) (cc/parse ''(10 20)))
+  (assert= {:tag :const, :value 10} (cc/parse ''10))
+  (assert= {:tag :const, :value '(10 20)} (cc/parse ''(10 20)))
   (assert= {:tag :const, :value {:a :b}} (cc/parse ''{:a :b})))
 
 
@@ -749,60 +749,60 @@
 
 
 (deftest parse-let
-   (assert= {:tag :let, :locals [], :exprs []} (cc/parse '(let* [])))
-   (assert= {:tag :let, :locals [], :exprs [nil]} (cc/parse '(let* [] nil)))
-   (assert= {:tag :let, :locals [], :exprs [{:tag :var, :name 'a} 10]} (cc/parse '(let* [] a 10)))
-   (assert= {:tag :let, :locals [{:name 'a, :index 0, :expr 10}], :exprs []} (cc/parse '(let* [a 10])))
-   (assert= {:tag :let, :locals [{:name 'a, :index 0, :expr 10}
-                                 {:name 'b, :index 1, :expr 20}
-                                 {:name 'c, :index 2, :expr 30}], :exprs []} (cc/parse '(let* [a 10 b 20 c 30])))
-   (assert= [{:tag :local, :index 1} {:tag :local, :index 2} {:tag :local, :index 0}] (:exprs (cc/parse '(let* [a 10 b 20 c 30] b c a))))
-   (let [let3 (cc/parse '(let* [a :x] (let* [b :y c :z] (let* [d :w]))))]
-     (assert= [{:name 'a, :index 0, :expr :x}] (-> let3 :locals))
-     (assert= [{:name 'b, :index 1, :expr :y} {:name 'c, :index 2, :expr :z}] (-> let3 :exprs first :locals))
-     (assert= [{:name 'd, :index 3, :expr :w}] (-> let3 :exprs first :exprs first :locals)))
-   (assert= {:tag :let
-             :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
-                      {:name 'x, :index 1, :expr {:tag :local, :index 0}}
-                      {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
-             :exprs [{:tag :local, :index 2}]} (cc/parse '(let* [x x x x x x] x)))
-   (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
-             {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
-             {:name 'x, :index 2, :expr {:tag :local, :index 1}}
-             {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(let* [x x y y x y y x])))))
+  (assert= {:tag :let, :locals [], :exprs []} (cc/parse '(let* [])))
+  (assert= {:tag :let, :locals [], :exprs [nil]} (cc/parse '(let* [] nil)))
+  (assert= {:tag :let, :locals [], :exprs [{:tag :var, :name 'a} {:tag :const, :value 10}]} (cc/parse '(let* [] a 10)))
+  (assert= {:tag :let, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}], :exprs []} (cc/parse '(let* [a 10])))
+  (assert= {:tag :let, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}
+                                {:name 'b, :index 1, :expr {:tag :const, :value 20}}
+                                {:name 'c, :index 2, :expr {:tag :const, :value 30}}], :exprs []} (cc/parse '(let* [a 10 b 20 c 30])))
+  (assert= [{:tag :local, :index 1} {:tag :local, :index 2} {:tag :local, :index 0}] (:exprs (cc/parse '(let* [a 10 b 20 c 30] b c a))))
+  (let [let3 (cc/parse '(let* [a :x] (let* [b :y c :z] (let* [d :w]))))]
+    (assert= [{:name 'a, :index 0, :expr {:tag :const, :value :x}}] (-> let3 :locals))
+    (assert= [{:name 'b, :index 1, :expr {:tag :const, :value :y}} {:name 'c, :index 2, :expr {:tag :const, :value :z}}] (-> let3 :exprs first :locals))
+    (assert= [{:name 'd, :index 3, :expr {:tag :const, :value :w}}] (-> let3 :exprs first :exprs first :locals)))
+  (assert= {:tag :let
+            :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+                     {:name 'x, :index 1, :expr {:tag :local, :index 0}}
+                     {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
+            :exprs [{:tag :local, :index 2}]} (cc/parse '(let* [x x x x x x] x)))
+  (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+            {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
+            {:name 'x, :index 2, :expr {:tag :local, :index 1}}
+            {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(let* [x x y y x y y x])))))
 
 
 (deftest parse-loop
-   (assert= {:tag :loop, :locals [], :exprs []} (cc/parse '(loop* [])))
-   (assert= {:tag :loop, :locals [], :exprs [nil]} (cc/parse '(loop* [] nil)))
-   (assert= {:tag :loop, :locals [], :exprs [{:tag :var, :name 'a} 10]} (cc/parse '(loop* [] a 10)))
-   (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr 10}], :exprs []} (cc/parse '(loop* [a 10])))
-   (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr 10}
-                                 {:name 'b, :index 1, :expr 20}
-                                 {:name 'c, :index 2, :expr 30}], :exprs []} (cc/parse '(loop* [a 10 b 20 c 30])))
-   (assert= [{:tag :local, :index 1} {:tag :local, :index 2} {:tag :local, :index 0}] (:exprs (cc/parse '(loop* [a 10 b 20 c 30] b c a))))
-   (let [loop3 (cc/parse '(loop* [a :x] (loop* [b :y c :z] (loop* [d :w]))))]
-     (assert= [{:name 'a, :index 0, :expr :x}] (-> loop3 :locals))
-     (assert= [{:name 'b, :index 1, :expr :y} {:name 'c, :index 2, :expr :z}] (-> loop3 :exprs first :locals))
-     (assert= [{:name 'd, :index 3, :expr :w}] (-> loop3 :exprs first :exprs first :locals)))
-   (assert= {:tag :loop
-             :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
-                      {:name 'x, :index 1, :expr {:tag :local, :index 0}}
-                      {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
-             :exprs [{:tag :local, :index 2}]} (cc/parse '(loop* [x x x x x x] x)))
-   (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
-             {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
-             {:name 'x, :index 2, :expr {:tag :local, :index 1}}
+  (assert= {:tag :loop, :locals [], :exprs []} (cc/parse '(loop* [])))
+  (assert= {:tag :loop, :locals [], :exprs [nil]} (cc/parse '(loop* [] nil)))
+  (assert= {:tag :loop, :locals [], :exprs [{:tag :var, :name 'a} {:tag :const, :value 10}]} (cc/parse '(loop* [] a 10)))
+  (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}], :exprs []} (cc/parse '(loop* [a 10])))
+  (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}
+                                 {:name 'b, :index 1, :expr {:tag :const, :value 20}}
+                                 {:name 'c, :index 2, :expr {:tag :const, :value 30}}], :exprs []} (cc/parse '(loop* [a 10 b 20 c 30])))
+  (assert= [{:tag :local, :index 1} {:tag :local, :index 2} {:tag :local, :index 0}] (:exprs (cc/parse '(loop* [a 10 b 20 c 30] b c a))))
+  (let [loop3 (cc/parse '(loop* [a :x] (loop* [b :y c :z] (loop* [d :w]))))]
+    (assert= [{:name 'a, :index 0, :expr {:tag :const, :value :x}}] (-> loop3 :locals))
+    (assert= [{:name 'b, :index 1, :expr {:tag :const, :value :y}} {:name 'c, :index 2, :expr {:tag :const, :value :z}}] (-> loop3 :exprs first :locals))
+    (assert= [{:name 'd, :index 3, :expr {:tag :const, :value :w}}] (-> loop3 :exprs first :exprs first :locals)))
+  (assert= {:tag :loop
+            :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+                     {:name 'x, :index 1, :expr {:tag :local, :index 0}}
+                     {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
+            :exprs [{:tag :local, :index 2}]} (cc/parse '(loop* [x x x x x x] x)))
+  (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+            {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
+            {:name 'x, :index 2, :expr {:tag :local, :index 1}}
              {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(loop* [x x y y x y y x])))))
 
 
 (deftest parse-def
-  (assert= {:tag :def, :name 'x, :expr 10} (cc/parse '(def x 10)))
+  (assert= {:tag :def, :name 'x, :expr {:tag :const, :value 10}} (cc/parse '(def x 10)))
   (assert= {:tag :def, :name 'x, :expr nil} (cc/parse '(def x nil)))
   (assert= {:tag :def, :name 'x} (cc/parse '(def x)))
-  (assert= {:tag :def, :name 'a/x, :expr 10} (cc/parse '(def a/x 10)))
+  (assert= {:tag :def, :name 'a/x, :expr {:tag :const, :value 10}} (cc/parse '(def a/x 10)))
   (assert= {:tag :def, :name 'xr, :expr {:tag :var, :name 'xr}} (cc/parse '(def xr xr)))
-  (assert= {:tag :def, :name 'z, :meta {10 20}, :expr 13} (cc/parse '(def {10 20} z 13)))
+  (assert= {:tag :def, :name 'z, :meta {10 20}, :expr {:tag :const, :value 13}} (cc/parse '(def {10 20} z 13)))
   (assert= {:tag :def, :name 'z, :meta {10 20}} (cc/parse '(def {10 20} z))))
 
 
@@ -815,12 +815,12 @@
 
 
 (deftest parse-vector
-  (assert= [] (cc/parse []))
-  (assert= [5 6 7] (cc/parse [5 6 7]))
+  (assert= {:tag :const, :value []} (cc/parse []))
+  (assert= {:tag :const, :value [5 6 7]} (cc/parse [5 6 7]))
   (assert= (cc/parse '(cleo.core/persistent! (cleo.core/conj! (cleo.core/transient [3 4]) x))) (cc/parse '[3 4 x]))
   (assert= (cc/parse '(cleo.core/persistent! (cleo.core/conj! (cleo.core/conj! (cleo.core/conj! (cleo.core/transient []) z) x) y))) (cc/parse '[z x y]))
   (assert= (cc/parse '(cleo.core/persistent! (cleo.core/conj! (cleo.core/transient [2 4.0 "x" :k]) (f 3)))) (cc/parse '[2 4.0 "x" :k (f 3)]))
-  (assert= [10 [20 30]] (cc/parse [10 [20 30]]))
+  (assert= {:tag :const, :value [10 [20 30]]} (cc/parse [10 [20 30]]))
   (assert= (cc/parse '(cleo.core/persistent!
                        (cleo.core/conj!
                         (cleo.core/transient [10])
@@ -828,12 +828,12 @@
 
 
 (deftest parse-hash-set
-  (assert= #{} (cc/parse #{}))
-  (assert= #{5 6 7} (cc/parse #{5 6 7}))
+  (assert= {:tag :const, :value #{}} (cc/parse #{}))
+  (assert= {:tag :const, :value #{5 6 7}} (cc/parse #{5 6 7}))
   (assert= (cc/parse '(cleo.core/conj #{3 4} x)) (cc/parse '#{3 x 4}))
   (assert= (cc/parse '(cleo.core/conj (cleo.core/conj (cleo.core/conj #{} z) x) y)) (cc/parse '#{z x y}))
   (assert= (cc/parse '(cleo.core/conj #{2 4.0 "x" :k} (f 3))) (cc/parse '#{2 4.0 "x" (f 3) :k}))
-  (assert= #{10 #{20 30}} (cc/parse #{10 #{20 30}}))
+  (assert= {:tag :const, :value #{10 #{20 30}}} (cc/parse #{10 #{20 30}}))
   (assert= (cc/parse '(cleo.core/conj #{10} (cleo.core/conj #{20} x))) (cc/parse '#{10 #{20 x}})))
 
 
@@ -852,9 +852,9 @@
 
 
 (deftest parse-nested-structures
-  (assert= [[10 20] [[30 [40]]]] (cc/parse [[10 20] [[30 [40]]]]))
-  (assert= #{10 20 [30 40] #{50 #{} #{60}}} (cc/parse #{10 20 [30 40] #{50 #{} #{60}}}))
-  (assert= [10 {20 {30 40}} #{50} [60]] (cc/parse [10 {20 {30 40}} #{50} [60]]))
+  (assert= {:tag :const, :value [[10 20] [[30 [40]]]]} (cc/parse [[10 20] [[30 [40]]]]))
+  (assert= {:tag :const, :value #{10 20 [30 40] #{50 #{} #{60}}}} (cc/parse #{10 20 [30 40] #{50 #{} #{60}}}))
+  (assert= {:tag :const, :value [10 {20 {30 40}} #{50} [60]]} (cc/parse [10 {20 {30 40}} #{50} [60]]))
   (assert= {:tag :const, :value {10 {20 {30 40}} #{50} [60]}} (cc/parse {10 {20 {30 40}} #{50} [60]})))
 
 
@@ -951,7 +951,7 @@
                                             {:tag :local, :index 3}]}}]}}
            (-> (cc/parse '(fn* f [a] (fn* g [b] (do f a g b)))) :bodies first))
   (assert= {:tag :let
-            :locals [{:name 'z, :index 1, :expr 10}]
+            :locals [{:name 'z, :index 1, :expr {:tag :const, :value 10}}]
             :exprs [{:tag :local, :index 1}]}
            (-> (cc/parse '(fn* [z] (let* [z 10] z))) :bodies first :expr))
   (assert= {:params [{:name 'z, :index 2}]
@@ -1604,13 +1604,13 @@
                     (assoc x :marked-path path))]
     (assert= {:tag :if
               :cond {:tag :do
-                     :exprs [9]
+                     :exprs [{:tag :const, :value 9}]
                      :marked-path [:cond]}
               :then {:tag :do
-                     :exprs [1 2 3]
+                     :exprs [{:tag :const, :value 1} {:tag :const, :value 2} {:tag :const, :value 3}]
                      :marked-path [:then]}
               :else {:tag :do
-                     :exprs [5 6 7]
+                     :exprs [{:tag :const, :value 5} {:tag :const, :value 6} {:tag :const, :value 7}]
                      :marked-path [:else]}}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(if (do 9) (do 1 2 3) (do 5 6 7)))))
     (assert= {:tag :throw
@@ -1624,19 +1624,19 @@
               :expr {:fn {:tag :var
                           :name 'f}
                      :tag :call
-                     :args [10]
+                     :args [{:tag :const, :value 10}]
                      :marked-path [:expr]}
               :finally {:tag :call
                         :fn {:tag :var
                              :name 'f}
-                        :args [20]
+                        :args [{:tag :const, :value 20}]
                         :marked-path [:finally]}}
              (cc/transform-expr (with-tag :call) mark-path (cc/parse '(try* (f 10) (finally* (f 20))))))
     (assert= {:tag :try
               :expr {:fn {:tag :var
                           :name 'f}
                      :tag :call
-                     :args [10]
+                     :args [{:tag :const, :value 10}]
                      :marked-path [:expr]}
               :catch {:type 'Exception
                       :local {:index 0
@@ -1644,74 +1644,74 @@
                       :expr {:tag :call
                              :fn {:tag :var
                                   :name 'f}
-                             :args [20]
+                             :args [{:tag :const, :value 20}]
                              :marked-path [:catch :expr]}}}
              (cc/transform-expr (with-tag :call) mark-path (cc/parse '(try* (f 10) (catch* Exception e (f 20))))))
     (assert= {:tag :call
-              :fn {:tag :if, :cond 1, :then 2, :else nil
+              :fn {:tag :if, :cond {:tag :const, :value 1}, :then {:tag :const, :value 2}, :else nil
                    :marked-path [:fn]}
-              :args [{:tag :if, :cond 3, :then 4, :else nil
+              :args [{:tag :if, :cond {:tag :const, :value 3}, :then {:tag :const, :value 4}, :else nil
                       :marked-path [:args 0]}
-                     {:tag :if, :cond 5, :then 6, :else nil
+                     {:tag :if, :cond {:tag :const, :value 5}, :then {:tag :const, :value 6}, :else nil
                       :marked-path [:args 1]}]}
              (cc/transform-expr (with-tag :if) mark-path (cc/parse '((if 1 2) (if 3 4) (if 5 6)))))
     (assert= {:tag :do
-              :exprs [{:tag :if, :cond 1, :then 2, :else nil
+              :exprs [{:tag :if, :cond {:tag :const, :value 1}, :then {:tag :const, :value 2}, :else nil
                        :marked-path [:exprs 0]}
-                      {:tag :if, :cond 3, :then 4, :else nil
+                      {:tag :if, :cond {:tag :const, :value 3}, :then {:tag :const, :value 4}, :else nil
                        :marked-path [:exprs 1]}]}
              (cc/transform-expr (with-tag :if) mark-path (cc/parse '(do (if 1 2) (if 3 4)))))
     (assert= {:tag :let
               :locals [{:index 0, :name 'x
                         :expr {:tag :do
-                               :exprs [1]
+                               :exprs [{:tag :const, :value 1}]
                                :marked-path [:locals 0 :expr]}}
                        {:index 1, :name 'y
                         :expr {:tag :do
-                               :exprs [2]
+                               :exprs [{:tag :const, :value 2}]
                                :marked-path [:locals 1 :expr]}}]
               :exprs [{:tag :do
-                       :exprs [3]
+                       :exprs [{:tag :const, :value 3}]
                        :marked-path [:exprs 0]}
                       {:tag :do
-                       :exprs [4]
+                       :exprs [{:tag :const, :value 4}]
                        :marked-path [:exprs 1]}]}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(let* [x (do 1) y (do 2)] (do 3) (do 4)))))
     (assert= {:tag :loop
               :locals [{:index 0, :name 'x
                         :expr {:tag :do
-                               :exprs [1]
+                               :exprs [{:tag :const, :value 1}]
                                :marked-path [:locals 0 :expr]}}
                        {:index 1, :name 'y
                         :expr {:tag :do
-                               :exprs [2]
+                               :exprs [{:tag :const, :value 2}]
                                :marked-path [:locals 1 :expr]}}]
               :exprs [{:tag :do
-                       :exprs [3]
+                       :exprs [{:tag :const, :value 3}]
                        :marked-path [:exprs 0]}
                       {:tag :do
-                       :exprs [4]
+                       :exprs [{:tag :const, :value 4}]
                        :marked-path [:exprs 1]}]}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(loop* [x (do 1) y (do 2)] (do 3) (do 4)))))
     (assert= {:tag :fn
               :bodies [{:params []
                         :expr {:tag :do
-                               :exprs [10]
+                               :exprs [{:tag :const, :value 10}]
                                :marked-path [:bodies 0 :expr]}}
                        {:params [{:index 0, :name 'x}]
                         :expr {:tag :do
-                               :exprs [20]
+                               :exprs [{:tag :const, :value 20}]
                                :marked-path [:bodies 1 :expr]}}]}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(fn* ([] (do 10)) ([x] (do 20))))))
     (assert= {:tag :loop
-              :locals [{:index 0, :name 'x, :expr 0}
-                       {:index 1, :name 'y, :expr 1}]
+              :locals [{:index 0, :name 'x, :expr {:tag :const, :value 0}}
+                       {:index 1, :name 'y, :expr {:tag :const, :value 1}}]
               :exprs [{:tag :recur
                        :args [{:tag :do
-                               :exprs [1]
+                               :exprs [{:tag :const, :value 1}]
                                :marked-path [:exprs 0 :args 0]}
                               {:tag :do
-                               :exprs [2]
+                               :exprs [{:tag :const, :value 2}]
                                :marked-path [:exprs 0 :args 1]}]}]}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(loop* [x 0 y 1] (recur (do 1) (do 2))))))
     (assert= {:tag :def
@@ -1720,7 +1720,7 @@
     (assert= {:tag :def
               :name 'x
               :expr {:tag :do
-                     :exprs [30]
+                     :exprs [{:tag :const, :value 30}]
                      :marked-path [:expr]}}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x (do 30)))))))
 
