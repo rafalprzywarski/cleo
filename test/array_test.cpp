@@ -97,6 +97,35 @@ TEST_F(array_test, should_conj_elements_at_the_end_of_the_vector)
     ASSERT_TRUE(elem2->is(get_array_elem(*vec3, 2)));
 }
 
+TEST_F(array_test, should_pop_elements_from_the_end_of_the_vector)
+{
+    Root a{create_string("a")};
+    Root b{create_string("b")};
+    Root c{create_string("c")};
+    Root vec1{array_conj(*EMPTY_VECTOR, *a)};
+    Root vec2{array_conj(*vec1, *b)};
+    Root vec3{array_conj(*vec2, *c)};
+    Root pvec2{array_pop(*vec3)};
+    Root pvec1{array_pop(*pvec2)};
+    Root pvec0{array_pop(*pvec1)};
+
+    EXPECT_EQ_VALS(*vec2, *pvec2);
+    EXPECT_EQ_VALS(*vec1, *pvec1);
+    EXPECT_EQ_REFS(*EMPTY_VECTOR, *pvec0);
+
+    try
+    {
+        Root empty{create_array(nullptr, 0)};
+        array_pop(*empty);
+        FAIL() << "array_pop should fail for an empty array";
+    }
+    catch (Exception const& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_REFS(*type::IllegalState, get_value_type(*e));
+    }
+}
+
 struct transient_array_test : Test
 {
     transient_array_test() : Test("cleo.transient-array.test") { }

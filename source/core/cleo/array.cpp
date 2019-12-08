@@ -43,6 +43,23 @@ Force array_conj(Value v, Value e)
     return create_array(&new_elems.front(), new_elems.size());
 }
 
+Force array_pop(Value v)
+{
+    auto size = get_array_size(v);
+    if (size == 0)
+    {
+        Root msg{create_string("Can't pop an empty array")};
+        throw_exception(new_illegal_state(*msg));
+    }
+    if (size == 1)
+        return *EMPTY_VECTOR;
+    std::vector<Value> popped;
+    popped.reserve(size - 1);
+    for (decltype(size) i = 0; i < (size - 1); ++i)
+        popped.push_back(get_array_elem(v, i));
+    return create_array(popped.data(), popped.size());
+}
+
 Force array_hash(Value v)
 {
     std::uint64_t h = 0;

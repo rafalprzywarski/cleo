@@ -145,8 +145,6 @@ const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 const Value EVAL = create_symbol("cleo.core", "eval");
 const Value SHOULD_RECOMPILE = create_symbol("cleo.core", "should-recompile");
-const Value PEEK = create_symbol("cleo.core", "peek");
-const Value VAR_NAME = create_symbol("cleo.core", "var-name");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -399,6 +397,9 @@ const Value STR_STARTS_WITH = create_symbol("cleo.core", "str-starts-with?");
 const Value SORT_E = create_symbol("cleo.core", "sort!");
 const Value DERIVE = create_symbol("cleo.core", "derive");
 const Value GET_TYPE_FIELD_INDEX = create_symbol("cleo.core", "get-type-field-index");
+const Value PEEK = create_symbol("cleo.core", "peek");
+const Value POP = create_symbol("cleo.core", "pop");
+const Value VAR_NAME = create_symbol("cleo.core", "var-name");
 
 const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
 const Value FIRST_ARG = create_symbol("first-arg");
@@ -1605,6 +1606,7 @@ struct Initialize
         define_multimethod(FIRST, *first_type, undefined);
         define_multimethod(NEXT, *first_type, undefined);
         define_multimethod(PEEK, *first_type, undefined);
+        define_multimethod(POP, *first_type, undefined);
 
         f = create_native_function1<nil_seq, &SEQ>();
         define_method(SEQ, nil, *f);
@@ -1622,6 +1624,8 @@ struct Initialize
         define_method(NEXT, *type::List, *f);
         f = create_native_function1<get_list_first, &PEEK>();
         define_method(PEEK, *type::List, *f);
+        f = create_native_function1<get_list_next, &POP>();
+        define_method(POP, *type::List, *f);
 
         derive(*type::Cons, *type::Sequence);
         f = create_native_function1<identity, &SEQ>();
@@ -1648,6 +1652,8 @@ struct Initialize
         define_method(NEXT, *type::ArraySeq, *f);
         f = create_native_function1<array_peek, &PEEK>();
         define_method(PEEK, *type::Array, *f);
+        f = create_native_function1<array_pop, &POP>();
+        define_method(POP, *type::Array, *f);
 
         f = create_native_function1<transient_array_peek, &PEEK>();
         define_method(PEEK, *type::TransientArray, *f);

@@ -12,6 +12,7 @@ Force array_seq(Value v);
 Value get_array_seq_first(Value s);
 Force get_array_seq_next(Value s);
 Force array_conj(Value v, Value e);
+Force array_pop(Value v);
 Force array_hash(Value v);
 
 Force transient_array(Value other);
