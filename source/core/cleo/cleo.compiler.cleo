@@ -248,7 +248,7 @@
         form (next form)]
     (let [scope (reduce add-local scope params)
           scope (assoc scope :recur-size (count params))
-          params (vec (map (fn [p] {:name p, :index ((:indexed-locals scope) p)}) params))
+          params (mapv (fn [p] {:name p, :index ((:indexed-locals scope) p)}) params)
           ast {:params params
                :expr (parse-form scope (first form))}]
       (when (next form)
@@ -282,7 +282,7 @@
         scope (if name (add-local scope name) scope)
         form (if (symbol? name) (next form) form)
         bodies (if (and form (not (seq? (first form)))) (list form) form)
-        bodies (vec (map (fn [body] (parse-fn-body scope body)) bodies))]
+        bodies (mapv (fn [body] (parse-fn-body scope body)) bodies)]
     (validate-overloads bodies)
     (let [ast {:tag :fn
                :bodies bodies}
@@ -301,14 +301,14 @@
     (when (not= (count form) (:recur-size scope))
       (fail "Mismatched argument count to recur, expected " (:recur-size scope) " args, got " (count form)))
     {:tag :recur
-     :args (vec (map (fn [x] (parse-form scope x)) form))}))
+     :args (mapv (fn [x] (parse-form scope x)) form)}))
 
 
 (defn- parse-call [scope form]
   (let [scope (no-recur scope)]
     {:tag :call,
      :fn (parse-form scope (first form))
-     :args (vec (map (fn [x] (parse-form scope x)) (next form)))}))
+     :args (mapv (fn [x] (parse-form scope x)) (next form))}))
 
 
 (defn- parse-seq [scope form]
