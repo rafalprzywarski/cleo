@@ -237,6 +237,7 @@ Force create_static_object(Value type, Value elem0, Value elem1);
 Force create_static_object(Value type, Int64 elem0, Value elem1, Value elem2);
 Force create_static_object(Value type, Value elem0, Value elem1, Int64 elem2);
 Force create_static_object(Value type, Value elem0, Value elem1, Int64 elem2, Value elem3);
+Force create_static_object(Value type, Value elem0, Value elem1, Value elem2, Value elem3, Value elem4);
 Force create_static_object(Value type, Value elem0, Int64 elem1);
 Force create_object0(Value type);
 Force create_object1(Value type, Value elem);

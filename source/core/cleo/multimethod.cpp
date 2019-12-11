@@ -14,18 +14,20 @@ namespace cleo
 
 Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal)
 {
-    Root multi{create_object(*type::Multimethod, &name, 1)};
-    define(name, *multi);
-    auto& desc = multimethods[name];
-    desc.dispatchFn = dispatchFn;
-    desc.defaultDispatchVal = defaultDispatchVal;
-    return *multi;
+    Root multi{create_static_object(*type::Multimethod, name, dispatchFn, defaultDispatchVal, nil, nil)};
+    return define(name, *multi);
 }
 
 void define_method(Value name, Value dispatchVal, Value fn)
 {
-    multimethods[name].fns[dispatchVal] = fn;
-    multimethods[name].memoized_fns = {};
+    auto var = get_var(name);
+    auto m = get_var_root_value(var);
+    auto dispatch_fn = get_static_object_element(m, 1);
+    auto default_dispatch_val = get_static_object_element(m, 2);
+    Root fns{get_static_object_element(m, 3)};
+    fns = map_assoc(*fns ? *fns : *EMPTY_MAP, dispatchVal, fn);
+    Root new_m{create_static_object(*type::Multimethod, name, dispatch_fn, default_dispatch_val, *fns, nil)};
+    set_var_root_value(var, *new_m);
 }
 
 void derive(Value tag, Value parent)
@@ -70,43 +72,51 @@ Value isa(Value child, Value parent)
         is_ancestor(child, parent)) ? TRUE : nil;
 }
 
-void validate_no_ambiguity(const Multimethod& multimethod, Value dispatchVal, Value selected)
+void validate_no_ambiguity(Value multimethod, Value dispatchVal, Value selected)
 {
-    for (auto& fn : multimethod.fns)
-        if (isa(dispatchVal, fn.first) && !isa(selected, fn.first))
+    Value fns = get_static_object_element(multimethod, 3);
+    for (Root s{map_seq(fns)}; *s; s = map_seq_next(*s))
+    {
+        auto type = get_array_elem(map_seq_first(*s), 0);
+        if (isa(dispatchVal, type) && !isa(selected, type))
         {
             Root msg{create_string("ambiguous multimethod call")};
             throw_exception(new_illegal_argument(*msg));
         }
-}
-
-Value get_method(const Multimethod& multimethod, Value dispatchVal)
-{
-    auto memoized = multimethod.memoized_fns.find(dispatchVal);
-    if (memoized != end(multimethod.memoized_fns))
-        return memoized->second;
-    std::pair<Value, Value> best{*SENTINEL, nil};
-    for (auto& fn : multimethod.fns)
-        if (isa(dispatchVal, fn.first) && (best.first.is(*SENTINEL) || isa(fn.first, best.first)))
-            best = fn;
-
-    validate_no_ambiguity(multimethod, dispatchVal, best.first);
-
-    if (best.first.is(*SENTINEL))
-    {
-        auto default_ = multimethod.fns.find(multimethod.defaultDispatchVal);
-        if (default_ != end(multimethod.fns))
-            best.second = default_->second;
     }
-    multimethod.memoized_fns[dispatchVal] = best.second;
-    return best.second;
 }
 
-Value get_method(Value multi, Value dispatchVal)
+Value get_method(Value multimethod, Value dispatchVal)
 {
-    auto name = get_multimethod_name(multi);
-    auto& multimethod = multimethods.find(name)->second;
-    return get_method(multimethod, dispatchVal);
+    auto memoized_fns = get_static_object_element(multimethod, 4);
+    auto memoized = map_get(memoized_fns, dispatchVal);
+    if (memoized)
+        return memoized;
+    Value best_val = *SENTINEL;
+    Value best_fn = nil;
+    Value fns = get_static_object_element(multimethod, 3);
+    for (Root s{map_seq(fns)}; *s; s = map_seq_next(*s))
+    {
+        auto tf = map_seq_first(*s);
+        auto val = get_array_elem(tf, 0);
+        if (isa(dispatchVal, val) && (best_val.is(*SENTINEL) || isa(val, best_val)))
+        {
+            best_val = val;
+            best_fn = get_array_elem(tf, 1);
+        }
+    }
+
+    validate_no_ambiguity(multimethod, dispatchVal, best_val);
+
+    if (best_val.is(*SENTINEL))
+    {
+        auto default_ = map_get(fns, get_static_object_element(multimethod, 2));
+        if (default_)
+            best_fn = default_;
+    }
+    Root rmemoized_fns{map_assoc(memoized_fns, dispatchVal, best_fn)};
+    set_static_object_element(multimethod, 4, *rmemoized_fns);
+    return best_fn;
 }
 
 Value get_multimethod_name(Value multi)
@@ -118,13 +128,12 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     check_type("multimethod", multi, *type::Multimethod);
     auto name = get_static_object_element(multi, 0);
-    auto& multimethod = multimethods.find(name)->second;
     std::vector<Value> fcall;
     fcall.reserve(numArgs + 1);
-    fcall.push_back(multimethod.dispatchFn);
+    fcall.push_back(get_static_object_element(multi, 1));
     fcall.insert(fcall.end(), args, args + numArgs);
     Root dispatchVal{call(fcall.data(), fcall.size())};
-    auto fn = get_method(multimethod, *dispatchVal);
+    auto fn = get_method(multi, *dispatchVal);
     if (!fn)
     {
         auto mns = get_symbol_namespace(name);

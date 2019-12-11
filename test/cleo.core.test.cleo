@@ -156,8 +156,8 @@
 
 
 (deftest defmulti
-  (assert= '(def abc (cleo.core/multi* 'cleo.core.run/abc (fn* [x] x) :default)) (macroexpand '(defmulti abc (fn* [x] x))))
-  (assert= '(def abc (cleo.core/multi* 'cleo.core.run/abc (fn* [x] x) 7)) (macroexpand '(defmulti abc (fn* [x] x) :default 7))))
+  (assert= '(cleo.core/defmulti* 'cleo.core.run/abc (fn* [x] x) :default) (macroexpand '(defmulti abc (fn* [x] x))))
+  (assert= '(cleo.core/defmulti* 'cleo.core.run/abc (fn* [x] x) 7) (macroexpand '(defmulti abc (fn* [x] x) :default 7))))
 
 
 (deftest defmethod

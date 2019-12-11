@@ -49,10 +49,10 @@ TEST_F(multimethod_test, get_method_should_provide_the_method_for_a_dispatch_val
     define_method(name, *val2, *fn2);
     define_method(name, nil, *fnnil);
 
-    ASSERT_TRUE(fn1->is(get_method(multi, *val1)));
-    ASSERT_TRUE(fn2->is(get_method(multi, *val2)));
-    ASSERT_TRUE(fnnil->is(get_method(multi, nil)));
-    ASSERT_TRUE(get_method(multi, *val3).is_nil());
+    ASSERT_TRUE(fn1->is(get_method(get_var_value(multi), *val1)));
+    ASSERT_TRUE(fn2->is(get_method(get_var_value(multi), *val2)));
+    ASSERT_TRUE(fnnil->is(get_method(get_var_value(multi), nil)));
+    ASSERT_TRUE(get_method(get_var_value(multi), *val3).is_nil());
 }
 
 TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_defined_and_no_methods_are_matched)
@@ -71,13 +71,13 @@ TEST_F(multimethod_test, get_method_should_provide_the_default_method_if_its_def
     define_method(name, *val1, *fn1);
     define_method(name, nil, *fnnil);
 
-    ASSERT_TRUE(get_method(multi, *val2).is_nil());
+    ASSERT_TRUE(get_method(get_var_value(multi), *val2).is_nil());
 
     define_method(name, default_, *fn2);
 
-    ASSERT_TRUE(fn1->is(get_method(multi, *val1)));
-    ASSERT_TRUE(fn2->is(get_method(multi, *val2)));
-    ASSERT_TRUE(fnnil->is(get_method(multi, nil)));
+    ASSERT_TRUE(fn1->is(get_method(get_var_value(multi), *val1)));
+    ASSERT_TRUE(fn2->is(get_method(get_var_value(multi), *val2)));
+    ASSERT_TRUE(fnnil->is(get_method(get_var_value(multi), nil)));
 }
 
 TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
@@ -98,21 +98,21 @@ TEST_F(multimethod_test, get_method_should_follow_ancestors_to_find_matches)
     Value multi = define_multimethod(name, *dfn, nil);
     define_method(name, ha, *fn1);
 
-    EXPECT_TRUE(fn1->is(get_method(multi, ha)));
-    EXPECT_TRUE(fn1->is(get_method(multi, hb)));
-    EXPECT_TRUE(fn1->is(get_method(multi, hc)));
+    EXPECT_TRUE(fn1->is(get_method(get_var_value(multi), ha)));
+    EXPECT_TRUE(fn1->is(get_method(get_var_value(multi), hb)));
+    EXPECT_TRUE(fn1->is(get_method(get_var_value(multi), hc)));
 
     define_method(name, hb, *fn2);
 
-    EXPECT_TRUE(fn1->is(get_method(multi, ha)));
-    EXPECT_TRUE(fn2->is(get_method(multi, hb)));
-    EXPECT_TRUE(fn2->is(get_method(multi, hc)));
+    EXPECT_TRUE(fn1->is(get_method(get_var_value(multi), ha)));
+    EXPECT_TRUE(fn2->is(get_method(get_var_value(multi), hb)));
+    EXPECT_TRUE(fn2->is(get_method(get_var_value(multi), hc)));
 
     define_method(name, hc, *fn3);
 
-    EXPECT_TRUE(fn1->is(get_method(multi, ha)));
-    EXPECT_TRUE(fn2->is(get_method(multi, hb)));
-    EXPECT_TRUE(fn3->is(get_method(multi, hc)));
+    EXPECT_TRUE(fn1->is(get_method(get_var_value(multi), ha)));
+    EXPECT_TRUE(fn2->is(get_method(get_var_value(multi), hb)));
+    EXPECT_TRUE(fn3->is(get_method(get_var_value(multi), hc)));
 }
 
 TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_dispatch_value)
@@ -135,7 +135,7 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
 
     try
     {
-        get_method(multi, c);
+        get_method(get_var_value(multi), c);
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -225,11 +225,11 @@ TEST_F(multimethod_test, get_method_should_check_for_ambiguity_after_selecting_t
         define_method(name, rchild, *fn3);
         define_method(name, gchild, *fn4);
 
-        EXPECT_TRUE(fn1->is(get_method(multi, parent)));
-        EXPECT_TRUE(fn2->is(get_method(multi, lchild)));
-        EXPECT_TRUE(fn3->is(get_method(multi, rchild)));
-        EXPECT_TRUE(fn4->is(get_method(multi, gchild)));
-        EXPECT_TRUE(fn4->is(get_method(multi, ggchild)));
+        EXPECT_TRUE(fn1->is(get_method(get_var_value(multi), parent)));
+        EXPECT_TRUE(fn2->is(get_method(get_var_value(multi), lchild)));
+        EXPECT_TRUE(fn3->is(get_method(get_var_value(multi), rchild)));
+        EXPECT_TRUE(fn4->is(get_method(get_var_value(multi), gchild)));
+        EXPECT_TRUE(fn4->is(get_method(get_var_value(multi), ggchild)));
     }
 }
 

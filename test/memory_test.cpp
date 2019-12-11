@@ -262,37 +262,6 @@ TEST_F(memory_test, should_trace_vars)
     ASSERT_EQ(num_allocations_before, allocations.size());
 }
 
-TEST_F(memory_test, should_trace_multimethods)
-{
-    Root name{create_symbol("cleo.memory.test", "mm1")};
-    Root fn{create_native_function([](const Value *, std::uint8_t){ return force(nil); })};
-    Root fn1{create_native_function([](const Value *, std::uint8_t){ return force(nil); })};
-    Root def_val{create_string("cleo.memory.test/mm_def_val")};
-    Root val1{create_string("cleo.memory.test/mm_val1")};
-
-    define(*name, nil);
-    gc();
-
-    auto before_ns = allocations.size();
-    define(*name, nil);
-    auto after_ns = allocations.size();
-    gc();
-
-    auto mm = define_multimethod(*name, *fn, *def_val);
-    define_method(*name, *val1, *fn1);
-    get_method(mm, *val1);
-    name = nil;
-    fn = nil;
-    fn1 = nil;
-    def_val = nil;
-    val1 = nil;
-
-    auto num_allocations = allocations.size();
-
-    gc();
-    ASSERT_EQ(num_allocations - after_ns + before_ns, allocations.size());
-}
-
 TEST_F(memory_test, should_trace_global_hierarchy)
 {
     Root s1{create_string("cleo.memory.test/string1")};

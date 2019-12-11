@@ -172,6 +172,42 @@ Force map_merge(Value m1, Value m2)
     return call_multimethod2(*rt::merge, m1, m2);
 }
 
+Force map_seq(Value m)
+{
+    if (!m)
+        return nil;
+    auto type = get_value_type(m);
+    if (type.is(*type::PersistentHashMap))
+        return persistent_hash_map_seq(m);
+    if (type.is(*type::ArrayMap))
+        return array_map_seq(m);
+    throw_illegal_argument("invalid map type: " + to_string(type));
+}
+
+Value map_seq_first(Value s)
+{
+    if (!s)
+        return nil;
+    auto type = get_value_type(s);
+    if (type.is(*type::PersistentHashMapSeq))
+        return get_persistent_hash_map_seq_first(s);
+    if (type.is(*type::ArrayMapSeq))
+        return get_array_map_seq_first(s);
+    throw_illegal_argument("invalid map seq type: " + to_string(type));
+}
+
+Force map_seq_next(Value s)
+{
+    if (!s)
+        return nil;
+    auto type = get_value_type(s);
+    if (type.is(*type::PersistentHashMapSeq))
+        return get_persistent_hash_map_seq_next(s);
+    if (type.is(*type::ArrayMapSeq))
+        return get_array_map_seq_next(s);
+    throw_illegal_argument("invalid map seq type: " + to_string(type));
+}
+
 Value namespace_symbol(Value sym)
 {
     check_type("symbol", sym, *type::Symbol);

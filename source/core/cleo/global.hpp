@@ -179,15 +179,6 @@ struct Hierachy
     std::unordered_map<Value, std::unordered_set<Value, StdHash>, StdHash> ancestors;
 };
 
-struct Multimethod
-{
-    Value dispatchFn;
-    Value defaultDispatchVal;
-    std::unordered_map<Value, Value, StdHash> fns;
-    mutable std::unordered_map<Value, Value, StdHash> memoized_fns;
-};
-
-extern std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimethods;
 extern Hierachy global_hierarchy;
 
 extern Root current_exception;

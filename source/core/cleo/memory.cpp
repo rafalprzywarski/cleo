@@ -109,24 +109,6 @@ void mark_vars()
         mark_value(var.second);
 }
 
-void mark_multimethods()
-{
-    for (auto& mm : multimethods)
-    {
-        mark_value(mm.second.dispatchFn);
-        mark_value(mm.second.defaultDispatchVal);
-
-        for (auto& fn : mm.second.fns)
-        {
-            mark_value(fn.first);
-            mark_value(fn.second);
-        }
-
-        for (auto& fn : mm.second.memoized_fns)
-            mark_value(fn.first);
-    }
-}
-
 void mark_global_hierarchy()
 {
     for (auto& entry : global_hierarchy.ancestors)
@@ -214,7 +196,6 @@ void gc()
     mark_symbols();
     mark_keyword();
     mark_vars();
-    mark_multimethods();
     mark_global_hierarchy();
     mark_extra_roots();
     mark_stack();

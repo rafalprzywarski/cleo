@@ -252,7 +252,7 @@
 (defmacro defmulti [name dispatch-fn & options]
   (let* [options (apply hash-map options)
          default (options :default :default)]
-    `(def ~name (multi* '~(symbol (cleo.core/name (cleo.core/ns-name *ns*)) (cleo.core/name name)) ~dispatch-fn ~default))))
+    `(defmulti* '~(symbol (cleo.core/name (cleo.core/ns-name *ns*)) (cleo.core/name name)) ~dispatch-fn ~default)))
 
 
 (defmacro defmethod [multi dispatch-val & fn-tail]

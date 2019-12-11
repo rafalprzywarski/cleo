@@ -47,7 +47,6 @@ std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords
 
 std::unordered_map<Value, Value, std::hash<Value>, StdIs> vars;
 
-std::unordered_map<Value, Multimethod, std::hash<Value>, StdIs> multimethods;
 Hierachy global_hierarchy;
 
 Root current_exception;
@@ -237,7 +236,7 @@ const ConstRoot ArrayMap{create_dynamic_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_static_type("cleo.core", "ArrayMapSeq", {"first", "map", {"index", Int64}})};
 const ConstRoot ArraySet{create_dynamic_type("cleo.core", "ArraySet")};
 const ConstRoot ArraySetSeq{create_static_type("cleo.core", "ArraySetSeq", {"set", {"index", Int64}})};
-const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"name"})};
+const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"name", "dispatch_fn", "default_dispatch_val", "fns", "memoized_fns"})};
 const ConstRoot Seqable{create_basic_type("cleo.core", "Seqable")};
 const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};
 const ConstRoot Callable{create_basic_type("cleo.core", "Callable")};
@@ -376,7 +375,7 @@ const Value REM = create_symbol("cleo.core", "rem");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
 const Value GET_TIME = create_symbol("cleo.core", "get-time");
 const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
-const Value MULTI = create_symbol("cleo.core", "multi*");
+const Value DEFMULTI = create_symbol("cleo.core", "defmulti*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 const Value DISASM = create_symbol("cleo.core", "disasm*");
 const Value GET_BYTECODE_FN_BODY = create_symbol("cleo.core", "get-bytecode-fn-body");
@@ -1088,7 +1087,7 @@ Force new_instance(const Value *args, std::uint8_t n)
     return create_object(type, args + 1, n - 1);
 }
 
-Value multi(Value name, Value dispatchFn, Value defaultDispatchVal)
+Value defmulti(Value name, Value dispatchFn, Value defaultDispatchVal)
 {
     check_type("name", name, *type::Symbol);
     return define_multimethod(name, dispatchFn, defaultDispatchVal);
@@ -2110,7 +2109,7 @@ struct Initialize
 
         define_method(PERSISTENT, *type::TransientArray, *rt::transient_array_persistent);
 
-        define_function(MULTI, create_native_function3<multi, &MULTI>());
+        define_function(DEFMULTI, create_native_function3<defmulti, &DEFMULTI>());
         define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());
 
         define_function(DISASM, create_native_function1<disasm, &DISASM>());

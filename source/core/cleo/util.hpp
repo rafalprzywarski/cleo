@@ -225,6 +225,9 @@ Force map_assoc(Value m, Value k, Value v);
 Value map_get(Value m, Value k);
 Int64 map_count(Value m);
 Force map_merge(Value m1, Value m2);
+Force map_seq(Value m);
+Value map_seq_first(Value s);
+Force map_seq_next(Value s);
 
 Value namespace_symbol(Value sym);
 Value name_symbol(Value sym);
