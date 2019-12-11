@@ -98,10 +98,7 @@ void validate_no_ambiguity(Value multimethod, Value dispatchVal, Value selected)
     {
         auto type = get_array_elem(map_seq_first(*s), 0);
         if (isa(dispatchVal, type) && !isa(selected, type))
-        {
-            Root msg{create_string("ambiguous multimethod call")};
-            throw_exception(new_illegal_argument(*msg));
-        }
+            throw_illegal_argument("ambiguous multimethod call");
     }
 }
 
@@ -148,8 +145,6 @@ Value get_multimethod_name(Value multi)
     return get_static_object_element(multi, 5);
 }
 
-std::array<unsigned, 256> call_histogram{{}};
-
 Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     check_type("multimethod", multi, *type::Multimethod);
@@ -163,20 +158,7 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
     Root dispatchVal{call(fcall, numArgs + 1)};
     auto fn = get_method(multi, *dispatchVal);
     if (!fn)
-    {
-        auto name = get_multimethod_name(multi);
-        auto mns = get_symbol_namespace(name);
-        auto mname = get_symbol_name(name);
-        std::string sname;
-        if (mns)
-        {
-            sname.assign(get_string_ptr(mns), get_string_size(mns));
-            sname += '/';
-        }
-        sname.append(get_string_ptr(mname), get_string_size(mname));
-        Root msg{create_string("multimethod not matched: " + sname)};
-        throw_exception(new_illegal_argument(*msg));
-    }
+        throw_illegal_argument("multimethod not matched: " + to_string(get_multimethod_name(multi)));
     fcall[0] = fn;
     return call(fcall, numArgs + 1);
 }
