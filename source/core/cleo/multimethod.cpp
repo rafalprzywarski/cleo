@@ -124,15 +124,20 @@ Value get_multimethod_name(Value multi)
     return get_static_object_element(multi, 0);
 }
 
+std::array<unsigned, 256> call_histogram{{}};
+
 Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
 {
     check_type("multimethod", multi, *type::Multimethod);
     auto name = get_static_object_element(multi, 0);
-    std::vector<Value> fcall;
-    fcall.reserve(numArgs + 1);
-    fcall.push_back(get_static_object_element(multi, 1));
-    fcall.insert(fcall.end(), args, args + numArgs);
-    Root dispatchVal{call(fcall.data(), fcall.size())};
+    std::vector<Value> vbuf;
+    std::array<Value, 4> abuf;
+    Value *fcall = (numArgs < abuf.size()) ?
+        abuf.data() :
+        (vbuf.resize(numArgs + 1), vbuf.data());
+    fcall[0] = get_static_object_element(multi, 1);
+    std::copy(args, args + numArgs, fcall + 1);
+    Root dispatchVal{call(fcall, numArgs + 1)};
     auto fn = get_method(multi, *dispatchVal);
     if (!fn)
     {
@@ -149,7 +154,7 @@ Force call_multimethod(Value multi, const Value *args, std::uint8_t numArgs)
         throw_exception(new_illegal_argument(*msg));
     }
     fcall[0] = fn;
-    return call(fcall.data(), fcall.size());
+    return call(fcall, numArgs + 1);
 }
 
 Force call_multimethod1(Value multi, Value arg)
