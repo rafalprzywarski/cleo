@@ -6,6 +6,7 @@ namespace cleo
 
 Value define_multimethod(Value name, Value dispatchFn, Value defaultDispatchVal);
 void define_method(Value name, Value dispatchVal, Value fn);
+void create_global_hierarchy();
 void derive(Value tag, Value parent);
 Value isa(Value child, Value parent);
 Value get_method(Value multi, Value dispatchVal);

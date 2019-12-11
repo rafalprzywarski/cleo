@@ -109,12 +109,6 @@ void mark_vars()
         mark_value(var.second);
 }
 
-void mark_global_hierarchy()
-{
-    for (auto& entry : global_hierarchy.ancestors)
-        mark_value(entry.first);
-}
-
 void mark_extra_roots()
 {
     for (auto val : extra_roots)
@@ -196,7 +190,6 @@ void gc()
     mark_symbols();
     mark_keyword();
     mark_vars();
-    mark_global_hierarchy();
     mark_extra_roots();
     mark_stack();
 

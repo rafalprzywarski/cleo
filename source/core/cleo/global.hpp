@@ -155,6 +155,7 @@ class StaticVar
 public:
     StaticVar(Value var) : var(var) { }
     Value operator*() const { return get_var_root_value(var); }
+    Value get_var() const { return var; }
 private:
     Value var;
 };
@@ -173,13 +174,6 @@ extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> s
 extern std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords;
 
 extern std::unordered_map<Value, Value, std::hash<Value>, StdIs> vars;
-
-struct Hierachy
-{
-    std::unordered_map<Value, std::unordered_set<Value, StdHash>, StdHash> ancestors;
-};
-
-extern Hierachy global_hierarchy;
 
 extern Root current_exception;
 
@@ -281,6 +275,7 @@ extern const Root TWO;
 extern const Root THREE;
 extern const Root SENTINEL;
 extern const Root RELOAD;
+extern const Value GLOBAL_HIERARCHY;
 
 extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 
@@ -306,6 +301,7 @@ extern const ConstRoot ArrayMap;
 extern const ConstRoot ArrayMapSeq;
 extern const ConstRoot ArraySet;
 extern const ConstRoot ArraySetSeq;
+extern const ConstRoot Hierarchy;
 extern const ConstRoot Multimethod;
 extern const ConstRoot Seqable;
 extern const ConstRoot Sequence;
@@ -382,6 +378,7 @@ extern const StaticVar merge;
 extern const StaticVar get_message;
 extern const StaticVar hash_obj;
 extern const StaticVar eval;
+extern const StaticVar global_hierarchy;
 
 }
 

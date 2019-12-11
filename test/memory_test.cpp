@@ -262,21 +262,6 @@ TEST_F(memory_test, should_trace_vars)
     ASSERT_EQ(num_allocations_before, allocations.size());
 }
 
-TEST_F(memory_test, should_trace_global_hierarchy)
-{
-    Root s1{create_string("cleo.memory.test/string1")};
-    Root s2{create_string("cleo.memory.test/string2")};
-
-    auto num_allocations = allocations.size();
-
-    derive(*s1, *s2);
-    s1 = nil;
-    s2 = nil;
-
-    gc();
-    ASSERT_EQ(num_allocations, allocations.size());
-}
-
 TEST_F(memory_test, should_trace_global_stack)
 {
     auto num_allocations = allocations.size();

@@ -8,6 +8,7 @@
 #include "util.hpp"
 #include "var.hpp"
 #include "eval.hpp"
+#include "array_set.hpp"
 
 namespace cleo
 {
@@ -30,19 +31,39 @@ void define_method(Value name, Value dispatchVal, Value fn)
     set_var_root_value(var, *new_m);
 }
 
+void create_global_hierarchy()
+{
+    Root h{create_static_object(*type::Hierarchy, *EMPTY_MAP)};
+    set_var_root_value(rt::global_hierarchy.get_var(), *h);
+}
+
 void derive(Value tag, Value parent)
 {
-    auto& h = global_hierarchy;
-    auto& parent_ancestors = h.ancestors[parent];
-    for (auto& a : h.ancestors)
-        if (a.second.count(tag))
+    auto h = *rt::global_hierarchy;
+    Root ancestors{get_static_object_element(h, 0)};
+    auto parent_ancestors = map_get(*ancestors, parent);
+    auto parent_ancestors_size = parent_ancestors ? get_array_set_size(parent_ancestors) : 0;
+    for (Root s{map_seq(*ancestors)}; *s; s = map_seq_next(*s))
+    {
+        auto entry = map_seq_first(*s);
+        Root entry_ancestors{get_array_elem(entry, 1)};
+        if (*entry_ancestors && array_set_contains(*entry_ancestors, tag))
         {
-            a.second.insert(parent);
-            a.second.insert(begin(parent_ancestors), end(parent_ancestors));
+            entry_ancestors = array_set_conj(*entry_ancestors, parent);
+            for (decltype(parent_ancestors_size) i = 0; i != parent_ancestors_size; ++i)
+                entry_ancestors = array_set_conj(*entry_ancestors, get_array_elem(parent_ancestors, i));
+            ancestors = map_assoc(*ancestors, get_array_elem(entry, 0), *entry_ancestors);
         }
-    auto& ancestors = h.ancestors[tag];
-    ancestors.insert(parent);
-    ancestors.insert(begin(parent_ancestors), end(parent_ancestors));
+    }
+    Root tag_ancestors{map_get(*ancestors, tag)};
+    if (tag_ancestors->is_nil())
+        tag_ancestors = *EMPTY_SET;
+    tag_ancestors = array_set_conj(*tag_ancestors, parent);
+    for (decltype(parent_ancestors_size) i = 0; i != parent_ancestors_size; ++i)
+        tag_ancestors = array_set_conj(*tag_ancestors, get_array_elem(parent_ancestors, i));
+        ancestors = map_assoc(*ancestors, tag, *tag_ancestors);
+    Root new_h{create_static_object(*type::Hierarchy, *ancestors)};
+    set_var_root_value(rt::global_hierarchy.get_var(), *new_h);
 }
 
 bool isa_vectors(Value child, Value parent)
@@ -58,10 +79,8 @@ bool isa_vectors(Value child, Value parent)
 
 bool is_ancestor(Value child, Value ancestor)
 {
-    auto ancestors = global_hierarchy.ancestors.find(child);
-    if (ancestors == end(global_hierarchy.ancestors))
-        return false;
-    return ancestors->second.count(ancestor) != 0;
+    auto ancestors = map_get(get_static_object_element(*rt::global_hierarchy, 0), child);
+    return ancestors && array_set_contains(ancestors, ancestor);
 }
 
 Value isa(Value child, Value parent)

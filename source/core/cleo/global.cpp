@@ -47,8 +47,6 @@ std::unordered_map<std::string, std::unordered_map<std::string, Value>> keywords
 
 std::unordered_map<Value, Value, std::hash<Value>, StdIs> vars;
 
-Hierachy global_hierarchy;
-
 Root current_exception;
 
 namespace prof
@@ -144,6 +142,7 @@ const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 const Value EVAL = create_symbol("cleo.core", "eval");
 const Value SHOULD_RECOMPILE = create_symbol("cleo.core", "should-recompile");
+const Value GLOBAL_HIERARCHY = create_symbol("cleo.core", "global-hierarchy");
 
 const Root ZERO{create_int64(0)};
 const Root ONE{create_int64(1)};
@@ -236,6 +235,7 @@ const ConstRoot ArrayMap{create_dynamic_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_static_type("cleo.core", "ArrayMapSeq", {"first", "map", {"index", Int64}})};
 const ConstRoot ArraySet{create_dynamic_type("cleo.core", "ArraySet")};
 const ConstRoot ArraySetSeq{create_static_type("cleo.core", "ArraySetSeq", {"set", {"index", Int64}})};
+const ConstRoot Hierarchy{create_static_type("cleo.core", "Hierarchy", {"ancestors"})};
 const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"name", "dispatch_fn", "default_dispatch_val", "fns", "memoized_fns"})};
 const ConstRoot Seqable{create_basic_type("cleo.core", "Seqable")};
 const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};
@@ -331,6 +331,7 @@ const StaticVar merge = define_var(MERGE, nil);
 const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
 const StaticVar eval = define_var(EVAL, nil);
+const StaticVar global_hierarchy = define_var(GLOBAL_HIERARCHY, nil);
 
 }
 
@@ -1469,6 +1470,8 @@ struct Initialize
         Root core_doc{create_string("The core Cleo library")};
         core_meta = map_assoc(*core_meta, create_keyword("doc"), *core_doc);
         define_ns(CLEO_CORE, *core_meta);
+
+        create_global_hierarchy();
 
         define_type(*type::Type);
         define_type(type::Int64);
