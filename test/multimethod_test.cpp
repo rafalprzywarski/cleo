@@ -127,11 +127,14 @@ TEST_F(multimethod_test, get_method_should_fail_when_multiple_methods_match_a_di
     fn2 = mk_fn();
 
     derive(c, a);
-    derive(c, b);
 
     Value multi = define_multimethod(name, *dfn, nil);
     define_method(name, a, *fn1);
     define_method(name, b, *fn2);
+
+    ASSERT_EQ_REFS(*fn1, get_method(get_var_value(multi), c));
+
+    derive(c, b);
 
     try
     {

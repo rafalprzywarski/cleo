@@ -236,7 +236,7 @@ const ConstRoot ArrayMapSeq{create_static_type("cleo.core", "ArrayMapSeq", {"fir
 const ConstRoot ArraySet{create_dynamic_type("cleo.core", "ArraySet")};
 const ConstRoot ArraySetSeq{create_static_type("cleo.core", "ArraySetSeq", {"set", {"index", Int64}})};
 const ConstRoot Hierarchy{create_static_type("cleo.core", "Hierarchy", {"ancestors"})};
-const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"name", "dispatch_fn", "default_dispatch_val", "fns", "memoized_fns"})};
+const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"dispatch_fn", "hierarchy", "memoized_fns", "fns", "default_dispatch_val", "name"})};
 const ConstRoot Seqable{create_basic_type("cleo.core", "Seqable")};
 const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};
 const ConstRoot Callable{create_basic_type("cleo.core", "Callable")};
@@ -1491,6 +1491,7 @@ struct Initialize
         define_type(*type::ArrayMapSeq);
         define_type(*type::ArraySet);
         define_type(*type::ArraySetSeq);
+        define_type(*type::Hierarchy);
         define_type(*type::Multimethod);
         define_type(*type::Seqable);
         define_type(*type::Sequence);
