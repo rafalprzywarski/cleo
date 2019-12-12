@@ -664,6 +664,12 @@ Value get_object_type_field_type(Value type, Int64 index)
     return (&get_ptr<ObjectType>(type)->firstField)[index].type;
 }
 
+Value get_object_type_field_name(Value type, Int64 index)
+{
+    assert(get_value_type(type).is(*type::Type));
+    return (&get_ptr<ObjectType>(type)->firstField)[index].name;
+}
+
 bool is_object_type_constructible(Value type)
 {
     assert(get_value_type(type).is(*type::Type));

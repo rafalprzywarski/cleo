@@ -268,6 +268,7 @@ inline Force create_static_object_type(const std::string& ns, const std::string&
 Value get_object_type_name(Value type);
 Int64 get_object_type_field_count(Value type);
 Value get_object_type_field_type(Value type, Int64 index);
+Value get_object_type_field_name(Value type, Int64 index);
 bool is_object_type_constructible(Value type);
 Int64 get_object_field_index(Value type, Value name);
 

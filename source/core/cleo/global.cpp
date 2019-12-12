@@ -257,7 +257,7 @@ const ConstRoot CallError{create_static_type("cleo.core", "CallError", {"msg"})}
 const ConstRoot SymbolNotFound{create_static_type("cleo.core", "SymbolNotFound", {"msg"})};
 const ConstRoot IllegalArgument{create_static_type("cleo.core", "IllegalArgument", {"msg"})};
 const ConstRoot IllegalState{create_static_type("cleo.core", "IllegalState", {"msg"})};
-const ConstRoot UnexpectedEndOfInput{create_static_type("cleo.core", "UnexpectedEndOfInput", {{"line", Int64}, {"column", Int64}})};
+const ConstRoot UnexpectedEndOfInput{create_static_type("cleo.core", "UnexpectedEndOfInput", {"msg", {"line", Int64}, {"column", Int64}})};
 const ConstRoot FileNotFound{create_static_type("cleo.core", "FileNotFound", {"msg"})};
 const ConstRoot ArithmeticException{create_static_type("cleo.core", "ArithmeticException", {"msg"})};
 const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBounds", {})};

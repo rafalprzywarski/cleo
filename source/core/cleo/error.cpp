@@ -11,7 +11,9 @@ const char *Exception::what() const noexcept
         return "nil";
     try
     {
-        Root text{pr_str(*current_exception)};
+        Root text{get_value_type(*current_exception).is(*type::IllegalArgument) ?
+                  illegal_argument_message(*current_exception) :
+                  pr_str(*current_exception)};
         buffer = std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text));
     }
     catch (...)
@@ -61,22 +63,23 @@ Int64 read_error_column(Value e)
 
 Force new_unexpected_end_of_input(Value line, Value column)
 {
-    return create_object2(*type::UnexpectedEndOfInput, line, column);
+    Root msg{create_string("unexpected end of input")};
+    return create_object3(*type::UnexpectedEndOfInput, *msg, line, column);
 }
 
-Force unexpected_end_of_input_message(Value)
+Force unexpected_end_of_input_message(Value e)
 {
-    return create_string("unexpected end of input");
+    return get_static_object_element(e, 0);
 }
 
 Int64 unexpected_end_of_input_line(Value e)
 {
-    return get_static_object_int(e, 0);
+    return get_static_object_int(e, 1);
 }
 
 Int64 unexpected_end_of_input_column(Value e)
 {
-    return get_static_object_int(e, 1);
+    return get_static_object_int(e, 2);
 }
 
 Force new_call_error(Value msg)

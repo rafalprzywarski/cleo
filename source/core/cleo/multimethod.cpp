@@ -37,8 +37,39 @@ void create_global_hierarchy()
     set_var_root_value(rt::global_hierarchy.get_var(), *h);
 }
 
+namespace
+{
+
+void validate_inheritance(Value tag, Value parent)
+{
+    if (get_value_tag(parent) != tag::OBJECT_TYPE)
+        return;
+    if (get_value_tag(tag) != tag::OBJECT_TYPE)
+        throw_illegal_argument("Can't derive a non-type: " + to_string(tag) + " from a type: " + to_string(parent));
+    if (tag.is(parent))
+        throw_illegal_argument("Can't derive from itself: " + to_string(tag));
+    if (isa(parent, tag))
+        throw_illegal_argument("Can't derive an ancestor: " + to_string(tag) + " from a derived type: " + to_string(parent));
+
+    auto tag_field_count = get_object_type_field_count(tag);
+    auto parent_field_count = get_object_type_field_count(parent);
+    if (parent_field_count > tag_field_count)
+        throw_illegal_argument("Parent type: " + to_string(parent) + " is incompatible with: " + to_string(tag));
+
+    for (decltype(parent_field_count) i = 0; i != parent_field_count; ++i)
+        if (!get_object_type_field_type(tag, i).is(get_object_type_field_type(parent, i)) ||
+            !get_object_type_field_name(tag, i).is(get_object_type_field_name(parent, i)))
+            throw_illegal_argument("Parent type: " + to_string(parent) + " is incompatible with: " + to_string(tag));
+
+    if (is_object_type_dynamic(parent) && !is_object_type_dynamic(tag))
+        throw_illegal_argument("Can't derive a static type: " + to_string(tag) + " from a dynamic type: " + to_string(parent));
+}
+
+}
+
 void derive(Value tag, Value parent)
 {
+    validate_inheritance(tag, parent);
     auto h = *rt::global_hierarchy;
     Root ancestors{get_static_object_element(h, 0)};
     auto parent_ancestors = map_get(*ancestors, parent);

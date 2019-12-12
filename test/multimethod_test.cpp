@@ -253,6 +253,23 @@ struct hierarchy_test : multimethod_test
     Value p2 = keyword("p2");
     Value p3 = keyword("p3");
     Value gp1 = keyword("gp1");
+
+    void assert_derive_fails(const std::string& msg,  Value type, Value parent)
+    {
+        try
+        {
+            derive(type, parent);
+            FAIL() << "expected an exception for " << to_string(type) << " and " << to_string(parent) << " with message: " << msg;
+        }
+        catch (const Exception& )
+        {
+            Root e{catch_exception()};
+            ASSERT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
+            Root emsg{illegal_argument_message(*e)};
+            ASSERT_EQ_REFS(*type::UTF8String, get_value_type(*emsg));
+            ASSERT_EQ(msg, std::string(get_string_ptr(*emsg), get_string_len(*emsg)));
+        }
+    }
 };
 
 TEST_F(hierarchy_test, isa_should_be_true_for_equal_values)
@@ -365,6 +382,52 @@ TEST_F(hierarchy_test, isa_should_treat_arrays_as_tuples)
     EXPECT_FALSE(bool(isa(*val1, *val2)));
     val2 = array(gp1, p3);
     EXPECT_FALSE(bool(isa(*val1, *val2)));
+}
+
+TEST_F(hierarchy_test, derive_should_fail_when_one_of_the_types_is_dynamic)
+{
+    std::array<Value, 3> abc_names{{create_symbol("a"), create_symbol("b"), create_symbol("c")}};
+    std::array<Value, 3> abd_names{{create_symbol("a"), create_symbol("b"), create_symbol("d")}};
+    std::array<Value, 3> abc_types{{type::Int64, *type::UTF8String, nil}};
+    std::array<Value, 3> abc_types2{{type::Int64, *type::UTF8String, *type::Float64}};
+    std::array<Value, 3> ab_types2{{type::Int64, *type::Float64}};
+    Root EmptyStatic{create_static_object_type("hierarchy.test", "EmptyStatic", nullptr, nullptr, 0)};
+    Root EmptyStatic2{create_static_object_type("hierarchy.test", "EmptyStatic2", nullptr, nullptr, 0)};
+    Root AB{create_static_object_type("hierarchy.test", "AB", abc_names.data(), abc_types.data(), 2)};
+    Root AB2{create_static_object_type("hierarchy.test", "AB2", abc_names.data(), abc_types.data(), 2)};
+    Root ABC{create_static_object_type("hierarchy.test", "ABC", abc_names.data(), abc_types.data(), abc_names.size())};
+    Root ABC2{create_static_object_type("hierarchy.test", "ABC2", abc_names.data(), abc_types.data(), abc_names.size())};
+    Root ABC3{create_static_object_type("hierarchy.test", "ABC3", abc_names.data(), abc_types.data(), abc_names.size())};
+    Root ABC_diff_type{create_static_object_type("hierarchy.test", "ABC-diff-type", abc_names.data(), abc_types2.data(), abc_names.size())};
+    Root AB_diff_type{create_static_object_type("hierarchy.test", "AB-diff-type", abc_names.data(), ab_types2.data(), ab_types2.size())};
+    Root ABD{create_static_object_type("hierarchy.test", "ABD", abd_names.data(), abc_types.data(), abd_names.size())};
+    Root Dynamic{create_dynamic_object_type("hierarchy.test", "Dynamic")};
+    Root Dynamic2{create_dynamic_object_type("hierarchy.test", "Dynamic2")};
+    Value keyword1 = create_keyword("hierarchy.test", "keyword1");
+    Value keyword2 = create_keyword("hierarchy.test", "keyword2");
+
+    ASSERT_NO_THROW(derive(*ABC, *AB));
+    ASSERT_NO_THROW(derive(*AB, *EmptyStatic));
+    ASSERT_NO_THROW(derive(*ABC, keyword1));
+
+    assert_derive_fails("Can't derive a non-type: :hierarchy.test/keyword2 from a type: hierarchy.test/ABC2", keyword2, *ABC2);
+
+    assert_derive_fails("Can't derive from itself: hierarchy.test/ABC2", *ABC2, *ABC2);
+
+    assert_derive_fails("Can't derive an ancestor: hierarchy.test/AB from a derived type: hierarchy.test/ABC", *AB, *ABC);
+
+    assert_derive_fails("Parent type: hierarchy.test/AB-diff-type is incompatible with: hierarchy.test/ABC2", *ABC2, *AB_diff_type);
+    assert_derive_fails("Parent type: hierarchy.test/ABC-diff-type is incompatible with: hierarchy.test/ABC2", *ABC2, *ABC_diff_type);
+    assert_derive_fails("Parent type: hierarchy.test/ABD is incompatible with: hierarchy.test/ABC2", *ABC2, *ABD);
+    assert_derive_fails("Parent type: hierarchy.test/ABC2 is incompatible with: hierarchy.test/ABD", *ABD, *ABC2);
+    assert_derive_fails("Parent type: hierarchy.test/ABC2 is incompatible with: hierarchy.test/AB2", *AB2, *ABC2);
+    assert_derive_fails("Parent type: hierarchy.test/ABC2 is incompatible with: hierarchy.test/Dynamic", *Dynamic, *ABC2);
+
+    assert_derive_fails("Can't derive a static type: hierarchy.test/ABC2 from a dynamic type: hierarchy.test/Dynamic", *ABC2, *Dynamic);
+
+    ASSERT_NO_THROW(derive(*Dynamic, *EmptyStatic2));
+    ASSERT_NO_THROW(derive(*ABC2, *ABC3));
+    ASSERT_NO_THROW(derive(*Dynamic2, *Dynamic));
 }
 
 }
