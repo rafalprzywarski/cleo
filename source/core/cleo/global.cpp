@@ -100,8 +100,6 @@ const Value IDENTICAL = create_symbol("cleo.core", "identical?");
 const Value ISA = create_symbol("cleo.core", "isa?");
 const Value SYMBOL_Q = create_symbol("cleo.core", "symbol?");
 const Value KEYWORD_Q = create_symbol("cleo.core", "keyword?");
-const Value VECTOR_Q = create_symbol("cleo.core", "vector?");
-const Value SET_Q = create_symbol("cleo.core", "set?");
 const Value STRING_Q = create_symbol("cleo.core", "string?");
 const Value LT = create_symbol("cleo.core", "<");
 const Value EQ = create_symbol("cleo.core", "=");
@@ -229,23 +227,25 @@ const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "me
 const ConstRoot List{create_static_type("cleo.core", "List", {{"size", Int64}, "first", "next"})};
 const ConstRoot Cons{create_static_type("cleo.core", "Cons", {"first", "next"})};
 const ConstRoot LazySeq{create_static_type("cleo.core", "LazySeq", {"fn", "seq"})};
+const ConstRoot PersistentVector{create_protocol("cleo.core", "PersistentVector")};
 const ConstRoot Array{create_dynamic_type("cleo.core", "Array")};
 const ConstRoot TransientArray{create_dynamic_type("cleo.core", "TransientArray")};
 const ConstRoot ArraySeq{create_static_type("cleo.core", "ArraySeq", {"array", {"index", Int64}})};
 const ConstRoot ArrayMap{create_dynamic_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_static_type("cleo.core", "ArrayMapSeq", {"first", "map", {"index", Int64}})};
+const ConstRoot PersistentSet{create_protocol("cleo.core", "PersistentSet")};
 const ConstRoot ArraySet{create_dynamic_type("cleo.core", "ArraySet")};
 const ConstRoot ArraySetSeq{create_static_type("cleo.core", "ArraySetSeq", {"set", {"index", Int64}})};
 const ConstRoot Hierarchy{create_static_type("cleo.core", "Hierarchy", {"ancestors"})};
 const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"dispatch_fn", "hierarchy", "memoized_fns", "fns", "default_dispatch_val", "name"})};
 const ConstRoot Seqable{create_protocol("cleo.core", "Seqable")};
-const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};
-const ConstRoot Callable{create_basic_type("cleo.core", "Callable")};
+const ConstRoot Sequence{create_protocol("cleo.core", "Sequence")};
+const ConstRoot Callable{create_protocol("cleo.core", "Callable")};
 const ConstRoot BytecodeFn{create_dynamic_type("cleo.core", "BytecodeFn")};
 const ConstRoot BytecodeFnBody{create_dynamic_type("cleo.core", "BytecodeFnBody")};
 const ConstRoot BytecodeFnExceptionTable{create_dynamic_type("cleo.core", "BytecodeFnExceptionTable")};
 const ConstRoot Atom{create_static_type("cleo.core", "Atom", {"value"})};
-const ConstRoot PersistentMap{create_basic_type("cleo.core", "PersistentMap")};
+const ConstRoot PersistentMap{create_protocol("cleo.core", "PersistentMap")};
 const ConstRoot PersistentHashMap{create_dynamic_type("cleo.core", "PersistentHashMap")};
 const ConstRoot PersistentHashMapSeq{create_static_type("cleo.core", "PersistentHashMapSeq", {"first", "node", {"index", Int64}, "parent"})};
 const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "PersistentHashMapSeqParent", {{"index", Int64}, "node", "parent"})};
@@ -363,7 +363,6 @@ const Value BITTEST = create_symbol("cleo.core", "bit-test");
 const Value BITSHIFTLEFT = create_symbol("cleo.core", "bit-shift-left");
 const Value BITSHIFTRIGHT = create_symbol("cleo.core", "bit-shift-right");
 const Value UNSIGNEDBITSHIFTRIGHT = create_symbol("cleo.core", "unsigned-bit-shift-right");
-const Value MAP_Q = create_symbol("cleo.core", "map?");
 const Value KEYWORD = create_symbol("cleo.core", "keyword");
 const Value NAME = create_symbol("cleo.core", "name");
 const Value NAMESPACE = create_symbol("cleo.core", "namespace");
@@ -747,24 +746,9 @@ Value keyword_q(Value x)
     return get_value_tag(x) == tag::KEYWORD ? TRUE : nil;
 }
 
-Value vector_q(Value x)
-{
-    return get_value_type(x) == *type::Array ? TRUE : nil;
-}
-
-Value set_q(Value x)
-{
-    return get_value_type(x) == *type::ArraySet ? TRUE : nil;
-}
-
 Value string_q(Value x)
 {
     return get_value_tag(x) == tag::UTF8STRING ? TRUE : nil;
-}
-
-Value map_q(Value x)
-{
-    return is_map(x) ? TRUE : nil;
 }
 
 Force list(const Value *args, std::uint8_t n)
@@ -1499,22 +1483,26 @@ struct Initialize
         define_type(*type::List);
         define_type(*type::Cons);
         define_type(*type::LazySeq);
+        define_protocol(*type::PersistentVector);
         define_type(*type::Array);
+        derive(*type::Array, *type::PersistentVector);
         define_type(*type::ArraySeq);
         define_type(*type::ArrayMap);
         define_type(*type::ArrayMapSeq);
+        define_protocol(*type::PersistentSet);
         define_type(*type::ArraySet);
+        derive(*type::ArraySet, *type::PersistentSet);
         define_type(*type::ArraySetSeq);
         define_type(*type::Hierarchy);
         define_type(*type::Multimethod);
         define_protocol(*type::Seqable);
-        define_type(*type::Sequence);
-        define_type(*type::Callable);
+        define_protocol(*type::Sequence);
+        define_protocol(*type::Callable);
         define_type(*type::BytecodeFn);
         define_type(*type::BytecodeFnBody);
         define_type(*type::BytecodeFnExceptionTable);
         define_type(*type::Atom);
-        define_type(*type::PersistentMap);
+        define_protocol(*type::PersistentMap);
         define_type(*type::PersistentHashMap);
         define_type(*type::PersistentHashMapCollisionNode);
         define_type(*type::PersistentHashMapArrayNode);
@@ -1580,17 +1568,8 @@ struct Initialize
         f = create_native_function1<keyword_q, &KEYWORD_Q>();
         define(KEYWORD_Q, *f);
 
-        f = create_native_function1<vector_q, &VECTOR_Q>();
-        define(VECTOR_Q, *f);
-
-        f = create_native_function1<set_q, &SET_Q>();
-        define(SET_Q, *f);
-
         f = create_native_function1<string_q, &STRING_Q>();
         define(STRING_Q, *f);
-
-        f = create_native_function1<map_q, &MAP_Q>();
-        define(MAP_Q, *f);
 
         f = create_native_function(list, LIST);
         define(LIST, *f);

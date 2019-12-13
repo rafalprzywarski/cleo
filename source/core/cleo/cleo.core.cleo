@@ -10,6 +10,24 @@
          (throw (CastError. (str "Cannot cast " (type val) " to " vtype))))))
 
 
+(def {:arglists '([x])}
+  vector?
+  (fn* vector? [x]
+       (isa? (type x) PersistentVector)))
+
+
+(def {:arglists '([x])}
+  set?
+  (fn* set? [x]
+       (isa? (type x) PersistentSet)))
+
+
+(def {:arglists '([x])}
+  map?
+  (fn* map? [x]
+       (isa? (type x) PersistentMap)))
+
+
 (def {:arglists '([f coll] [f val coll])} reduce
   (fn* reduce
        ([f coll]
