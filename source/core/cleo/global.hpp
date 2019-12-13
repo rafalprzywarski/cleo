@@ -282,6 +282,7 @@ extern const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS;
 namespace type
 {
 extern const ConstRoot Type;
+extern const ConstRoot Protocol;
 extern const Value Int64;
 extern const ConstRoot UChar;
 extern const ConstRoot Float64;
@@ -395,6 +396,7 @@ inline Value get_value_type(Value val)
     case tag::FLOAT64: return *type::Float64;
     case tag::UTF8STRING: return *type::UTF8String;
     case tag::OBJECT_TYPE: return *type::Type;
+    case tag::PROTOCOL: return *type::Protocol;
     default: return nil;
     }
 }

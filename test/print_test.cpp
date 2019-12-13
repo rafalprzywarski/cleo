@@ -140,6 +140,13 @@ TEST_F(pr_str_test, should_print_objects)
     EXPECT_EQ("#somewhere/something[0x" + os.str() + "]", str(pr_str(*obj)));
 }
 
+TEST_F(pr_str_test, should_print_protocols)
+{
+    Root t{create_protocol("somewhere", "something")};
+    std::ostringstream os;
+    EXPECT_EQ("somewhere/something", str(pr_str(*t)));
+}
+
 TEST_F(pr_str_test, should_print_types)
 {
     Root t{create_dynamic_object_type("somewhere", "something")};

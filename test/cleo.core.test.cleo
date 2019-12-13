@@ -144,6 +144,10 @@
   (assert= 123 (+ 100 20 3)))
 
 
+(deftest defprotocol
+  (assert= '(def {:const :true} Xyz (cleo.core/protocol* 'Xyz)) (macroexpand '(defprotocol Xyz))))
+
+
 (deftest deftype
   (assert= '(do
               (def {:const :true} Xyz (cleo.core/type* 'Xyz '[a b c] [nil nil nil]))
@@ -2015,7 +2019,14 @@
                        vm/LDL 255 255
                        vm/CALL 2]}
            (translate-body '(fn* [x] (cast List x))))
-  (assert-compilation-error "First argument to cast must be a type" (translate-body '(fn* [x] (cast 10 x)))))
+  (assert= {:arity 1
+            :consts [cast Seqable]
+            :bytecode [vm/LDC 0 0
+                       vm/LDC 1 0
+                       vm/LDL 255 255
+                       vm/CALL 2]}
+           (translate-body '(fn* [x] (cast Seqable x))))
+  (assert-compilation-error "First argument to cast must be a type or a protocol" (translate-body '(fn* [x] (cast 10 x)))))
 
 
 (deftype ABC [a b c])
@@ -2031,7 +2042,8 @@
                        vm/LDL 255 255
                        vm/CALL 4]}
            (translate-body '(fn* [x y z] (new cleo.core.test/ABC x y z))))
-  (assert-compilation-error "First argument to new must be a type" (translate-body '(fn* [x] (new 10 x)))))
+  (assert-compilation-error "First argument to new must be a type" (translate-body '(fn* [x] (new 10 x))))
+  (assert-compilation-error "First argument to new must be a type" (translate-body '(fn* [x] (new Seqable x)))))
 
 
 (deftype F259 [f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11 f12 f13 f14 f15

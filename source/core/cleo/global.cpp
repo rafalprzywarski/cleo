@@ -181,6 +181,7 @@ const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
 namespace type
 {
 const ConstRoot Type{create_basic_type("cleo.core", "Type")};
+const ConstRoot Protocol{create_basic_type("cleo.core", "Protocol")};
 }
 
 namespace
@@ -237,7 +238,7 @@ const ConstRoot ArraySet{create_dynamic_type("cleo.core", "ArraySet")};
 const ConstRoot ArraySetSeq{create_static_type("cleo.core", "ArraySetSeq", {"set", {"index", Int64}})};
 const ConstRoot Hierarchy{create_static_type("cleo.core", "Hierarchy", {"ancestors"})};
 const ConstRoot Multimethod{create_static_type("cleo.core", "Multimethod", {"dispatch_fn", "hierarchy", "memoized_fns", "fns", "default_dispatch_val", "name"})};
-const ConstRoot Seqable{create_basic_type("cleo.core", "Seqable")};
+const ConstRoot Seqable{create_protocol("cleo.core", "Seqable")};
 const ConstRoot Sequence{create_basic_type("cleo.core", "Sequence")};
 const ConstRoot Callable{create_basic_type("cleo.core", "Callable")};
 const ConstRoot BytecodeFn{create_dynamic_type("cleo.core", "BytecodeFn")};
@@ -375,6 +376,7 @@ const Value QUOT = create_symbol("cleo.core", "quot");
 const Value REM = create_symbol("cleo.core", "rem");
 const Value GC_LOG = create_symbol("cleo.core", "gc-log");
 const Value GET_TIME = create_symbol("cleo.core", "get-time");
+const Value PROTOCOL = create_symbol("cleo.core", "protocol*");
 const Value CREATE_TYPE = create_symbol("cleo.core", "type*");
 const Value DEFMULTI = create_symbol("cleo.core", "defmulti*");
 const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
@@ -690,6 +692,11 @@ Force get_seqable_next(Value val)
 void define_type(Value type)
 {
     define(get_object_type_name(type), type, *CONST_META);
+}
+
+void define_protocol(Value p)
+{
+    define(get_protocol_name(p), p, *CONST_META);
 }
 
 Force pr_str_var(Value var)
@@ -1048,6 +1055,12 @@ Force get_time()
 {
     using namespace std::chrono;
     return create_int64(duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count());
+}
+
+Force protocol(Value name)
+{
+    check_type("name", name, *type::Symbol);
+    return create_protocol(name);
 }
 
 Force create_type(Value name, Value field_names, Value field_types)
@@ -1474,6 +1487,7 @@ struct Initialize
         create_global_hierarchy();
 
         define_type(*type::Type);
+        define_type(*type::Protocol);
         define_type(type::Int64);
         define_type(*type::Float64);
         define_type(*type::UTF8String);
@@ -1493,7 +1507,7 @@ struct Initialize
         define_type(*type::ArraySetSeq);
         define_type(*type::Hierarchy);
         define_type(*type::Multimethod);
-        define_type(*type::Seqable);
+        define_protocol(*type::Seqable);
         define_type(*type::Sequence);
         define_type(*type::Callable);
         define_type(*type::BytecodeFn);
@@ -1523,6 +1537,7 @@ struct Initialize
 
         define(SHOULD_RECOMPILE, TRUE);
 
+        define_function(PROTOCOL, create_native_function1<protocol, &PROTOCOL>());
         define_function(CREATE_TYPE, create_native_function3<create_type, &CREATE_TYPE>());
 
         define_multimethod(HASH_OBJ, *first_type, nil);

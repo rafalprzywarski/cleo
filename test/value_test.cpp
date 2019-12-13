@@ -506,6 +506,7 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     auto f = [](const Value *, std::uint8_t) { return force(nil); };
     Root dtype{create_dynamic_object_type("org", "xxx")};
     Root stype{create_static_object_type("org", "xxx", nullptr, nullptr, 0)};
+    Root p{create_protocol("org", "abc")};
     Root val;
     ASSERT_TRUE(get_value_type(nil).is_nil());
     val = create_native_function(f);
@@ -528,6 +529,7 @@ TEST_F(value_test, should_return_the_type_of_a_value)
     ASSERT_TRUE(stype->is(get_value_type(*val)));
     val = create_dynamic_object_type("some", "type");
     ASSERT_TRUE(type::Type->is(get_value_type(*val)));
+    ASSERT_TRUE(type::Protocol->is(get_value_type(*p)));
 }
 
 TEST_F(value_test, should_create_types_with_fields)
@@ -571,6 +573,13 @@ TEST_F(value_test, get_object_field_index_should_return_a_negative_value_when_a_
     EXPECT_LT(get_object_field_index(*type, x), 0);
 
     EXPECT_LT(get_object_field_index(nil, x), 0);
+}
+
+TEST_F(value_test, should_create_protocols)
+{
+    auto name = create_symbol("value.test", "X");
+    Root p{create_protocol(name)};
+    ASSERT_TRUE(get_protocol_name(*p).is(name));
 }
 
 }

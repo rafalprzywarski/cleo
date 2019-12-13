@@ -73,6 +73,11 @@ using Char32 = std::uint32_t;
 using Float64 = double;
 static_assert(sizeof(Float64) == 8, "Float64 should have 64 bits");
 
+struct ObjectProtocol
+{
+    Value name;
+};
+
 struct ObjectType
 {
     Value name;
@@ -119,6 +124,7 @@ constexpr Tag INT64 = ValueBits(5) << 48;
 constexpr Tag UTF8STRING = ValueBits(6) << 48;
 constexpr Tag FLOAT64 = ValueBits(7) << 48;
 constexpr Tag UCHAR = ValueBits(8) << 48;
+constexpr Tag PROTOCOL = ValueBits(9) << 48;
 
 constexpr Tag INT48 = ValueBits(13) << 48;
 
@@ -144,7 +150,8 @@ inline bool is_value_ptr(Value val)
          tag == tag::SYMBOL ||
          tag == tag::KEYWORD ||
          tag == tag::INT64 ||
-         tag == tag::UTF8STRING);
+         tag == tag::UTF8STRING ||
+         tag == tag::PROTOCOL);
 }
 
 inline Tag get_value_tag(Value val)
@@ -257,6 +264,10 @@ void set_dynamic_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_static_object_int(Value obj, std::uint32_t index, Int64 val);
 void set_dynamic_object_element(Value obj, std::uint32_t index, Value val);
 void set_static_object_element(Value obj, std::uint32_t index, Value val);
+
+Force create_protocol(Value name);
+Force create_protocol(const std::string& ns, const std::string& name);
+Value get_protocol_name(Value p);
 
 Force create_object_type(Value name, const Value *fields, const Value *types, std::uint32_t size, bool is_constructible, bool is_dynamic);
 Force create_object_type(const std::string& ns, const std::string& name, const Value *fields, const Value *types, std::uint32_t size, bool is_constructible, bool is_dynamic);

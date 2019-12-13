@@ -1001,18 +1001,27 @@
          (identical? (type @v) cleo.core/Type))))
 
 
+(defn- type-or-protocol-expr? [expr]
+  (when-let [v (check-resolve-var-expr expr)]
+    (and (:const (meta v))
+         (let [vtype (type @v)]
+           (or (identical? vtype cleo.core/Type)
+               (identical? vtype cleo.core/Protocol))))))
+
+
 (defn- const-var? [expr]
   (when-let [v (check-resolve-var-expr expr)]
     (:const (meta v))))
 
 
-(defn- cast-expr? [expr]
+(defn- type-cast-expr? [expr]
   (let [{tag :tag f :fn args :args} expr]
     (and (= tag :call)
          (identical? #'cleo.core/cast (check-resolve-var-expr f))
          (= (count args) 2)
-         (or (type-expr? (first args))
-             (fail "First argument to cast must be a type")))))
+         (or (type-or-protocol-expr? (first args))
+             (fail "First argument to cast must be a type or a protocol"))
+         (type-expr? (first args)))))
 
 
 (defn- new-expr? [expr]
@@ -1040,7 +1049,7 @@
 (defn- annotate-const-cast-new [ast]
   (transform-expr (fn [expr _]
                     (or (const-var? expr)
-                        (cast-expr? expr)
+                        (type-cast-expr? expr)
                         (new-expr? expr)))
                   (fn [expr _]
                     (assoc expr :value-type (if (const-var? expr)

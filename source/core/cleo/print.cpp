@@ -275,6 +275,11 @@ Force pr_str_object_type(Value v)
     return pr_str(get_object_type_name(v));
 }
 
+Force pr_str_protocol(Value v)
+{
+    return pr_str(get_protocol_name(v));
+}
+
 Force pr_str(Value val)
 {
     switch (get_value_tag(val))
@@ -287,6 +292,7 @@ Force pr_str(Value val)
         case tag::FLOAT64: return pr_str_float(val);
         case tag::UTF8STRING: return pr_str_string(val);
         case tag::OBJECT_TYPE: return pr_str_object_type(val);
+        case tag::PROTOCOL: return pr_str_protocol(val);
         default: // tag::OBJECT
             if (val.is_nil())
                 return create_string("nil");

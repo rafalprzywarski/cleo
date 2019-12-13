@@ -234,6 +234,10 @@
                              `(fn* ~name ~@(map1 (fn* [d] (into-do d '[&form &env])) decl)))))))
 
 
+(defmacro defprotocol [name]
+  `(def {:const :true} ~name (cleo.core/protocol* '~name)))
+
+
 (defmacro deftype [name fields]
   (let* [field-names (persistent! (reduce (fn* [r f]
                                             (conj! r (if (identical? (type f) List) (first f) f)))

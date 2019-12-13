@@ -621,6 +621,24 @@ void set_static_object_element(Value obj, std::uint32_t index, Value val)
         (&get_ptr<StaticObject>(obj)->firstVal)[index] = val.bits();
 }
 
+Force create_protocol(Value name)
+{
+    auto p = alloc<ObjectProtocol>();
+    p->name = name;
+    return tag_ptr(p, tag::PROTOCOL);
+}
+
+Force create_protocol(const std::string& ns, const std::string& name)
+{
+    return create_protocol(create_symbol(ns, name));
+}
+
+Value get_protocol_name(Value p)
+{
+    assert(get_value_tag(p) == tag::PROTOCOL);
+    return get_ptr<ObjectProtocol>(p)->name;
+}
+
 Force create_object_type(Value name, const Value *fields, const Value *types, std::uint32_t size, bool is_constructible, bool is_dynamic)
 {
     assert(get_value_type(name).is(*type::Symbol));
