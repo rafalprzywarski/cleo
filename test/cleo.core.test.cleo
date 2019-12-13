@@ -145,7 +145,19 @@
 
 
 (deftest defprotocol
-  (assert= '(def {:const :true} Xyz (cleo.core/protocol* 'Xyz)) (macroexpand '(defprotocol Xyz))))
+  (assert= '(do (def {:const :true} Xyz (cleo.core/protocol* 'Xyz))) (macroexpand '(defprotocol Xyz)))
+  (assert= '(do
+              (def {:const :true} Xyz (cleo.core/protocol* 'Xyz))
+              (cleo.core/defmulti foo (fn* ([this] (cleo.core/type this))))
+              (cleo.core/defmulti bar (fn* ([this] (cleo.core/type this)) ([this _] (cleo.core/type this)) ([this _ _ _ _] (cleo.core/type this)))))
+           (macroexpand '(defprotocol Xyz
+                           (foo [this])
+                           (bar [that] [that more] [a b c d e]))))
+  (assert-throws IllegalArgument (macroexpand '(defprotocol 10)))
+  (assert-throws IllegalArgument (macroexpand '(defprotocol X ())))
+  (assert-throws IllegalArgument (macroexpand '(defprotocol X (foo))))
+  (assert-throws IllegalArgument (macroexpand '(defprotocol X (foo []))))
+  (assert-throws IllegalArgument (macroexpand '(defprotocol X (foo [x]) z))))
 
 
 (deftest deftype
