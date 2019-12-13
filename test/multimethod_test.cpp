@@ -265,9 +265,9 @@ struct hierarchy_test : multimethod_test
         {
             Root e{catch_exception()};
             ASSERT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
-            Root emsg{illegal_argument_message(*e)};
-            ASSERT_EQ_REFS(*type::UTF8String, get_value_type(*emsg));
-            ASSERT_EQ(msg, std::string(get_string_ptr(*emsg), get_string_len(*emsg)));
+            Value  emsg = exception_message(*e);
+            ASSERT_EQ_REFS(*type::UTF8String, get_value_type(emsg));
+            ASSERT_EQ(msg, std::string(get_string_ptr(emsg), get_string_len(emsg)));
         }
     }
 };

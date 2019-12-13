@@ -82,7 +82,6 @@ const Value PRINT_READABLY = create_symbol("cleo.core", "*print-readably*");
 const Value PR_STR = create_symbol("cleo.core", "pr-str");
 const Value PR_STR_OBJ = create_symbol("cleo.core", "pr-str-obj");
 const Value STR = create_symbol("cleo.core", "str");
-const Value GET_MESSAGE = create_symbol("cleo.core", "get-message");
 const Value QUOTE = create_symbol("quote");
 const Value UNQUOTE = create_symbol("cleo.core", "unquote");
 const Value UNQUOTE_SPLICING = create_symbol("cleo.core", "unquote-splicing");
@@ -251,7 +250,7 @@ const ConstRoot PersistentHashMapSeq{create_static_type("cleo.core", "Persistent
 const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "PersistentHashMapSeqParent", {{"index", Int64}, "node", "parent"})};
 const ConstRoot PersistentHashMapCollisionNode(create_dynamic_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_dynamic_type("cleo.core", "PersistentHashMapArrayNode"));
-const ConstRoot Exception{create_basic_type("cleo.core", "Exception")};
+const ConstRoot Exception{create_static_type("cleo.core", "Exception", {"msg"})};
 const ConstRoot CastError{create_static_type("cleo.core", "CastError", {"msg"})};
 const ConstRoot ReadError{create_static_type("cleo.core", "ReadError", {"msg", {"line", Int64}, {"column", Int64}})};
 const ConstRoot CallError{create_static_type("cleo.core", "CallError", {"msg"})};
@@ -261,9 +260,9 @@ const ConstRoot IllegalState{create_static_type("cleo.core", "IllegalState", {"m
 const ConstRoot UnexpectedEndOfInput{create_static_type("cleo.core", "UnexpectedEndOfInput", {"msg", {"line", Int64}, {"column", Int64}})};
 const ConstRoot FileNotFound{create_static_type("cleo.core", "FileNotFound", {"msg"})};
 const ConstRoot ArithmeticException{create_static_type("cleo.core", "ArithmeticException", {"msg"})};
-const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBounds", {})};
+const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBounds", {"msg"})};
 const ConstRoot CompilationError{create_static_type("cleo.core", "CompilationError", {"msg"})};
-const ConstRoot StackOverflow{create_static_type("cleo.core", "StackOverflow", {})};
+const ConstRoot StackOverflow{create_static_type("cleo.core", "StackOverflow", {"msg"})};
 const ConstRoot Namespace{create_static_type("cleo.core", "Namespace", {"name", "meta", "mapping", "aliases"})};
 const ConstRoot UTF8StringSeq{create_static_type("cleo.core", "UTF8StringSeq", {"str", {"offset", Int64}})};
 }
@@ -329,7 +328,6 @@ const StaticVar get = define_var(GET, nil);
 const StaticVar contains = define_var(CONTAINS, nil);
 const StaticVar assoc = define_var(ASSOC, nil);
 const StaticVar merge = define_var(MERGE, nil);
-const StaticVar get_message = define_var(GET_MESSAGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
 const StaticVar eval = define_var(EVAL, nil);
 const StaticVar global_hierarchy = define_var(GLOBAL_HIERARCHY, nil);
@@ -520,7 +518,7 @@ Force lt2(Value l, Value r)
 
 Force pr_str_exception(Value e)
 {
-    cleo::Root msg{call_multimethod1(*rt::get_message, e)};
+    cleo::Root msg{exception_message(e)};
     cleo::Root type{cleo::pr_str(cleo::get_value_type(e))};
     msg = print_str(*msg);
 
@@ -1509,17 +1507,30 @@ struct Initialize
         define_type(*type::PersistentHashMapSeqParent);
         define_type(*type::Exception);
         define_type(*type::CastError);
+        derive(*type::CastError, *type::Exception);
         define_type(*type::ReadError);
-        define_type(*type::CallError);
-        define_type(*type::SymbolNotFound);
-        define_type(*type::IllegalArgument);
-        define_type(*type::IllegalState);
+        derive(*type::ReadError, *type::Exception);
         define_type(*type::UnexpectedEndOfInput);
+        derive(*type::UnexpectedEndOfInput, *type::ReadError);
+        define_type(*type::CallError);
+        derive(*type::CallError, *type::Exception);
+        define_type(*type::SymbolNotFound);
+        derive(*type::SymbolNotFound, *type::Exception);
+        define_type(*type::IllegalArgument);
+        derive(*type::IllegalArgument, *type::Exception);
+        define_type(*type::IllegalState);
+        derive(*type::IllegalState, *type::Exception);
         define_type(*type::FileNotFound);
+        derive(*type::FileNotFound, *type::Exception);
         define_type(*type::ArithmeticException);
+        derive(*type::ArithmeticException, *type::Exception);
         define_type(*type::IndexOutOfBounds);
+        derive(*type::IndexOutOfBounds, *type::Exception);
         define_type(*type::CompilationError);
+        derive(*type::CompilationError, *type::Exception);
         define_type(*type::StackOverflow);
+        derive(*type::StackOverflow, *type::Exception);
+
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
 
@@ -1945,56 +1956,6 @@ struct Initialize
 
         f = create_native_function1<pr_str_exception, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Exception, *f);
-
-        define_multimethod(GET_MESSAGE, *first_type, nil);
-
-        derive(*type::CastError, *type::Exception);
-        f = create_native_function1<cast_error_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::CastError, *f);
-
-        derive(*type::ReadError, *type::Exception);
-        f = create_native_function1<read_error_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::ReadError, *f);
-
-        derive(*type::UnexpectedEndOfInput, *type::ReadError);
-        f = create_native_function1<unexpected_end_of_input_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::UnexpectedEndOfInput, *f);
-
-        derive(*type::CallError, *type::Exception);
-        f = create_native_function1<call_error_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::CallError, *f);
-
-        derive(*type::SymbolNotFound, *type::Exception);
-        f = create_native_function1<symbol_not_found_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::SymbolNotFound, *f);
-
-        derive(*type::IllegalArgument, *type::Exception);
-        f = create_native_function1<illegal_argument_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::IllegalArgument, *f);
-
-        derive(*type::IllegalState, *type::Exception);
-        f = create_native_function1<illegal_state_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::IllegalState, *f);
-
-        derive(*type::FileNotFound, *type::Exception);
-        f = create_native_function1<file_not_found_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::FileNotFound, *f);
-
-        derive(*type::ArithmeticException, *type::Exception);
-        f = create_native_function1<arithmetic_exception_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::ArithmeticException, *f);
-
-        derive(*type::IndexOutOfBounds, *type::Exception);
-        f = create_native_function1<index_out_of_bounds_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::IndexOutOfBounds, *f);
-
-        derive(*type::CompilationError, *type::Exception);
-        f = create_native_function1<compilation_error_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::CompilationError, *f);
-
-        derive(*type::StackOverflow, *type::Exception);
-        f = create_native_function1<stack_overflow_message, &GET_MESSAGE>();
-        define_method(GET_MESSAGE, *type::StackOverflow, *f);
 
         f = create_native_function1<macroexpand1_noenv, &MACROEXPAND1>();
         define(MACROEXPAND1, *f);

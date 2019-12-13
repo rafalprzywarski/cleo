@@ -56,8 +56,7 @@ struct compile_test : Test
             if (!msg.empty())
             {
                 Root expected_msg{create_string(msg)};
-                Root actual_msg{compilation_error_message(*e)};
-                ASSERT_EQ_VALS(*expected_msg, *actual_msg) << "form: " << form_str;
+                ASSERT_EQ_VALS(*expected_msg, exception_message(*e)) << "form: " << form_str;
             }
         }
     }

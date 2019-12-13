@@ -32,17 +32,13 @@ struct reader_test : Test
         {
             cleo::Root e{cleo::catch_exception()};
             EXPECT_TRUE(exType.is(get_value_type(*e)));
-            cleo::Root exMsg{call_multimethod1(*rt::get_message, *e)};
-            EXPECT_EQ(msg, std::string(get_string_ptr(*exMsg), get_string_size(*exMsg)));
-            if (get_value_type(*e).is(*type::ReadError))
+            Value exMsg = exception_message(*e);
+            ASSERT_TRUE(get_value_type(exMsg).is(*type::UTF8String));
+            EXPECT_EQ(msg, std::string(get_string_ptr(exMsg), get_string_size(exMsg)));
+            if (isa(get_value_type(*e), *type::ReadError))
             {
                 EXPECT_EQ(line, read_error_line(*e));
                 EXPECT_EQ(col, read_error_column(*e));
-            }
-            if (get_value_type(*e).is(*type::UnexpectedEndOfInput))
-            {
-                EXPECT_EQ(line, unexpected_end_of_input_line(*e));
-                EXPECT_EQ(col, unexpected_end_of_input_column(*e));
             }
         }
         catch (std::exception const& e)

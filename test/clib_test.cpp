@@ -153,9 +153,8 @@ struct clib_test : Test
         {
             Root e{catch_exception()};
             ASSERT_EQ_REFS(*type::CallError, get_value_type(*e));
-            Root emsg{call_error_message(*e)};
             Root expected{create_string(msg)};
-            ASSERT_EQ_VALS(*expected, *emsg);
+            ASSERT_EQ_VALS(*expected, exception_message(*e));
         }
     }
 };
@@ -376,9 +375,8 @@ TEST_F(clib_test, should_fail_on_invalid_declared_type)
     {
         Root e{catch_exception()};
         ASSERT_EQ_REFS(*type::IllegalArgument, get_value_type(*e));
-        Root emsg{illegal_argument_message(*e)};
         Root expected{create_string("Invalid parameter types: [:bad]")};
-        ASSERT_EQ_VALS(*expected, *emsg);
+        ASSERT_EQ_VALS(*expected, exception_message(*e));
     }
 }
 

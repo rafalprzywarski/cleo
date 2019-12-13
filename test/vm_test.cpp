@@ -95,8 +95,7 @@ struct vm_test : Test
             Root e{catch_exception()};
             ASSERT_EQ_REFS(*type::CallError, get_value_type(*e)) << " args: " << to_string(*args);
             Root msg{create_string(msgv)};
-            Root actual{call_error_message(*e)};
-            ASSERT_EQ_VALS(*msg, *actual) << " args: " << to_string(*args);
+            ASSERT_EQ_VALS(*msg, exception_message(*e)) << " args: " << to_string(*args);
         }
     }
 };

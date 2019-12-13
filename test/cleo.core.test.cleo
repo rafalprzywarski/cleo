@@ -2925,7 +2925,7 @@
         a (atom 1)]
     (assert-throws IllegalArgument (f a))
     (assert= 5 @a)
-    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds.)))
+    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds. nil)))
     (assert= IllegalArgument (type (f 0 (IllegalArgument. "x"))))))
 
 
