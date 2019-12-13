@@ -5,7 +5,7 @@
       :const :true}
   cast
   (fn* cast [vtype val]
-       (if (identical? (type val) vtype)
+       (if (isa? (type val) vtype)
          val
          (throw (CastError. (str "Cannot cast " (type val) " to " vtype))))))
 

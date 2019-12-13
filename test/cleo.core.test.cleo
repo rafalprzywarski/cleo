@@ -128,6 +128,10 @@
     (assert (identical? x (cast Int64 x))))
   (let [x '(1 2 3)]
     (assert (identical? x (cast List x))))
+  (let [x (ReadError. "abc" 10 20)]
+    (assert (identical? x (cast Exception x))))
+  (let [x [1 2]]
+    (assert (identical? x (cast Seqable x))))
   (assert-throws CastError (cast Int64 "abc"))
   (assert-throws CastError (cast List [1 2]))
   (assert-throws CastError (cast List nil)))
