@@ -270,7 +270,7 @@
                               (throw (IllegalArgument. "Parameter declaration missing")))
                           `(defmulti
                              ~name
-                             (fn* ~@(map1 gen-fn-body (next sig)))))))]
+                             (fn* ~name ~@(map1 gen-fn-body (next sig)))))))]
     `(do
        (def {:const :true} ~name (cleo.core/protocol* '~name))
        ~@(map1 gen-sig sigs))))
