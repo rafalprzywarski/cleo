@@ -25,6 +25,9 @@ constexpr Byte LDSF = 0x15;
 constexpr Byte STL = 0x20;
 constexpr Byte STVV = 0x21;
 constexpr Byte STVM = 0x22;
+constexpr Byte STVB = 0x23;
+constexpr Byte STDF = 0x24;
+constexpr Byte STSF = 0x25;
 
 constexpr Byte BR = 0x30;
 constexpr Byte BNIL = 0x31;

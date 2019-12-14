@@ -44,7 +44,7 @@
 
 (def {:const :true
       :arglists '([(index UInt16)])
-      :doc "LoaD Static Field - Pop and object from the value stack and push the value of the field in the object at index"}
+      :doc "LoaD Static Field - Pop an object from the value stack and push the value of a field in the object at index"}
   LDSF 0x15)
 
 
@@ -64,6 +64,24 @@
       :arglists '([])
       :doc "STore Var Meta - pop a value and a var from the value stack and set the value as meta of the var"}
   STVM 0x22)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "STore Var Binding - pop a value and a var from the value stack and set the value as the current binding of the var or throw an exception if no binding exists"}
+  STVB 0x23)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "STore Dynamic Field - pop a field name, an object, and a value from the value stack and set the value as the value of the field in the object, or throw an exception if the field does not exist"}
+  STDF 0x24)
+
+
+(def {:const :true
+      :arglists '([(index UInt16)])
+      :doc "STore Static Field - pop an object and a value from the value stack and set the value as the value of a field in the object at index"}
+  STSF 0x25)
 
 
 (def {:const :true
