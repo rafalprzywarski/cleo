@@ -156,13 +156,13 @@ TEST_F(var_test, set_var_root_value_should_change_the_root_value)
     EXPECT_EQ_VALS(newv, get_var_root_value(var));
 }
 
-TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
+TEST_F(var_test, set_var_value_should_fail_if_there_are_no_bindings_for_it)
 {
     auto s = create_symbol("cleo.var.test/nob");
     auto var = define_var(s, create_keyword("xxx"));
     try
     {
-        set_var(s, create_keyword("yyy"));
+        set_var_value(var, create_keyword("yyy"));
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -175,7 +175,7 @@ TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
 
     try
     {
-        set_var(s, create_keyword("yyy"));
+        set_var_value(var, create_keyword("yyy"));
         FAIL() << "expected an exception";
     }
     catch (const Exception& )
@@ -187,7 +187,7 @@ TEST_F(var_test, set_var_should_fail_if_there_are_no_bindings_for_it)
     ASSERT_EQ_VALS(create_keyword("xxx"), get_var_value(var));
 }
 
-TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
+TEST_F(var_test, set_var_value_should_change_the_value_of_a_var_in_the_latest_bindings)
 {
     auto a = create_symbol("cleo.var.test/ba");
     auto b = create_symbol("cleo.var.test/bb");
@@ -205,7 +205,7 @@ TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
         Root bindings1{amap(a, ka2)};
         PushBindingsGuard bind1{*bindings1};
 
-        set_var(a, kax);
+        set_var_value(va, kax);
         EXPECT_EQ_VALS(ka, get_var_root_value(va));
         EXPECT_EQ_VALS(kax, get_var_value(va));
 
@@ -216,14 +216,14 @@ TEST_F(var_test, set_var_change_the_value_of_a_var_in_the_latest_bindings)
             EXPECT_EQ_VALS(kb, get_var_root_value(vb));
             EXPECT_EQ_VALS(kb2, get_var_value(vb));
 
-            set_var(a, kax);
+            set_var_value(va, kax);
             EXPECT_EQ_VALS(kax, get_var_value(va));
-            set_var(b, kbx);
+            set_var_value(vb, kbx);
             EXPECT_EQ_VALS(kbx, get_var_value(vb));
 
-            set_var(a, ka3);
+            set_var_value(va, ka3);
             EXPECT_EQ_VALS(ka3, get_var_value(va));
-            set_var(b, kb2);
+            set_var_value(vb, kb2);
             EXPECT_EQ_VALS(kb2, get_var_value(vb));
         }
         EXPECT_EQ_VALS(kax, get_var_value(va));

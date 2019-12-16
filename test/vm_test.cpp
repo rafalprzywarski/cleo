@@ -249,14 +249,70 @@ TEST_F(vm_test, stvm)
     EXPECT_EQ_VALS(*var_meta, get_var_meta(var));
 }
 
+TEST_F(vm_test, stvb)
+{
+    in_ns(create_symbol("vm.stvb.test"));
+    auto var = define(create_symbol("vm.stvb.test", "a"), *THREE);
+    stack_push(var);
+    stack_push(*TWO);
+    const std::array<Byte, 7> bc{{LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), STVB}};
+    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.stvb.test", "a"), *EMPTY_VECTOR)};
+    PushBindingsGuard g(*bindings);
+
+    eval_bytecode(nil, nil, 0, bc);
+
+    ASSERT_EQ(3u, stack.size());
+    EXPECT_EQ_VALS(*TWO, stack[2]);
+    EXPECT_EQ_VALS(*TWO, stack[1]);
+    EXPECT_EQ_VALS(var, stack[0]);
+    EXPECT_EQ_VALS(*TWO, get_var_value(var));
+}
+
+TEST_F(vm_test, catching_exceptions_from_stvb)
+{
+    in_ns(create_symbol("vm.stvb.exception.test"));
+    auto var = define(create_symbol("vm.stvb.exception.test", "a"), *THREE);
+    const std::array<Byte, 10> bc{{LDL, Byte(-2), Byte(-1), LDL, Byte(-1), Byte(-1), STVB, CNIL, CNIL, CNIL}};
+    const std::array<Int64, 4> et{{6, 7, 9, 0}};
+    const std::array<Value, 1> types{{*type::IllegalState}};
+    stack_push(var);
+    stack_push(*TWO);
+    eval_bytecode(nil, nil, 0, et, types, bc);
+
+    ASSERT_EQ(4u, stack.size());
+    EXPECT_EQ_VALS(nil, stack[3]);
+    EXPECT_EQ_REFS(*type::IllegalState, get_value_type(stack[2]));
+    EXPECT_EQ_VALS(*TWO, stack[1]);
+    EXPECT_EQ_REFS(var, stack[0]);
+    stack.clear();
+
+    const std::array<Value, 1> other_types{{*type::IndexOutOfBounds}};
+    stack_push(var);
+    stack_push(*TWO);
+    try
+    {
+        eval_bytecode(nil, nil, 0, et, other_types, bc);
+    }
+    catch (const Exception& )
+    {
+        Root actual{catch_exception()};
+        EXPECT_EQ_REFS(*type::IllegalState, get_value_type(*actual));
+        ASSERT_EQ(4u, stack.size());
+        EXPECT_EQ_VALS(*TWO, stack[3]);
+        EXPECT_EQ_REFS(var, stack[2]);
+        EXPECT_EQ_VALS(*TWO, stack[1]);
+        EXPECT_EQ_VALS(var, stack[0]);
+    }
+}
+
 TEST_F(vm_test, lddv)
 {
-    in_ns(create_symbol("vm.ldv.test"));
-    auto v1 = define(create_symbol("vm.ldv.test", "a"), *THREE);
-    auto v2 = define(create_symbol("vm.ldv.test", "b"), *TWO);
-    auto v3 = define(create_symbol("vm.ldv.test", "c"), *ZERO);
-    auto v4 = define(create_symbol("vm.ldv.test", "d"), *ONE);
-    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.ldvr.test", "b"), *EMPTY_VECTOR)};
+    in_ns(create_symbol("vm.lddv.test"));
+    auto v1 = define(create_symbol("vm.lddv.test", "a"), *THREE);
+    auto v2 = define(create_symbol("vm.lddv.test", "b"), *TWO);
+    auto v3 = define(create_symbol("vm.lddv.test", "c"), *ZERO);
+    auto v4 = define(create_symbol("vm.lddv.test", "d"), *ONE);
+    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.lddv.test", "b"), *EMPTY_VECTOR)};
     PushBindingsGuard g(*bindings);
     Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
 
@@ -273,20 +329,20 @@ TEST_F(vm_test, lddv)
     eval_bytecode(nil, *vars, 0, bc2);
 
     ASSERT_EQ(4u, stack.size());
-    EXPECT_EQ_VALS(get_var_value(v4), stack[3]);
-    EXPECT_EQ_VALS(get_var_value(v3), stack[2]);
-    EXPECT_EQ_VALS(get_var_value(v2), stack[1]);
-    EXPECT_EQ_VALS(get_var_value(v1), stack[0]);
+    EXPECT_EQ_VALS(*ONE, stack[3]);
+    EXPECT_EQ_VALS(*ZERO, stack[2]);
+    EXPECT_EQ_VALS(*EMPTY_VECTOR, stack[1]);
+    EXPECT_EQ_VALS(*THREE, stack[0]);
 }
 
 TEST_F(vm_test, ldv)
 {
-    in_ns(create_symbol("vm.ldvr.test"));
-    auto v1 = define(create_symbol("vm.ldvr.test", "a"), *THREE);
-    auto v2 = define(create_symbol("vm.ldvr.test", "b"), *TWO);
-    auto v3 = define(create_symbol("vm.ldvr.test", "c"), *ZERO);
-    auto v4 = define(create_symbol("vm.ldvr.test", "d"), *ONE);
-    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.ldvr.test", "b"), *EMPTY_VECTOR)};
+    in_ns(create_symbol("vm.ldv.test"));
+    auto v1 = define(create_symbol("vm.ldv.test", "a"), *THREE);
+    auto v2 = define(create_symbol("vm.ldv.test", "b"), *TWO);
+    auto v3 = define(create_symbol("vm.ldv.test", "c"), *ZERO);
+    auto v4 = define(create_symbol("vm.ldv.test", "d"), *ONE);
+    Root bindings{map_assoc(*EMPTY_MAP, create_symbol("vm.ldv.test", "b"), *EMPTY_VECTOR)};
     PushBindingsGuard g(*bindings);
     Root vars{create_vars({{255, v1}, {0, v2}, {1, v3}, {65535, v4}})};
 
@@ -303,10 +359,10 @@ TEST_F(vm_test, ldv)
     eval_bytecode(nil, *vars, 0, bc2);
 
     ASSERT_EQ(4u, stack.size());
-    EXPECT_EQ_VALS(get_var_root_value(v4), stack[3]);
-    EXPECT_EQ_VALS(get_var_root_value(v3), stack[2]);
-    EXPECT_EQ_VALS(get_var_root_value(v2), stack[1]);
-    EXPECT_EQ_VALS(get_var_root_value(v1), stack[0]);
+    EXPECT_EQ_VALS(*ONE, stack[3]);
+    EXPECT_EQ_VALS(*ZERO, stack[2]);
+    EXPECT_EQ_VALS(*TWO, stack[1]);
+    EXPECT_EQ_VALS(*THREE, stack[0]);
 }
 
 TEST_F(vm_test, br)

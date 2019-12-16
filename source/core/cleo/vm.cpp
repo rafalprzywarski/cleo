@@ -270,6 +270,27 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             ++p;
             break;
         }
+        case STVB:
+        {
+            auto var = stack[stack.size() - 2];
+            auto val = stack.back();
+            try
+            {
+                set_var_value(var, val);
+                stack[stack.size() - 2] = val;
+                stack_pop();
+                ++p;
+            }
+            catch (cleo::Exception const& )
+            {
+                auto handler = find_exception_handler(p, *current_exception);
+                if (handler.offset < 0)
+                    throw;
+                Root ex{catch_exception()};
+                p = handle_exception(handler, p, *ex);
+            }
+            break;
+        }
         case POP:
             stack_pop();
             ++p;

@@ -78,15 +78,16 @@ void set_var_meta(Value var, Value meta)
     set_static_object_element(var, 2, *nmeta);
 }
 
-void set_var(Value sym, Value val)
+void set_var_value(Value var, Value val)
 {
-    if (!*bindings || !map_contains(get_list_first(*bindings), sym))
+    auto name = get_var_name(var);
+    if (!*bindings || !map_contains(get_list_first(*bindings), name))
     {
-        Root ss{pr_str(sym)};
+        Root ss{pr_str(name)};
         throw_illegal_state("Can't change/establish root binding of: " + std::string(get_string_ptr(*ss), get_string_size(*ss)));
     }
     Root latest{get_list_first(*bindings)};
-    latest = map_assoc(*latest, sym, val);
+    latest = map_assoc(*latest, name, val);
     auto popped = get_list_next(*bindings);
     bindings = list_conj(!popped ? *EMPTY_LIST : popped, *latest);
 }

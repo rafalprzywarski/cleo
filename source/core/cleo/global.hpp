@@ -165,7 +165,7 @@ class DynamicVar
 public:
     DynamicVar(Value var) : var(var) { }
     Value operator*() const { return get_var_value(var); }
-    const DynamicVar& operator=(Value val) const { set_var(get_var_name(var), val); return *this; }
+    const DynamicVar& operator=(Value val) const { set_var_value(var, val); return *this; }
 private:
     Value var;
 };

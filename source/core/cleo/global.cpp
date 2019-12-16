@@ -1178,6 +1178,11 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             dbs = transient_array_conj(*dbs, *oc);
             ++p;
             break;
+        case vm::STVB:
+            oc = mk("STVB");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
         case vm::POP:
             oc = mk("POP");
             dbs = transient_array_conj(*dbs, *oc);
