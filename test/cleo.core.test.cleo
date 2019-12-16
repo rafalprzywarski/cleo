@@ -996,6 +996,18 @@
   (assert-no-exception (cc/parse '(fn* [x] (if x 1 (recur x))))))
 
 
+(deftest parse-set!
+  (assert= {:tag :assign
+            :target {:tag :var, :name 'x}
+            :arg {:tag :const, :value 10}}
+           (cc/parse '(set! x 10)))
+  (assert= {:tag :assign
+            :target {:tag :dot
+                     :expr {:tag :var, :name 'x}
+                     :member 'f}
+            :arg {:tag :var, :name 'y}}
+           (cc/parse '(set! (.-f x) y)))) ; recur!
+
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if 1)))
@@ -1095,11 +1107,19 @@
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] ((recur 10) 20))))
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (def z (recur 10)))))
   (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (if (recur 10) 1 2))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (set! (recur x) 20))))
+  (assert-compilation-error "Can only recur from tail position" (cc/parse '(fn* [x] (set! x (recur 20)))))
 
   (assert-compilation-error "Can't have fixed arity function with more params than variadic function" (cc/parse '(fn* ([a b] nil) ([a & b] nil))))
   (assert-compilation-error "Can't have fixed arity function with more params than variadic function" (cc/parse '(fn* ([a b & c] nil) ([a b] nil) ([a b c]))))
   (assert-compilation-error "Can't have more than 1 variadic overload" (cc/parse '(fn* ([a & b] nil) ([& b] nil))))
-  (assert-compilation-error "Can't have 2 overloads with same arity" (cc/parse '(fn* ([x] nil) ([x y] nil) ([x] nil)))))
+  (assert-compilation-error "Can't have 2 overloads with same arity" (cc/parse '(fn* ([x] nil) ([x y] nil) ([x] nil))))
+
+  (assert-compilation-error "Malformed set!, expected a target and an expression" (cc/parse '(set!)))
+  (assert-compilation-error "Malformed set!, expected a target and an expression" (cc/parse '(set! x)))
+  (assert-compilation-error "Malformed set!, expected a target and an expression" (cc/parse '(set! x 10 20)))
+  (assert-compilation-error "set! target must be a var or a field" (cc/parse '(fn* [x] (set! x 10))))
+  (assert-compilation-error "set! target must be a var or a field" (cc/parse '(let* [x 7] (set! x 10)))))
 
 
 (defn translate-body [form]
@@ -2642,6 +2662,20 @@
                          vm/LDL 0 0
                          vm/STVV]
               :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
+             body))
+  (let [body (binding-ns 'cleo.core.test
+                         (translate-body '(fn* [x] (set! test-var0 (try* (x) (catch* cleo.core/Exception e e))))))]
+    (assert= {:arity 1
+              :locals-size 1
+              :consts [#'test-var0]
+              :bytecode [vm/LDC 0 0
+                         vm/LDL 255 255
+                         vm/CALL 0
+                         vm/BR 6 0
+                         vm/STL 0 0
+                         vm/LDL 0 0
+                         vm/STVB]
+              :exception-table [{:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type Exception}]}
              body)))
 
 
@@ -2914,6 +2948,16 @@
                          vm/LDC 0 0
                          vm/CALL 2]}
              (-> f :consts first deserialize-fn :bodies first))))
+
+
+(deftest translate-set!
+  (assert= {:arity 1
+            :consts [#'test-var0]
+            :bytecode [vm/LDC 0 0
+                       vm/LDL 255 255
+                       vm/STVB]}
+           (translate-body '(fn [x] (set! cleo.core.test/test-var0 x))))
+  (assert-compilation-error "unable to resolve symbol: cleo.core.test/not-defined" (translate-body '(set! cleo.core.test/not-defined 20))))
 
 
 (deftest eval-fn

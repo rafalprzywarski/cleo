@@ -311,6 +311,21 @@
      :args (mapv (fn [x] (parse-form scope x)) (next form))}))
 
 
+(defn- parse-assign [scope form]
+  (when (not= (count form) 3)
+    (fail "Malformed set!, expected a target and an expression"))
+  (let [scope (no-recur scope)
+        form (next form)
+        target (parse-form scope (first form))
+        form (next form)
+        arg (parse-form scope (first form))]
+    (when (not (#{:var :dot} (:tag target)))
+      (fail "set! target must be a var or a field"))
+    {:tag :assign
+     :target target
+     :arg arg}))
+
+
 (defn- parse-seq [scope form]
   (if-let [form (seq form)]
     (let [f (first form)]
@@ -326,6 +341,7 @@
         (= f 'try*) (parse-try scope form)
         (= f 'fn*) (parse-fn scope form)
         (= f 'recur) (parse-recur scope form)
+        (= f 'set!) (parse-assign scope form)
         :else (parse-call scope form)))
     (parse-const ())))
 
@@ -706,6 +722,15 @@
       body)))
 
 
+(defn- translate-assign! [body {:keys [target arg]}]
+  (let [the-var (resolve-var (:name target))]
+    (-> body
+        (translate-const! the-var)
+        inc-stack-depth
+        (translate-expr! arg)
+        (update :bytecode (fn [bc] (conj! bc vm/STVB))))))
+
+
 (defn- translate-reassign-locals! [body first-index n]
   (assoc body
          :bytecode (loop [i n
@@ -801,6 +826,7 @@
           (= tag :recur) (translate-recur! body expr)
           (= tag :try) (translate-try! body expr)
           (= tag :fn) (translate-ifn! body expr)
+          (= tag :assign) (translate-assign! body expr)
           :else (translate-const! body (:value expr)))))
 
 
