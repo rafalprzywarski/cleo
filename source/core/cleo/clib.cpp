@@ -278,13 +278,32 @@ Force call_c_function(const Value *args, std::uint8_t num_args)
     return Value{reinterpret_cast<CFunction>(addr)(raw_args, num_args - 1)};
 }
 
+namespace
+{
+
+void *open_lib(const std::string& libname)
+{
+    void *lib = nullptr;
+    auto path_count = get_array_size(*rt::lib_paths);
+    for (decltype(path_count) i = 0; !lib && i != path_count; ++i)
+    {
+        auto path = get_array_elem(*rt::lib_paths, i);
+        std::string spath{get_string_ptr(path), get_string_size(path)};
+        lib = dlopen((spath + '/' + libname).c_str(), RTLD_NOW);
+    }
+    return lib;
+}
+
+}
+
 Force import_c_fn(Value libname, Value fnname, Value ret_type, Value param_types)
 {
     check_type("lib-name", libname, *type::UTF8String);
     check_type("fn-name", fnname, *type::UTF8String);
+    check_type("*lib-paths*", *rt::lib_paths, *type::Array);
     std::string slibname{get_string_ptr(libname), get_string_size(libname)};
     std::string sfnname{get_string_ptr(fnname), get_string_size(fnname)};
-    auto lib = dlopen(slibname.c_str(), RTLD_NOW);
+    auto lib = open_lib(slibname + ".so");
     if (!lib)
         return nil;
     auto sym = dlsym(lib, sfnname.c_str());
