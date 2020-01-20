@@ -92,7 +92,7 @@ void derive(Value tag, Value parent)
     tag_ancestors = array_set_conj(*tag_ancestors, parent);
     for (decltype(parent_ancestors_size) i = 0; i != parent_ancestors_size; ++i)
         tag_ancestors = array_set_conj(*tag_ancestors, get_array_elem(parent_ancestors, i));
-        ancestors = map_assoc(*ancestors, tag, *tag_ancestors);
+    ancestors = map_assoc(*ancestors, tag, *tag_ancestors);
     Root new_h{create_static_object(*type::Hierarchy, *ancestors)};
     set_var_root_value(rt::global_hierarchy.get_var(), *new_h);
 }
