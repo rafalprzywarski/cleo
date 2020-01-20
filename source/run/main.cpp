@@ -20,16 +20,31 @@ cleo::Force create_command_line_args(const std::vector<std::string>& args)
     return *command_line_args;
 }
 
+void split_paths(const std::string& s, cleo::Root& out)
+{
+    cleo::Root path;
+    std::string::size_type spos = std::string::npos;
+    do
+    {
+        ++spos;
+        auto next_pos = s.find_first_of(":;", spos);
+        path = cleo::create_string(s.substr(spos, next_pos - spos));
+        out = array_conj(*out, *path);
+        spos = next_pos;
+    }
+    while (spos != std::string::npos);
+}
+
 cleo::Force create_ns_bindings(const std::vector<std::string>& args)
 {
     cleo::Root ns_bindings{cleo::map_assoc(*cleo::EMPTY_MAP, cleo::CURRENT_NS, *cleo::rt::current_ns)};
     cleo::Root command_line_args{create_command_line_args(args)};
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::COMMAND_LINE_ARGS, *command_line_args);
 
+    cleo::Root lib_paths{*cleo::EMPTY_VECTOR};
     cleo::Root root_lib_path{cleo::create_string(args[0])};
-    cleo::Root project_lib_path{cleo::create_string(args[1])};
-    std::array<cleo::Value, 2> paths{{*root_lib_path, *project_lib_path}};
-    cleo::Root lib_paths{cleo::create_array(paths.data(), paths.size())};
+    lib_paths = array_conj(*lib_paths, *root_lib_path);
+    split_paths(args[1], lib_paths);
     ns_bindings = cleo::map_assoc(*ns_bindings, cleo::LIB_PATHS, *lib_paths);
     return *ns_bindings;
 }
