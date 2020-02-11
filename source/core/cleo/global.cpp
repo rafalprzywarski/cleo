@@ -981,8 +981,10 @@ Force mk_keyword(Value val)
         case tag::KEYWORD: return val;
         case tag::SYMBOL:
         {
+            auto ns = get_symbol_namespace(val);
             auto name = get_symbol_name(val);
-            return create_keyword(std::string(get_string_ptr(name), get_string_size(name)));
+            return create_keyword(ns ? std::string(get_string_ptr(ns), get_string_size(ns)) : std::string(),
+                                  std::string(get_string_ptr(name), get_string_size(name)));
         }
         case tag::UTF8STRING: return create_keyword(std::string(get_string_ptr(val), get_string_size(val)));
         default: return nil;

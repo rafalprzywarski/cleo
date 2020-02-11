@@ -255,6 +255,12 @@
   (assert= '(10 20 30) ((fn* [m] (let [{:keys [a b c]} m] [a b c])) {:a 10 :b 20 :c 30}))
   (assert= '(10 27 30) ((fn* [m] (let [{:keys [a b c] :or {a 17 b 27 c 37}} m] [a b c])) {:a 10 :c 30}))
   (assert= '(17 27 37) ((fn* [m] (let [{:keys [a b c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
+  (assert= '(10 20 30) ((fn* [m] (let [{:keys [a xx/b yy/c]} m] [a b c])) {:a 10 :xx/b 20 :yy/c 30}))
+  (assert= '(17 27 37) ((fn* [m] (let [{:keys [a xx/b yy/c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
+  (assert= '(10 20 30) ((fn* [m] (let [{:keys [:a :b :c]} m] [a b c])) {:a 10 :b 20 :c 30}))
+  (assert= '(17 27 37) ((fn* [m] (let [{:keys [:a :b :c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
+  (assert= '(10 20 30) ((fn* [m] (let [{:keys [::a :xx/b :yy/c]} m] [a b c])) {::a 10 :xx/b 20 :yy/c 30}))
+  (assert= '(17 27 37) ((fn* [m] (let [{:keys [::a :xx/b :yy/c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
 
   (assert= '(nil) ((fn* [m] (let [{:syms [a]} m] [a])) nil))
   (assert= '(nil) ((fn* [m] (let [{:syms [a]} m] [a])) {}))
@@ -262,6 +268,9 @@
   (assert= '(10 20 30) ((fn* [m] (let [{:syms [a b c]} m] [a b c])) {'a 10 'b 20 'c 30}))
   (assert= '(10 27 30) ((fn* [m] (let [{:syms [a b c] :or {a 17 b 27 c 37}} m] [a b c])) {'a 10 'c 30}))
   (assert= '(17 27 37) ((fn* [m] (let [{:syms [a b c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
+  (assert= '(10 20 30) ((fn* [m] (let [{:syms [a xx/b yy/c]} m] [a b c])) {'a 10 'xx/b 20 'yy/c 30}))
+  (assert= '(17 27 37) ((fn* [m] (let [{:syms [a xx/b yy/c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
+  (assert-throws IllegalArgument (macroexpand '(let [{:syms [:x]} v] nil)))
 
   (assert= '(nil) ((fn* [m] (let [{:strs [a]} m] [a])) nil))
   (assert= '(nil) ((fn* [m] (let [{:strs [a]} m] [a])) {}))
@@ -269,6 +278,8 @@
   (assert= '(10 20 30) ((fn* [m] (let [{:strs [a b c]} m] [a b c])) {"a" 10 "b" 20 "c" 30}))
   (assert= '(10 27 30) ((fn* [m] (let [{:strs [a b c] :or {a 17 b 27 c 37}} m] [a b c])) {"a" 10 "c" 30}))
   (assert= '(17 27 37) ((fn* [m] (let [{:strs [a b c] :or {a 17 b 27 c 37}} m] [a b c])) nil))
+  (assert-throws IllegalArgument (macroexpand '(let [{:strs [:x]} v] nil)))
+  (assert-throws IllegalArgument (macroexpand '(let [{:strs [a/x]} v] nil)))
 
   (assert= '(10 20 30 40) ((fn* [m] (let [{x :d :keys [a] :syms [b] :strs [c]} m] [a b c x])) {:a 10 'b 20 "c" 30 :d 40}))
 

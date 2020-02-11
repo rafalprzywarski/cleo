@@ -11,6 +11,15 @@
 
 
 (def {:arglists '([x])}
+  simple-symbol?
+  (fn* simple-symbol? [x]
+       (if (symbol? x)
+         (if (namespace x)
+           nil
+           :true))))
+
+
+(def {:arglists '([x])}
   vector?
   (fn* vector? [x]
        (isa? (type x) PersistentVector)))
@@ -159,17 +168,20 @@
                                       out (conj out vsym v)
                                       defaults (b :or)
                                       all (b :as)
+                                      symbol-or-keyword? (fn* [x] (if (symbol? x) :true (keyword? x)))
                                       destructure-locals
-                                      (fn* [out key-fn locals]
-                                           (reduce (fn* [out sym] (if (symbol? sym)
-                                                                    (conj out sym `(get ~vsym ~(key-fn sym) ~(get defaults sym)))
-                                                                    (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
+                                      (fn* [out valid-fn key-fn locals]
+                                           (reduce (fn* [out sym]
+                                                        (if (valid-fn sym)
+                                                          (let* [ssym (symbol nil (name sym))]
+                                                            (conj out ssym `(get ~vsym ~(key-fn sym) ~(get defaults ssym))))
+                                                          (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
                                                    out
                                                    locals))
                                       out (if all (conj out all vsym) out)
-                                      out (destructure-locals out keyword (b :keys))
-                                      out (destructure-locals out (fn* [sym] (list 'quote sym)) (b :syms))
-                                      out (destructure-locals out name (b :strs))
+                                      out (destructure-locals out symbol-or-keyword? keyword (b :keys))
+                                      out (destructure-locals out symbol? (fn* [sym] (list 'quote sym)) (b :syms))
+                                      out (destructure-locals out simple-symbol? name (b :strs))
                                       b (dissoc b :or :as :keys :syms :strs)]
                                  (reduce (fn* [out bk]
                                               (destructure-binding out
