@@ -383,6 +383,8 @@
 (defn even? [x] (zero? (bit-and* x 1)))
 (defn odd? [x] (not (even? x)))
 (defn > [x y] (< y x))
+(defn <= [x y] (not (< y x)))
+(defn >= [x y] (not (< x y)))
 
 
 (defn max
