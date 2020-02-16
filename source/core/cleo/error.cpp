@@ -41,6 +41,11 @@ Value exception_message(Value e)
     return get_static_object_element(e, 0);
 }
 
+Value logic_exception_callstack(Value e)
+{
+    return get_static_object_element(e, 1);
+}
+
 Force new_read_error(Value msg, Value line, Value column)
 {
     return create_object3(*type::ReadError, msg, line, column);
@@ -64,7 +69,8 @@ Force new_unexpected_end_of_input(Value line, Value column)
 
 Force new_call_error(Value msg)
 {
-    return create_object1(*type::CallError, msg);
+    Root s{current_callstack()};
+    return create_object2(*type::CallError, msg, *s);
 }
 
 Force new_symbol_not_found(Value msg)
@@ -74,12 +80,14 @@ Force new_symbol_not_found(Value msg)
 
 Force new_illegal_argument(Value msg)
 {
-    return create_object1(*type::IllegalArgument, msg);
+    Root s{current_callstack()};
+    return create_object2(*type::IllegalArgument, msg, *s);
 }
 
 Force new_illegal_state(Value msg)
 {
-    return create_object1(*type::IllegalState, msg);
+    Root s{current_callstack()};
+    return create_object2(*type::IllegalState, msg, *s);
 }
 
 Force new_file_not_found(Value msg)
@@ -89,12 +97,14 @@ Force new_file_not_found(Value msg)
 
 Force new_arithmetic_exception(Value msg)
 {
-    return create_object1(*type::ArithmeticException, msg);
+    Root s{current_callstack()};
+    return create_object2(*type::ArithmeticException, msg, *s);
 }
 
 Force new_index_out_of_bounds()
 {
-    return create_static_object(*type::IndexOutOfBounds, nil);
+    Root s{current_callstack()};
+    return create_static_object(*type::IndexOutOfBounds, nil, *s);
 }
 
 Force new_compilation_error(Value msg)
@@ -104,7 +114,8 @@ Force new_compilation_error(Value msg)
 
 Force new_stack_overflow()
 {
-    return create_static_object(*type::StackOverflow, nil);
+    Root s{current_callstack()};
+    return create_static_object(*type::StackOverflow, nil, *s);
 }
 
 }

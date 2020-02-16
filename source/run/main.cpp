@@ -6,6 +6,7 @@
 #include <cleo/array.hpp>
 #include <cleo/print.hpp>
 #include <cleo/util.hpp>
+#include <cleo/multimethod.hpp>
 #include <iostream>
 
 cleo::Force create_command_line_args(const std::vector<std::string>& args)
@@ -84,6 +85,12 @@ int main(int argc, const char *const* argv)
         cleo::Root e{cleo::catch_exception()};
         cleo::Root text{cleo::pr_str(*e)};
         std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text)) << std::endl;
+        if (cleo::isa(cleo::get_value_type(*e), *cleo::type::LogicException))
+        {
+            cleo::Root cs{logic_exception_callstack(*e)};
+            cs = cleo::pr_str(*cs);
+            std::cout << "  callstack: " << std::string(cleo::get_string_ptr(*cs), cleo::get_string_size(*cs)) << std::endl;
+        }
         return 2;
     }
     catch (std::exception const& e)

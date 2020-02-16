@@ -8,6 +8,7 @@
 #include <cleo/array.hpp>
 #include <cleo/util.hpp>
 #include <cleo/list.hpp>
+#include <cleo/multimethod.hpp>
 #include <iostream>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -52,6 +53,12 @@ bool eval_source(const std::string& line)
         cleo::Root e{cleo::catch_exception()};
         cleo::Root text{cleo::pr_str(*e)};
         std::cout << std::string(cleo::get_string_ptr(*text), cleo::get_string_size(*text)) << std::endl;
+        if (cleo::isa(cleo::get_value_type(*e), *cleo::type::LogicException))
+        {
+            cleo::Root cs{logic_exception_callstack(*e)};
+            cs = cleo::pr_str(*cs);
+            std::cout << "  callstack: " << std::string(cleo::get_string_ptr(*cs), cleo::get_string_size(*cs)) << std::endl;
+        }
     }
     catch (std::exception const& e)
     {

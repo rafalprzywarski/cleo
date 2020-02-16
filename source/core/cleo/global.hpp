@@ -180,7 +180,7 @@ extern Root current_exception;
 namespace prof
 {
 extern bool enabled;
-constexpr std::size_t MAX_CALLSTACK_SIZE = 2048;
+constexpr std::size_t MAX_CALLSTACK_SIZE = 16384;
 extern Value callstack[MAX_CALLSTACK_SIZE];
 extern volatile std::size_t callstack_size;
 extern Value callstack_copy[MAX_CALLSTACK_SIZE];
@@ -317,6 +317,7 @@ extern const ConstRoot PersistentHashMapSeqParent;
 extern const ConstRoot PersistentHashMapCollisionNode;
 extern const ConstRoot PersistentHashMapArrayNode;
 extern const ConstRoot Exception;
+extern const ConstRoot LogicException;
 extern const ConstRoot CastError;
 extern const ConstRoot ReadError;
 extern const ConstRoot CallError;
@@ -398,5 +399,7 @@ inline Value get_value_type(Value val)
     default: return nil;
     }
 }
+
+Force current_callstack();
 
 }

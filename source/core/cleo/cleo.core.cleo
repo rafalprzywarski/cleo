@@ -7,7 +7,7 @@
   (fn* cast [vtype val]
        (if (isa? (type val) vtype)
          val
-         (throw (CastError. (str "Cannot cast " (type val) " to " vtype))))))
+         (throw (CastError. (str "Cannot cast " (type val) " to " vtype) (current-callstack))))))
 
 
 (def {:arglists '([x])}

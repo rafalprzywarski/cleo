@@ -17,6 +17,7 @@ private:
 Force catch_exception();
 
 Value exception_message(Value e);
+Value logic_exception_callstack(Value e);
 
 Force new_read_error(Value msg, Value line, Value column);
 Int64 read_error_line(Value e);

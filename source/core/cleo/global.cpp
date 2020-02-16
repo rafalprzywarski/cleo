@@ -251,18 +251,19 @@ const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "Pers
 const ConstRoot PersistentHashMapCollisionNode(create_dynamic_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_dynamic_type("cleo.core", "PersistentHashMapArrayNode"));
 const ConstRoot Exception{create_static_type("cleo.core", "Exception", {"msg"})};
-const ConstRoot CastError{create_static_type("cleo.core", "CastError", {"msg"})};
+const ConstRoot LogicException{create_static_type("cleo.core", "LogicException", {"msg", "callstack"})};
+const ConstRoot CastError{create_static_type("cleo.core", "CastError", {"msg", "callstack"})};
 const ConstRoot ReadError{create_static_type("cleo.core", "ReadError", {"msg", {"line", Int64}, {"column", Int64}})};
-const ConstRoot CallError{create_static_type("cleo.core", "CallError", {"msg"})};
+const ConstRoot CallError{create_static_type("cleo.core", "CallError", {"msg", "callstack"})};
 const ConstRoot SymbolNotFound{create_static_type("cleo.core", "SymbolNotFound", {"msg"})};
-const ConstRoot IllegalArgument{create_static_type("cleo.core", "IllegalArgument", {"msg"})};
-const ConstRoot IllegalState{create_static_type("cleo.core", "IllegalState", {"msg"})};
+const ConstRoot IllegalArgument{create_static_type("cleo.core", "IllegalArgument", {"msg", "callstack"})};
+const ConstRoot IllegalState{create_static_type("cleo.core", "IllegalState", {"msg", "callstack"})};
 const ConstRoot UnexpectedEndOfInput{create_static_type("cleo.core", "UnexpectedEndOfInput", {"msg", {"line", Int64}, {"column", Int64}})};
 const ConstRoot FileNotFound{create_static_type("cleo.core", "FileNotFound", {"msg"})};
-const ConstRoot ArithmeticException{create_static_type("cleo.core", "ArithmeticException", {"msg"})};
-const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBounds", {"msg"})};
+const ConstRoot ArithmeticException{create_static_type("cleo.core", "ArithmeticException", {"msg", "callstack"})};
+const ConstRoot IndexOutOfBounds{create_static_type("cleo.core", "IndexOutOfBounds", {"msg", "callstack"})};
 const ConstRoot CompilationError{create_static_type("cleo.core", "CompilationError", {"msg"})};
-const ConstRoot StackOverflow{create_static_type("cleo.core", "StackOverflow", {"msg"})};
+const ConstRoot StackOverflow{create_static_type("cleo.core", "StackOverflow", {"msg", "callstack"})};
 const ConstRoot Namespace{create_static_type("cleo.core", "Namespace", {"name", "meta", "mapping", "aliases"})};
 const ConstRoot UTF8StringSeq{create_static_type("cleo.core", "UTF8StringSeq", {"str", {"offset", Int64}})};
 }
@@ -334,6 +335,11 @@ const StaticVar global_hierarchy = define_var(GLOBAL_HIERARCHY, nil);
 
 }
 
+Force current_callstack()
+{
+    return create_array(prof::callstack, prof::callstack_size);
+}
+
 namespace
 {
 
@@ -399,6 +405,7 @@ const Value GET_TYPE_FIELD_INDEX = create_symbol("cleo.core", "get-type-field-in
 const Value PEEK = create_symbol("cleo.core", "peek");
 const Value POP = create_symbol("cleo.core", "pop");
 const Value VAR_NAME = create_symbol("cleo.core", "var-name");
+const Value CURRENT_CALLSTACK = create_symbol("cleo.core", "current-callstack");
 
 const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
 const Value FIRST_ARG = create_symbol("first-arg");
@@ -1438,6 +1445,11 @@ Force get_type_field_index(Value type, Value field)
     return index < 0 ? nil : create_int64(index);
 }
 
+Force current_callstack_fn()
+{
+    return create_array(prof::callstack, prof::callstack_size - 1);
+}
+
 template <std::uint32_t f(Value)>
 struct WrapUInt32Fn
 {
@@ -1513,30 +1525,32 @@ struct Initialize
         define_type(*type::PersistentHashMapArrayNode);
         define_type(*type::PersistentHashMapSeqParent);
         define_type(*type::Exception);
+        define_type(*type::LogicException);
+        derive(*type::LogicException, *type::Exception);
         define_type(*type::CastError);
-        derive(*type::CastError, *type::Exception);
+        derive(*type::CastError, *type::LogicException);
         define_type(*type::ReadError);
         derive(*type::ReadError, *type::Exception);
         define_type(*type::UnexpectedEndOfInput);
         derive(*type::UnexpectedEndOfInput, *type::ReadError);
         define_type(*type::CallError);
-        derive(*type::CallError, *type::Exception);
+        derive(*type::CallError, *type::LogicException);
         define_type(*type::SymbolNotFound);
         derive(*type::SymbolNotFound, *type::Exception);
         define_type(*type::IllegalArgument);
-        derive(*type::IllegalArgument, *type::Exception);
+        derive(*type::IllegalArgument, *type::LogicException);
         define_type(*type::IllegalState);
-        derive(*type::IllegalState, *type::Exception);
+        derive(*type::IllegalState, *type::LogicException);
         define_type(*type::FileNotFound);
         derive(*type::FileNotFound, *type::Exception);
         define_type(*type::ArithmeticException);
-        derive(*type::ArithmeticException, *type::Exception);
+        derive(*type::ArithmeticException, *type::LogicException);
         define_type(*type::IndexOutOfBounds);
-        derive(*type::IndexOutOfBounds, *type::Exception);
+        derive(*type::IndexOutOfBounds, *type::LogicException);
         define_type(*type::CompilationError);
         derive(*type::CompilationError, *type::Exception);
         define_type(*type::StackOverflow);
-        derive(*type::StackOverflow, *type::Exception);
+        derive(*type::StackOverflow, *type::LogicException);
 
         define_type(*type::Namespace);
         define_type(*type::TransientArray);
@@ -2058,6 +2072,8 @@ struct Initialize
         define_function(NAMESPACES, create_native_function0<get_namespaces, &NAMESPACES>());
 
         define_function(VAR_NAME, create_native_function1<get_var_name, &VAR_NAME>());
+
+        define_function(CURRENT_CALLSTACK, create_native_function0<current_callstack_fn, &CURRENT_CALLSTACK>());
 
         define_function(GC_LOG, create_native_function1<set_gc_log, &GC_LOG>());
 

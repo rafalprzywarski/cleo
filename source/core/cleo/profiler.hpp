@@ -9,8 +9,7 @@ namespace prof
 class Trace
 {
 public:
-    Trace() = default;
-    void do_trace(Value fn_name)
+    Trace(Value fn_name)
     {
         if (callstack_size == MAX_CALLSTACK_SIZE)
             return;
@@ -32,8 +31,7 @@ private:
 };
 
 #define CLEO_PROF_TRACE(name, expr) \
-    ::cleo::prof::Trace name{}; \
-    if (::cleo::prof::enabled) name.do_trace(expr); else;
+    ::cleo::prof::Trace name{expr};
 
 Value start();
 Force finish();

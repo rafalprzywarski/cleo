@@ -2987,13 +2987,13 @@
     (assert= '(1 2 3 (4)) (f 1 2 3 4)))
   (let [f (binding-ns 'cleo.core.test
                       (cc/eval '(fn dummy
-                                  ([a] (try* (throw (IllegalArgument. "Bad")) (finally* (reset! a 5))))
+                                  ([a] (try* (throw (IllegalArgument. "Bad" nil)) (finally* (reset! a 5))))
                                   ([_ x] (try* (throw x) (catch* IllegalArgument e e))))))
         a (atom 1)]
     (assert-throws IllegalArgument (f a))
     (assert= 5 @a)
-    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds. nil)))
-    (assert= IllegalArgument (type (f 0 (IllegalArgument. "x"))))))
+    (assert-throws IndexOutOfBounds (f 0 (IndexOutOfBounds. nil nil)))
+    (assert= IllegalArgument (type (f 0 (IllegalArgument. "x" nil))))))
 
 
 (defmacro get-var-value-at-macroexpansion [name]
