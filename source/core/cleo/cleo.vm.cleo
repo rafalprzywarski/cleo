@@ -142,3 +142,24 @@
       :arglists '([])
       :doc "Add Int64 - pop two values from and push their sum onto the int stack"}
   ADDI64 0x82)
+
+
+(def {:const :true
+      :arglists '([])
+      :doc "No OPeration - does nothing"}
+  NOP 0xff)
+
+
+(defn isize [oc]
+  ({LDC 3
+    LDL 3
+    LDDV 3
+    LDV 3
+    LDSF 3
+    STL 3
+    BR 3
+    BNIL 3
+    BNNIL 3
+    CALL 2
+    APPLY 2
+    IFN 2} oc 1))

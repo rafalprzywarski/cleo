@@ -1138,6 +1138,7 @@
       cc/parse
       cc/optimize
       cc/translate
+      cc/optimize-fn-bytecode
       :bodies
       first))
 
@@ -2969,6 +2970,96 @@
                        vm/STVB]}
            (translate-body '(fn [x] (set! cleo.core.test/test-var0 x))))
   (assert-compilation-error "unable to resolve symbol: cleo.core.test/not-defined" (translate-body '(set! cleo.core.test/not-defined 20))))
+
+
+(deftest optimize-bytecode-remove-NOPs
+  (assert= vm/NOP 255) ; the next test assumes that
+  (assert= {:name 'abc
+            :bodies [{:arity 1
+                      :bytecode [vm/LDL 255 255]}]}
+           (cc/optimize-fn-bytecode
+            {:name 'abc
+             :bodies [{:arity 1
+                       :bytecode [vm/NOP
+                                  vm/NOP
+                                  vm/LDL 255 255
+                                  vm/NOP]}]}))
+  (assert= {:name 'abc
+            :bodies [{:arity 1, :bytecode [vm/LDL 255 255]}
+                     {:arity 2, :bytecode [vm/LDL 254 255]}
+                     {:arity 3, :bytecode [vm/CNIL]}]}
+           (cc/optimize-fn-bytecode
+            {:name 'abc
+             :bodies [{:arity 1
+                       :bytecode [vm/LDL 255 255
+                                  vm/NOP]}
+                      {:arity 2
+                       :bytecode [vm/NOP
+                                  vm/LDL 254 255
+                                  vm/NOP]}
+                      {:arity 3
+                       :bytecode [vm/CNIL
+                                  vm/NOP]}]}))
+  (let [optimize-bytecode (fn optimize-body [bytecode]
+                            (-> {:name :xyz
+                                 :bodies [{:arity 3
+                                           :bytecode bytecode}]}
+                                cc/optimize-fn-bytecode
+                                :bodies
+                                first
+                                :bytecode))]
+    (assert= [vm/LDL 255 255
+              vm/BNIL 6 0
+              vm/LDL 255 255
+              vm/BR 3 0
+              vm/LDL 254 255]
+             (optimize-bytecode [vm/LDL 255 255
+                                 vm/BNIL 8 0
+                                 vm/NOP
+                                 vm/LDL 255 255
+                                 vm/NOP
+                                 vm/BR 4 0
+                                 vm/NOP
+                                 vm/LDL 254 255
+                                 vm/NOP]))
+    (assert= [vm/LDL 255 255
+              vm/BNNIL 6 0
+              vm/LDL 254 255
+              vm/BR 3 0
+              vm/LDL 255 255]
+             (optimize-bytecode [vm/LDL 255 255
+                                 vm/BNNIL 8 0
+                                 vm/NOP
+                                 vm/LDL 254 255
+                                 vm/NOP
+                                 vm/BR 4 0
+                                 vm/NOP
+                                 vm/LDL 255 255
+                                 vm/NOP]))
+    (assert= [vm/LDL 253 255
+              vm/BNIL 21 0
+              vm/LDL 254 255
+              vm/LDL 255 255
+              vm/LDL 253 255
+              vm/STL 255 255
+              vm/STL 254 255
+              vm/STL 253 255
+              vm/BR 229 255 ; -27
+              vm/LDL 254 255]
+             (optimize-bytecode [vm/LDL 253 255
+                                 vm/BNIL 25 0
+                                 vm/NOP
+                                 vm/NOP
+                                 vm/LDL 254 255
+                                 vm/LDL 255 255
+                                 vm/LDL 253 255
+                                 vm/STL 255 255
+                                 vm/NOP
+                                 vm/NOP
+                                 vm/STL 254 255
+                                 vm/STL 253 255
+                                 vm/BR 225 255 ; -31
+                                 vm/LDL 254 255]))))
 
 
 (deftest eval-fn

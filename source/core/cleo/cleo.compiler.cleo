@@ -474,6 +474,17 @@
       (assoc! (inc off) (bit-and (bit-shift-right n 8) 0xff))))
 
 
+(defn- get-u16 [v off]
+  (+ (bit-or (get v off) (bit-shift-left (get v (inc off)) 8))))
+
+
+(defn- get-i16 [v off]
+  (let [x (get-u16 v off)]
+    (if (< 32767 x)
+      (- x 65536)
+      x)))
+
+
 (defn- conj-STL! [v n]
   (-> v
       (conj! vm/STL)
@@ -798,11 +809,13 @@
 
 
 (def translate-fn)
+(def optimize-fn-bytecode)
 
 
 (defn- translate-ifn! [body expr]
   (let [parent-locals (merge (or (:parent-locals body) {}) (-> body :scope :locals))
         tfn (translate-fn parent-locals expr)
+        tfn (optimize-fn-bytecode tfn)
         closed-parent-locals (-> tfn :closed-parent-locals)
         body (translate-const! body (serialize-fn tfn))
         body (reduce translate-local-index! body closed-parent-locals)]
@@ -878,18 +891,22 @@
     tbody))
 
 
-(defn conj-nils! [n v]
-  (loop [n n
-         v (transient v)]
-    (if (not (pos? n))
-      (persistent! v)
-      (recur (dec n) (conj! v nil)))))
+(defn conj-nils! [v n]
+  (if (pos? n)
+    (recur (conj! v nil) (dec n))
+    v))
+
+
+(defn conj-nils [v n]
+  (-> (transient v)
+      (conj-nils! n)
+      persistent!))
 
 
 (defn init-loads [{:keys [consts parent-local-loads] :as body} closed-parent-locals]
   (let [const-base (count consts)]
     (-> body
-        (update :consts (fn [c] (conj-nils! (count closed-parent-locals) (or c []))))
+        (update :consts (fn [c] (conj-nils (or c []) (count closed-parent-locals))))
         (update :bytecode (fn [bc]
                             (persistent! (reduce (fn [bc {:keys [index offset]}]
                                                    (assoc-u16! bc (inc offset) (+ const-base (closed-parent-locals index))))
@@ -1131,6 +1148,53 @@
       inline-no-arg-returning-const))
 
 
+(defn vcopy! [out v i n]
+  (let [end (+ i n)]
+    (loop [i i
+           out out]
+      (if (< i end)
+        (recur (inc i) (conj! out (v i)))
+        out))))
+
+
+(defn no-NOP-map [bc]
+  (let [n (count bc)]
+    (loop [off 0
+           nnoff 0
+           out (transient [])]
+      (if (< off n)
+        (let [oc (bc off)
+              isize (vm/isize oc)]
+          (recur (+ off isize)
+                 (if (= oc vm/NOP)
+                   nnoff
+                   (+ nnoff isize))
+                 (-> out (conj! nnoff) (conj-nils! (dec isize)))))
+        (persistent! (conj! out nnoff))))))
+
+
+(defn remove-NOPs [bc]
+  (let [n (count bc)
+        nnmap (no-NOP-map bc)]
+    (loop [off 0
+           out (transient [])]
+      (if (< off n)
+        (let [oc (bc off)
+              isize (vm/isize oc)
+              noff (+ off isize)]
+          (recur noff
+                 (cond (= oc vm/NOP) out
+                       (#{vm/BR vm/BNIL vm/BNNIL} oc) (-> out (conj! oc)
+                                                          (conj-i16! (- (nnmap (+ noff (get-i16 bc (inc off))))
+                                                                        (nnmap noff))))
+                       :else (vcopy! out bc off isize))))
+        (persistent! out)))))
+
+
+(defn optimize-fn-bytecode [f]
+  (assoc f :bodies (mapv (fn [b] (update b :bytecode remove-NOPs)) (:bodies f))))
+
+
 (defn translate [ast]
   (let [ast (if (not= :fn (:tag ast))
               {:tag :fn
@@ -1154,4 +1218,5 @@
             fn-wrap
             optimize
             translate
+            optimize-fn-bytecode
             serialize-fn)))))

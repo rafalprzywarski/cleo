@@ -416,7 +416,11 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             }
             int_stack.back() = r;
             ++p;
+            break;
         }
+        case NOP:
+            ++p;
+            break;
         }
     }
 }
