@@ -1142,7 +1142,6 @@
       cc/parse
       cc/optimize
       cc/translate
-      cc/optimize-fn-bytecode
       :bodies
       first))
 
@@ -3156,6 +3155,34 @@
                                       vm/POP
                                       vm/CNIL]
                            :exception-table [{:start-offset 12, :end-offset 17, :handler-offset 20, :stack-size 0, :type cleo.core/Exception}]})))
+
+
+(deftest optimize-bytecode-remove-dead-code
+  (assert= [vm/LDL 254 255]
+           (optimize-bytecode [vm/BR 3 0
+                               vm/LDL 255 255
+                               vm/LDL 254 255]))
+  (assert= [vm/LDL 255 255
+            vm/THROW]
+           (optimize-bytecode [vm/LDL 255 255
+                               vm/THROW
+                               vm/LDL 254 255
+                               vm/CNIL]))
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 4 0
+                       vm/POP
+                       vm/LDL 254 255]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 8, :stack-size 0, :type cleo.core/Exception}]}
+           (optimize-body {:arity 1
+                           :bytecode [vm/LDL 255 255
+                                      vm/CALL 0
+                                      vm/BR 7 0
+                                      vm/LDL 255 255
+                                      vm/POP
+                                      vm/LDL 254 255]
+                           :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 11, :stack-size 0, :type cleo.core/Exception}]})))
 
 
 (deftest eval-fn

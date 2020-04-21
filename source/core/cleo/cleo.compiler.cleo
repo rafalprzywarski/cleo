@@ -1216,9 +1216,62 @@
     body))
 
 
+(defn- assoc-true! [bc off n]
+  (if (pos? n)
+    (recur (assoc! bc off :true) (inc off) (dec n))
+    bc))
+
+
+(defn- nil-vec! [n]
+  (loop [n n
+         out (transient [])]
+    (if (pos? n)
+      (recur (dec n) (conj! out nil))
+      out)))
+
+
+(defn- mark-reachable-bytes [bc offs]
+  (let [n (count bc)]
+    (loop [offs (transient offs)
+           v (nil-vec! (count bc))]
+      (if (pos? (count offs))
+        (let [off (peek offs)
+              offs (pop! offs)]
+          (if (or (= off n)
+                  (v off))
+            (recur offs v)
+            (let [oc (bc off)
+                  isize (vm/isize oc)
+                  v (assoc-true! v off isize)
+                  noff (+ off isize)
+                  offs (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
+                         (conj! offs (+ noff (get-i16 bc (inc off))))
+                         offs)
+                  offs (if (not (#{vm/BR vm/THROW} oc))
+                         (conj! offs noff)
+                         offs)]
+              (recur offs v))))
+        (let [v (persistent! v)]
+          (when (some not v)
+            v))))))
+
+
+(defn- remove-dead-code [{bc :bytecode et :exception-table :as body}]
+  (if-let [rb (mark-reachable-bytes bc (conj (mapv :handler-offset et) 0))]
+    (loop [r (seq rb)
+           s (seq bc)
+           out (transient [])]
+      (if s
+        (recur (next r) (next s) (conj! out (if (first r) (first s) vm/NOP)))
+        (assoc body :bytecode (persistent! out))))
+    body))
+
+
 (defn optimize-fn-bytecode [f]
   (let [optimize-body (fn [body]
-                        (let [obody (remove-NOPs body)]
+                        (let [obody (-> body
+                                        remove-NOPs
+                                        remove-dead-code)]
                           (if (= body obody)
                             body
                             (recur obody))))]
