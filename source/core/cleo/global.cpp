@@ -304,6 +304,7 @@ namespace
 const Value TRANSIENT = create_symbol("cleo.core", "transient");
 const Value PERSISTENT = create_symbol("cleo.core", "persistent!");
 const Value CONJ_E = create_symbol("cleo.core", "conj!");
+const Value POP_E = create_symbol("cleo.core", "pop!");
 }
 
 namespace rt
@@ -311,6 +312,7 @@ namespace rt
 
 const Root transient_array{create_native_function1<cleo::transient_array, &TRANSIENT>()};
 const Root transient_array_conj{create_native_function2<cleo::transient_array_conj, &CONJ_E>()};
+const Root transient_array_pop{create_native_function1<cleo::transient_array_pop, &POP_E>()};
 const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent, &PERSISTENT>()};
 const Root array_set_conj{create_native_function2<cleo::array_set_conj, &CONJ>()};
 const Root map_assoc{create_native_function3<cleo::map_assoc, &ASSOC>()};
@@ -2082,6 +2084,10 @@ struct Initialize
         define_multimethod(CONJ_E, *first_type, undefined);
 
         define_method(CONJ_E, *type::TransientArray, *rt::transient_array_conj);
+
+        define_multimethod(POP_E, *first_type, undefined);
+
+        define_method(POP_E, *type::TransientArray, *rt::transient_array_pop);
 
         define_multimethod(TRANSIENT, *first_type, undefined);
 

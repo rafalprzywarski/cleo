@@ -190,6 +190,44 @@ TEST_F(transient_array_test, should_conj_elements_at_the_end_of_the_vector)
     ASSERT_TRUE(elem2->is(get_transient_array_elem(*vec3, 2)));
 }
 
+TEST_F(transient_array_test, should_pop_elements_from_the_end_of_the_vector)
+{
+    Root a{create_string("a")};
+    Root b{create_string("b")};
+    Root c{create_string("c")};
+    Root vec1{array_conj(*EMPTY_VECTOR, *a)};
+    Root vec2{array_conj(*vec1, *b)};
+    Root vec3{array_conj(*vec2, *c)};
+    Root pvec2{transient_array(*vec3)};
+    pvec2 = transient_array_pop(*pvec2);
+
+    ASSERT_EQ(2, get_transient_array_size(*pvec2));
+    ASSERT_TRUE(a->is(get_transient_array_elem(*pvec2, 0)));
+    ASSERT_TRUE(b->is(get_transient_array_elem(*pvec2, 1)));
+
+    Root pvec1{transient_array_pop(*pvec2)};
+
+    ASSERT_EQ(1, get_transient_array_size(*pvec1));
+    ASSERT_TRUE(a->is(get_transient_array_elem(*pvec1, 0)));
+
+    Root pvec0{transient_array_pop(*pvec1)};
+
+    ASSERT_EQ(0, get_transient_array_size(*pvec0));
+
+    try
+    {
+        Root empty{create_array(nullptr, 0)};
+        empty = transient_array(*empty);
+        transient_array_pop(*empty);
+        FAIL() << "array_pop should fail for an empty array";
+    }
+    catch (Exception const& )
+    {
+        Root e{catch_exception()};
+        ASSERT_EQ_REFS(*type::IllegalState, get_value_type(*e));
+    }
+}
+
 TEST_F(transient_array_test, conj_should_reallocate_when_capacity_is_exceeded)
 {
     Root p{create_array(nullptr, 0)};

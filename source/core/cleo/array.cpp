@@ -102,6 +102,19 @@ Force transient_array_conj(Value v, Value e)
     return *t;
 }
 
+Force transient_array_pop(Value v)
+{
+    auto size = get_transient_array_size(v);
+    if (size == 0)
+    {
+        Root msg{create_string("Can't pop an empty array")};
+        throw_exception(new_illegal_state(*msg));
+    }
+    set_dynamic_object_element(v, size - 1, nil); // GC
+    set_dynamic_object_int(v, 0, size - 1);
+    return v;
+}
+
 Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e)
 {
     auto size = get_transient_array_size(v);

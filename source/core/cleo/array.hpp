@@ -19,6 +19,7 @@ Force transient_array(Value other);
 inline Int64 get_transient_array_size(Value v) { return get_dynamic_object_int(v, 0); }
 Value get_transient_array_elem(Value v, std::uint32_t index);
 Force transient_array_conj(Value v, Value e);
+Force transient_array_pop(Value v);
 Force transient_array_assoc_elem(Value v, std::uint32_t index, Value e);
 Force transient_array_persistent(Value v);
 
