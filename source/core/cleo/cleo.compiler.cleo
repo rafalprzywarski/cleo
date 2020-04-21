@@ -1166,11 +1166,15 @@
         (let [oc (bc off)
               isize (vm/isize oc)]
           (recur (+ off isize)
-                 (if (= oc vm/NOP)
-                   nnoff
-                   (+ nnoff isize))
+                 (cond (= oc vm/NOP) nnoff
+                       (and (= oc vm/BR)
+                            (zero? (get-i16 bc (inc off)))) nnoff
+                       (and (#{vm/BNIL vm/BNNIL} oc)
+                            (zero? (get-i16 bc (inc off)))) (inc nnoff)
+                       :else (+ nnoff isize))
                  (-> out (conj! nnoff) (conj-nils! (dec isize)))))
-        (persistent! (conj! out nnoff))))))
+        (when (not= nnoff n)
+          (persistent! (conj! out nnoff)))))))
 
 
 (defn- remap-exception-table [nnmap et]
@@ -1192,6 +1196,10 @@
               noff (+ off isize)]
           (recur noff
                  (cond (= oc vm/NOP) out
+                       (and (= oc vm/BR)
+                            (zero? (get-i16 bc (inc off)))) out
+                       (and (#{vm/BNIL vm/BNNIL} oc)
+                            (zero? (get-i16 bc (inc off)))) (conj! out vm/POP)
                        (#{vm/BR vm/BNIL vm/BNNIL} oc) (-> out (conj! oc)
                                                           (conj-i16! (- (nnmap (+ noff (get-i16 bc (inc off))))
                                                                         (nnmap noff))))
@@ -1200,15 +1208,21 @@
 
 
 (defn- remove-NOPs [{bc :bytecode et :exception-table :as body}]
-  (let [nnmap (no-NOP-map bc)
-        body (if et
-               (assoc body :exception-table (remap-exception-table nnmap et))
-               body)]
-    (assoc body :bytecode (remove-NOPs-and-remap-branches nnmap bc))))
+  (if-let [nnmap (no-NOP-map bc)]
+    (let [body (if et
+                 (assoc body :exception-table (remap-exception-table nnmap et))
+                 body)]
+      (assoc body :bytecode (remove-NOPs-and-remap-branches nnmap bc)))
+    body))
 
 
 (defn optimize-fn-bytecode [f]
-  (assoc f :bodies (mapv remove-NOPs (:bodies f))))
+  (let [optimize-body (fn [body]
+                        (let [obody (remove-NOPs body)]
+                          (if (= body obody)
+                            body
+                            (recur obody))))]
+    (assoc f :bodies (mapv optimize-body (:bodies f)))))
 
 
 (defn translate [ast]

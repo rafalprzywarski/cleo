@@ -2976,6 +2976,21 @@
   (assert-compilation-error "unable to resolve symbol: cleo.core.test/not-defined" (translate-body '(set! cleo.core.test/not-defined 20))))
 
 
+(defn optimize-body [body]
+  (-> {:name :xyz
+       :bodies [body]}
+      cc/optimize-fn-bytecode
+      :bodies
+      first))
+
+
+(defn optimize-bytecode [bytecode]
+  (-> {:arity 3
+       :bytecode bytecode}
+      optimize-body
+      :bytecode))
+
+
 (deftest optimize-bytecode-remove-NOPs
   (assert= vm/NOP 255) ; the next test assumes that
   (assert= {:name 'abc
@@ -3004,104 +3019,143 @@
                       {:arity 3
                        :bytecode [vm/CNIL
                                   vm/NOP]}]}))
-  (let [optimize-body (fn optimize-body
-                        [body]
-                        (-> {:name :xyz
-                             :bodies [body]}
-                            cc/optimize-fn-bytecode
-                            :bodies
-                            first))
-        optimize-bytecode (fn optimize-bytecode [bytecode]
-                            (-> {:arity 3
-                                 :bytecode bytecode}
-                                optimize-body
-                                :bytecode))]
-    (assert= [vm/LDL 255 255
-              vm/BNIL 6 0
-              vm/LDL 255 255
-              vm/BR 3 0
-              vm/LDL 254 255]
-             (optimize-bytecode [vm/LDL 255 255
-                                 vm/BNIL 8 0
-                                 vm/NOP
-                                 vm/LDL 255 255
-                                 vm/NOP
-                                 vm/BR 4 0
-                                 vm/NOP
-                                 vm/LDL 254 255
-                                 vm/NOP]))
-    (assert= [vm/LDL 255 255
-              vm/BNNIL 6 0
-              vm/LDL 254 255
-              vm/BR 3 0
-              vm/LDL 255 255]
-             (optimize-bytecode [vm/LDL 255 255
-                                 vm/BNNIL 8 0
-                                 vm/NOP
-                                 vm/LDL 254 255
-                                 vm/NOP
-                                 vm/BR 4 0
-                                 vm/NOP
-                                 vm/LDL 255 255
-                                 vm/NOP]))
-    (assert= [vm/LDL 253 255
-              vm/BNIL 21 0
-              vm/LDL 254 255
-              vm/LDL 255 255
-              vm/LDL 253 255
-              vm/STL 255 255
-              vm/STL 254 255
-              vm/STL 253 255
-              vm/BR 229 255 ; -27
-              vm/LDL 254 255]
-             (optimize-bytecode [vm/LDL 253 255
-                                 vm/BNIL 25 0
-                                 vm/NOP
-                                 vm/NOP
-                                 vm/LDL 254 255
-                                 vm/LDL 255 255
-                                 vm/LDL 253 255
-                                 vm/STL 255 255
-                                 vm/NOP
-                                 vm/NOP
-                                 vm/STL 254 255
-                                 vm/STL 253 255
-                                 vm/BR 225 255 ; -31
-                                 vm/LDL 254 255]))
-    (assert= {:locals-size 2
-              :arity 2
-              :bytecode [vm/LDL 255 255
-                         vm/LDL 254 255
-                         vm/CALL 0
-                         vm/BR 15 0
-                         vm/STL 0 0
-                         vm/LDL 255 255
-                         vm/LDL 0 0
-                         vm/CALL 1
-                         vm/BR 1 0
-                         vm/CNIL
-                         vm/CALL 1]
-              :exception-table [{:start-offset 14, :end-offset 22, :handler-offset 25, :stack-size 1, :type cleo.core/IllegalArgument}
-                                {:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type cleo.core/Exception}]}
-             (optimize-body {:locals-size 2
-                             :arity 2
-                             :bytecode [vm/LDL 255 255
-                                        vm/NOP
-                                        vm/LDL 254 255
-                                        vm/CALL 0
-                                        vm/NOP
-                                        vm/BR 16 0
-                                        vm/STL 0 0
-                                        vm/LDL 255 255
-                                        vm/LDL 0 0
-                                        vm/CALL 1
-                                        vm/BR 2 0
-                                        vm/NOP
-                                        vm/CNIL
-                                        vm/NOP
-                                        vm/CALL 1]
-                             :exception-table [{:start-offset 16, :end-offset 24, :handler-offset 27, :stack-size 1, :type cleo.core/IllegalArgument}
-                                               {:start-offset 4, :end-offset 10, :handler-offset 13, :stack-size 1, :type cleo.core/Exception}]}))))
+  (assert= [vm/LDL 255 255
+            vm/BNIL 6 0
+            vm/LDL 255 255
+            vm/BR 3 0
+            vm/LDL 254 255]
+           (optimize-bytecode [vm/LDL 255 255
+                               vm/BNIL 8 0
+                               vm/NOP
+                               vm/LDL 255 255
+                               vm/NOP
+                               vm/BR 4 0
+                               vm/NOP
+                               vm/LDL 254 255
+                               vm/NOP]))
+  (assert= [vm/LDL 255 255
+            vm/BNNIL 6 0
+            vm/LDL 254 255
+            vm/BR 3 0
+            vm/LDL 255 255]
+           (optimize-bytecode [vm/LDL 255 255
+                               vm/BNNIL 8 0
+                               vm/NOP
+                               vm/LDL 254 255
+                               vm/NOP
+                               vm/BR 4 0
+                               vm/NOP
+                               vm/LDL 255 255
+                               vm/NOP]))
+  (assert= [vm/LDL 253 255
+            vm/BNIL 21 0
+            vm/LDL 254 255
+            vm/LDL 255 255
+            vm/LDL 253 255
+            vm/STL 255 255
+            vm/STL 254 255
+            vm/STL 253 255
+            vm/BR 229 255 ; -27
+            vm/LDL 254 255]
+           (optimize-bytecode [vm/LDL 253 255
+                               vm/BNIL 25 0
+                               vm/NOP
+                               vm/NOP
+                               vm/LDL 254 255
+                               vm/LDL 255 255
+                               vm/LDL 253 255
+                               vm/STL 255 255
+                               vm/NOP
+                               vm/NOP
+                               vm/STL 254 255
+                               vm/STL 253 255
+                               vm/BR 225 255 ; -31
+                               vm/LDL 254 255]))
+  (assert= {:locals-size 2
+            :arity 2
+            :bytecode [vm/LDL 255 255
+                       vm/LDL 254 255
+                       vm/CALL 0
+                       vm/BR 15 0
+                       vm/STL 0 0
+                       vm/LDL 255 255
+                       vm/LDL 0 0
+                       vm/CALL 1
+                       vm/BR 1 0
+                       vm/CNIL
+                       vm/CALL 1]
+            :exception-table [{:start-offset 14, :end-offset 22, :handler-offset 25, :stack-size 1, :type cleo.core/IllegalArgument}
+                              {:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type cleo.core/Exception}]}
+           (optimize-body {:locals-size 2
+                           :arity 2
+                           :bytecode [vm/LDL 255 255
+                                      vm/NOP
+                                      vm/LDL 254 255
+                                      vm/CALL 0
+                                      vm/NOP
+                                      vm/BR 16 0
+                                      vm/STL 0 0
+                                      vm/LDL 255 255
+                                      vm/LDL 0 0
+                                      vm/CALL 1
+                                      vm/BR 2 0
+                                      vm/NOP
+                                      vm/CNIL
+                                      vm/NOP
+                                      vm/CALL 1]
+                           :exception-table [{:start-offset 16, :end-offset 24, :handler-offset 27, :stack-size 1, :type cleo.core/IllegalArgument}
+                                             {:start-offset 4, :end-offset 10, :handler-offset 13, :stack-size 1, :type cleo.core/Exception}]})))
+
+
+(deftest optimize-bytecode-remove-redundant-branches
+  (assert= [vm/LDL 255 255]
+           (optimize-bytecode [vm/BR 0 0
+                               vm/BR 0 0
+                               vm/LDL 255 255]))
+  (assert= [vm/LDL 255 255]
+           (optimize-bytecode [vm/BR 3 0
+                               vm/BR 0 0
+                               vm/LDL 255 255]))
+  (assert= [vm/LDL 255 255
+            vm/CALL 0
+            vm/POP
+            vm/LDL 255 255]
+           (optimize-bytecode [vm/LDL 255 255
+                               vm/CALL 0
+                               vm/BNIL 3 0
+                               vm/BR 0 0
+                               vm/LDL 255 255]))
+  (assert= [vm/LDL 255 255
+            vm/CALL 0
+            vm/POP
+            vm/LDL 255 255]
+           (optimize-bytecode [vm/LDL 255 255
+                               vm/CALL 0
+                               vm/BNNIL 3 0
+                               vm/BR 0 0
+                               vm/LDL 255 255]))
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255
+                       vm/LDL 255 255
+                       vm/POP
+                       vm/POP
+                       vm/LDL 255 255
+                       vm/CALL 0
+                       vm/BR 2 0
+                       vm/POP
+                       vm/CNIL]
+            :exception-table [{:start-offset 8, :end-offset 13, :handler-offset 16, :stack-size 0, :type cleo.core/Exception}]}
+           (optimize-body {:arity 1
+                           :bytecode [vm/LDL 255 255
+                                      vm/LDL 255 255
+                                      vm/BNIL 0 0
+                                      vm/BNNIL 0 0
+                                      vm/LDL 255 255
+                                      vm/CALL 0
+                                      vm/BR 2 0
+                                      vm/POP
+                                      vm/CNIL]
+                           :exception-table [{:start-offset 12, :end-offset 17, :handler-offset 20, :stack-size 0, :type cleo.core/Exception}]})))
 
 
 (deftest eval-fn
