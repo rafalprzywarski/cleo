@@ -1148,7 +1148,7 @@
       inline-no-arg-returning-const))
 
 
-(defn vcopy! [out v i n]
+(defn- vcopy! [out v i n]
   (let [end (+ i n)]
     (loop [i i
            out out]
@@ -1157,7 +1157,7 @@
         out))))
 
 
-(defn no-NOP-map [bc]
+(defn- no-NOP-map [bc]
   (let [n (count bc)]
     (loop [off 0
            nnoff 0
@@ -1173,9 +1173,17 @@
         (persistent! (conj! out nnoff))))))
 
 
-(defn remove-NOPs [bc]
-  (let [n (count bc)
-        nnmap (no-NOP-map bc)]
+(defn- remap-exception-table [nnmap et]
+  (mapv (fn [e]
+          (-> e
+              (update :start-offset nnmap)
+              (update :end-offset nnmap)
+              (update :handler-offset nnmap)))
+        et))
+
+
+(defn- remove-NOPs-and-remap-branches [nnmap bc]
+  (let [n (count bc)]
     (loop [off 0
            out (transient [])]
       (if (< off n)
@@ -1191,8 +1199,16 @@
         (persistent! out)))))
 
 
+(defn- remove-NOPs [{bc :bytecode et :exception-table :as body}]
+  (let [nnmap (no-NOP-map bc)
+        body (if et
+               (assoc body :exception-table (remap-exception-table nnmap et))
+               body)]
+    (assoc body :bytecode (remove-NOPs-and-remap-branches nnmap bc))))
+
+
 (defn optimize-fn-bytecode [f]
-  (assoc f :bodies (mapv (fn [b] (update b :bytecode remove-NOPs)) (:bodies f))))
+  (assoc f :bodies (mapv remove-NOPs (:bodies f))))
 
 
 (defn translate [ast]

@@ -38,10 +38,12 @@
                         "assertion failed: " ~(pr-str actual)
                         "\n expected to equal: " (pr-str expected-val#)
                         "\n            actual: " (pr-str actual-val#)))
-         (catch* Exception ~'e
+         (catch* Exception e#
            (fail "assertion failed: " ~(pr-str actual)
                  " expected to equal: " (pr-str expected-val#)
-                 " actual exception: " ~'e))))))
+                 " actual exception: " e#
+                 (when (isa? (type e#) LogicException)
+                   (str " callstack: " (pr-str (.-callstack e#))))))))))
 
 
 (def {:macro :true} assert
@@ -51,9 +53,11 @@
          (fail-unless actual-val#
                       "assertion failed: " ~(pr-str actual)
                       " expected to be true, actual: " (pr-str actual-val#)))
-       (catch* Exception ~'e
+       (catch* Exception e#
          (fail "assertion failed: " ~(pr-str actual)
-               " expected to be true, actual exception: " ~'e)))))
+               " expected to be true, actual exception: " e#
+               (when (isa? (type e#) LogicException)
+                 (str " callstack: " (pr-str (.-callstack e#)))))))))
 
 
 (def {:macro :true} assert-not
@@ -3000,13 +3004,17 @@
                       {:arity 3
                        :bytecode [vm/CNIL
                                   vm/NOP]}]}))
-  (let [optimize-bytecode (fn optimize-body [bytecode]
-                            (-> {:name :xyz
-                                 :bodies [{:arity 3
-                                           :bytecode bytecode}]}
-                                cc/optimize-fn-bytecode
-                                :bodies
-                                first
+  (let [optimize-body (fn optimize-body
+                        [body]
+                        (-> {:name :xyz
+                             :bodies [body]}
+                            cc/optimize-fn-bytecode
+                            :bodies
+                            first))
+        optimize-bytecode (fn optimize-bytecode [bytecode]
+                            (-> {:arity 3
+                                 :bytecode bytecode}
+                                optimize-body
                                 :bytecode))]
     (assert= [vm/LDL 255 255
               vm/BNIL 6 0
@@ -3059,7 +3067,41 @@
                                  vm/STL 254 255
                                  vm/STL 253 255
                                  vm/BR 225 255 ; -31
-                                 vm/LDL 254 255]))))
+                                 vm/LDL 254 255]))
+    (assert= {:locals-size 2
+              :arity 2
+              :bytecode [vm/LDL 255 255
+                         vm/LDL 254 255
+                         vm/CALL 0
+                         vm/BR 15 0
+                         vm/STL 0 0
+                         vm/LDL 255 255
+                         vm/LDL 0 0
+                         vm/CALL 1
+                         vm/BR 1 0
+                         vm/CNIL
+                         vm/CALL 1]
+              :exception-table [{:start-offset 14, :end-offset 22, :handler-offset 25, :stack-size 1, :type cleo.core/IllegalArgument}
+                                {:start-offset 3, :end-offset 8, :handler-offset 11, :stack-size 1, :type cleo.core/Exception}]}
+             (optimize-body {:locals-size 2
+                             :arity 2
+                             :bytecode [vm/LDL 255 255
+                                        vm/NOP
+                                        vm/LDL 254 255
+                                        vm/CALL 0
+                                        vm/NOP
+                                        vm/BR 16 0
+                                        vm/STL 0 0
+                                        vm/LDL 255 255
+                                        vm/LDL 0 0
+                                        vm/CALL 1
+                                        vm/BR 2 0
+                                        vm/NOP
+                                        vm/CNIL
+                                        vm/NOP
+                                        vm/CALL 1]
+                             :exception-table [{:start-offset 16, :end-offset 24, :handler-offset 27, :stack-size 1, :type cleo.core/IllegalArgument}
+                                               {:start-offset 4, :end-offset 10, :handler-offset 13, :stack-size 1, :type cleo.core/Exception}]}))))
 
 
 (deftest eval-fn
