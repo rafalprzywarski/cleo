@@ -1267,11 +1267,29 @@
     body))
 
 
+(defn- accumulate-branches [{bc :bytecode :as body}]
+  (let [n (count bc)]
+    (loop [off 0
+           out (transient [])]
+      (if (< off n)
+        (let [oc (bc off)
+              isize (vm/isize oc)
+              noff (+ off isize)]
+          (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
+            (let [boff (+ noff (get-i16 bc (inc off)))]
+              (if (= vm/BR (get bc boff))
+                (recur noff (-> out (conj! oc) (conj-i16! (+ (- boff off) (get-i16 bc (inc boff))))))
+                (recur noff (vcopy! out bc off isize))))
+            (recur noff (vcopy! out bc off isize))))
+        (assoc body :bytecode (persistent! out))))))
+
+
 (defn optimize-fn-bytecode [f]
-  (let [optimize-body (fn [body]
+  (let [optimize-body (fn optimize-body [body]
                         (let [obody (-> body
-                                        remove-NOPs
-                                        remove-dead-code)]
+                                        accumulate-branches
+                                        remove-dead-code
+                                        remove-NOPs)]
                           (if (= body obody)
                             body
                             (recur obody))))]

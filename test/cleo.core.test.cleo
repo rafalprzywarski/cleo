@@ -3185,6 +3185,50 @@
                            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 11, :stack-size 0, :type cleo.core/Exception}]})))
 
 
+(deftest optimize-bytecode-Bx-BR
+  (assert= [vm/LDL 255 255
+            vm/CALL 0
+            vm/CALL 0]
+           (optimize-bytecode [vm/BR 8 0
+                               vm/LDL 255 255
+                               vm/CALL 0
+                               vm/BR 3 0
+                               vm/BR 245 255
+                               vm/CALL 0]))
+  (assert= [vm/LDL 254 255
+            vm/BNIL 6 0
+            vm/LDL 253 255
+            vm/BR 3 0
+            vm/LDL 255 255
+            vm/CALL 0
+            vm/CALL 0]
+           (optimize-bytecode [vm/LDL 254 255
+                               vm/BNIL 14 0
+                               vm/LDL 253 255
+                               vm/BR 3 0
+                               vm/LDL 255 255
+                               vm/CALL 0
+                               vm/BR 3 0
+                               vm/BR 245 255
+                               vm/CALL 0]))
+  (assert= [vm/LDL 254 255
+            vm/BNNIL 6 0
+            vm/LDL 253 255
+            vm/BR 3 0
+            vm/LDL 255 255
+            vm/CALL 0
+            vm/CALL 0]
+           (optimize-bytecode [vm/LDL 254 255
+                               vm/BNNIL 14 0
+                               vm/LDL 253 255
+                               vm/BR 3 0
+                               vm/LDL 255 255
+                               vm/CALL 0
+                               vm/BR 3 0
+                               vm/BR 245 255
+                               vm/CALL 0])))
+
+
 (deftest eval-fn
   (let [f (binding-ns 'cleo.core.test
                       (cc/eval '(fn dummy [x & xs] (reduce + x xs))))]
