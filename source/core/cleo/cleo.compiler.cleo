@@ -1287,67 +1287,51 @@
         get-dest (fn [boff]
                    (+ boff 3 (get-i16 bc (inc boff))))]
     (loop [off 0
-           out (transient [])
            newoff 0
            newoffs (transient [])
            broffs (transient [])
-           doffs (transient [])]
+           doffs (transient [])
+           out (transient [])]
       (if (< off n)
         (let [oc (bc off)
               isize (vm/isize oc)
-              noff (+ off isize)]
-          (cond (#{vm/BR} oc)
-                (let [doff (get-dest off)
-                      boc (get bc doff)]
-                  (cond (#{vm/BR} boc)
-                        (let [newdoff (get-dest doff)]
-                          (recur noff
-                                 (-> out (conj! boc) (conj-i16! 0))
-                                 (+ newoff isize)
-                                 (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
-                                 (conj! broffs newoff)
-                                 (conj! doffs newdoff)))
-                        (#{vm/BNIL vm/BNNIL} boc)
-                        (let [newdoff (get-dest doff)
-                              newaltdoff (+ doff isize)]
-                          (recur noff
-                                 (-> out
-                                     (conj! boc) (conj-i16! 0)
-                                     (conj! oc) (conj-i16! 0))
-                                 (+ newoff isize isize)
-                                 (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
-                                 (-> broffs (conj! newoff) (conj! (+ newoff isize)))
-                                 (-> doffs (conj! newdoff) (conj! newaltdoff))))
-                        :else
-                        (recur noff
-                               (vcopy! out bc off isize)
-                               (+ newoff isize)
-                               (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
-                               (conj! broffs newoff)
-                               (conj! doffs doff))))
-                (#{vm/BNIL vm/BNNIL} oc)
-                (let [doff (get-dest off)]
-                  (if (= vm/BR (get bc doff))
-                    (let [newdoff (get-dest doff)]
-                      (recur noff
-                             (-> out (conj! oc) (conj-i16! 0))
-                             (+ newoff isize)
-                             (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
-                             (conj! broffs newoff)
-                             (conj! doffs newdoff)))
-                    (recur noff
-                           (vcopy! out bc off isize)
-                           (+ newoff isize)
-                           (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
-                           (conj! broffs newoff)
-                           (conj! doffs doff))))
-                :else
+              noff (+ off isize)
+              nnewoff (+ newoff isize)
+              newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))]
+          (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
+            (let [doff (get-dest off)
+                  boc (get bc doff)
+                  redirect? (if (= oc vm/BR)
+                              (#{vm/BR vm/BNIL vm/BNNIL} boc)
+                              (= boc vm/BR))
+                  needs-br? (and (= oc vm/BR)
+                                 (#{vm/BNIL vm/BNNIL} boc))
+                  newdoff (if redirect?
+                            (get-dest doff)
+                            doff)
+                  broffs (conj! broffs newoff)
+                  doffs (conj! doffs newdoff)]
+              (if needs-br?
                 (recur noff
-                       (vcopy! out bc off isize)
-                       (+ newoff isize)
-                       (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
+                       (+ nnewoff isize)
+                       newoffs
+                       (conj! broffs nnewoff)
+                       (conj! doffs (+ doff isize))
+                       (-> out
+                           (conj! boc) (conj-i16! 0)
+                           (vcopy! bc off isize)))
+                (recur noff
+                       nnewoff
+                       newoffs
                        broffs
-                       doffs)))
+                       doffs
+                       (vcopy! out bc off isize))))
+            (recur noff
+                   nnewoff
+                   newoffs
+                   broffs
+                   doffs
+                   (vcopy! out bc off isize))))
         (let [newoffs (persistent! (conj! newoffs newoff))
               broffs (persistent! broffs)
               doffs (persistent! doffs)
