@@ -1157,26 +1157,6 @@
         out))))
 
 
-(defn- no-NOP-map [bc]
-  (let [n (count bc)]
-    (loop [off 0
-           nnoff 0
-           out (transient [])]
-      (if (< off n)
-        (let [oc (bc off)
-              isize (vm/isize oc)]
-          (recur (+ off isize)
-                 (cond (= oc vm/NOP) nnoff
-                       (and (= oc vm/BR)
-                            (zero? (get-i16 bc (inc off)))) nnoff
-                       (and (#{vm/BNIL vm/BNNIL} oc)
-                            (zero? (get-i16 bc (inc off)))) (inc nnoff)
-                       :else (+ nnoff isize))
-                 (-> out (conj! nnoff) (conj-nils! (dec isize)))))
-        (when (not= nnoff n)
-          (persistent! (conj! out nnoff)))))))
-
-
 (defn- remap-exception-table [nnmap et]
   (mapv (fn [e]
           (-> e
@@ -1184,36 +1164,6 @@
               (update :end-offset nnmap)
               (update :handler-offset nnmap)))
         et))
-
-
-(defn- remove-NOPs-and-remap-branches [nnmap bc]
-  (let [n (count bc)]
-    (loop [off 0
-           out (transient [])]
-      (if (< off n)
-        (let [oc (bc off)
-              isize (vm/isize oc)
-              noff (+ off isize)]
-          (recur noff
-                 (cond (= oc vm/NOP) out
-                       (and (= oc vm/BR)
-                            (zero? (get-i16 bc (inc off)))) out
-                       (and (#{vm/BNIL vm/BNNIL} oc)
-                            (zero? (get-i16 bc (inc off)))) (conj! out vm/POP)
-                       (#{vm/BR vm/BNIL vm/BNNIL} oc) (-> out (conj! oc)
-                                                          (conj-i16! (- (nnmap (+ noff (get-i16 bc (inc off))))
-                                                                        (nnmap noff))))
-                       :else (vcopy! out bc off isize))))
-        (persistent! out)))))
-
-
-(defn- remove-NOPs [{bc :bytecode et :exception-table :as body}]
-  (if-let [nnmap (no-NOP-map bc)]
-    (let [body (if et
-                 (assoc body :exception-table (remap-exception-table nnmap et))
-                 body)]
-      (assoc body :bytecode (remove-NOPs-and-remap-branches nnmap bc)))
-    body))
 
 
 (defn- assoc-true! [bc off n]
@@ -1282,57 +1232,64 @@
       bc)))
 
 
-(defn- accumulate-branches [{bc :bytecode et :exception-table :as body}]
+(defn- accumulate-branches-and-remove-NOPs [{bc :bytecode et :exception-table :as body}]
   (let [n (count bc)
         get-dest (fn [boff]
                    (+ boff 3 (get-i16 bc (inc boff))))]
     (loop [off 0
-           newoff 0
            newoffs (transient [])
            broffs (transient [])
            doffs (transient [])
            out (transient [])]
       (if (< off n)
-        (let [oc (bc off)
+        (let [newoff (count out)
+              oc (bc off)
               isize (vm/isize oc)
               noff (+ off isize)
-              nnewoff (+ newoff isize)
-              newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))]
-          (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
-            (let [doff (get-dest off)
-                  boc (get bc doff)
-                  redirect? (if (= oc vm/BR)
-                              (#{vm/BR vm/BNIL vm/BNNIL} boc)
-                              (= boc vm/BR))
-                  needs-br? (and (= oc vm/BR)
-                                 (#{vm/BNIL vm/BNNIL} boc))
-                  newdoff (if redirect?
-                            (get-dest doff)
-                            doff)
-                  broffs (conj! broffs newoff)
-                  doffs (conj! doffs newdoff)]
-              (if needs-br?
+              newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
+              branch? (#{vm/BR vm/BNIL vm/BNNIL} oc)]
+          (cond (or (and branch?
+                         (zero? (get-i16 bc (inc off))))
+                    (= oc vm/NOP))
+                (let [needs-pop? (#{vm/BNIL vm/BNNIL} oc)]
+                  (recur noff
+                         newoffs
+                         broffs
+                         doffs
+                         (if needs-pop? (conj! out vm/POP) out)))
+                branch?
+                (let [doff (get-dest off)
+                      boc (get bc doff)
+                      redirect? (if (= oc vm/BR)
+                                  (#{vm/BR vm/BNIL vm/BNNIL} boc)
+                                  (= boc vm/BR))
+                      needs-br? (and (= oc vm/BR)
+                                     (#{vm/BNIL vm/BNNIL} boc))
+                      newdoff (if redirect?
+                                (get-dest doff)
+                                doff)
+                      broffs (conj! broffs newoff)
+                      doffs (conj! doffs newdoff)]
+                  (if needs-br?
+                    (recur noff
+                           newoffs
+                           (conj! broffs (+ newoff isize))
+                           (conj! doffs (+ doff isize))
+                           (-> out
+                               (conj! boc) (conj-i16! 0)
+                               (vcopy! bc off isize)))
+                    (recur noff
+                           newoffs
+                           broffs
+                           doffs
+                           (vcopy! out bc off isize))))
+                :else
                 (recur noff
-                       (+ nnewoff isize)
-                       newoffs
-                       (conj! broffs nnewoff)
-                       (conj! doffs (+ doff isize))
-                       (-> out
-                           (conj! boc) (conj-i16! 0)
-                           (vcopy! bc off isize)))
-                (recur noff
-                       nnewoff
                        newoffs
                        broffs
                        doffs
                        (vcopy! out bc off isize))))
-            (recur noff
-                   nnewoff
-                   newoffs
-                   broffs
-                   doffs
-                   (vcopy! out bc off isize))))
-        (let [newoffs (persistent! (conj! newoffs newoff))
+        (let [newoffs (persistent! (conj! newoffs (count out)))
               broffs (persistent! broffs)
               doffs (persistent! doffs)
               body (if et
@@ -1344,9 +1301,8 @@
 (defn optimize-fn-bytecode [f]
   (let [optimize-body (fn optimize-body [body]
                         (let [obody (-> body
-                                        accumulate-branches
-                                        remove-dead-code
-                                        remove-NOPs)]
+                                        accumulate-branches-and-remove-NOPs
+                                        remove-dead-code)]
                           (if (= body obody)
                             body
                             (recur obody))))]
