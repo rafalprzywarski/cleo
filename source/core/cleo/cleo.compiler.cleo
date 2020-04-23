@@ -1201,20 +1201,7 @@
                          (conj! offs noff)
                          offs)]
               (recur offs v))))
-        (let [v (persistent! v)]
-          (when (some not v)
-            v))))))
-
-
-(defn- remove-dead-code [{bc :bytecode et :exception-table :as body}]
-  (if-let [rb (mark-reachable-bytes bc (conj (mapv :handler-offset et) 0))]
-    (loop [r (seq rb)
-           s (seq bc)
-           out (transient [])]
-      (if s
-        (recur (next r) (next s) (conj! out (if (first r) (first s) vm/NOP)))
-        (assoc body :bytecode (persistent! out))))
-    body))
+        (persistent! v)))))
 
 
 (defn- remap-branches! [bc broffs doffs newoffmap]
@@ -1232,8 +1219,9 @@
       bc)))
 
 
-(defn- accumulate-branches-and-remove-NOPs [{bc :bytecode et :exception-table :as body}]
+(defn- optimize-body-bytecode [{bc :bytecode et :exception-table :as body}]
   (let [n (count bc)
+        reachable-bytes (mark-reachable-bytes bc (conj (mapv :handler-offset et) 0))
         get-dest (fn [boff]
                    (+ boff 3 (get-i16 bc (inc boff))))]
     (loop [off 0
@@ -1248,7 +1236,8 @@
               noff (+ off isize)
               newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
               branch? (#{vm/BR vm/BNIL vm/BNNIL} oc)]
-          (cond (or (and branch?
+          (cond (or (not (reachable-bytes off))
+                    (and branch?
                          (zero? (get-i16 bc (inc off))))
                     (= oc vm/NOP))
                 (let [needs-pop? (#{vm/BNIL vm/BNNIL} oc)]
@@ -1300,9 +1289,7 @@
 
 (defn optimize-fn-bytecode [f]
   (let [optimize-body (fn optimize-body [body]
-                        (let [obody (-> body
-                                        accumulate-branches-and-remove-NOPs
-                                        remove-dead-code)]
+                        (let [obody (optimize-body-bytecode body)]
                           (if (= body obody)
                             body
                             (recur obody))))]
