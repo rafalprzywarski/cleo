@@ -658,7 +658,7 @@
 
 
 (defn disasm [fn]
-  (let [{:keys [name bodies]} (disasm* fn)
+  (let [{:keys [name bodies fns]} (disasm* fn)
         right (fn [w n]
                 (loop [n (str n)]
                   (if (< (count n) w)
@@ -680,7 +680,9 @@
         (println "exception table:")
         (println "  start     end handler stacksz type")
         (doseq [{:keys [start-offset end-offset handler-offset stack-size type]} exception-table]
-          (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) (right 7 stack-size) type))))))
+          (println (right 7 start-offset) (right 7 end-offset) (right 7 handler-offset) (right 7 stack-size) type))))
+    (doseq [f fns]
+      (disasm f))))
 
 
 (defmacro -> [x & forms]

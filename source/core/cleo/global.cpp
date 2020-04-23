@@ -1282,6 +1282,7 @@ Force disasm(Value fn)
     Root dfn{*EMPTY_MAP};
     dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
     Root bodies{*EMPTY_VECTOR};
+    Root fns{*EMPTY_VECTOR};
     for (Int64 i = 0; i < get_bytecode_fn_size(fn); ++i)
     {
         Root arity{create_int64(get_bytecode_fn_arity(fn, i))};
@@ -1290,14 +1291,19 @@ Force disasm(Value fn)
         Root locals_size{create_int64(get_bytecode_fn_body_locals_size(body))};
         dbody = map_assoc(*dbody, create_keyword("arity"), *arity);
         dbody = map_assoc(*dbody, create_keyword("locals-size"), *locals_size);
-        Root dbs{disasm_bytes(get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body), get_bytecode_fn_body_consts(body), get_bytecode_fn_body_vars(body))};
+        auto consts = get_bytecode_fn_body_consts(body);
+        Root dbs{disasm_bytes(get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body), consts, get_bytecode_fn_body_vars(body))};
         dbody = map_assoc(*dbody, create_keyword("bytecode"), *dbs);
         Root det{disasm_exception_table(get_bytecode_fn_body_exception_table(body))};
         if (*det)
             dbody = map_assoc(*dbody, create_keyword("exception-table"), *det);
         bodies = array_conj(*bodies, *dbody);
+        for (Int64 j = 0; j < get_array_size(consts); ++j)
+            if (get_value_type(get_array_elem(consts, j)).is(*type::BytecodeFn))
+                fns = array_conj(*fns, get_array_elem(consts, j));
     }
     dfn = map_assoc(*dfn, create_keyword("bodies"), *bodies);
+    dfn = map_assoc(*dfn, create_keyword("fns"), *fns);
     return *dfn;
 }
 
