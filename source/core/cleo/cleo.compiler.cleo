@@ -1166,12 +1166,6 @@
         et))
 
 
-(defn- assoc-true! [bc off n]
-  (if (pos? n)
-    (recur (assoc! bc off :true) (inc off) (dec n))
-    bc))
-
-
 (defn- nil-vec! [n]
   (loop [n n
          out (transient [])]
@@ -1187,20 +1181,19 @@
       (if (pos? (count offs))
         (let [off (peek offs)
               offs (pop! offs)]
-          (if (or (= off n)
-                  (v off))
-            (recur offs v)
-            (let [oc (bc off)
-                  isize (vm/isize oc)
-                  v (assoc-true! v off isize)
-                  noff (+ off isize)
-                  offs (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
-                         (conj! offs (+ noff (get-i16 bc (inc off))))
-                         offs)
-                  offs (if (not (#{vm/BR vm/THROW} oc))
-                         (conj! offs noff)
-                         offs)]
-              (recur offs v))))
+          (cond (= off n) (recur offs v)
+                (v off) (recur offs (assoc! v off (inc (v off))))
+                :else (let [oc (bc off)
+                            isize (vm/isize oc)
+                            v (assoc! v off 1)
+                            noff (+ off isize)
+                            offs (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
+                                   (conj! offs (+ noff (get-i16 bc (inc off))))
+                                   offs)
+                            offs (if (not (#{vm/BR vm/THROW} oc))
+                                   (conj! offs noff)
+                                   offs)]
+                        (recur offs v))))
         (persistent! v)))))
 
 
@@ -1236,7 +1229,23 @@
               noff (+ off isize)
               newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
               branch? (#{vm/BR vm/BNIL vm/BNNIL} oc)]
-          (cond (or (not (reachable-bytes off))
+          (cond (and (= oc vm/CNIL)
+                     (= (get bc noff) vm/BNNIL)
+                     (= (reachable-bytes noff) 1))
+                (recur (+ noff 3)
+                       (-> newoffs (conj! newoff) (conj-nils! 2))
+                       broffs
+                       doffs
+                       out)
+                (and (= oc vm/CNIL)
+                     (= (get bc noff) vm/BNIL)
+                     (= (reachable-bytes noff) 1))
+                (recur (+ noff 3)
+                       (-> newoffs (conj! newoff) (conj-nils! 2))
+                       (conj! broffs newoff)
+                       (conj! doffs (get-dest noff))
+                       (-> out (conj! vm/BR) (conj-i16! 0)))
+                (or (not (reachable-bytes off))
                     (and branch?
                          (zero? (get-i16 bc (inc off))))
                     (= oc vm/NOP))
