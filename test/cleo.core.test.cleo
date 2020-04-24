@@ -3348,12 +3348,12 @@
             :bytecode [vm/LDL 255 255
                        vm/CALL 0
                        vm/POP
-                       vm/CNIL
+                       vm/BR 9 0
                        vm/BNIL 6 0
                        vm/LDL 254 255
                        vm/BR 3 0
                        vm/LDL 253 255]
-            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 7, :stack-size 0, :type cleo.core/Exception}]}
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 9, :stack-size 0, :type cleo.core/Exception}]}
            (optimize-body {:arity 1
                            :bytecode [vm/LDL 255 255
                                       vm/CALL 0
@@ -3383,12 +3383,12 @@
             :bytecode [vm/LDL 255 255
                        vm/CALL 0
                        vm/POP
-                       vm/CNIL
+                       vm/BR 3 0
                        vm/BNNIL 6 0
                        vm/LDL 254 255
                        vm/BR 3 0
                        vm/LDL 253 255]
-            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 7, :stack-size 0, :type cleo.core/Exception}]}
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 9, :stack-size 0, :type cleo.core/Exception}]}
            (optimize-body {:arity 1
                            :bytecode [vm/LDL 255 255
                                       vm/CALL 0
