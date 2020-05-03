@@ -109,12 +109,17 @@
           (conj* coll x)))))
 
 
+(def {:private :true} illegal-argument
+  (fn* illegal-argument [msg]
+       (new IllegalArgument msg (current-callstack))))
+
+
 (def {:macro :true, :arglists '([& pairs])} cond
   (fn* cond [&form &env & pairs]
        (if pairs
          (if (next pairs)
            `(if ~(first pairs) ~(second pairs) (cond ~@(nnext pairs)))
-           (throw (new IllegalArgument  "cond requires an even number of forms"))))))
+           (throw (illegal-argument "cond requires an even number of forms"))))))
 
 
 (def {:arglists '([m] [m k] [m k & ks])} dissoc
@@ -157,7 +162,7 @@
                                                                     :true)
                                             (= :as (first s)) (destructure-binding out (second s) vsym)
                                             :else (if expect-as?
-                                                    (throw (new IllegalArgument "Unsupported binding form, only :as can follow & parameter"))
+                                                    (throw (illegal-argument "Unsupported binding form, only :as can follow & parameter"))
                                                     (recur (conj (destructure-binding out (first s) `(first ~ssym)) ssym `(next ~ssym))
                                                            (next s)
                                                            nil)))
@@ -175,7 +180,7 @@
                                                         (if (valid-fn sym)
                                                           (let* [ssym (symbol nil (name sym))]
                                                             (conj out ssym `(get ~vsym ~(key-fn sym) ~(get defaults ssym))))
-                                                          (throw (new IllegalArgument (str "Unsupported binding form: " sym)))))
+                                                          (throw (illegal-argument (str "Unsupported binding form: " sym)))))
                                                    out
                                                    locals))
                                       out (if all (conj out all vsym) out)
@@ -193,7 +198,7 @@
                        (vector? b) (destructure-vector out b v)
                        (map? b) (destructure-map out b v)
                        (symbol? b) (conj out b v)
-                       :else (throw (new IllegalArgument (str "Unsupported binding form: " b))))))
+                       :else (throw (illegal-argument (str "Unsupported binding form: " b))))))
               destructure-binding-pair (fn* [out bv] (destructure-binding out (first bv) (second bv)))]
          (reduce destructure-binding-pair [] pairs))))
 
@@ -266,20 +271,20 @@
 
 (defmacro defprotocol [name & sigs]
   (if (symbol? name) nil
-      (throw (IllegalArgument. "Protocol name must be a symbol")))
+      (throw (illegal-argument "Protocol name must be a symbol")))
   (let* [gen-fn-body (fn* [params]
                           (do
                             (if (seq params) nil
-                                (throw (IllegalArgument. "Method definition must have at least one parameter")))
+                                (throw (illegal-argument "Method definition must have at least one parameter")))
                             `([~'this ~@(map1 (fn* [_] '_) (next params))]
                               (type ~'this))))
          gen-sig (fn* [sig]
                       (let* [name (first sig)]
                         (do
                           (if (symbol? name) nil
-                              (throw (IllegalArgument. "Method name must be a symbol")))
+                              (throw (illegal-argument "Method name must be a symbol")))
                           (if (next sig) nil
-                              (throw (IllegalArgument. "Parameter declaration missing")))
+                              (throw (illegal-argument "Parameter declaration missing")))
                           `(defmulti
                              ~name
                              (fn* ~name ~@(map1 gen-fn-body (next sig)))))))]
@@ -421,7 +426,7 @@
       (if kvs
         (if (next kvs)
           (recur m (first kvs) (second kvs) (nnext kvs))
-          (throw (new IllegalArgument "assoc expects even number of arguments")))
+          (throw (illegal-argument "assoc expects even number of arguments")))
         m))))
 
 
