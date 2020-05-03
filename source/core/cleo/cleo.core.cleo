@@ -649,12 +649,7 @@
 (defn sort
   ([coll] (sort < coll))
   ([pred coll]
-   (let [tarray (loop [s (seq coll)
-                       out (transient [])]
-                  (if s
-                    (recur (next s) (conj! out (first s)))
-                    out))]
-     (persistent! (sort! pred tarray)))))
+   (persistent! (sort! pred (reduce conj! (transient []) coll)))))
 
 
 (defn disasm [fn]
