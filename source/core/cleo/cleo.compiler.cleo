@@ -1023,6 +1023,18 @@
                   ast))
 
 
+(defn simplify-ifs-with-const-cond [ast]
+  (transform-expr (fn [expr _]
+                    (and (= (:tag expr) :if)
+                         (or (not (:cond expr))
+                             (= (-> expr :cond :tag) :const))))
+                  (fn [s _]
+                    (if (-> s :cond :value)
+                      (:then s)
+                      (:else s)))
+                  ast))
+
+
 (defn inline-no-arg-returning-const [ast]
   (transform-expr (fn [expr _]
                    (and (= (:tag expr) :call)
@@ -1145,7 +1157,8 @@
   (-> ast
       compute-types
       inline-identity-calls
-      inline-no-arg-returning-const))
+      inline-no-arg-returning-const
+      simplify-ifs-with-const-cond))
 
 
 (defn- vcopy! [out v i n]

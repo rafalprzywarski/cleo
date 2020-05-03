@@ -1811,6 +1811,31 @@
            (translate-body '(fn [x] (cleo.core.test/const-inline)))))
 
 
+(deftest simplify-ifs-with-const-cond
+  (assert= [vm/LDL 255 255]
+           (-> '(fn [x y]
+                  (if nil x y))
+               translate-body
+               :bytecode))
+  (assert= [vm/LDL 254 255]
+           (-> '(fn [x y]
+                  (if :abc x y))
+               translate-body
+               :bytecode))
+  (assert= [vm/LDL 254 255
+            vm/POP
+            vm/LDL 254 255
+            vm/CALL 0
+            vm/POP
+            vm/LDL 255 255]
+           (-> '(fn [x y]
+                  (if :abc x y)
+                  (x)
+                  (if nil x y))
+               translate-body
+               :bytecode)))
+
+
 (deftest translate-let
   (assert= {:arity 0
             :bytecode [vm/CNIL]}
