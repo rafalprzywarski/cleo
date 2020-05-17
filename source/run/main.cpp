@@ -53,12 +53,12 @@ cleo::Force create_ns_bindings(const std::vector<std::string>& args)
 int main(int argc, const char *const* argv)
 {
     std::vector<std::string> args{argv + 1, argv + argc};
-    if (args.size() == 4 && args[1] == "--not-self-hosting")
+    if (args.size() >= 2 && args[1] == "--not-self-hosting")
     {
         define(cleo::SHOULD_RECOMPILE, cleo::nil);
         args.erase(begin(args) + 1);
     }
-    if (args.size() != 3)
+    if (args.size() < 3)
     {
         std::cout << "usage: cleo [--not-self-hosting] <project_lib_path> <project_namespace>" << std::endl;
         return 1;
