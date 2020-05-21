@@ -23,6 +23,7 @@ add_library(cleo_core
   cleo/print.cpp
   cleo/profiler.cpp
   cleo/reader.cpp
+  cleo/sha.cpp
   cleo/string_seq.cpp
   cleo/util.cpp
   cleo/value.cpp

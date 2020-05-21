@@ -22,6 +22,7 @@ add_executable(cleo_test
   persistent_hash_map_test.cpp
   print_test.cpp
   reader_test.cpp
+  sha_test.cpp
   string_seq_test.cpp
   value_test.cpp
   var_test.cpp
