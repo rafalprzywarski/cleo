@@ -12,6 +12,7 @@
 #include "array_set.hpp"
 #include "array_map.hpp"
 #include "persistent_hash_map.hpp"
+#include "persistent_hash_set.hpp"
 #include "namespace.hpp"
 #include "reader.hpp"
 #include "atom.hpp"
@@ -250,6 +251,11 @@ const ConstRoot PersistentHashMapSeq{create_static_type("cleo.core", "Persistent
 const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "PersistentHashMapSeqParent", {{"index", Int64}, "node", "parent"})};
 const ConstRoot PersistentHashMapCollisionNode(create_dynamic_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_dynamic_type("cleo.core", "PersistentHashMapArrayNode"));
+const ConstRoot PersistentHashSet{create_dynamic_type("cleo.core", "PersistentHashSet")};
+const ConstRoot PersistentHashSetSeq{create_static_type("cleo.core", "PersistentHashSetSeq", {"first", "node", {"index", Int64}, "parent"})};
+const ConstRoot PersistentHashSetSeqParent{create_static_type("cleo.core", "PersistentHashSetSeqParent", {{"index", Int64}, "node", "parent"})};
+const ConstRoot PersistentHashSetCollisionNode(create_dynamic_type("cleo.core", "PersistentHashSetCollisionNode"));
+const ConstRoot PersistentHashSetArrayNode(create_dynamic_type("cleo.core", "PersistentHashSetArrayNode"));
 const ConstRoot Exception{create_static_type("cleo.core", "Exception", {"msg"})};
 const ConstRoot LogicException{create_static_type("cleo.core", "LogicException", {"msg", "callstack"})};
 const ConstRoot CastError{create_static_type("cleo.core", "CastError", {"msg", "callstack"})};
@@ -279,6 +285,7 @@ const ConstRoot EMPTY_VECTOR{create_array(nullptr, 0)};
 const ConstRoot EMPTY_SET{create_array_set()};
 const ConstRoot EMPTY_MAP{create_array_map()};
 const ConstRoot EMPTY_HASH_MAP{create_persistent_hash_map()};
+const ConstRoot EMPTY_HASH_SET{create_persistent_hash_set()};
 
 Root namespaces{*EMPTY_MAP};
 Root bindings;

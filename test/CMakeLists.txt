@@ -20,6 +20,7 @@ add_executable(cleo_test
   multimethod_test.cpp
   namespace_test.cpp
   persistent_hash_map_test.cpp
+  persistent_hash_set_test.cpp
   print_test.cpp
   reader_test.cpp
   sha_test.cpp
