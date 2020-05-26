@@ -251,7 +251,7 @@ const ConstRoot PersistentHashMapSeq{create_static_type("cleo.core", "Persistent
 const ConstRoot PersistentHashMapSeqParent{create_static_type("cleo.core", "PersistentHashMapSeqParent", {{"index", Int64}, "node", "parent"})};
 const ConstRoot PersistentHashMapCollisionNode(create_dynamic_type("cleo.core", "PersistentHashMapCollisionNode"));
 const ConstRoot PersistentHashMapArrayNode(create_dynamic_type("cleo.core", "PersistentHashMapArrayNode"));
-const ConstRoot PersistentHashSet{create_dynamic_type("cleo.core", "PersistentHashSet")};
+const ConstRoot PersistentHashSet{create_static_type("cleo.core", "PersistentHashSet", {{"size", Int64}, "root"})};
 const ConstRoot PersistentHashSetSeq{create_static_type("cleo.core", "PersistentHashSetSeq", {"first", "node", {"index", Int64}, "parent"})};
 const ConstRoot PersistentHashSetSeqParent{create_static_type("cleo.core", "PersistentHashSetSeqParent", {{"index", Int64}, "node", "parent"})};
 const ConstRoot PersistentHashSetCollisionNode(create_dynamic_type("cleo.core", "PersistentHashSetCollisionNode"));

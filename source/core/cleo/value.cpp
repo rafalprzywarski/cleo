@@ -463,6 +463,14 @@ Force create_static_object(Value type, Int64 elem0, Value elem1, Value elem2)
     return ev.val;
 }
 
+Force create_static_object(Value type, Int64 elem0, Value elem1)
+{
+    auto ev = create_static_object_uninitialized(type);
+    ev.elems[0] = ValueBits(elem0);
+    ev.elems[1] = elem1.bits();
+    return ev.val;
+}
+
 Force create_static_object(Value type, Value elem0, Value elem1, Int64 elem2)
 {
     auto ev = create_static_object_uninitialized(type);

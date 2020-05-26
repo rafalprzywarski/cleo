@@ -6,10 +6,10 @@ namespace cleo
 {
 
 // HashSet:
-//   size 0: [0 | SENTINEL]
-//   size 1: [1 | value key]
-//   size>1: [size | collision-node]
-//   size>1: [size | array-node]
+//   size 0: [0 SENTINEL]
+//   size 1: [1 key]
+//   size>1: [size collision-node]
+//   size>1: [size array-node]
 // CollisionNode:
 //   [hash | key0 value0 key1 value1 key2? value2? ...]
 // ArrayNode:
@@ -39,14 +39,14 @@ Force create_collision_node(std::uint32_t hash, Value k0, Value k1)
     return create_object1_4(*type::PersistentHashSetCollisionNode, hash, k0, nil, k1, nil);
 }
 
-Force create_single_value_set(Value k)
-{
-    return create_object1_2(*type::PersistentHashSet, 1, nil, k);
-}
-
 Force create_set(Int64 size, Value elem0)
 {
-    return create_object1_1(*type::PersistentHashSet, size, elem0);
+    return create_static_object(*type::PersistentHashSet, size, elem0);
+}
+
+Force create_single_value_set(Value k)
+{
+    return create_set(1, k);
 }
 
 Force create_collision_set(std::uint32_t hash, Value k0, Value k1)
@@ -440,101 +440,99 @@ Force create_persistent_hash_set()
     return create_set(0, *SENTINEL);
 }
 
-Int64 get_persistent_hash_set_size(Value m)
+Int64 get_persistent_hash_set_size(Value set)
 {
-    return get_dynamic_object_int(m, 0);
+    return get_static_object_int(set, 0);
 }
 
-Value persistent_hash_set_get(Value m, Value k)
+Value persistent_hash_set_get(Value set, Value k)
 {
-    return persistent_hash_set_get(m, k, nil);
+    return persistent_hash_set_get(set, k, nil);
 }
 
-Value persistent_hash_set_get(Value map, Value key, Value def_val)
+Value persistent_hash_set_get(Value set, Value key, Value def_val)
 {
-    auto node_or_val = get_dynamic_object_element(map, 0);
-    if (node_or_val.is(*SENTINEL))
+    auto node_or_key = get_static_object_element(set, 1);
+    if (node_or_key.is(*SENTINEL))
         return def_val;
-    auto node_or_val_type = get_value_type(node_or_val);
-    if (node_or_val_type.is(*type::PersistentHashSetCollisionNode))
+    auto node_or_key_type = get_value_type(node_or_key);
+    if (node_or_key_type.is(*type::PersistentHashSetCollisionNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        return collision_node_get(node_or_val, key, key_hash, def_val);
+        return collision_node_get(node_or_key, key, key_hash, def_val);
     }
-    if (node_or_val_type.is(*type::PersistentHashSetArrayNode))
+    if (node_or_key_type.is(*type::PersistentHashSetArrayNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        return array_node_get(node_or_val, 0, key, key_hash, def_val);
+        return array_node_get(node_or_key, 0, key, key_hash, def_val);
     }
-    return get_dynamic_object_element(map, 1) == key ? key : def_val;
+    return node_or_key == key ? key : def_val;
 }
 
-Force persistent_hash_set_conj(Value map, Value key)
+Force persistent_hash_set_conj(Value set, Value key)
 {
-    auto node_or_val = get_dynamic_object_element(map, 0);
-    if (node_or_val.is(*SENTINEL))
+    auto node_or_key = get_static_object_element(set, 1);
+    if (node_or_key.is(*SENTINEL))
         return create_single_value_set(key);
 
-    auto node_or_val_type = get_value_type(node_or_val);
-    if (node_or_val_type.is(*type::PersistentHashSetCollisionNode))
+    auto node_or_key_type = get_value_type(node_or_key);
+    if (node_or_key_type.is(*type::PersistentHashSetCollisionNode))
     {
         std::uint32_t key_hash = hash_value(key);
         auto added = true;
-        Root new_node{collision_node_conj(node_or_val, 0, key, key_hash, added)};
-        auto size = get_persistent_hash_set_size(map);
+        Root new_node{collision_node_conj(node_or_key, 0, key, key_hash, added)};
+        auto size = get_persistent_hash_set_size(set);
         return create_set(added ? (size + 1) : size, *new_node);
     }
-    if (node_or_val_type.is(*type::PersistentHashSetArrayNode))
+    if (node_or_key_type.is(*type::PersistentHashSetArrayNode))
     {
         std::uint32_t key_hash = hash_value(key);
         auto added = true;
-        Root new_node{array_node_conj(node_or_val, 0, key, key_hash, added)};
-        auto size = get_persistent_hash_set_size(map);
+        Root new_node{array_node_conj(node_or_key, 0, key, key_hash, added)};
+        auto size = get_persistent_hash_set_size(set);
         return create_set(added ? (size + 1) : size, *new_node);
     }
 
-    Value key0 = get_dynamic_object_element(map, 1);
-    if (key0 == key)
+    if (node_or_key == key)
         return create_single_value_set(key);
     std::uint32_t key_hash = hash_value(key);
-    std::uint32_t key0_hash = hash_value(key0);
+    std::uint32_t key0_hash = hash_value(node_or_key);
     if (key_hash == key0_hash)
-        return create_collision_set(key_hash, key0, key);
-    return create_array_set(key0, key0_hash, key, key_hash);
+        return create_collision_set(key_hash, node_or_key, key);
+    return create_array_set(node_or_key, key0_hash, key, key_hash);
 }
 
-Force persistent_hash_set_disj(Value map, Value key)
+Force persistent_hash_set_disj(Value set, Value key)
 {
-    auto node_or_val = get_dynamic_object_element(map, 0);
-    if (node_or_val.is(*SENTINEL))
-        return map;
-    auto node_or_val_type = get_value_type(node_or_val);
-    if (node_or_val_type.is(*type::PersistentHashSetCollisionNode))
+    auto node_or_key = get_static_object_element(set, 1);
+    if (node_or_key.is(*SENTINEL))
+        return set;
+    auto node_or_key_type = get_value_type(node_or_key);
+    if (node_or_key_type.is(*type::PersistentHashSetCollisionNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        std::pair<Root, Value> new_node{collision_node_disj(node_or_val, key, key_hash)};
-        if (new_node.first->is(node_or_val))
-            return map;
+        std::pair<Root, Value> new_node{collision_node_disj(node_or_key, key, key_hash)};
+        if (new_node.first->is(node_or_key))
+            return set;
         if (!new_node.second.is(*SENTINEL))
             return create_single_value_set(new_node.second);
-        auto size = get_persistent_hash_set_size(map);
+        auto size = get_persistent_hash_set_size(set);
         return create_set(size - 1, *new_node.first);
     }
-    if (node_or_val_type.is(*type::PersistentHashSetArrayNode))
+    if (node_or_key_type.is(*type::PersistentHashSetArrayNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        std::pair<Root, Value> new_node{array_node_disj(node_or_val, 0, key, key_hash)};
-        if (new_node.first->is(node_or_val))
-            return map;
+        std::pair<Root, Value> new_node{array_node_disj(node_or_key, 0, key, key_hash)};
+        if (new_node.first->is(node_or_key))
+            return set;
         if (!new_node.second.is(*SENTINEL))
             return create_single_value_set(new_node.second);
-        auto size = get_persistent_hash_set_size(map);
+        auto size = get_persistent_hash_set_size(set);
         return create_set(size - 1, *new_node.first);
     }
-    Value key0 = get_dynamic_object_element(map, 1);
-    if (key0 == key)
+    if (node_or_key == key)
         return *EMPTY_HASH_SET;
-    return map;
+    return set;
 }
 
 Value persistent_hash_set_contains(Value m, Value k)
@@ -547,41 +545,38 @@ Value are_persistent_hash_sets_equal(Value left, Value right)
 {
     if (get_persistent_hash_set_size(left) != get_persistent_hash_set_size(right))
         return nil;
-    auto left_node_or_val = get_dynamic_object_element(left, 0);
-    auto right_node_or_val = get_dynamic_object_element(right, 0);
-    if (left_node_or_val.is(*SENTINEL) || right_node_or_val.is(*SENTINEL))
-        return left_node_or_val.is(right_node_or_val) ? TRUE : nil;
-    auto left_type = get_value_type(left_node_or_val);
-    auto right_type = get_value_type(right_node_or_val);
+    auto left_node_or_key = get_static_object_element(left, 1);
+    auto right_node_or_key = get_static_object_element(right, 1);
+    if (left_node_or_key.is(*SENTINEL) || right_node_or_key.is(*SENTINEL))
+        return left_node_or_key.is(right_node_or_key) ? TRUE : nil;
+    auto left_type = get_value_type(left_node_or_key);
+    auto right_type = get_value_type(right_node_or_key);
     if (left_type.is(*type::PersistentHashSetCollisionNode) || right_type.is(*type::PersistentHashSetCollisionNode))
     {
         if (!left_type.is(right_type))
             return nil;
-        return collision_node_equal(left_node_or_val, right_node_or_val);
+        return collision_node_equal(left_node_or_key, right_node_or_key);
     }
     if (left_type.is(*type::PersistentHashSetArrayNode) || right_type.is(*type::PersistentHashSetArrayNode))
     {
         if (!left_type.is(right_type))
             return nil;
-        return array_node_equal(left_node_or_val, right_node_or_val);
+        return array_node_equal(left_node_or_key, right_node_or_key);
     }
-    auto left_key = get_dynamic_object_element(left, 1);
-    auto right_key = get_dynamic_object_element(right, 1);
-    return (left_node_or_val == right_node_or_val && left_key == right_key) ? TRUE : nil;
+    return left_node_or_key == right_node_or_key ? TRUE : nil;
 }
 
-Force persistent_hash_set_seq(Value m)
+Force persistent_hash_set_seq(Value set)
 {
-    auto node_or_val = get_dynamic_object_element(m, 0);
-    if (node_or_val.is(*SENTINEL))
+    auto node_or_key = get_static_object_element(set, 1);
+    if (node_or_key.is(*SENTINEL))
         return nil;
-    auto node_type = get_value_type(node_or_val);
+    auto node_type = get_value_type(node_or_key);
     if (node_type.is(*type::PersistentHashSetCollisionNode))
-        return collision_node_seq(node_or_val, nil);
+        return collision_node_seq(node_or_key, nil);
     if (node_type.is(*type::PersistentHashSetArrayNode))
-        return array_node_seq(node_or_val, nil);
-    auto k = get_dynamic_object_element(m, 1);
-    return create_static_object(*type::PersistentHashSetSeq, k, nil, 0, nil);
+        return array_node_seq(node_or_key, nil);
+    return create_static_object(*type::PersistentHashSetSeq, node_or_key, nil, 0, nil);
 }
 
 Value get_persistent_hash_set_seq_first(Value s)

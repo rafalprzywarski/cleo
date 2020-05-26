@@ -216,10 +216,10 @@ struct persistent_hash_set_test : Test
         }
     }
 
-    void check_optimal_structure(Value map)
+    void check_optimal_structure(Value set)
     {
-        ASSERT_EQ_REFS(*type::PersistentHashSet, get_value_type(map));
-        check_node_invariant(get_dynamic_object_element(map, 0));
+        ASSERT_EQ_REFS(*type::PersistentHashSet, get_value_type(set));
+        check_node_invariant(get_static_object_element(set, 1));
     }
 
     Force create_set(std::vector<std::string> ks)
