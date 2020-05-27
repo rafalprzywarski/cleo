@@ -11,9 +11,9 @@ namespace cleo
 //   size>1: [size collision-node]
 //   size>1: [size array-node]
 // CollisionNode:
-//   [hash | key0 value0 key1 value1 key2? value2? ...]
+//   [hash | key0 key1 key2? ...]
 // ArrayNode:
-//   [(value-map node-map) | key0? value0? key1? value1? ... node2? node1? node0?]
+//   [(value-map node-map) | key0? key1? ... node2? node1? node0?]
 // HashSetSeq:
 //   size 1: [first-key nil 0 nil]
 //   size>1: [first-key collision-node 0 #SeqParent[index array-node parent-or-nil]-or-nil]
@@ -36,7 +36,7 @@ void copy_object_elements(Value dst, std::uint32_t dst_index, Value src, std::ui
 Force create_collision_node(std::uint32_t hash, Value k0, Value k1)
 {
     assert(static_cast<std::uint32_t>(hash_value(k0)) == static_cast<std::uint32_t>(hash_value(k1)));
-    return create_object1_4(*type::PersistentHashSetCollisionNode, hash, k0, nil, k1, nil);
+    return create_object1_2(*type::PersistentHashSetCollisionNode, hash, k0, k1);
 }
 
 Force create_set(Int64 size, Value elem0)
@@ -58,7 +58,7 @@ Force create_collision_set(std::uint32_t hash, Value k0, Value k1)
 Value collision_node_get(Value node, std::uint32_t size, Value key, Value def_val)
 {
     assert(get_value_type(node).is(*type::PersistentHashSetCollisionNode));
-    for (decltype(size) i = 0; i < size; i += 2)
+    for (decltype(size) i = 0; i < size; ++i)
         if (get_dynamic_object_element(node, i) == key)
             return key;
     return def_val;
@@ -92,31 +92,30 @@ Force collision_node_conj(Value node, std::uint8_t shift, Value key, std::uint32
         return node;
     }
 
-    Root new_node{create_object(*type::PersistentHashSetCollisionNode, &node_hash, 1, nullptr, node_size + 2)};
+    Root new_node{create_object(*type::PersistentHashSetCollisionNode, &node_hash, 1, nullptr, node_size + 1)};
     copy_object_elements(*new_node, 0, node, 0, node_size);
     set_dynamic_object_element(*new_node, node_size, key);
-    set_dynamic_object_element(*new_node, node_size + 1, nil);
     return *new_node;
 }
 
-std::pair<Force, Value> collision_node_disj(Value node, Value key, std::uint32_t key_hash)
+std::pair<Force, bool> collision_node_disj(Value node, Value key, std::uint32_t key_hash)
 {
     assert(get_value_type(node).is(*type::PersistentHashSetCollisionNode));
     auto node_hash = get_dynamic_object_int(node, 0);
     if (node_hash != key_hash)
-        return {node, *SENTINEL};
+        return {node, true};
     auto node_size = get_dynamic_object_size(node);
     decltype(node_size) index = 0;
     while (index < node_size && get_dynamic_object_element(node, index) != key)
-        index += 2;
-    if (index >= node_size)
-        return {node, *SENTINEL};
-    if (node_size == 4) // two KVs
-        return {get_dynamic_object_element(node, 3 - index), get_dynamic_object_element(node, 2 - index)};
-    Root new_node{create_object(*type::PersistentHashSetCollisionNode, &node_hash, 1, nullptr, node_size - 2)};
+        ++index;
+    if (index == node_size)
+        return {node, true};
+    if (node_size == 2)
+        return {get_dynamic_object_element(node, 1 - index), false};
+    Root new_node{create_object(*type::PersistentHashSetCollisionNode, &node_hash, 1, nullptr, node_size - 1)};
     copy_object_elements(*new_node, 0, node, 0, index);
-    copy_object_elements(*new_node, index, node, index + 2, node_size);
-    return {*new_node, *SENTINEL};
+    copy_object_elements(*new_node, index, node, index + 1, node_size);
+    return {*new_node, true};
 }
 
 Value collision_node_equal(Value left, Value right)
@@ -128,7 +127,7 @@ Value collision_node_equal(Value left, Value right)
         return nil;
     if (get_dynamic_object_int(left, 0) != get_dynamic_object_int(right, 0))
         return nil;
-    for (decltype(size) i = 0; i < size; i += 2)
+    for (decltype(size) i = 0; i < size; ++i)
     {
         auto key = get_dynamic_object_element(left, i);
         if (collision_node_get(right, size, key, *SENTINEL).is(*SENTINEL))
@@ -144,7 +143,7 @@ std::uint32_t map_bit(std::uint8_t shift, std::uint32_t hash)
 
 std::uint32_t map_key_index(std::uint32_t value_set, std::uint32_t bit)
 {
-    return 2 * popcount(value_set & (bit - 1));
+    return popcount(value_set & (bit - 1));
 }
 
 std::uint32_t map_node_index(std::uint32_t node_set, std::uint32_t node_size, std::uint32_t bit)
@@ -175,9 +174,9 @@ Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash,
         std::uint32_t value_set = key0_bit | key1_bit;
         auto map_val = combine_maps(value_set, 0);
         if (key0_bit < key1_bit)
-            return create_object1_4(*type::PersistentHashSetArrayNode, map_val, key0, nil, key1, nil);
+            return create_object1_2(*type::PersistentHashSetArrayNode, map_val, key0, key1);
         else
-            return create_object1_4(*type::PersistentHashSetArrayNode, map_val, key1, nil, key0, nil);
+            return create_object1_2(*type::PersistentHashSetArrayNode, map_val, key1, key0);
     }
 }
 
@@ -196,7 +195,7 @@ Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash,
     else
     {
         auto map_val = combine_maps(key0_bit, node_bit);
-        return create_object1_3(*type::PersistentHashSetArrayNode, map_val, key0, nil, node);
+        return create_object1_2(*type::PersistentHashSetArrayNode, map_val, key0, node);
     }
 }
 
@@ -222,9 +221,7 @@ Value array_node_get(Value node, std::uint8_t shift, Value key, std::uint32_t ke
     if (value_set & key_bit)
     {
         auto key_index = map_key_index(value_set, key_bit);
-        if (get_dynamic_object_element(node, key_index) != key)
-            return def_val;
-        return key;
+        return get_dynamic_object_element(node, key_index) == key ? key : def_val;
     }
     if (node_set & key_bit)
     {
@@ -255,7 +252,7 @@ Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t k
             return node;
         }
         auto new_value_set = combine_maps(value_set ^ key_bit, node_set ^ key_bit);
-        Root new_node{create_array_node(new_value_set, node_size - 1)};
+        Root new_node{create_array_node(new_value_set, node_size)};
         auto node_index = map_node_index(node_set, node_size, key_bit);
         std::uint32_t key0_hash = hash_value(key0);
         Root new_child{
@@ -264,9 +261,9 @@ Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t k
             create_array_node(shift + 5, key0, key0_hash, key, key_hash)};
 
         copy_object_elements(*new_node, 0, node, 0, key_index);
-        copy_object_elements(*new_node, key_index, node, key_index + 2, node_index + 1);
-        set_dynamic_object_element(*new_node, node_index - 1, *new_child);
-        copy_object_elements(*new_node, node_index, node, node_index + 1, node_size);
+        copy_object_elements(*new_node, key_index, node, key_index + 1, node_index + 1);
+        set_dynamic_object_element(*new_node, node_index, *new_child);
+        copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
 
         return *new_node;
     }
@@ -287,17 +284,16 @@ Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t k
     else
     {
         Int64 new_value_set = combine_maps(value_set | key_bit, node_set);
-        Root new_node{create_array_node(new_value_set, node_size + 2)};
+        Root new_node{create_array_node(new_value_set, node_size + 1)};
         copy_object_elements(*new_node, 0, node, 0, key_index);
         set_dynamic_object_element(*new_node, key_index, key);
-        set_dynamic_object_element(*new_node, key_index + 1, key);
-        copy_object_elements(*new_node, key_index + 2, node, key_index, node_size);
+        copy_object_elements(*new_node, key_index + 1, node, key_index, node_size);
 
         return *new_node;
     }
 }
 
-std::pair<Force, Value> array_node_disj(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash)
+std::pair<Force, bool> array_node_disj(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash)
 {
     std::uint64_t value_node_set = get_dynamic_object_int(node, 0);
     std::uint32_t value_set{static_cast<std::uint32_t>(value_node_set)};
@@ -308,56 +304,55 @@ std::pair<Force, Value> array_node_disj(Value node, std::uint8_t shift, Value ke
         auto key_index = map_key_index(value_set, key_bit);
         auto key0 = get_dynamic_object_element(node, key_index);
         if (key0 != key)
-            return {node, *SENTINEL};
+            return {node, true};
         auto node_size = get_dynamic_object_size(node);
         auto value_count = popcount(value_set);
         if (value_count == 2 && node_set == 0)
-            return {get_dynamic_object_element(node, 3 - key_index), get_dynamic_object_element(node, 2 - key_index)};
+            return {get_dynamic_object_element(node, 1 - key_index), false};
         if (value_count == 1 && popcount(node_set) == 1)
         {
             auto other_child_node = get_dynamic_object_element(node, node_size - 1);
             if (get_value_type(other_child_node).is(*type::PersistentHashSetCollisionNode))
-                return {other_child_node, *SENTINEL};
+                return {other_child_node, true};
         }
         auto new_value_node_set = combine_maps(value_set ^ key_bit, node_set);
-        Root new_node{create_array_node(new_value_node_set, node_size - 2)};
+        Root new_node{create_array_node(new_value_node_set, node_size - 1)};
         copy_object_elements(*new_node, 0, node, 0, key_index);
-        copy_object_elements(*new_node, key_index, node, key_index + 2, node_size);
-        return {*new_node, *SENTINEL};
+        copy_object_elements(*new_node, key_index, node, key_index + 1, node_size);
+        return {*new_node, true};
     }
     else if (node_set & key_bit)
     {
         auto node_size = get_dynamic_object_size(node);
         auto node_index = map_node_index(node_set, node_size, key_bit);
         auto child_node = get_dynamic_object_element(node, node_index);
-        std::pair<Root, Value> new_child{
+        std::pair<Root, bool> new_child{
             get_value_type(child_node).is(*type::PersistentHashSetCollisionNode) ?
             collision_node_disj(child_node, key, key_hash) :
             array_node_disj(child_node, shift + 5, key, key_hash)};
         if (*new_child.first == child_node)
-            return {node, *SENTINEL};
-        if (!new_child.second.is(*SENTINEL))
+            return {node, true};
+        if (!new_child.second)
         {
             if (value_set == 0 && node_set == key_bit)
                 return {*new_child.first, new_child.second};
             auto new_value_node_set = combine_maps(value_set ^ key_bit, node_set ^ key_bit);
-            Root new_node{create_array_node(new_value_node_set, node_size + 1)};
+            Root new_node{create_array_node(new_value_node_set, node_size)};
             auto key_index = map_key_index(value_set, key_bit);
             copy_object_elements(*new_node, 0, node, 0, key_index);
-            set_dynamic_object_element(*new_node, key_index, new_child.second);
-            set_dynamic_object_element(*new_node, key_index + 1, *new_child.first);
-            copy_object_elements(*new_node, key_index + 2, node, key_index, node_index);
-            copy_object_elements(*new_node, node_index + 2, node, node_index + 1, node_size);
-            return {*new_node, *SENTINEL};
+            set_dynamic_object_element(*new_node, key_index, *new_child.first);
+            copy_object_elements(*new_node, key_index + 1, node, key_index, node_index);
+            copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
+            return {*new_node, true};
         }
         Root new_node{create_array_node(value_node_set, node_size)};
         copy_object_elements(*new_node, 0, node, 0, node_index);
         set_dynamic_object_element(*new_node, node_index, *new_child.first);
         copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
-        return {*new_node, *SENTINEL};
+        return {*new_node, true};
     }
     else
-        return {node, *SENTINEL};
+        return {node, true};
 }
 
 Value array_node_equal(Value left, Value right)
@@ -370,11 +365,11 @@ Value array_node_equal(Value left, Value right)
         return nil;
     std::uint32_t value_set{static_cast<std::uint32_t>(value_node_set)};
     auto value_count = popcount(value_set);
-    for (std::uint32_t i = 0; i < std::uint32_t(value_count * 2); ++i)
+    for (std::uint32_t i = 0; i < std::uint32_t(value_count); ++i)
         if (get_dynamic_object_element(left, i) != get_dynamic_object_element(right, i))
             return nil;
     auto node_size = get_dynamic_object_size(left);
-    for (std::uint32_t i = value_count * 2; i < node_size; ++i)
+    for (std::uint32_t i = value_count; i < node_size; ++i)
     {
         auto left_child = get_dynamic_object_element(left, i);
         auto right_child = get_dynamic_object_element(right, i);
@@ -392,7 +387,7 @@ Value array_node_equal(Value left, Value right)
 Force collision_node_seq(Value node, Value parent)
 {
     auto k = get_dynamic_object_element(node, 0);
-    return create_static_object(*type::PersistentHashSetSeq, k, node, 2, parent);
+    return create_static_object(*type::PersistentHashSetSeq, k, node, 1, parent);
 }
 
 Force array_node_seq(Value node, Value parent)
@@ -402,7 +397,7 @@ Force array_node_seq(Value node, Value parent)
     if (value_set != 0)
     {
         auto k = get_dynamic_object_element(node, 0);
-        return create_static_object(*type::PersistentHashSetSeq, k, node, 2, parent);
+        return create_static_object(*type::PersistentHashSetSeq, k, node, 1, parent);
     }
     Root child_parent{create_static_object(*type::PersistentHashSetSeqParent, 1, node, parent)};
     auto child = get_dynamic_object_element(node, 0);
@@ -415,7 +410,7 @@ Force collision_node_next(Value node, Value child, Value parent, Int64 index)
 {
     auto k = get_dynamic_object_element(child, 0);
     Root child_parent{create_static_object(*type::PersistentHashSetSeqParent, index + 1, node, parent)};
-    return create_static_object(*type::PersistentHashSetSeq, k, child, 2, *child_parent);
+    return create_static_object(*type::PersistentHashSetSeq, k, child, 1, *child_parent);
 }
 
 Force array_node_next(Value node, Value child, Value parent, Int64 index)
@@ -427,7 +422,7 @@ Force array_node_next(Value node, Value child, Value parent, Int64 index)
     if (value_set != 0)
     {
         auto k = get_dynamic_object_element(child, 0);
-        return create_static_object(*type::PersistentHashSetSeq, k, child, 2, *child_parent);
+        return create_static_object(*type::PersistentHashSetSeq, k, child, 1, *child_parent);
     }
 
     return array_node_seq(child, *child_parent);
@@ -511,24 +506,20 @@ Force persistent_hash_set_disj(Value set, Value key)
     if (node_or_key_type.is(*type::PersistentHashSetCollisionNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        std::pair<Root, Value> new_node{collision_node_disj(node_or_key, key, key_hash)};
-        if (new_node.first->is(node_or_key))
+        Root new_node{collision_node_disj(node_or_key, key, key_hash).first};
+        if (new_node->is(node_or_key))
             return set;
-        if (!new_node.second.is(*SENTINEL))
-            return create_single_value_set(new_node.second);
         auto size = get_persistent_hash_set_size(set);
-        return create_set(size - 1, *new_node.first);
+        return create_set(size - 1, *new_node);
     }
     if (node_or_key_type.is(*type::PersistentHashSetArrayNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        std::pair<Root, Value> new_node{array_node_disj(node_or_key, 0, key, key_hash)};
-        if (new_node.first->is(node_or_key))
+        Root new_node{array_node_disj(node_or_key, 0, key, key_hash).first};
+        if (new_node->is(node_or_key))
             return set;
-        if (!new_node.second.is(*SENTINEL))
-            return create_single_value_set(new_node.second);
         auto size = get_persistent_hash_set_size(set);
-        return create_set(size - 1, *new_node.first);
+        return create_set(size - 1, *new_node);
     }
     if (node_or_key == key)
         return *EMPTY_HASH_SET;
@@ -604,7 +595,7 @@ Force get_persistent_hash_set_seq_next(Value s)
         return collision_node_next(node, child, parent, index);
     if (get_value_type(child).is(*type::PersistentHashSetArrayNode))
         return array_node_next(node, child, parent, index);
-    return create_static_object(*type::PersistentHashSetSeq, child, node, index + 2, parent);
+    return create_static_object(*type::PersistentHashSetSeq, child, node, index + 1, parent);
 }
 
 }

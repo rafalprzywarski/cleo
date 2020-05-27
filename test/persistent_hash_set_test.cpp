@@ -186,7 +186,7 @@ struct persistent_hash_set_test : Test
     {
         if (get_value_type(node).is(*type::PersistentHashSetCollisionNode))
         {
-            return get_dynamic_object_size(node) / 2;
+            return get_dynamic_object_size(node);
         }
         if (get_value_type(node).is(*type::PersistentHashSetArrayNode))
         {
