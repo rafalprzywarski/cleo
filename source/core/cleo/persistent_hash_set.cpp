@@ -79,7 +79,7 @@ Value collision_node_get(Value node, Value key, std::uint32_t key_hash, Value de
 
 Force create_array_node(std::uint8_t shift, Value key0, std::uint32_t key0_hash, std::uint32_t node_hash, Value node);
 
-Force collision_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash, bool& added)
+Force collision_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash)
 {
     assert(get_value_type(node).is(*type::PersistentHashSetCollisionNode));
     auto node_hash = get_dynamic_object_int(node, 0);
@@ -87,10 +87,7 @@ Force collision_node_conj(Value node, std::uint8_t shift, Value key, std::uint32
         return create_array_node(shift, key, key_hash, node_hash, node);
     auto node_size = get_dynamic_object_size(node);
     if (!collision_node_get(node, key, *SENTINEL).is(*SENTINEL))
-    {
-        added = false;
         return node;
-    }
 
     Root new_node{create_object(*type::PersistentHashSetCollisionNode, &node_hash, 1, nullptr, node_size + 1)};
     copy_object_elements(*new_node, 0, node, 0, node_size);
@@ -234,7 +231,7 @@ Value array_node_get(Value node, std::uint8_t shift, Value key, std::uint32_t ke
     return def_val;
 }
 
-Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash, bool& added)
+Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t key_hash)
 {
     assert(get_value_type(node).is(*type::PersistentHashSetArrayNode));
     std::uint64_t value_node_set = get_dynamic_object_int(node, 0);
@@ -247,10 +244,8 @@ Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t k
     {
         auto key0 = get_dynamic_object_element(node, key_index);
         if (key0 == key)
-        {
-            added = false;
             return node;
-        }
+
         auto new_value_set = combine_maps(value_set ^ key_bit, node_set ^ key_bit);
         Root new_node{create_array_node(new_value_set, node_size)};
         auto node_index = map_node_index(node_set, node_size, key_bit);
@@ -269,13 +264,15 @@ Value array_node_conj(Value node, std::uint8_t shift, Value key, std::uint32_t k
     }
     else if (node_set & key_bit)
     {
-        Root new_node{create_array_node(value_node_set, node_size)};
         auto node_index = map_node_index(node_set, node_size, key_bit);
         auto child_node = get_dynamic_object_element(node, node_index);
         Root new_child{
             get_value_type(child_node).is(*type::PersistentHashSetCollisionNode) ?
-            collision_node_conj(child_node, shift + 5, key, key_hash, added) :
-            array_node_conj(child_node, shift + 5, key, key_hash, added)};
+            collision_node_conj(child_node, shift + 5, key, key_hash) :
+            array_node_conj(child_node, shift + 5, key, key_hash)};
+        if (new_child->is(child_node))
+            return node;
+        Root new_node{create_array_node(value_node_set, node_size)};
         copy_object_elements(*new_node, 0, node, 0, node_index);
         set_dynamic_object_element(*new_node, node_index, *new_child);
         copy_object_elements(*new_node, node_index + 1, node, node_index + 1, node_size);
@@ -474,22 +471,24 @@ Force persistent_hash_set_conj(Value set, Value key)
     if (node_or_key_type.is(*type::PersistentHashSetCollisionNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        auto added = true;
-        Root new_node{collision_node_conj(node_or_key, 0, key, key_hash, added)};
+        Root new_node{collision_node_conj(node_or_key, 0, key, key_hash)};
+        if (new_node->is(node_or_key))
+            return set;
         auto size = get_persistent_hash_set_size(set);
-        return create_set(added ? (size + 1) : size, *new_node);
+        return create_set(size + 1, *new_node);
     }
     if (node_or_key_type.is(*type::PersistentHashSetArrayNode))
     {
         std::uint32_t key_hash = hash_value(key);
-        auto added = true;
-        Root new_node{array_node_conj(node_or_key, 0, key, key_hash, added)};
+        Root new_node{array_node_conj(node_or_key, 0, key, key_hash)};
+        if (new_node->is(node_or_key))
+            return set;
         auto size = get_persistent_hash_set_size(set);
-        return create_set(added ? (size + 1) : size, *new_node);
+        return create_set(size + 1, *new_node);
     }
-
     if (node_or_key == key)
-        return create_single_value_set(key);
+        return set;
+
     std::uint32_t key_hash = hash_value(key);
     std::uint32_t key0_hash = hash_value(node_or_key);
     if (key_hash == key0_hash)
