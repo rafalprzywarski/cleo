@@ -1000,7 +1000,7 @@ TEST_F(compile_test, should_compile_hash_sets)
 
     fn = compile_fn("(fn* [x] #{3 x 4})");
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::array_set_conj,
+                                         arrayv(*rt::set_conj,
                                                 asetv(3, 4)),
                                          b(vm::LDC, 0, 0,
                                            vm::LDC, 1, 0,
@@ -1009,7 +1009,7 @@ TEST_F(compile_test, should_compile_hash_sets)
 
     fn = compile_fn("(fn* [x y z] #{z x y})");
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::array_set_conj,
+                                         arrayv(*rt::set_conj,
                                                 *EMPTY_SET),
                                          b(vm::LDC, 0, 0,
                                            vm::LDC, 0, 0,
@@ -1024,7 +1024,7 @@ TEST_F(compile_test, should_compile_hash_sets)
 
     fn = compile_fn("(fn* [f] #{2 4.0 \"x\" (f 3) :k})");
     expect_body_with_consts_and_bytecode(*fn, 0,
-                                         arrayv(*rt::array_set_conj,
+                                         arrayv(*rt::set_conj,
                                                 asetv(2, 4.0, "x", create_keyword("k")),
                                                 3),
                                          b(vm::LDC, 0, 0,
@@ -1562,7 +1562,7 @@ TEST_F(compile_test, should_compile_functions_with_try_catch)
 
     fn = compile_fn("(fn* [x y] #{3 4 (try* (x) (catch* Exception e e)) (try* (y) (catch* Exception e e))})");
     expect_body_with_consts_exception_table_locals_and_bytecode(*fn, 0,
-                                                                arrayv(*rt::array_set_conj,
+                                                                arrayv(*rt::set_conj,
                                                                        asetv(3, 4)),
                                                                 {9, 14, 17, 3, 25, 30, 33, 2},
                                                                 {*type::Exception, *type::Exception},

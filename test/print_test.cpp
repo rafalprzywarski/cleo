@@ -221,6 +221,24 @@ TEST_F(pr_str_test, should_print_sets)
     EXPECT_EQ("#{:a :b :c 20 30 40}", str(pr_str(*val)));
 }
 
+TEST_F(pr_str_test, should_print_persistent_hash_sets)
+{
+    Root val{phset()};
+    EXPECT_EQ("#{}", str(pr_str(*val)));
+    val = phset(nil);
+    EXPECT_EQ("#{nil}", str(pr_str(*val)));
+    auto a = create_keyword("a");
+    auto b = create_keyword("b");
+    val = phset(a, b, 10);
+    EXPECT_THAT(str(pr_str(*val)), AnyOf(
+        "#{:a :b 10}",
+        "#{:a 10 :b}",
+        "#{:b :a 10}",
+        "#{:b 10 :a}",
+        "#{10 :a :b}",
+        "#{10 :b :a}"));
+}
+
 TEST_F(pr_str_test, should_print_sequences)
 {
     Root val;

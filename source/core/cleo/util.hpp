@@ -229,6 +229,11 @@ Force map_seq(Value m);
 Value map_seq_first(Value s);
 Force map_seq_next(Value s);
 
+bool is_set(Value val);
+Force set_conj(Value s, Value k);
+bool set_contains(Value s, Value k);
+Int64 set_count(Value s);
+
 Value namespace_symbol(Value sym);
 Value name_symbol(Value sym);
 

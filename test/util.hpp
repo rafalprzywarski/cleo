@@ -5,6 +5,7 @@
 #include <cleo/array_map.hpp>
 #include <cleo/persistent_hash_map.hpp>
 #include <cleo/array_set.hpp>
+#include <cleo/persistent_hash_set.hpp>
 #include <cleo/global.hpp>
 #include <cleo/print.hpp>
 #include <cleo/namespace.hpp>
@@ -174,6 +175,19 @@ template <typename... Ts>
 auto asetv(const Ts&... elems)
 {
     return delayed([=] { return aset(elems...); });
+}
+
+inline Force phset()
+{
+    return create_persistent_hash_set();
+}
+
+template <typename K, typename... Rest>
+Force phset(const K& k, const Rest&... rest)
+{
+    Root m{phset(rest...)};
+    Root key{to_value(k)};
+    return persistent_hash_set_conj(*m, *key);
 }
 
 inline Force amap()

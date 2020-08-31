@@ -2,7 +2,6 @@
 #include "bytecode_fn.hpp"
 #include "global.hpp"
 #include "array.hpp"
-#include "array_set.hpp"
 #include "util.hpp"
 #include "namespace.hpp"
 #include "persistent_hash_map.hpp"
@@ -454,10 +453,10 @@ bool is_const(Value val)
         auto type = get_value_type(val);
         if (type.is(*type::Array))
             return get_vector_const_prefix_len(val) == get_array_size(val);
-        if (type.is(*type::ArraySet))
+        if (is_set(val))
         {
             Root ss{get_hash_set_const_subset(val)};
-            return get_array_set_size(*ss) == get_array_set_size(val);
+            return set_count(*ss) == set_count(val);
         }
         if (is_map(val))
         {
@@ -516,12 +515,11 @@ void Compiler::compile_vector(Scope scope, Value val)
 Force get_hash_set_const_subset(Value val)
 {
     Root ss{*EMPTY_SET};
-    Int64 size = get_array_set_size(val);
-    for (Int64 i = 0; i < size; ++i)
+    for (Root s{seq(val)}; *s; s = seq_next(*s))
     {
-        auto e = get_array_set_elem(val, i);
-        if (is_const(e))
-            ss = array_set_conj(*ss, e);
+        Root e{seq_first(*s)};
+        if (is_const(*e))
+            ss = set_conj(*ss, *e);
     }
     return *ss;
 }
@@ -530,20 +528,20 @@ void Compiler::compile_hash_set(Scope scope, Value val)
 {
     scope = no_recur(scope);
     Root subset{get_hash_set_const_subset(val)};
-    auto size = get_array_set_size(val);
-    auto subset_size = get_array_set_size(*subset);
+    auto size = set_count(val);
+    auto subset_size = set_count(*subset);
     if (subset_size == size)
         return compile_const(val);
     for (Int64 i = subset_size; i < size; ++i)
-        compile_const(*rt::array_set_conj);
+        compile_const(*rt::set_conj);
     compile_const(*subset);
     scope.stack_depth = size - subset_size + 1;
-    for (Int64 i = 0; i < size; ++i)
+    for (Root s{seq(val)}; *s; s = seq_next(*s))
     {
-        auto e = get_array_set_elem(val, i);
-        if (!array_set_contains(*subset,  e))
+        Root e{seq_first(*s)};
+        if (!set_contains(*subset, *e))
         {
-            compile_value(scope, e);
+            compile_value(scope, *e);
             append(code, vm::CALL, 2);
             scope.stack_depth--;
         }
@@ -819,7 +817,7 @@ void Compiler::compile_value(Scope scope, Value val)
 
     if (vtype.is(*type::Array))
         return compile_vector(scope, val);
-    if (vtype.is(*type::ArraySet))
+    if (is_set(val))
         return compile_hash_set(scope, val);
     if (is_map(val))
         return compile_hash_map(scope, val);

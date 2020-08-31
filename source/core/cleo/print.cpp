@@ -6,6 +6,7 @@
 #include "array_set.hpp"
 #include "array_map.hpp"
 #include "persistent_hash_map.hpp"
+#include "persistent_hash_set.hpp"
 #include "error.hpp"
 #include "util.hpp"
 #include <sstream>
@@ -206,6 +207,21 @@ Force pr_str_array_set(Value s)
         if (i > 0)
             str += ' ';
         Root ss{pr_str(get_array_set_elem(s, i))};
+        str.append(get_string_ptr(*ss), get_string_size(*ss));
+    }
+    str += '}';
+    return create_string(str);
+}
+
+Force pr_str_persistent_hash_set(Value val)
+{
+    std::string str;
+    str += "#{";
+    for (Root seq{persistent_hash_set_seq(val)}; *seq; seq = get_persistent_hash_set_seq_next(*seq))
+    {
+        if (str.back() != '{')
+            str += ' ';
+        Root ss{pr_str(get_persistent_hash_set_seq_first(*seq))};
         str.append(get_string_ptr(*ss), get_string_size(*ss));
     }
     str += '}';

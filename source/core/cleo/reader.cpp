@@ -1,8 +1,6 @@
 #include "reader.hpp"
 #include "list.hpp"
 #include "array.hpp"
-#include "persistent_hash_map.hpp"
-#include "array_set.hpp"
 #include "global.hpp"
 #include "error.hpp"
 #include "print.hpp"
@@ -535,18 +533,18 @@ Force read_set(Stream& s)
     s.next(); // '#'
     s.next(); // '{'
     eat_ws(s);
-    Root set{create_array_set()};
+    Root set{*EMPTY_SET};
 
     while (!s.eos() && s.peek() != '}')
     {
         auto key_pos = s.pos();
         Root e{read(s)};
-        if (array_set_contains(*set, *e))
+        if (set_contains(*set, *e))
         {
             Root text{pr_str(*e)};
             throw_read_error("duplicate key: " + std::string(get_string_ptr(*text), get_string_size(*text)), key_pos);
         }
-        set = array_set_conj(*set, *e);
+        set = set_conj(*set, *e);
         eat_ws(s);
     }
     if (s.eos())

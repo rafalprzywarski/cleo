@@ -321,7 +321,7 @@ const Root transient_array{create_native_function1<cleo::transient_array, &TRANS
 const Root transient_array_conj{create_native_function2<cleo::transient_array_conj, &CONJ_E>()};
 const Root transient_array_pop{create_native_function1<cleo::transient_array_pop, &POP_E>()};
 const Root transient_array_persistent{create_native_function1<cleo::transient_array_persistent, &PERSISTENT>()};
-const Root array_set_conj{create_native_function2<cleo::array_set_conj, &CONJ>()};
+const Root set_conj{create_native_function2<cleo::set_conj, &CONJ>()};
 const Root map_assoc{create_native_function3<cleo::map_assoc, &ASSOC>()};
 
 const DynamicVar current_ns = define_var(CURRENT_NS, nil, *DYNAMIC_META);
@@ -789,7 +789,7 @@ Force hash_set(const Value *args, std::uint8_t n)
 {
     Root s{*EMPTY_SET};
     for (std::uint8_t i = 0; i < n; ++i)
-        s = array_set_conj(*s, args[i]);
+        s = set_conj(*s, args[i]);
     return *s;
 }
 
@@ -1539,6 +1539,11 @@ struct Initialize
         define_type(*type::PersistentHashMapCollisionNode);
         define_type(*type::PersistentHashMapArrayNode);
         define_type(*type::PersistentHashMapSeqParent);
+        define_type(*type::PersistentHashSet);
+        define_type(*type::PersistentHashSetCollisionNode);
+        define_type(*type::PersistentHashSetArrayNode);
+        define_type(*type::PersistentHashSetSeqParent);
+        derive(*type::PersistentHashSet, *type::PersistentSet);
         define_type(*type::Exception);
         define_type(*type::LogicException);
         derive(*type::LogicException, *type::Exception);
@@ -1726,6 +1731,14 @@ struct Initialize
         f = create_native_function1<get_persistent_hash_map_seq_next, &NEXT>();
         define_method(NEXT, *type::PersistentHashMapSeq, *f);
 
+        derive(*type::PersistentHashSet, *type::Seqable);
+        f = create_native_function1<persistent_hash_set_seq, &SEQ>();
+        define_method(SEQ, *type::PersistentHashSet, *f);
+        f = create_native_function1<get_persistent_hash_set_seq_first, &FIRST>();
+        define_method(FIRST, *type::PersistentHashSetSeq, *f);
+        f = create_native_function1<get_persistent_hash_set_seq_next, &NEXT>();
+        define_method(NEXT, *type::PersistentHashSetSeq, *f);
+
         derive(*type::UTF8String, *type::Seqable);
         f = create_native_function1<string_seq, &SEQ>();
         define_method(SEQ, *type::UTF8String, *f);
@@ -1738,6 +1751,7 @@ struct Initialize
         derive(*type::ArraySetSeq, *type::Sequence);
         derive(*type::ArrayMapSeq, *type::Sequence);
         derive(*type::PersistentHashMapSeq, *type::Sequence);
+        derive(*type::PersistentHashSetSeq, *type::Sequence);
         derive(*type::UTF8StringSeq, *type::Sequence);
         derive(*type::Sequence, *type::Seqable);
         f = create_native_function1<identity, &SEQ>();
@@ -1755,6 +1769,8 @@ struct Initialize
         define_method(COUNT, *type::PersistentHashMap, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_set_size>::fn, &COUNT>();
         define_method(COUNT, *type::ArraySet, *f);
+        f = create_native_function1<WrapInt64Fn<get_persistent_hash_set_size>::fn, &COUNT>();
+        define_method(COUNT, *type::PersistentHashSet, *f);
         f = create_native_function1<WrapInt64Fn<get_list_size>::fn, &COUNT>();
         define_method(COUNT, *type::List, *f);
         f = create_native_function1<cons_size, &COUNT>();
@@ -1781,6 +1797,9 @@ struct Initialize
         f = create_native_function2or3<array_set_get, array_set_get, &GET>();
         define_method(GET, *type::ArraySet, *f);
 
+        f = create_native_function2or3<persistent_hash_set_get, persistent_hash_set_get, &GET>();
+        define_method(GET, *type::PersistentHashSet, *f);
+
         f = create_native_function2<array_get, &GET>();
         define_method(GET, *type::Array, *f);
 
@@ -1801,6 +1820,12 @@ struct Initialize
         f = create_native_function2<persistent_hash_map_contains, &CONTAINS>();
         define_method(CONTAINS, *type::PersistentHashMap, *f);
 
+        f = create_native_function2<array_set_contains, &CONTAINS>();
+        define_method(CONTAINS, *type::ArraySet, *f);
+
+        f = create_native_function2<persistent_hash_set_contains, &CONTAINS>();
+        define_method(CONTAINS, *type::PersistentHashSet, *f);
+
         f = create_native_function2<nil_contains, &CONTAINS>();
         define_method(CONTAINS, nil, *f);
 
@@ -1812,7 +1837,10 @@ struct Initialize
         f = create_native_function2<cons_conj, &CONJ>();
         define_method(CONJ, *type::ArraySeq, *f);
 
-        define_method(CONJ, *type::ArraySet, *rt::array_set_conj);
+        define_method(CONJ, *type::ArraySet, *rt::set_conj);
+
+        f = create_native_function2<persistent_hash_set_conj, &CONJ>();
+        define_method(CONJ, *type::PersistentHashSet, *f);
 
         f = create_native_function2<list_conj, &CONJ>();
         define_method(CONJ, *type::List, *f);
@@ -1931,9 +1959,14 @@ struct Initialize
         define_seq_eq(*type::List, *type::List);
         define_seq_eq(*type::List, *type::Sequence);
 
-        std::array<Value, 2> two_sets{{*type::ArraySet, *type::ArraySet}};
-        v = create_array(two_sets.data(), two_sets.size());
+        std::array<Value, 2> two_array_sets{{*type::ArraySet, *type::ArraySet}};
+        v = create_array(two_array_sets.data(), two_array_sets.size());
         f = create_native_function2<are_array_sets_equal, &OBJ_EQ>();
+        define_method(OBJ_EQ, *v, *f);
+
+        std::array<Value, 2> two_hash_sets{{*type::PersistentHashSet, *type::PersistentHashSet}};
+        v = create_array(two_hash_sets.data(), two_hash_sets.size());
+        f = create_native_function2<are_persistent_hash_sets_equal, &OBJ_EQ>();
         define_method(OBJ_EQ, *v, *f);
 
         v = create_array(two_array_maps.data(), two_array_maps.size());
@@ -1957,6 +1990,8 @@ struct Initialize
         define_method(PR_STR_OBJ, *type::Array, *f);
         f = create_native_function1<pr_str_array_set, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::ArraySet, *f);
+        f = create_native_function1<pr_str_persistent_hash_set, &PR_STR_OBJ>();
+        define_method(PR_STR_OBJ, *type::PersistentHashSet, *f);
         f = create_native_function1<pr_str_array_map, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::ArrayMap, *f);
         f = create_native_function1<pr_str_persistent_hash_map, &PR_STR_OBJ>();

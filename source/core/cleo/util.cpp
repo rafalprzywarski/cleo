@@ -4,7 +4,9 @@
 #include "error.hpp"
 #include "multimethod.hpp"
 #include "persistent_hash_map.hpp"
+#include "persistent_hash_set.hpp"
 #include "array_map.hpp"
+#include "array_set.hpp"
 
 namespace cleo
 {
@@ -122,6 +124,15 @@ Force array_map_to_persistent_hash_map(Value m)
     return *pm;
 }
 
+Force array_set_to_persistent_hash_set(Value s)
+{
+    Root ps{*EMPTY_HASH_SET};
+    auto size = get_array_set_size(s);
+    for (decltype(size) i = 0; i != size; ++i)
+        ps = persistent_hash_set_conj(*ps, get_array_set_elem(s, i));
+    return *ps;
+}
+
 }
 
 Force map_assoc(Value m, Value k, Value v)
@@ -206,6 +217,55 @@ Force map_seq_next(Value s)
     if (type.is(*type::ArrayMapSeq))
         return get_array_map_seq_next(s);
     throw_illegal_argument("invalid map seq type: " + to_string(type));
+}
+
+bool is_set(Value val)
+{
+    auto vt = get_value_type(val);
+    return vt == *type::PersistentHashSet || vt == *type::ArraySet;
+}
+
+Force set_conj(Value s, Value k)
+{
+    if (!s)
+        s = *EMPTY_SET;
+    auto type = get_value_type(s);
+    if (type.is(*type::PersistentHashSet))
+        return persistent_hash_set_conj(s, k);
+    if (type.is(*type::ArraySet))
+    {
+        if (get_array_set_size(s) >= 16)
+        {
+            Root ps{array_set_to_persistent_hash_set(s)};
+            return persistent_hash_set_conj(*ps, k);
+        }
+        return array_set_conj(s, k);
+    }
+    throw_illegal_argument("invalid set type: " + to_string(type));
+}
+
+bool set_contains(Value s, Value k)
+{
+    if (!s)
+        return false;
+    auto type = get_value_type(s);
+    if (type.is(*type::PersistentHashSet))
+        return static_cast<bool>(persistent_hash_set_contains(s, k));
+    if (type.is(*type::ArraySet))
+        return static_cast<bool>(array_set_contains(s, k));
+    throw_illegal_argument("invalid set type: " + to_string(type));
+}
+
+Int64 set_count(Value s)
+{
+    if (!s)
+        return 0;
+    auto type = get_value_type(s);
+    if (type.is(*type::PersistentHashSet))
+        return get_persistent_hash_set_size(s);
+    if (type.is(*type::ArraySet))
+        return get_array_set_size(s);
+    throw_illegal_argument("invalid set type: " + to_string(type));
 }
 
 Value namespace_symbol(Value sym)
