@@ -1252,8 +1252,23 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             dbs = transient_array_conj(*dbs, *oc);
             ++p;
             break;
+        case vm::UBXI64:
+            oc = mk("UBXI64");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::BXI64:
+            oc = mk("BXI64");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
+        case vm::ADDI64:
+            oc = mk("ADDI64");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
         default:
-            throw_illegal_argument("Invalid opcode");
+            throw_illegal_argument("Invalid opcode: " + std::to_string(*p));
         }
     }
     return transient_array_persistent(*dbs);
