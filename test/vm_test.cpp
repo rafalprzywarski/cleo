@@ -1200,6 +1200,24 @@ TEST_F(vm_test, catching_exceptions_from_addi64)
     EXPECT_EQ_REFS(*big, stack[0]);
 }
 
+TEST_F(vm_test, not_)
+{
+    stack_push(*THREE);
+    stack_push(*ONE);
+
+    const std::array<Byte, 1> bc1{{NOT}};
+    eval_bytecode(nil, nil, 0, bc1);
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_REFS(nil, stack[1]);
+    EXPECT_EQ_VALS(*THREE, stack[0]);
+
+    const std::array<Byte, 3> bc2{{NOT, NOT, NOT}};
+    eval_bytecode(nil, nil, 0, bc2);
+    ASSERT_EQ(2u, stack.size());
+    EXPECT_EQ_REFS(TRUE, stack[1]);
+    EXPECT_EQ_VALS(*THREE, stack[0]);
+}
+
 TEST_F(vm_test, nop)
 {
     stack_push(*THREE);

@@ -418,6 +418,10 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             ++p;
             break;
         }
+        case NOT:
+            stack.back() = stack.back() ? nil : TRUE;
+            ++p;
+            break;
         case NOP:
             ++p;
             break;
