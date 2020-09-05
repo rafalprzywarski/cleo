@@ -608,25 +608,41 @@
   (assoc body :scope (-> body :scope :prev)))
 
 
-(defn translate-call! [body {:keys [fn args]}]
-  (when (< 255 (count args))
-    (fail "Too many arguments: " (count args)))
-  (let [apply? (and (= (:tag fn) :var)
-                    (= (resolve (:name fn)) #'cleo.core/apply))
-        arg-count (count args)
-        fn (if apply? (first args) fn)
-        args (if apply? (next args) args)
-        opcode (if apply? vm/APPLY vm/CALL)
-        body (push-scope body)
-        body (translate-expr! body fn)
-        body (inc-stack-depth body)
-        body (reduce (fn [body arg] (-> body (translate-expr! arg) inc-stack-depth)) body args)
+(defn translate-not! [body expr]
+  (-> body
+      (translate-expr! expr)
+      (update :bytecode (fn [bc] (conj! bc vm/NOT)))))
+
+
+(defn translate-push-exprs! [body exprs]
+  (let [body (push-scope body)
+        body (reduce (fn [body expr]
+                       (-> body (translate-expr! expr) inc-stack-depth))
+                     body
+                     exprs)
         body (pop-scope body)]
-    (when (and apply?
-               (< arg-count 2))
-      (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))
-    (update body :bytecode (fn [bc]
-                             (-> bc (conj! opcode) (conj! (if apply? (dec (count args)) (count args))))))))
+    body))
+
+
+(defn translate-call-or-apply! [body exprs opcode n]
+  (-> body
+      (translate-push-exprs! exprs)
+      (update :bytecode (fn [bc]
+                          (-> bc (conj! opcode) (conj! n))))))
+
+
+(defn translate-call! [body {:keys [fn args]}]
+  (let [arg-count (count args)]
+    (when (< 255 arg-count)
+      (fail "Too many arguments: " arg-count))
+    (let [callee-var (when (= (:tag fn) :var)
+                       (resolve (:name fn)))]
+      (cond (and (= callee-var #'cleo.core/not) (= arg-count 1)) (translate-not! body (first args))
+            (= callee-var #'cleo.core/apply) (do
+                                               (when (< arg-count 2)
+                                                 (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))
+                                               (translate-call-or-apply! body args vm/APPLY (- arg-count 2)))
+            :else (translate-call-or-apply! body (cons fn args) vm/CALL arg-count)))))
 
 
 (defn- add-tlocal [{{:keys [locals locals-size] :as scope} :scope :as body} index]

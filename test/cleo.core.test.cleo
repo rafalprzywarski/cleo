@@ -2429,6 +2429,20 @@
   (assert-compilation-error "Wrong number of args (1) passed to cleo.core/apply" (cc/translate (cc/parse '(fn* [f] (cleo.core/apply f))))))
 
 
+(deftest translate-not
+  (assert= {:arity 1
+            :bytecode [vm/LDL 255 255
+                       vm/NOT]}
+           (translate-body '(fn* [x] (cleo.core/not x))))
+  (assert= {:arity 2
+            :vars [#'cleo.core/not]
+            :bytecode [vm/LDV 0 0
+                       vm/LDL 254 255
+                       vm/LDL 255 255
+                       vm/CALL 2]}
+           (translate-body '(fn* [x y] (cleo.core/not x y)))))
+
+
 (define-var 'cleo.compiler.def.test.other/ex nil)
 
 (in-ns 'cleo.compiler.imported-def.test)
