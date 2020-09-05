@@ -603,7 +603,7 @@
    (cons x (iterate f (f x)))))
 
 
-(deftype CycleSeq [seq coll])
+(deftype CycleSeq [(seq Sequence) (coll Seqable)])
 
 
 (defmethod seq CycleSeq [c] c)

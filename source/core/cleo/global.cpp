@@ -1078,7 +1078,7 @@ Force create_type(Value name, Value field_names, Value field_types)
         auto name = get_array_elem(field_names, i);
         auto type = get_array_elem(field_types, i);
         check_type("field-name", name, *type::Symbol);
-        if (type)
+        if (type && !get_value_type(type).is(*type::Protocol))
             check_type("field-type", type, *type::Type);
         names[i] = name;
         types[i] = type;
@@ -1096,7 +1096,7 @@ Force new_instance(const Value *args, std::uint8_t n)
         throw_illegal_argument("No matching constructor found for type " + to_string(type));
     for (Int64 i = 1; i < n; ++i)
         if (auto ftype = get_object_type_field_type(type, i - 1))
-            if (!get_value_type(args[i]).is(ftype))
+            if (!isa(get_value_type(args[i]), ftype))
                 throw_illegal_argument("Mismatched " + to_string(type) + " ctor argument " + std::to_string(i - 1) + " type, expected: " + to_string(ftype) + ", got: " + to_string(args[i]));
     return create_object(type, args + 1, n - 1);
 }
