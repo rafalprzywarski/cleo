@@ -44,6 +44,8 @@ constexpr Byte UBXI64 = 0x80;
 constexpr Byte BXI64 =  0x81;
 constexpr Byte ADDI64 = 0x82;
 
+constexpr Byte NOT = 0x90;
+
 constexpr Byte NOP = 0xff;
 
 void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size);

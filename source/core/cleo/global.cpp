@@ -1274,6 +1274,11 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             dbs = transient_array_conj(*dbs, *oc);
             ++p;
             break;
+        case vm::NOT:
+            oc = mk("NOT");
+            dbs = transient_array_conj(*dbs, *oc);
+            ++p;
+            break;
         default:
             throw_illegal_argument("Invalid opcode: " + std::to_string(*p));
         }

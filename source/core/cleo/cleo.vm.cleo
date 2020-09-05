@@ -146,6 +146,12 @@
 
 (def {:const true
       :arglists '([])
+      :doc "Pop a value from the values stack, and push true if the value is nil or push nil if the value is not nil"}
+  NOT 0x90)
+
+
+(def {:const true
+      :arglists '([])
       :doc "No OPeration - does nothing"}
   NOP 0xff)
 
