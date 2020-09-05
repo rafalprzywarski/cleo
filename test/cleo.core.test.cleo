@@ -4,13 +4,13 @@
 (require 'cleo.vm)
 (alias 'vm 'cleo.vm)
 
-(def slow-tests :true)
+(def slow-tests true)
 (def tests (atom {}))
 (def current-test (atom nil))
 (def failed-tests (atom #{}))
 
 
-(def {:macro :true} deftest
+(def {:macro true} deftest
   (fn* deftest [&form &env name & body]
     `(swap! tests assoc* '~name (fn* [] (do ~@body)))))
 
@@ -22,14 +22,14 @@
       (println @current-test (apply str msg)))))
 
 
-(def {:macro :true} fail-unless
+(def {:macro true} fail-unless
   (fn* fail-unless [&form &env conde & msg]
     `(if ~conde
        nil
        (fail ~@msg))))
 
 
-(def {:macro :true} assert=
+(def {:macro true} assert=
   (fn assert= [&form &env expected actual]
     `(let* [expected-val# ~expected]
        (try*
@@ -46,7 +46,7 @@
                    (str " callstack: " (pr-str (.-callstack e#))))))))))
 
 
-(def {:macro :true} assert
+(def {:macro true} assert
   (fn* assert [&form &env actual]
     `(try*
        (let* [actual-val# ~actual]
@@ -60,12 +60,12 @@
                  (str " callstack: " (pr-str (.-callstack e#)))))))))
 
 
-(def {:macro :true} assert-not
+(def {:macro true} assert-not
   (fn* assert-not [&form &env actual]
     `(assert ~(list 'not actual))))
 
 
-(def {:macro :true} assert-throws
+(def {:macro true} assert-throws
   (fn* [&form &env expected actual]
     `(try*
        (try*
@@ -81,7 +81,7 @@
                " actual exception: " ~'e)))))
 
 
-(def {:macro :true} assert-no-exception
+(def {:macro true} assert-no-exception
   (fn* [&form &env actual]
     `(try*
        ~actual
@@ -90,7 +90,7 @@
                " expected no exception, got: " ~'e)))))
 
 
-(def {:macro :true} assert-compilation-error
+(def {:macro true} assert-compilation-error
   (fn* [&form &env expected actual]
     `(try*
        (try*
@@ -149,9 +149,9 @@
 
 
 (deftest defprotocol
-  (assert= '(do (def {:const :true} Xyz (cleo.core/protocol* 'Xyz))) (macroexpand '(defprotocol Xyz)))
+  (assert= '(do (def {:const true} Xyz (cleo.core/protocol* 'Xyz))) (macroexpand '(defprotocol Xyz)))
   (assert= '(do
-              (def {:const :true} Xyz (cleo.core/protocol* 'Xyz))
+              (def {:const true} Xyz (cleo.core/protocol* 'Xyz))
               (cleo.core/defmulti foo (fn* foo ([this] (cleo.core/type this))))
               (cleo.core/defmulti bar (fn* bar ([this] (cleo.core/type this)) ([this _] (cleo.core/type this)) ([this _ _ _ _] (cleo.core/type this)))))
            (macroexpand '(defprotocol Xyz
@@ -166,16 +166,16 @@
 
 (deftest deftype
   (assert= '(do
-              (def {:const :true} Xyz (cleo.core/type* 'Xyz '[a b c] [nil nil nil]))
-              (cleo.core/defn ->Xyz {:const :true} [a b c] (cleo.core/new Xyz a b c)) Xyz)
+              (def {:const true} Xyz (cleo.core/type* 'Xyz '[a b c] [nil nil nil]))
+              (cleo.core/defn ->Xyz {:const true} [a b c] (cleo.core/new Xyz a b c)) Xyz)
            (macroexpand '(deftype Xyz [a b c])))
   (assert= '(do
-              (def {:const :true} Xyz (cleo.core/type* 'Xyz '[] []))
-              (cleo.core/defn ->Xyz {:const :true} []  (cleo.core/new Xyz)) Xyz)
+              (def {:const true} Xyz (cleo.core/type* 'Xyz '[] []))
+              (cleo.core/defn ->Xyz {:const true} []  (cleo.core/new Xyz)) Xyz)
            (macroexpand '(deftype Xyz [])))
   (assert= '(do
-              (def {:const :true} Xyz (cleo.core/type* 'Xyz '[a b c] [Int64 nil UTF8String]))
-              (cleo.core/defn ->Xyz {:const :true} [a b c] (cleo.core/new Xyz a b c)) Xyz)
+              (def {:const true} Xyz (cleo.core/type* 'Xyz '[a b c] [Int64 nil UTF8String]))
+              (cleo.core/defn ->Xyz {:const true} [a b c] (cleo.core/new Xyz a b c)) Xyz)
            (macroexpand '(deftype Xyz [(a Int64) b (c UTF8String)]))))
 
 
@@ -190,27 +190,27 @@
 
 
 (deftest defmacro
-  (assert= '(def {:macro :true, :arglists '([x]), :source-form '(defmacro sonia [x] (a) (b) (c))} sonia (fn* sonia [&form &env x] (do (a) (b) (c))))
+  (assert= '(def {:macro true, :arglists '([x]), :source-form '(defmacro sonia [x] (a) (b) (c))} sonia (fn* sonia [&form &env x] (do (a) (b) (c))))
            (macroexpand '(defmacro sonia [x] (a) (b) (c))))
-  (assert= '(def {:macro :true, :arglists '([] [x] [a b]), :source-form '(defmacro sonia ([] 1) ([x] 2) ([a b] 3))} sonia (fn* sonia ([&form &env] 1) ([&form &env x] 2) ([&form &env a b] 3)))
+  (assert= '(def {:macro true, :arglists '([] [x] [a b]), :source-form '(defmacro sonia ([] 1) ([x] 2) ([a b] 3))} sonia (fn* sonia ([&form &env] 1) ([&form &env x] 2) ([&form &env a b] 3)))
            (macroexpand '(defmacro sonia ([] 1) ([x] 2) ([a b] 3))))
-  (assert= '(def {:macro :true, :arglists '([x]), :source-form '(defmacro sonia [x] (a))} sonia (fn* sonia [&form &env x] (a)))
+  (assert= '(def {:macro true, :arglists '([x]), :source-form '(defmacro sonia [x] (a))} sonia (fn* sonia [&form &env x] (a)))
            (macroexpand '(defmacro sonia [x] (a))))
-  (assert= '(def {:macro :true, :arglists '([x]), :source-form '(defmacro sonia [x])} sonia (fn* sonia [&form &env x]))
+  (assert= '(def {:macro true, :arglists '([x]), :source-form '(defmacro sonia [x])} sonia (fn* sonia [&form &env x]))
            (macroexpand '(defmacro sonia [x])))
-  (assert= '(def {:doc "some", :macro :true, :arglists '([x]), :source-form '(defmacro sonia "some" [x])} sonia (fn* sonia [&form &env x]))
+  (assert= '(def {:doc "some", :macro true, :arglists '([x]), :source-form '(defmacro sonia "some" [x])} sonia (fn* sonia [&form &env x]))
            (macroexpand '(defmacro sonia "some" [x])))
-  (assert= '(def {:const :true, :macro :true, :arglists '([x]), :source-form '(defmacro sonia {:const :true} [x])} sonia (fn* sonia [&form &env x]))
-           (macroexpand '(defmacro sonia {:const :true} [x])))
-  (assert= '(def {:const :true, :doc "some", :macro :true, :arglists '([x]), :source-form '(defmacro sonia "some" {:const :true} [x])} sonia (fn* sonia [&form &env x]))
-           (macroexpand '(defmacro sonia "some" {:const :true} [x])))
-  (assert= '(def {:const :true, :doc "better", :macro :true, :arglists '([x]), :source-form '(defmacro sonia "some" {:const :true, :doc "better"} [x])} sonia (fn* sonia [&form &env x]))
-           (macroexpand '(defmacro sonia "some" {:const :true, :doc "better"} [x])))
-  (assert= '(def {:macro :true, :arglists '([x]), :source-form '(defmacro sonia {:macro false} [x])} sonia (fn* sonia [&form &env x]))
+  (assert= '(def {:const true, :macro true, :arglists '([x]), :source-form '(defmacro sonia {:const true} [x])} sonia (fn* sonia [&form &env x]))
+           (macroexpand '(defmacro sonia {:const true} [x])))
+  (assert= '(def {:const true, :doc "some", :macro true, :arglists '([x]), :source-form '(defmacro sonia "some" {:const true} [x])} sonia (fn* sonia [&form &env x]))
+           (macroexpand '(defmacro sonia "some" {:const true} [x])))
+  (assert= '(def {:const true, :doc "better", :macro true, :arglists '([x]), :source-form '(defmacro sonia "some" {:const true, :doc "better"} [x])} sonia (fn* sonia [&form &env x]))
+           (macroexpand '(defmacro sonia "some" {:const true, :doc "better"} [x])))
+  (assert= '(def {:macro true, :arglists '([x]), :source-form '(defmacro sonia {:macro false} [x])} sonia (fn* sonia [&form &env x]))
            (macroexpand '(defmacro sonia {:macro false} [x])))
-  (assert= '(def {:macro :true, :arglists '([1 2 3]), :source-form '(defmacro sonia {:arglists '([1 2 3])} [x])} sonia (fn* sonia [&form &env x]))
+  (assert= '(def {:macro true, :arglists '([1 2 3]), :source-form '(defmacro sonia {:arglists '([1 2 3])} [x])} sonia (fn* sonia [&form &env x]))
            (macroexpand '(defmacro sonia {:arglists '([1 2 3])} [x])))
-  (assert= '(def {:macro :true, :arglists '([x]), :source-form :custom} sonia (fn* sonia [&form &env x]))
+  (assert= '(def {:macro true, :arglists '([x]), :source-form :custom} sonia (fn* sonia [&form &env x]))
            (macroexpand '(defmacro sonia {:macro false, :source-form :custom} [x]))))
 
 
@@ -343,12 +343,12 @@
            (macroexpand '(defn abc ([] 1) ([x] 2) ([a b] 3))))
   (assert= '(def {:arglists '([x]), :doc "some", :source-form '(defn abc "some" [x] y)} abc (cleo.core/fn abc [x] y))
            (macroexpand '(defn abc "some" [x] y)))
-  (assert= '(def {:arglists '([x]), :const :true, :source-form '(defn abc {:const :true} [x] y)} abc (cleo.core/fn abc [x] y))
-           (macroexpand '(defn abc {:const :true} [x] y)))
-  (assert= '(def {:arglists '([x]), :const :true, :doc "some", :source-form '(defn abc "some" {:const :true} [x] y)} abc (cleo.core/fn abc [x] y))
-           (macroexpand '(defn abc "some" {:const :true} [x] y)))
-  (assert= '(def {:arglists '([x]), :const :true, :doc "better doc", :source-form '(defn abc "some" {:const :true, :doc "better doc"} [x] y)} abc (cleo.core/fn abc [x] y))
-           (macroexpand '(defn abc "some" {:const :true, :doc "better doc"} [x] y)))
+  (assert= '(def {:arglists '([x]), :const true, :source-form '(defn abc {:const true} [x] y)} abc (cleo.core/fn abc [x] y))
+           (macroexpand '(defn abc {:const true} [x] y)))
+  (assert= '(def {:arglists '([x]), :const true, :doc "some", :source-form '(defn abc "some" {:const true} [x] y)} abc (cleo.core/fn abc [x] y))
+           (macroexpand '(defn abc "some" {:const true} [x] y)))
+  (assert= '(def {:arglists '([x]), :const true, :doc "better doc", :source-form '(defn abc "some" {:const true, :doc "better doc"} [x] y)} abc (cleo.core/fn abc [x] y))
+           (macroexpand '(defn abc "some" {:const true, :doc "better doc"} [x] y)))
   (assert= '(def {:arglists '([1 2 3]), :source-form '(defn abc {:arglists '([1 2 3])} [a b])} abc (cleo.core/fn abc [a b]))
            (macroexpand '(defn abc {:arglists '([1 2 3])} [a b])))
   (assert= '(def {:arglists '([x]), :source-form :custom} abc (cleo.core/fn abc [x] x))
@@ -356,17 +356,17 @@
 
 
 (deftest defn-
-  (assert= '(def {:private :true, :arglists '([a b]), :source-form '(defn- abc [a b] (x) (y))} abc (cleo.core/fn abc [a b] (x) (y)))
+  (assert= '(def {:private true, :arglists '([a b]), :source-form '(defn- abc [a b] (x) (y))} abc (cleo.core/fn abc [a b] (x) (y)))
            (macroexpand '(defn- abc [a b] (x) (y))))
-  (assert= '(def {:private :true, :arglists '([x]) :doc "some", :source-form '(defn- abc "some" [x] y)} abc (cleo.core/fn abc [x] y))
+  (assert= '(def {:private true, :arglists '([x]) :doc "some", :source-form '(defn- abc "some" [x] y)} abc (cleo.core/fn abc [x] y))
            (macroexpand '(defn- abc "some" [x] y)))
-  (assert= '(def {:private :true, :arglists '([x]) :const :true, :source-form '(defn- abc {:const :true} [x] y)} abc (cleo.core/fn abc [x] y))
-           (macroexpand '(defn- abc {:const :true} [x] y)))
-  (assert= '(def {:private :true, :arglists '([x]) :const :true, :doc "some", :source-form '(defn- abc "some" {:const :true} [x] y)} abc (cleo.core/fn abc [x] y))
-           (macroexpand '(defn- abc "some" {:const :true} [x] y)))
-  (assert= '(def {:private :true, :arglists '([x]), :source-form '(defn- abc {:private 10} [x])} abc (cleo.core/fn abc [x]))
+  (assert= '(def {:private true, :arglists '([x]) :const true, :source-form '(defn- abc {:const true} [x] y)} abc (cleo.core/fn abc [x] y))
+           (macroexpand '(defn- abc {:const true} [x] y)))
+  (assert= '(def {:private true, :arglists '([x]) :const true, :doc "some", :source-form '(defn- abc "some" {:const true} [x] y)} abc (cleo.core/fn abc [x] y))
+           (macroexpand '(defn- abc "some" {:const true} [x] y)))
+  (assert= '(def {:private true, :arglists '([x]), :source-form '(defn- abc {:private 10} [x])} abc (cleo.core/fn abc [x]))
            (macroexpand '(defn- abc {:private 10} [x])))
-  (assert= '(def {:private :true, :arglists '([x]), :source-form :custom} abc (cleo.core/fn abc [x] x))
+  (assert= '(def {:private true, :arglists '([x]), :source-form :custom} abc (cleo.core/fn abc [x] x))
            (macroexpand '(defn- abc {:source-form :custom, :private 10} [x] x))))
 
 
@@ -393,7 +393,7 @@
 (deftest not
   (assert= nil (not 10))
   (assert= nil (not [1]))
-  (assert= :true (not nil)))
+  (assert= true (not nil)))
 
 
 (deftest or
@@ -410,7 +410,7 @@
 
 
 (deftest and
-  (assert= :true (and))
+  (assert= true (and))
   (assert= 10 (and 10))
   (assert= nil (and nil))
   (assert= nil (and nil :x))
@@ -587,7 +587,7 @@
              (dotimes [i 5] (swap! v conj i))
              @v))
   (assert-not (let [called? (atom nil)]
-                (dotimes [i 0] (reset! called? :true))
+                (dotimes [i 0] (reset! called? true))
                 @called?)))
 
 
@@ -597,10 +597,10 @@
              (doseq [x [:a :b :c]] (swap! l conj x))
              @l))
   (assert-not (let [called? (atom nil)]
-                (doseq [x nil] (reset! called? :true))
+                (doseq [x nil] (reset! called? true))
                 @called?))
   (assert-not (let [called? (atom nil)]
-                (doseq [x []] (reset! called? :true))
+                (doseq [x []] (reset! called? true))
                 @called?)))
 
 
@@ -957,10 +957,10 @@
   (assert= [{:params [{:name 'x, :index 1} {:name 'y, :index 2}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* f [x y] x))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y] y))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y &] y))))
-  (assert= [{:params [{:name 'x, :index 0}], :vararg :true, :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [& x] x))))
-  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :vararg :true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x & y] y))))
+  (assert= [{:params [{:name 'x, :index 0}], :vararg true, :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [& x] x))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :vararg true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x & y] y))))
   (assert-no-exception (cc/parse '(fn* ([x] nil) ([x & xs] nil))))
-  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1} {:name 'z, :index 2}], :vararg :true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y & z] y))))
+  (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1} {:name 'z, :index 2}], :vararg true, :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* [x y & z] y))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 1}}] (:bodies (cc/parse '(fn* ([x y] y)))))
   (assert= 'abc (:name (cc/parse '(fn* abc ([x y] y)))))
   (assert= [{:params [{:name 'z, :index 0}], :expr {:tag :local, :index 0}}
@@ -1172,7 +1172,7 @@
            (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))))
   (assert= {:name 'abc
             :bodies [{:arity 2
-                      :vararg :true
+                      :vararg true
                       :bytecode [vm/LDL 254 255
                                  vm/POP
                                  vm/LDL 255 255
@@ -1278,9 +1278,9 @@
 (def test-var0 10)
 (def test-var1 10)
 (def {:dynamic nil} test-var2 20)
-(def {:dynamic :true} test-dynvar 30)
-(def {:const :true} test-constvar 77)
-(def {:macro :true} test-macro 40)
+(def {:dynamic true} test-dynvar 30)
+(def {:const true} test-constvar 77)
+(def {:macro true} test-macro 40)
 (def test-var2 30)
 (def test-var3 40)
 (def test-var4 50)
@@ -1539,7 +1539,7 @@
 (def test-var257 2580)
 
 
-(define-var 'cleo.compiler.private-var.test/test-var {:private :true})
+(define-var 'cleo.compiler.private-var.test/test-var {:private true})
 
 
 (deftest translate-var
@@ -1780,7 +1780,7 @@
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x (do 30)))))))
 
 
-(defn identity-inline {:const :true} ([x] x) ([] "ignored") ([x y] "ignored"))
+(defn identity-inline {:const true} ([x] x) ([] "ignored") ([x y] "ignored"))
 
 
 (deftest translate-call-inline-identity
@@ -1797,7 +1797,7 @@
            (translate-body '(cleo.core.test/identity-inline cleo.core.test/identity-inline))))
 
 
-(defn const-inline {:const :true} ([] "the const") ([x] "ignored"))
+(defn const-inline {:const true} ([] "the const") ([x] "ignored"))
 
 
 (deftest translate-no-arg-returning-const
@@ -2137,7 +2137,7 @@
                f256 f257 f258])
 
 
-(def {:const :true} abc (new ABC 7 8 9))
+(def {:const true} abc (new ABC 7 8 9))
 
 (deftest translate-dot-with-known-type
   (assert= {:arity 1
@@ -2550,7 +2550,7 @@
                        vm/CNIL]}
            (translate-body '(fn* [f x] (if x (recur f (f x))))))
   (assert= {:arity 2
-            :vararg :true
+            :vararg true
             :consts [1 2]
             :bytecode [vm/LDC 0 0
                        vm/LDC 1 0
@@ -2934,7 +2934,7 @@
                           vm/LDC 1 0
                           vm/CALL 2]}
               {:arity 2
-               :vararg :true
+               :vararg true
                :consts [nil nil]
                :bytecode [vm/LDL 255 255
                           vm/LDC 1 0

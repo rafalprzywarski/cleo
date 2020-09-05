@@ -72,6 +72,8 @@ TEST_F(reader_test, should_parse_a_sequence_of_characters_as_a_symbol)
     EXPECT_EQ_VALS(create_symbol("nil0"), *val);
     val = read_str("true0");
     EXPECT_EQ_VALS(create_symbol("true0"), *val);
+    val = read_str("other/true");
+    EXPECT_EQ_VALS(create_symbol("other", "true"), *val);
     val = read_str("false0");
     EXPECT_EQ_VALS(create_symbol("false0"), *val);
     val = read_str("+x");
@@ -129,6 +131,12 @@ TEST_F(reader_test, should_not_treat_newline_as_part_of_symbol)
 {
     Root val{read_str("abc123\n")};
     EXPECT_EQ_VALS(create_symbol("abc123"), *val);
+}
+
+TEST_F(reader_test, should_parse_true)
+{
+    Root val{read_str("true")};
+    EXPECT_EQ_REFS(TRUE, *val);
 }
 
 TEST_F(reader_test, should_parse_a_sequence_of_digits_as_an_integer)

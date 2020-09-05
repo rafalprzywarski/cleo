@@ -41,7 +41,7 @@ TEST_F(macro_test, macroexpand1_should_return_the_given_form_if_its_not_a_list_w
 
 TEST_F(macro_test, macroexpand1_should_eval_the_body)
 {
-    eval_str("(def {:macro :true} mex1 (fn* [&form &env] (quote (cleo.core/first (cleo.core/seq [5 6 7])))))");
+    eval_str("(def {:macro true} mex1 (fn* [&form &env] (quote (cleo.core/first (cleo.core/seq [5 6 7])))))");
     auto name = create_symbol("cleo.macro.test", "mex1");
     Root call{list(name)};
     Root val{macroexpand1(*call)};
@@ -51,7 +51,7 @@ TEST_F(macro_test, macroexpand1_should_eval_the_body)
 
 TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
 {
-    eval_str("(def {:macro :true} mex1 (fn* [&form &env a b c] [b c a]))");
+    eval_str("(def {:macro true} mex1 (fn* [&form &env a b c] [b c a]))");
     auto name = create_symbol("cleo.macro.test", "mex1");
     Root v{array(5, 6, 7)};
     Root call{list(name, SEQ, FIRST, *v)};
@@ -63,7 +63,7 @@ TEST_F(macro_test, macroexpand1_should_pass_the_arguments_unevaluated)
 
 TEST_F(macro_test, macroexpand1_should_expand_seqs)
 {
-    eval_str("(def {:macro :true} mex1 (fn* [&form &env a b c] [b c a]))");
+    eval_str("(def {:macro true} mex1 (fn* [&form &env a b c] [b c a]))");
     auto name = create_symbol("cleo.macro.test", "mex1");
     Root v{array(5, 6, 7)};
     Root call{array(name, SEQ, FIRST, *v)};
@@ -76,7 +76,7 @@ TEST_F(macro_test, macroexpand1_should_expand_seqs)
 
 TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symbol)
 {
-    eval_str("(def {:macro :true} ms2e (fn* [&form &env a b c] [b c a]))");
+    eval_str("(def {:macro true} ms2e (fn* [&form &env a b c] [b c a]))");
     auto name = create_symbol("cleo.macro.test", "ms2e");
     Root v{array(5, 6, 7)};
     Root call{list(name, SEQ, FIRST, *v)};
@@ -87,7 +87,7 @@ TEST_F(macro_test, macroexpand1_should_evaluate_the_first_argument_if_its_a_symb
 
 TEST_F(macro_test, macroexpand1_should_fail_on_wrong_number_of_args)
 {
-    eval_str("(def {:macro :true} mex3 (fn* [&form &env a b c] nil))");
+    eval_str("(def {:macro true} mex3 (fn* [&form &env a b c] nil))");
     auto name = create_symbol("cleo.macro.test", "mex3");
     Root call{list(name, SEQ, FIRST)};
     try
@@ -171,19 +171,19 @@ TEST_F(macro_test, macroexpand_should_return_the_given_form_if_its_not_a_list_wi
 TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 {
     auto x = create_keyword("x");
-    eval_str("(def {:macro :true} mex3 (fn* [&form &env] :x))");
+    eval_str("(def {:macro true} mex3 (fn* [&form &env] :x))");
     auto name = create_symbol("cleo.macro.test", "mex3");
     Root call{list(name)};
     Root val{macroexpand(*call)};
     EXPECT_EQ_VALS(x, *val);
 
-    eval_str("(def {:macro :true} mex4 (fn* [&form &env] (quote (cleo.macro.test/mex3))))");
+    eval_str("(def {:macro true} mex4 (fn* [&form &env] (quote (cleo.macro.test/mex3))))");
     name = create_symbol("cleo.macro.test", "mex4");
     call = list(name);
     val = macroexpand(*call);
     EXPECT_EQ_VALS(x, *val);
 
-    eval_str("(def {:macro :true} mex5 (fn* [&form &env] (quote (cleo.macro.test/mex4))))");
+    eval_str("(def {:macro true} mex5 (fn* [&form &env] (quote (cleo.macro.test/mex4))))");
     name = create_symbol("cleo.macro.test", "mex5");
     call = list(name);
     val = macroexpand(*call);
@@ -192,7 +192,7 @@ TEST_F(macro_test, macroexpand_expand_until_the_first_element_is_not_a_macro)
 
 TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 {
-    eval_str("(def {:macro :true} mex6 (fn* [&form &env] (quote (cleo.core/first (s [5 6 7])))))");
+    eval_str("(def {:macro true} mex6 (fn* [&form &env] (quote (cleo.core/first (s [5 6 7])))))");
     Root call{create_string("(let* [s cleo.core/seq] (mex6))")};
     call = read(*call);
     Root val{eval(*call)};
@@ -202,7 +202,7 @@ TEST_F(macro_test, eval_should_expand_the_macro_and_eval_the_result)
 
 TEST_F(macro_test, eval_should_fail_when_evaluating_a_macro_symbol)
 {
-    eval_str("(def {:macro :true} mex7 (fn* [&form &env] nil))");
+    eval_str("(def {:macro true} mex7 (fn* [&form &env] nil))");
     auto name = create_symbol("cleo.macro.test", "mex7");
 
     try
@@ -238,7 +238,7 @@ TEST_F(macro_test, should_correctly_resolve_symbols_from_macros_namespace)
 TEST_F(macro_test, should_pass_the_form_as_a_hidden_parameter)
 {
     in_ns(create_symbol("cleo.macro.form.test"));
-    Root decl{create_string("(def {:macro :true} ff (fn* [&form &env & args] `(quote ~&form)))")};
+    Root decl{create_string("(def {:macro true} ff (fn* [&form &env & args] `(quote ~&form)))")};
     decl = read(*decl);
     eval(*decl);
     Root form{create_string("(ff 1 (+ 2 3) 4)")};

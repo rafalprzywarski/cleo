@@ -418,14 +418,14 @@ TEST_F(eval_test, def_should_define_a_var_with_meta)
 {
     in_ns(create_symbol("clue.eval.var.meta.test"));
     Root val, ex;
-    val = read_str("(def {:macro :true} var1)");
+    val = read_str("(def {:macro true} var1)");
     val = eval(*val);
     auto name = create_symbol("clue.eval.var.meta.test", "var1");
     EXPECT_EQ_VALS(get_var(name), *val);
     EXPECT_TRUE(bool(is_var_macro(*val)));
     EXPECT_EQ_VALS(nil, lookup(name));
 
-    val = read_str("(def {:macro :true} var2 30)");
+    val = read_str("(def {:macro true} var2 30)");
     val = eval(*val);
     ex = i64(30);
     name = create_symbol("clue.eval.var.meta.test", "var2");
@@ -611,7 +611,7 @@ TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_and_reevaluate_it)
 
 TEST_F(eval_test, recur_should_rebind_the_bindings_of_fn_with_varargs_and_reevaluate_it)
 {
-    Root val{read_str("((fn* [cond & xs] (if cond xs (recur :true xs))) nil 1 2 3)")};
+    Root val{read_str("((fn* [cond & xs] (if cond xs (recur true xs))) nil 1 2 3)")};
     Root ex{list(1, 2, 3)};
     val = eval(*val);
     EXPECT_EQ_VALS(*ex, *val);

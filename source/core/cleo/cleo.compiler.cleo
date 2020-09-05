@@ -254,7 +254,7 @@
       (when (next form)
         (fail "Too many forms passed to fn*"))
       (if va
-        (assoc ast :vararg :true)
+        (assoc ast :vararg true)
         ast))))
 
 
@@ -872,7 +872,7 @@
                :locals-size 0
                :bytecode (transient [])
                :exception-table (transient [])}
-        tbody (if vararg (assoc tbody :vararg :true) tbody)
+        tbody (if vararg (assoc tbody :vararg true) tbody)
         tbody (translate-expr! tbody expr)
         tbody (update tbody :bytecode persistent!)
         tbody (update tbody :exception-table persistent!)
@@ -1199,7 +1199,7 @@
             (recur offs v)
             (let [oc (bc off)
                   isize (vm/isize oc)
-                  v (assoc! v off :true)
+                  v (assoc! v off true)
                   noff (+ off isize)
                   offs (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
                          (conj! offs (+ noff (get-i16 bc (inc off))))

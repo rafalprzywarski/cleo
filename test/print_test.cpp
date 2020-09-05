@@ -28,6 +28,11 @@ TEST_F(pr_str_test, should_print_nil)
     EXPECT_EQ("nil", str(pr_str(nil)));
 }
 
+TEST_F(pr_str_test, should_print_true)
+{
+    EXPECT_EQ("true", str(pr_str(TRUE)));
+}
+
 TEST_F(pr_str_test, should_print_integers)
 {
     Root val;
@@ -279,6 +284,11 @@ struct print_str_test : Test
 TEST_F(print_str_test, should_print_nil)
 {
     EXPECT_EQ("nil", str(print_str(nil)));
+}
+
+TEST_F(print_str_test, should_print_true)
+{
+    EXPECT_EQ("true", str(print_str(TRUE)));
 }
 
 TEST_F(print_str_test, should_print_integers)

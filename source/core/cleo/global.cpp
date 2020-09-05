@@ -65,7 +65,6 @@ std::vector<std::vector<Value>> callstacks;
 std::thread collector{};
 }
 
-const Value TRUE = create_keyword("true");
 const Value SEQ = create_symbol("cleo.core", "seq");
 const Value FIRST = create_symbol("cleo.core", "first");
 const Value NEXT = create_symbol("cleo.core", "next");
@@ -179,8 +178,16 @@ const std::unordered_set<Value, std::hash<Value>, StdIs> SPECIAL_SYMBOLS{
 namespace type
 {
 const ConstRoot Type{create_basic_type("cleo.core", "Type")};
+const ConstRoot True{create_basic_type("cleo.core", "True")};
 const ConstRoot Protocol{create_basic_type("cleo.core", "Protocol")};
 }
+
+namespace
+{
+const ConstRoot TRUE_root{create_object(*type::True, nullptr, 0)};
+}
+
+const Value TRUE = *TRUE_root;
 
 namespace
 {
@@ -1518,6 +1525,7 @@ struct Initialize
         create_global_hierarchy();
 
         define_type(*type::Type);
+        define_type(*type::True);
         define_type(*type::Protocol);
         define_type(type::Int64);
         define_type(*type::Float64);

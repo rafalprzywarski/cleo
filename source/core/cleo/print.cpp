@@ -312,6 +312,8 @@ Force pr_str(Value val)
         default: // tag::OBJECT
             if (val.is_nil())
                 return create_string("nil");
+            if (val.is(TRUE))
+                return create_string("true");
             return call_multimethod(*rt::pr_str_obj, &val, 1);
     }
 }

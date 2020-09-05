@@ -106,9 +106,13 @@ std::pair<std::string, std::string> read_raw_symbol(Stream& s)
 Force read_symbol(Stream& s)
 {
     auto rs = read_raw_symbol(s);
-    if (rs.first.empty())
-        return rs.second == "nil" ? nil : create_symbol(rs.second);
-    return create_symbol(rs.first, rs.second);
+    if (!rs.first.empty())
+        return create_symbol(rs.first, rs.second);
+    if (rs.second == "nil")
+        return nil;
+    if (rs.second == "true")
+        return TRUE;
+    return create_symbol(rs.second);
 }
 
 Force read_keyword(Stream& s)
