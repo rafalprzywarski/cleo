@@ -733,10 +733,10 @@
   (map second (namespaces*)))
 
 
-(require 'cleo.compiler)
+(require 'cleo.compiler :reload)
 
 
 (when should-recompile
   (def should-recompile nil)
-  (def eval cleo.compiler/eval)
+  (def eval cleo.compiler/eval-form)
   (require 'cleo.core))

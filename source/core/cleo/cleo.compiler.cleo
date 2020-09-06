@@ -3,7 +3,7 @@
 (alias 'vm 'cleo.vm)
 
 
-(def eval)
+(def eval-form)
 (def parse-form)
 
 
@@ -732,7 +732,7 @@
                (not= (namespace (var-name the-var)) cur-ns-name))
       (fail (cleo.core/name name) " already refers to: " the-var " in namespace: " cur-ns-name))
     (let [meta (when meta
-                 (eval meta))
+                 (eval-form meta))
           the-var (if the-var the-var (define-var (symbol cur-ns-name (str name)) meta))
           body (translate-const! body the-var)
           body (inc-stack-depth body)
@@ -1341,10 +1341,10 @@
              :expr expr}]})
 
 
-(defn eval [form]
+(defn eval-form [form]
   (let [form (macroexpand form)]
     (if (and (seq? form) (= (first form) 'do))
-      (reduce (fn [_ expr] (eval expr)) nil (next form))
+      (reduce (fn [_ expr] (eval-form expr)) nil (next form))
       ((->> form
             parse
             fn-wrap
