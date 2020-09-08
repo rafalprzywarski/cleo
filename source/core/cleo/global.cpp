@@ -602,6 +602,26 @@ Value transient_array_get(Value v, Value index)
     return get_transient_array_elem(v, i);
 }
 
+Value byte_array_get(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        return nil;
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_byte_array_size(v))
+        return nil;
+    return get_byte_array_elem(v, i);
+}
+
+Value transient_byte_array_get(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        return nil;
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_transient_byte_array_size(v))
+        return nil;
+    return get_transient_byte_array_elem(v, i);
+}
+
 Force transient_array_assoc(Value v, Value index, Value e)
 {
     if (get_value_tag(index) != tag::INT64)
@@ -632,6 +652,16 @@ Value array_call(Value v, Value index)
     return get_array_elem(v, i);
 }
 
+Value byte_array_call(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        throw_illegal_argument("Key must be integer");
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_byte_array_size(v))
+        throw_index_out_of_bounds();
+    return get_byte_array_elem(v, i);
+}
+
 Value transient_array_call(Value v, Value index)
 {
     if (get_value_tag(index) != tag::INT64)
@@ -640,6 +670,16 @@ Value transient_array_call(Value v, Value index)
     if (i < 0 || i >= get_transient_array_size(v))
         throw_index_out_of_bounds();
     return get_transient_array_elem(v, i);
+}
+
+Value transient_byte_array_call(Value v, Value index)
+{
+    if (get_value_tag(index) != tag::INT64)
+        throw_illegal_argument("Key must be integer");
+    auto i = get_int64_value(index);
+    if (i < 0 || i >= get_transient_byte_array_size(v))
+        throw_index_out_of_bounds();
+    return get_transient_byte_array_elem(v, i);
 }
 
 Force var_call(const Value *args, std::uint8_t n)
@@ -1876,6 +1916,12 @@ struct Initialize
         f = create_native_function2<transient_array_get, &GET>();
         define_method(GET, *type::TransientArray, *f);
 
+        f = create_native_function2<byte_array_get, &GET>();
+        define_method(GET, *type::ByteArray, *f);
+
+        f = create_native_function2<transient_byte_array_get, &GET>();
+        define_method(GET, *type::TransientByteArray, *f);
+
         f = create_native_function2or3<nil_get, nil_get, &GET>();
         define_method(GET, nil, *f);
 
@@ -2001,9 +2047,17 @@ struct Initialize
         f = create_native_function2<array_call, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::Array, *f);
 
+        derive(*type::ByteArray, *type::Callable);
+        f = create_native_function2<byte_array_call, &OBJ_CALL>();
+        define_method(OBJ_CALL, *type::ByteArray, *f);
+
         derive(*type::TransientArray, *type::Callable);
         f = create_native_function2<transient_array_call, &OBJ_CALL>();
         define_method(OBJ_CALL, *type::TransientArray, *f);
+
+        derive(*type::TransientByteArray, *type::Callable);
+        f = create_native_function2<transient_byte_array_call, &OBJ_CALL>();
+        define_method(OBJ_CALL, *type::TransientByteArray, *f);
 
         derive(*type::CFunction, *type::Callable);
         f = create_native_function(call_c_function, OBJ_CALL);
