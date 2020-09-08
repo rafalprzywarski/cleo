@@ -886,7 +886,7 @@
                        :recur-local-index (- (count params))
                        :stack-depth 0}
                :locals-size 0
-               :bytecode (transient [])
+               :bytecode (transient (byte-array))
                :exception-table (transient [])}
         tbody (if vararg (assoc tbody :vararg true) tbody)
         tbody (translate-expr! tbody expr)
@@ -1251,7 +1251,7 @@
            newoffs (transient [])
            broffs (transient [])
            doffs (transient [])
-           out (transient [])]
+           out (transient (byte-array))]
       (if (< off n)
         (let [newoff (count out)
               oc (bc off)

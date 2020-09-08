@@ -2,6 +2,7 @@
 #include "bytecode_fn.hpp"
 #include "global.hpp"
 #include "array.hpp"
+#include "byte_array.hpp"
 #include "util.hpp"
 #include "namespace.hpp"
 #include "persistent_hash_map.hpp"
@@ -1006,8 +1007,9 @@ Force serialize_fn(Value fn)
             exception_table = create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size());
         Value fn_bytecode = map_get(*body, BYTECODE);
         std::vector<vm::Byte> bytecode;
-        for (Int64 i = 0, size = get_array_size(fn_bytecode); i < size; ++i)
-            bytecode.push_back(get_int64_value(get_array_elem_unchecked(fn_bytecode, i)));
+        check_type(":bytecode", fn_bytecode, *type::ByteArray);
+        for (Int64 i = 0, size = get_byte_array_size(fn_bytecode); i < size; ++i)
+            bytecode.push_back(get_int64_value(get_byte_array_elem_unchecked(fn_bytecode, i)));
         auto arity = get_int64_value(map_get(*body, ARITY));
         arity = map_get(*body, VARARG) ? -arity : arity;
         body_roots.set(bodies.size(),
