@@ -159,11 +159,16 @@ void set_keyword_hash(Value val, std::uint32_t h)
     get_ptr<Keyword>(val)->hashVal = h;
 }
 
+Value create_int48(Int64 intVal)
+{
+    return tag_data(std::uint64_t(intVal), tag::INT48);
+}
+
 Force create_int64(Int64 intVal)
 {
     static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
     if ((Int64(std::uint64_t(intVal) << tag::DATA_SHIFT) >> tag::DATA_SHIFT) == intVal)
-        return tag_data(std::uint64_t(intVal), tag::INT48);
+        return create_int48(intVal);
     auto val = alloc<Int64>();
     *val = intVal;
     return tag_ptr(val, tag::INT64);

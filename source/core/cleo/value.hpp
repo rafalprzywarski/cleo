@@ -71,6 +71,7 @@ using NativeFunction = Force(*)(const Value *, std::uint8_t);
 using Int64 = std::int64_t;
 using Char32 = std::uint32_t;
 using Float64 = double;
+using UInt8 = std::uint8_t;
 static_assert(sizeof(Float64) == 8, "Float64 should have 64 bits");
 
 struct ObjectProtocol
@@ -209,6 +210,7 @@ Value get_keyword_name(Value s);
 std::uint32_t get_keyword_hash(Value val);
 void set_keyword_hash(Value val, std::uint32_t h);
 
+Value create_int48(Int64 val);
 Force CLEO_CDECL create_int64(Int64 val);
 ValueBits CLEO_CDECL create_int64_unsafe(Int64 val);
 
@@ -368,11 +370,31 @@ inline const void *get_dynamic_object_int_ptr(Value obj, std::uint32_t index)
     return &get_ptr<DynamicObject>(obj)->firstVal + index;
 }
 
+inline void *get_dynamic_object_mut_int_ptr(Value obj, std::uint32_t index)
+{
+    assert(is_object_dynamic(obj));
+    return &get_ptr<DynamicObject>(obj)->firstVal + index;
+}
+
 inline Int64 get_dynamic_object_int(Value obj, std::uint32_t index)
 {
     assert(is_object_dynamic(obj));
     assert(index < get_dynamic_object_int_size(obj));
     return Int64((&get_ptr<DynamicObject>(obj)->firstVal)[index]);
+}
+
+inline UInt8 get_dynamic_object_int_byte(Value obj, Int64 index)
+{
+    assert(is_object_dynamic(obj));
+    assert(index >= 0 && std::size_t(index) < get_dynamic_object_int_size(obj) * sizeof(Int64));
+    return reinterpret_cast<const char *>(&get_ptr<DynamicObject>(obj)->firstVal)[index];
+}
+
+inline void set_dynamic_object_int_byte(Value obj, Int64 index, UInt8 b)
+{
+    assert(is_object_dynamic(obj));
+    assert(index >= 0 && std::size_t(index) < get_dynamic_object_int_size(obj) * sizeof(Int64));
+    reinterpret_cast<char *>(&get_ptr<DynamicObject>(obj)->firstVal)[index] = b;
 }
 
 }

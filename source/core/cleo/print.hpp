@@ -11,6 +11,7 @@ Force pr_str_persistent_hash_set(Value val);
 Force pr_str_array_map(Value val);
 Force pr_str_persistent_hash_map(Value val);
 Force pr_str_seqable(Value v);
+Force pr_str_vector(Value v);
 
 Force pr_str(Value val);
 

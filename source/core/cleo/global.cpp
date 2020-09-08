@@ -1,5 +1,6 @@
 #include "global.hpp"
 #include "array.hpp"
+#include "byte_array.hpp"
 #include "multimethod.hpp"
 #include "equality.hpp"
 #include "list.hpp"
@@ -238,6 +239,9 @@ const ConstRoot PersistentVector{create_protocol("cleo.core", "PersistentVector"
 const ConstRoot Array{create_dynamic_type("cleo.core", "Array")};
 const ConstRoot TransientArray{create_dynamic_type("cleo.core", "TransientArray")};
 const ConstRoot ArraySeq{create_static_type("cleo.core", "ArraySeq", {"array", {"index", Int64}})};
+const ConstRoot ByteArray{create_dynamic_type("cleo.core", "ByteArray")};
+const ConstRoot TransientByteArray{create_dynamic_type("cleo.core", "TransientByteArray")};
+const ConstRoot ByteArraySeq{create_static_type("cleo.core", "ByteArraySeq", {"array", {"index", Int64}})};
 const ConstRoot ArrayMap{create_dynamic_type("cleo.core", "ArrayMap")};
 const ConstRoot ArrayMapSeq{create_static_type("cleo.core", "ArrayMapSeq", {"first", "map", {"index", Int64}})};
 const ConstRoot PersistentSet{create_protocol("cleo.core", "PersistentSet")};
@@ -289,6 +293,7 @@ const Value string = create_keyword("string");
 
 const ConstRoot EMPTY_LIST{create_list(nullptr, 0)};
 const ConstRoot EMPTY_VECTOR{create_array(nullptr, 0)};
+const ConstRoot EMPTY_BYTE_ARRAY{create_byte_array(nullptr, 0)};
 const ConstRoot EMPTY_SET{create_array_set()};
 const ConstRoot EMPTY_MAP{create_array_map()};
 const ConstRoot EMPTY_HASH_MAP{create_persistent_hash_map()};
@@ -426,6 +431,8 @@ const Value CURRENT_CALLSTACK = create_symbol("cleo.core", "current-callstack");
 const Value FIRST_ARG_TYPE = create_symbol("first-arg-type");
 const Value FIRST_ARG = create_symbol("first-arg");
 const Value EQUAL_DISPATCH = create_symbol("equal-dispatch");
+
+const Value BYTE_ARRAY = create_symbol("cleo.core", "byte-array");
 
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
@@ -605,6 +612,16 @@ Force transient_array_assoc(Value v, Value index, Value e)
     return transient_array_assoc_elem(v, i, e);
 }
 
+Force transient_byte_array_assoc(Value v, Value index, Value e)
+{
+    if (get_value_tag(index) != tag::INT64)
+        return nil;
+    auto i = get_int64_value(index);
+    if (i < 0 || i > get_transient_byte_array_size(v))
+        throw_index_out_of_bounds();
+    return transient_byte_array_assoc_elem(v, i, e);
+}
+
 Value array_call(Value v, Value index)
 {
     if (get_value_tag(index) != tag::INT64)
@@ -780,6 +797,11 @@ Force list(const Value *args, std::uint8_t n)
 Force vector(const Value *args, std::uint8_t n)
 {
     return create_array(args, n);
+}
+
+Force byte_array(const Value *args, std::uint8_t n)
+{
+    return create_byte_array(args, n);
 }
 
 Force hash_map(const Value *args, std::uint8_t n)
@@ -1547,6 +1569,10 @@ struct Initialize
         define_type(*type::Array);
         derive(*type::Array, *type::PersistentVector);
         define_type(*type::ArraySeq);
+        define_type(*type::ByteArray);
+        derive(*type::ByteArray, *type::PersistentVector);
+        define_type(*type::ByteArraySeq);
+        define_type(*type::TransientByteArray);
         define_type(*type::ArrayMap);
         define_type(*type::ArrayMapSeq);
         define_protocol(*type::PersistentSet);
@@ -1556,6 +1582,7 @@ struct Initialize
         define_type(*type::Hierarchy);
         define_type(*type::Multimethod);
         define_protocol(*type::Seqable);
+        derive(*type::PersistentVector, *type::Seqable);
         define_protocol(*type::Sequence);
         define_protocol(*type::Callable);
         define_type(*type::BytecodeFn);
@@ -1720,7 +1747,6 @@ struct Initialize
         f = create_native_function1<lazy_seq_next, &NEXT>();
         define_method(NEXT, *type::LazySeq, *f);
 
-        derive(*type::Array, *type::Seqable);
         f = create_native_function1<array_seq, &SEQ>();
         define_method(SEQ, *type::Array, *f);
         f = create_native_function1<get_array_seq_first, &FIRST>();
@@ -1731,6 +1757,17 @@ struct Initialize
         define_method(PEEK, *type::Array, *f);
         f = create_native_function1<array_pop, &POP>();
         define_method(POP, *type::Array, *f);
+
+        f = create_native_function(byte_array, BYTE_ARRAY);
+        define(BYTE_ARRAY, *f);
+        f = create_native_function1<byte_array_seq, &SEQ>();
+        define_method(SEQ, *type::ByteArray, *f);
+        f = create_native_function1<get_byte_array_seq_first, &FIRST>();
+        define_method(FIRST, *type::ByteArraySeq, *f);
+        f = create_native_function1<get_byte_array_seq_next, &NEXT>();
+        define_method(NEXT, *type::ByteArraySeq, *f);
+        f = create_native_function1<byte_array_pop, &POP>();
+        define_method(POP, *type::ByteArray, *f);
 
         f = create_native_function1<transient_array_peek, &PEEK>();
         define_method(PEEK, *type::TransientArray, *f);
@@ -1776,6 +1813,7 @@ struct Initialize
         define_method(NEXT, *type::UTF8StringSeq, *f);
 
         derive(*type::ArraySeq, *type::Sequence);
+        derive(*type::ByteArraySeq, *type::Sequence);
         derive(*type::ArraySetSeq, *type::Sequence);
         derive(*type::ArrayMapSeq, *type::Sequence);
         derive(*type::PersistentHashMapSeq, *type::Sequence);
@@ -1807,8 +1845,12 @@ struct Initialize
         define_method(COUNT, *type::Sequence, *f);
         f = create_native_function1<WrapUInt32Fn<get_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::Array, *f);
+        f = create_native_function1<WrapInt64Fn<get_byte_array_size>::fn, &COUNT>();
+        define_method(COUNT, *type::ByteArray, *f);
         f = create_native_function1<WrapInt64Fn<get_transient_array_size>::fn, &COUNT>();
         define_method(COUNT, *type::TransientArray, *f);
+        f = create_native_function1<WrapInt64Fn<get_transient_byte_array_size>::fn, &COUNT>();
+        define_method(COUNT, *type::TransientByteArray, *f);
         f = create_native_function1<WrapUInt32Fn<get_string_len>::fn, &COUNT>();
         define_method(COUNT, *type::UTF8String, *f);
         f = create_native_function1<nil_count, &COUNT>();
@@ -1862,6 +1904,9 @@ struct Initialize
         f = create_native_function2<array_conj, &CONJ>();
         define_method(CONJ, *type::Array, *f);
 
+        f = create_native_function2<byte_array_conj, &CONJ>();
+        define_method(CONJ, *type::ByteArray, *f);
+
         f = create_native_function2<cons_conj, &CONJ>();
         define_method(CONJ, *type::ArraySeq, *f);
 
@@ -1902,6 +1947,8 @@ struct Initialize
 
         f = create_native_function3<transient_array_assoc, &ASSOC_E>();
         define_method(ASSOC_E, *type::TransientArray, *f);
+        f = create_native_function3<transient_byte_array_assoc, &ASSOC_E>();
+        define_method(ASSOC_E, *type::TransientByteArray, *f);
 
         f = create_native_function3<nil_assoc, &ASSOC>();
         define_method(ASSOC, nil, *f);
@@ -1972,20 +2019,26 @@ struct Initialize
         auto define_seq_eq = [&](auto type1, auto type2)
         {
             std::array<Value, 2> two{{type1, type2}};
-            Root v{create_array(two.data(), two.size())};
+            Root rtwo{create_array(two.data(), two.size())};
             Root f{create_native_function2<are_seqables_equal, &OBJ_EQ>()};
-            define_method(OBJ_EQ, *v, *f);
+            define_method(OBJ_EQ, *rtwo, *f);
+            if (type1.is(type2))
+                return;
+            std::array<Value, 2> two_rev{{type2, type1}};
+            Root rtwo_rev{create_array(two_rev.data(), two_rev.size())};
+            define_method(OBJ_EQ, *rtwo_rev, *f);
         };
 
         define_seq_eq(*type::Array, *type::Array);
+        define_seq_eq(*type::Array, *type::ByteArray);
         define_seq_eq(*type::Array, *type::List);
         define_seq_eq(*type::Array, *type::Sequence);
-        define_seq_eq(*type::Sequence, *type::Array);
+        define_seq_eq(*type::ByteArray, *type::ByteArray);
+        define_seq_eq(*type::ByteArray, *type::List);
+        define_seq_eq(*type::ByteArray, *type::Sequence);
         define_seq_eq(*type::Sequence, *type::List);
         define_seq_eq(*type::Sequence, *type::Sequence);
-        define_seq_eq(*type::List, *type::Array);
         define_seq_eq(*type::List, *type::List);
-        define_seq_eq(*type::List, *type::Sequence);
 
         std::array<Value, 2> two_array_sets{{*type::ArraySet, *type::ArraySet}};
         v = create_array(two_array_sets.data(), two_array_sets.size());
@@ -2026,6 +2079,8 @@ struct Initialize
         define_method(PR_STR_OBJ, *type::PersistentHashMap, *f);
         f = create_native_function1<pr_str_seqable, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Seqable, *f);
+        f = create_native_function1<pr_str_vector, &PR_STR_OBJ>();
+        define_method(PR_STR_OBJ, *type::PersistentVector, *f);
         f = create_native_function1<pr_str_object, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, nil, *f);
 
@@ -2160,18 +2215,26 @@ struct Initialize
         define_multimethod(CONJ_E, *first_type, undefined);
 
         define_method(CONJ_E, *type::TransientArray, *rt::transient_array_conj);
+        f = create_native_function2<transient_byte_array_conj, &CONJ_E>();
+        define_method(CONJ_E, *type::TransientByteArray, *f);
 
         define_multimethod(POP_E, *first_type, undefined);
 
         define_method(POP_E, *type::TransientArray, *rt::transient_array_pop);
+        f = create_native_function1<transient_byte_array_pop, &POP_E>();
+        define_method(POP_E, *type::TransientByteArray, *f);
 
         define_multimethod(TRANSIENT, *first_type, undefined);
 
         define_method(TRANSIENT, *type::Array, *rt::transient_array);
+        f = create_native_function1<transient_byte_array, &TRANSIENT>();
+        define_method(TRANSIENT, *type::ByteArray, *f);
 
         define_multimethod(PERSISTENT, *first_type, undefined);
 
         define_method(PERSISTENT, *type::TransientArray, *rt::transient_array_persistent);
+        f = create_native_function1<transient_byte_array_persistent, &PERSISTENT>();
+        define_method(PERSISTENT, *type::TransientByteArray, *f);
 
         define_function(DEFMULTI, create_native_function3<defmulti, &DEFMULTI>());
         define_function(DEFMETHOD, create_native_function3<defmethod, &DEFMETHOD>());

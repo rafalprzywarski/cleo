@@ -266,10 +266,12 @@ Force pr_str_persistent_hash_map(Value val)
     return create_string(str);
 }
 
-Force pr_str_seqable(Value v)
+namespace
+{
+Force pr_str_seqable(Value v, char open_char, char close_char)
 {
     std::string str;
-    str += '(';
+    str += open_char;
     bool first_elem = true;
     for (Root s{call_multimethod1(*rt::seq, v)}; *s; s = call_multimethod1(*rt::next, *s))
     {
@@ -282,8 +284,19 @@ Force pr_str_seqable(Value v)
         Root ss{pr_str(*f)};
         str.append(get_string_ptr(*ss), get_string_size(*ss));
     }
-    str += ')';
+    str += close_char;
     return create_string(str);
+}
+}
+
+Force pr_str_seqable(Value v)
+{
+    return pr_str_seqable(v, '(', ')');
+}
+
+Force pr_str_vector(Value v)
+{
+    return pr_str_seqable(v, '[', ']');
 }
 
 Force pr_str_object_type(Value v)

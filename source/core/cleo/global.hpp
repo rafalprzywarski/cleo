@@ -297,6 +297,9 @@ extern const ConstRoot LazySeq;
 extern const ConstRoot Array;
 extern const ConstRoot TransientArray;
 extern const ConstRoot ArraySeq;
+extern const ConstRoot ByteArray;
+extern const ConstRoot TransientByteArray;
+extern const ConstRoot ByteArraySeq;
 extern const ConstRoot ArrayMap;
 extern const ConstRoot ArrayMapSeq;
 extern const ConstRoot ArraySet;
@@ -347,6 +350,7 @@ extern const Value string;
 
 extern const ConstRoot EMPTY_LIST;
 extern const ConstRoot EMPTY_VECTOR;
+extern const ConstRoot EMPTY_BYTE_ARRAY;
 extern const ConstRoot EMPTY_SET;
 extern const ConstRoot EMPTY_MAP;
 extern const ConstRoot EMPTY_HASH_MAP;

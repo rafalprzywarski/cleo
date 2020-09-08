@@ -5,6 +5,7 @@ add_executable(cleo_test
   array_test.cpp
   array_map_test.cpp
   array_set_test.cpp
+  byte_array_test.cpp
   bytecode_fn_test.cpp
   clib_test.cpp
   compile_test.cpp
