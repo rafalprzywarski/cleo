@@ -631,13 +631,87 @@
                           (-> bc (conj! opcode) (conj! n))))))
 
 
+(def add-tlocal)
+(def vcopy!)
+
+
+(defn save-exprs-as-local! [body exprs]
+  (loop [exprs (seq exprs)
+         body body]
+    (if exprs
+      (recur (next exprs)
+             (let [body (translate-expr! body (first exprs))
+                   [body index] (add-tlocal body (gensym "inlined-p"))
+                   body (update body :bytecode (fn [bc] (conj-STL! bc index)))]
+               body))
+      body)))
+
+
+(defn combine-vars [body vars]
+  (update body :vars
+          (fn [bvars]
+            (reduce intern bvars vars))))
+
+
+(defn combine-consts [body consts]
+  (update body :consts
+          (fn [bconsts]
+            (reduce intern-strict bconsts consts))))
+
+
+(defn transform-bytecode [f init bc]
+  (let [size (count bc)]
+    (loop [i 0
+           val init]
+      (if (< i size)
+        (let [oc (bc i)
+              isize (vm/isize oc)]
+          (recur (+ i isize)
+                 (f val i oc isize)))
+        val))))
+
+
+(defn conj-fn-bytecode! [body fn nargs]
+  (let [fvars (get-bytecode-fn-vars fn nargs)
+        body (combine-vars body fvars)
+        body (combine-consts body (get-bytecode-fn-consts fn nargs))
+        body (update body :bytecode
+                (fn [bc]
+                  (let [fbc (get-bytecode-fn-body fn nargs)]
+                    (transform-bytecode
+                     (fn [bc i oc isize]
+                       (cond
+                         (= oc vm/LDV) (let [vindex (get-u16 fbc (inc i))]
+                                         (-> bc
+                                             (conj! vm/LDV)
+                                             (conj-u16! ((:vars body) (fvars vindex)))))
+                         (#{vm/LDL vm/STL} oc) (let [lindex (get-i16 fbc (inc i))]
+                                                 (-> bc
+                                                     (conj! oc)
+                                                     (conj-i16! (+ lindex (-> body :scope :locals-size)))))
+                         :else (vcopy! bc fbc i isize)))
+                     bc
+                     fbc))))
+        body (update body :locals-size (fn [s] (max s (+ (-> body :scope :locals-size) (get-bytecode-fn-locals-size fn nargs)))))]
+    body))
+
+
+(defn translate-inline! [body {:keys [fn args]}]
+  (let [body (push-scope body)
+        body (save-exprs-as-local! body args)
+        body (conj-fn-bytecode! body @(resolve (:name fn)) (count args))
+        body (pop-scope body)]
+    body))
+
+
 (defn translate-call! [body {:keys [fn args]}]
   (let [arg-count (count args)]
     (when (< 255 arg-count)
       (fail "Too many arguments: " arg-count))
     (let [callee-var (when (= (:tag fn) :var)
                        (resolve (:name fn)))]
-      (cond (and (= callee-var #'cleo.core/not) (= arg-count 1)) (translate-not! body (first args))
+      (cond (= callee-var #'cleo.core/inline) (translate-inline! body (first args))
+            (and (= callee-var #'cleo.core/not) (= arg-count 1)) (translate-not! body (first args))
             (= callee-var #'cleo.core/apply) (do
                                                (when (< arg-count 2)
                                                  (fail "Wrong number of args (" arg-count ") passed to cleo.core/apply"))

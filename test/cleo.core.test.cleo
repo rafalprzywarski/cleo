@@ -1816,6 +1816,145 @@
            (translate-body '(fn [x] (cleo.core.test/const-inline)))))
 
 
+(defn recur-fn [x y]
+  (if (= x 0)
+    y
+    (recur (dec x) (inc y))))
+
+
+(defn regular-fn
+  ([x]
+   (let [a (dec x)
+         b (dec a)
+         c (dec b)]
+     (dec c)))
+  ([x y]
+   (assoc x y 10)))
+
+
+(deftest translate-inline
+  (assert= {:arity 2
+            :bytecode [vm/LDV 0 0
+                       vm/LDL 254 255
+                       vm/LDC 0 0
+                       vm/CALL 2
+                       vm/BNIL 6 0
+                       vm/LDL 255 255
+                       vm/BR 25 0
+                       vm/LDV 1 0
+                       vm/LDL 254 255
+                       vm/CALL 1
+                       vm/LDV 2 0
+                       vm/LDL 255 255
+                       vm/CALL 1
+                       vm/STL 255 255
+                       vm/STL 254 255
+                       vm/BR 211 255]
+            :vars [#'cleo.core/= #'cleo.core/dec #'cleo.core/inc]
+            :consts [0]}
+           (translate-body '(fn [x y]
+                              (if (= x 0)
+                                y
+                                (recur (dec x) (inc y))))))
+  (assert= {:arity 2
+            :locals-size 3
+            :bytecode [vm/LDV 0 0
+                       vm/LDL 255 255
+                       vm/CALL 1
+                       vm/STL 0 0
+                       vm/LDV 0 0
+                       vm/LDL 0 0
+                       vm/CALL 1
+                       vm/STL 1 0
+                       vm/LDV 1 0
+                       vm/LDL 254 255
+                       vm/CALL 1
+                       vm/STL 2 0
+
+                       vm/LDV 2 0
+                       vm/LDL 1 0
+                       vm/LDC 0 0
+                       vm/CALL 2
+                       vm/BNIL 6 0
+                       vm/LDL 2 0
+                       vm/BR 25 0
+                       vm/LDV 1 0
+                       vm/LDL 1 0
+                       vm/CALL 1
+                       vm/LDV 0 0
+                       vm/LDL 2 0
+                       vm/CALL 1
+                       vm/STL 2 0
+                       vm/STL 1 0
+                       vm/BR 211 255
+
+                       vm/STL 1 0
+                       vm/LDV 0 0
+                       vm/LDL 1 0
+                       vm/CALL 1]
+            :vars [#'cleo.core/inc #'cleo.core/dec #'cleo.core/=]
+            :consts [0]}
+           (translate-body '(fn f [a b]
+                              (let [ib (inc b)
+                                    z (cleo.core/inline (cleo.core.test/recur-fn (inc ib) (dec a)))]
+                                (inc z)))))
+  (assert= {:arity 2
+            :locals-size 5
+            :bytecode [vm/LDL 254 255
+                       vm/STL 0 0
+
+                       vm/LDL 255 255
+                       vm/STL 1 0
+
+                       vm/LDV 0 0
+                       vm/LDL 1 0
+                       vm/CALL 1
+                       vm/STL 2 0
+                       vm/LDV 0 0
+                       vm/LDL 2 0
+                       vm/CALL 1
+                       vm/STL 3 0
+                       vm/LDV 0 0
+                       vm/LDL 3 0
+                       vm/CALL 1
+                       vm/STL 4 0
+                       vm/LDV 0 0
+                       vm/LDL 4 0
+                       vm/CALL 1
+
+                       vm/STL 1 0
+                       vm/LDV 1 0
+                       vm/LDL 1 0
+                       vm/CALL 1
+                       vm/STL 2 0
+                       vm/LDL 2 0]
+            :vars [#'cleo.core/dec #'cleo.core/inc]}
+           (translate-body '(fn f [a b]
+                              (let [x a
+                                    y (inline (cleo.core.test/regular-fn b))
+                                    z (inc y)]
+                                z))))
+  (assert= {:arity 2
+            :locals-size 2
+            :bytecode [vm/LDL 254 255
+                       vm/STL 0 0
+                       vm/LDV 0 0
+                       vm/LDL 255 255
+                       vm/CALL 1
+                       vm/STL 1 0
+                       vm/LDL 1 0
+                       vm/STL 1 0
+                       vm/LDV 1 0
+                       vm/LDL 0 0
+                       vm/LDL 1 0
+                       vm/LDC 0 0
+                       vm/CALL 3]
+            :vars [#'cleo.core/inc #'cleo.core/assoc]
+            :consts [10]}
+           (translate-body '(fn f [x y]
+                              (inline (cleo.core.test/regular-fn x (let [z (inc y)] z)))))))
+
+
 (deftest simplify-ifs-with-const-cond
   (assert= [vm/LDL 255 255]
            (-> '(fn [x y]

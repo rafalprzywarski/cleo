@@ -1,6 +1,11 @@
 (ns cleo.core)
 
 
+(def {:arglists '([call])}
+  inline
+  (fn* inline [val] val))
+
+
 (def {:arglists '([type val])
       :const true}
   cast

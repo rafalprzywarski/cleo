@@ -407,6 +407,8 @@ const Value DEFMETHOD = create_symbol("cleo.core", "defmethod*");
 const Value DISASM = create_symbol("cleo.core", "disasm*");
 const Value GET_BYTECODE_FN_BODY = create_symbol("cleo.core", "get-bytecode-fn-body");
 const Value GET_BYTECODE_FN_CONSTS = create_symbol("cleo.core", "get-bytecode-fn-consts");
+const Value GET_BYTECODE_FN_VARS = create_symbol("cleo.core", "get-bytecode-fn-vars");
+const Value GET_BYTECODE_FN_LOCALS_SIZE = create_symbol("cleo.core", "get-bytecode-fn-locals-size");
 const Value META = create_symbol("cleo.core", "meta");
 const Value THE_NS = create_symbol("cleo.core", "the-ns");
 const Value FIND_NS = create_symbol("cleo.core", "find-ns");
@@ -1432,6 +1434,26 @@ Force get_bytecode_fn_consts(Value fn, Value arity)
     return get_bytecode_fn_body_consts(body_arity.first);
 }
 
+Force get_bytecode_fn_vars(Value fn, Value arity)
+{
+    check_type("fn", fn, *type::BytecodeFn);
+    check_type("arity", arity, type::Int64);
+    auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
+    if (!body_arity.first || body_arity.second != get_int64_value(arity))
+        return nil;
+    return get_bytecode_fn_body_vars(body_arity.first);
+}
+
+Force get_bytecode_fn_locals_size(Value fn, Value arity)
+{
+    check_type("fn", fn, *type::BytecodeFn);
+    check_type("arity", arity, type::Int64);
+    auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
+    if (!body_arity.first || body_arity.second != get_int64_value(arity))
+        return nil;
+    return create_int64(get_bytecode_fn_body_locals_size(body_arity.first));
+}
+
 Value meta(Value x)
 {
     auto type = get_value_type(x);
@@ -2296,6 +2318,8 @@ struct Initialize
         define_function(DISASM, create_native_function1<disasm, &DISASM>());
         define_function(GET_BYTECODE_FN_BODY, create_native_function2<get_bytecode_fn_body, &GET_BYTECODE_FN_BODY>());
         define_function(GET_BYTECODE_FN_CONSTS, create_native_function2<get_bytecode_fn_consts, &GET_BYTECODE_FN_CONSTS>());
+        define_function(GET_BYTECODE_FN_VARS, create_native_function2<get_bytecode_fn_vars, &GET_BYTECODE_FN_VARS>());
+        define_function(GET_BYTECODE_FN_LOCALS_SIZE, create_native_function2<get_bytecode_fn_locals_size, &GET_BYTECODE_FN_LOCALS_SIZE>());
 
         define_function(SERIALIZE_FN, create_native_function1<serialize_fn, &SERIALIZE_FN>());
         define_function(DESERIALIZE_FN, create_native_function1<deserialize_fn, &DESERIALIZE_FN>());
