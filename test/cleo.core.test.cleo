@@ -109,6 +109,17 @@
                " expected to throw " ~(pr-str CompilationError) " with message " ~(pr-str expected)
                " actual exception: " ~'e)))))
 
+
+(defmacro binding-ns [name expr]
+  `(let [prev# (ns-name *ns*)]
+     (try*
+       (do
+         (in-ns ~name)
+         ~expr)
+       (finally*
+         (in-ns prev#)))))
+
+
 (def main
   (fn* main []
     (do
@@ -761,19 +772,32 @@
   (assert= {:tag :const, :value {:a 10}} (cc/parse {:a 10})))
 
 
+(def x-var 10)
+
+
+(define-var 'cleo.compiler.private-var.test/test-var {:private true})
+
+
 (deftest parse-var
-  (assert= {:tag :var, :name 'abc} (cc/parse 'abc)))
+  (assert= {:tag :var, :name 'abc, :var nil} (cc/parse 'abc))
+  (binding-ns 'cleo.core.test
+              (assert= {:tag :var, :name 'x-var, :var #'x-var} (cc/parse 'x-var)))
+  (assert= {:tag :var, :name 'cleo.core.test/x-var, :var #'x-var} (cc/parse 'cleo.core.test/x-var))
+  (assert= {:tag :var
+            :name 'cleo.compiler.private-var.test/test-var
+            :var #'cleo.compiler.private-var.test/test-var}
+           (binding-ns 'cleo.compiler.private-var.test (cc/parse 'cleo.compiler.private-var.test/test-var))))
 
 
 (deftest parse-if
-  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else nil} (cc/parse '(if c a)))
-  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else nil} (cc/parse '(if c a nil)))
-  (assert= {:tag :if, :cond {:tag :var, :name 'c}, :then {:tag :var, :name 'a}, :else {:tag :var, :name 'b}} (cc/parse '(if c a b))))
+  (assert= {:tag :if, :cond {:tag :var, :name 'c, :var nil}, :then {:tag :var, :name 'a, :var nil}, :else nil} (cc/parse '(if c a)))
+  (assert= {:tag :if, :cond {:tag :var, :name 'c, :var nil}, :then {:tag :var, :name 'a, :var nil}, :else nil} (cc/parse '(if c a nil)))
+  (assert= {:tag :if, :cond {:tag :var, :name 'c, :var nil}, :then {:tag :var, :name 'a, :var nil}, :else {:tag :var, :name 'b, :var nil}} (cc/parse '(if c a b))))
 
 
 (deftest parse-call
   (assert= {:tag :call, :fn {:tag :const, :value [7]}, :args []} (cc/parse '([7])))
-  (assert= {:tag :call, :fn {:tag :var, :name 'f}, :args [{:tag :const, :value 10} {:tag :var, :name 'x}]} (cc/parse '(f 10 x))))
+  (assert= {:tag :call, :fn {:tag :var, :name 'f, :var nil}, :args [{:tag :const, :value 10} {:tag :var, :name 'x, :var nil}]} (cc/parse '(f 10 x))))
 
 
 (deftest parse-quote
@@ -784,14 +808,14 @@
 
 (deftest parse-do
   (assert= {:tag :do, :exprs []} (cc/parse '(do)))
-  (assert= {:tag :do, :exprs [{:tag :var, :name 'x}]} (cc/parse '(do x)))
-  (assert= {:tag :do, :exprs [{:tag :var, :name 'x} {:tag :var, :name 'y}]} (cc/parse '(do x y))))
+  (assert= {:tag :do, :exprs [{:tag :var, :name 'x, :var nil}]} (cc/parse '(do x)))
+  (assert= {:tag :do, :exprs [{:tag :var, :name 'x, :var nil} {:tag :var, :name 'y, :var nil}]} (cc/parse '(do x y))))
 
 
 (deftest parse-let
   (assert= {:tag :let, :locals [], :exprs []} (cc/parse '(let* [])))
   (assert= {:tag :let, :locals [], :exprs [nil]} (cc/parse '(let* [] nil)))
-  (assert= {:tag :let, :locals [], :exprs [{:tag :var, :name 'a} {:tag :const, :value 10}]} (cc/parse '(let* [] a 10)))
+  (assert= {:tag :let, :locals [], :exprs [{:tag :var, :name 'a, :var nil} {:tag :const, :value 10}]} (cc/parse '(let* [] a 10)))
   (assert= {:tag :let, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}], :exprs []} (cc/parse '(let* [a 10])))
   (assert= {:tag :let, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}
                                 {:name 'b, :index 1, :expr {:tag :const, :value 20}}
@@ -802,12 +826,12 @@
     (assert= [{:name 'b, :index 1, :expr {:tag :const, :value :y}} {:name 'c, :index 2, :expr {:tag :const, :value :z}}] (-> let3 :exprs first :locals))
     (assert= [{:name 'd, :index 3, :expr {:tag :const, :value :w}}] (-> let3 :exprs first :exprs first :locals)))
   (assert= {:tag :let
-            :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+            :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x, :var nil}}
                      {:name 'x, :index 1, :expr {:tag :local, :index 0}}
                      {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
             :exprs [{:tag :local, :index 2}]} (cc/parse '(let* [x x x x x x] x)))
-  (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
-            {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
+  (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x, :var nil}}
+            {:name 'y, :index 1, :expr {:tag :var, :name 'y, :var nil}}
             {:name 'x, :index 2, :expr {:tag :local, :index 1}}
             {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(let* [x x y y x y y x])))))
 
@@ -815,7 +839,7 @@
 (deftest parse-loop
   (assert= {:tag :loop, :locals [], :exprs []} (cc/parse '(loop* [])))
   (assert= {:tag :loop, :locals [], :exprs [nil]} (cc/parse '(loop* [] nil)))
-  (assert= {:tag :loop, :locals [], :exprs [{:tag :var, :name 'a} {:tag :const, :value 10}]} (cc/parse '(loop* [] a 10)))
+  (assert= {:tag :loop, :locals [], :exprs [{:tag :var, :name 'a, :var nil} {:tag :const, :value 10}]} (cc/parse '(loop* [] a 10)))
   (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}], :exprs []} (cc/parse '(loop* [a 10])))
   (assert= {:tag :loop, :locals [{:name 'a, :index 0, :expr {:tag :const, :value 10}}
                                  {:name 'b, :index 1, :expr {:tag :const, :value 20}}
@@ -826,32 +850,73 @@
     (assert= [{:name 'b, :index 1, :expr {:tag :const, :value :y}} {:name 'c, :index 2, :expr {:tag :const, :value :z}}] (-> loop3 :exprs first :locals))
     (assert= [{:name 'd, :index 3, :expr {:tag :const, :value :w}}] (-> loop3 :exprs first :exprs first :locals)))
   (assert= {:tag :loop
-            :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
+            :locals [{:name 'x, :index 0, :expr {:tag :var, :name 'x, :var nil}}
                      {:name 'x, :index 1, :expr {:tag :local, :index 0}}
                      {:name 'x, :index 2, :expr {:tag :local, :index 1}}]
             :exprs [{:tag :local, :index 2}]} (cc/parse '(loop* [x x x x x x] x)))
-  (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x}}
-            {:name 'y, :index 1, :expr {:tag :var, :name 'y}}
+  (assert= [{:name 'x, :index 0, :expr {:tag :var, :name 'x, :var nil}}
+            {:name 'y, :index 1, :expr {:tag :var, :name 'y, :var nil}}
             {:name 'x, :index 2, :expr {:tag :local, :index 1}}
              {:name 'y, :index 3, :expr {:tag :local, :index 2}}] (:locals (cc/parse '(loop* [x x y y x y y x])))))
 
 
+(define-var 'cleo.compiler.def.test.other/ex nil)
+
+(in-ns 'cleo.compiler.imported-def.test)
+(def imported-existing 20)
+(cleo.core/in-ns 'cleo.compiler.def.test)
+(cleo.core/refer 'cleo.compiler.imported-def.test)
+(def existing 10)
+(cleo.core/in-ns 'cleo.core.test)
+
+
 (deftest parse-def
-  (assert= {:tag :def, :name 'x, :expr {:tag :const, :value 10}} (cc/parse '(def x 10)))
-  (assert= {:tag :def, :name 'x, :expr nil} (cc/parse '(def x nil)))
-  (assert= {:tag :def, :name 'x} (cc/parse '(def x)))
-  (assert= {:tag :def, :name 'a/x, :expr {:tag :const, :value 10}} (cc/parse '(def a/x 10)))
-  (assert= {:tag :def, :name 'xr, :expr {:tag :var, :name 'xr}} (cc/parse '(def xr xr)))
-  (assert= {:tag :def, :name 'z, :meta {10 20}, :expr {:tag :const, :value 13}} (cc/parse '(def {10 20} z 13)))
-  (assert= {:tag :def, :name 'z, :meta {10 20}} (cc/parse '(def {10 20} z))))
+  (let [ast (binding-ns 'cleo.compiler.def.test
+                        (cc/parse '(def x 10)))]
+    (assert (resolve 'cleo.compiler.def.test/x))
+    (assert= {:tag :def, :name 'x, :var (resolve 'cleo.compiler.def.test/x), :expr {:tag :const, :value 10}} ast))
+  (let [ast (binding-ns 'cleo.compiler.def.test
+                        (cc/parse '(def cleo.compiler.def.test/z nil)))]
+    (assert (resolve 'cleo.compiler.def.test/z))
+    (assert= {:tag :def, :name 'cleo.compiler.def.test/z, :var (resolve 'cleo.compiler.def.test/z) :expr nil} ast))
+  (let [ast (binding-ns 'cleo.compiler.def.test
+                        (cc/parse '(def w)))]
+    (assert (resolve 'cleo.compiler.def.test/w))
+    (assert= {:tag :def, :name 'w, :var (resolve 'cleo.compiler.def.test/w)} ast))
+  (let [ast (binding-ns 'cleo.compiler.def.test
+                        (cc/parse '(def xr xr)))]
+    (assert (resolve 'cleo.compiler.def.test/xr))
+    (assert= {:tag :def
+              :name 'xr
+              :var (resolve 'cleo.compiler.def.test/xr)
+              :expr {:tag :var, :name 'xr, :var (resolve 'cleo.compiler.def.test/xr)}} ast))
+  (let [ast (binding-ns 'cleo.compiler.def.test
+                        (cc/parse '(def {:x 7 :y '(z)} y 10)))]
+    (assert (resolve 'cleo.compiler.def.test/y))
+    (assert= {:tag :def
+              :name 'y
+              :var (resolve 'cleo.compiler.def.test/y)
+              :meta {:x 7, :y '(z)}
+              :expr {:tag :const, :value 10}} ast))
+  (let [ast (binding-ns 'cleo.compiler.def.test
+                        (cc/parse '(def {:x 7 :y '(z)} s)))]
+    (assert (resolve 'cleo.compiler.def.test/s))
+    (assert= {:tag :def
+              :name 's
+              :var (resolve 'cleo.compiler.def.test/s)
+              :meta {:x 7, :y '(z)}} ast))
+  (do
+    (binding-ns 'cleo.compiler.def.test
+                (cc/parse '(def existing 7)))
+    (assert= 10 cleo.compiler.def.test/existing)))
 
 
 (deftest parse-throw
-  (assert= {:tag :throw, :expr {:tag :var, :name 'x}} (cc/parse '(throw x))))
+  (assert= {:tag :throw, :expr {:tag :var, :name 'x, :var nil}} (cc/parse '(throw x))))
 
 
 (deftest parse-dot
-  (assert= {:tag :dot, :expr {:tag :var, :name 'x}, :member 'xf} (cc/parse '(. x -xf))))
+  (assert= {:tag :dot, :expr {:tag :var, :name 'x, :var nil}, :member 'xf} (cc/parse '(. x -xf))))
 
 
 (deftest parse-vector
@@ -909,10 +974,12 @@
   (assert= [{:tag :call
              :fn {:tag :local, :index 0}
              :args [{:tag :local, :index 1}]}] (:exprs (cc/parse '(let* [f 0 x 10] (f x)))))
-  (assert= [{:tag :def
-             :name 'x
-             :meta {10 20}
-             :expr {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [x 1 y 2] (def {10 20} x y)))))
+  (let [exprs (:exprs (binding-ns 'cleo.core.parse-let-with-other-forms.test (cc/parse '(let* [x 1 y 2] (def {10 20} x y)))))]
+    (assert= [{:tag :def
+               :name 'x
+               :meta {10 20}
+               :var (resolve 'cleo.core.parse-let-with-other-forms.test/x)
+               :expr {:tag :local, :index 1}}] exprs))
   (assert= [{:tag :throw
              :expr {:tag :local, :index 0}}] (:exprs (cc/parse '(let* [x 1] (throw x)))))
   (assert= [{:tag :dot
@@ -923,10 +990,10 @@
   (assert= (:exprs (cc/parse '(let* [x 1 y 2] (cleo.core/assoc {3 4 5 6} x y)))) (:exprs (cc/parse '(let* [x 1 y 2] {3 4 5 6 x y}))))
   (assert= [{:tag :local, :index 0}] (:exprs (cc/parse '(let* [x 1] (try* x)))))
   (assert= [{:tag :try, :expr {:tag :local, :index 0}, :finally {:tag :local, :index 1}}] (:exprs (cc/parse '(let* [f 1 g 2] (try* f (finally* g))))))
-  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :catch {:type 'X, :local {:name 'x :index 2}, :expr {:tag :local, :index 1}}}]
-           (:exprs (cc/parse '(let* [f 1 g 2] (try* f (catch* X x g))))))
-  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :catch {:type 'X, :local {:name 'x :index 2}, :expr {:tag :local, :index 2}}}]
-           (:exprs (cc/parse '(let* [f 1 g 2] (try* f (catch* X x x))))))  )
+  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :catch {:type Exception, :local {:name 'x :index 2}, :expr {:tag :local, :index 1}}}]
+           (:exprs (cc/parse '(let* [f 1 g 2] (try* f (catch* Exception x g))))))
+  (assert= [{:tag :try, :expr {:tag :local, :index 0}, :catch {:type Exception, :local {:name 'x :index 2}, :expr {:tag :local, :index 2}}}]
+           (:exprs (cc/parse '(let* [f 1 g 2] (try* f (catch* Exception x x)))))))
 
 
 (defmacro add-macro [x y] `(cleo.core/+ ~x ~y))
@@ -938,16 +1005,16 @@
 
 (deftest parse-try
   (assert= nil (cc/parse '(try*)))
-  (assert= {:tag :var, :name 'x} (cc/parse '(try* x))))
+  (assert= {:tag :var, :name 'x, :var nil} (cc/parse '(try* x))))
 
 
 (deftest parse-try-catch
-  (assert= {:tag :try, :expr {:tag :var, :name 'f}, :catch {:type 'X, :local {:name 'x :index 0}, :expr {:tag :var, :name 'g}}} (cc/parse '(try* f (catch* X x g))))
-  (assert= {:tag :try, :expr {:tag :var, :name 'f}, :catch {:type 'X, :local {:name 'x :index 0}, :expr {:tag :local, :index 0}}} (cc/parse '(try* f (catch* X x x)))))
+  (assert= {:tag :try, :expr {:tag :var, :name 'f, :var nil}, :catch {:type Exception, :local {:name 'x :index 0}, :expr {:tag :var, :name 'g, :var nil}}} (cc/parse '(try* f (catch* Exception x g))))
+  (assert= {:tag :try, :expr {:tag :var, :name 'f, :var nil}, :catch {:type IllegalArgument, :local {:name 'x :index 0}, :expr {:tag :local, :index 0}}} (cc/parse '(try* f (catch* IllegalArgument x x)))))
 
 
 (deftest parse-try-finally
-  (assert= {:tag :try, :expr {:tag :var, :name 'f}, :finally {:tag :var, :name 'g}} (cc/parse '(try* f (finally* g)))))
+  (assert= {:tag :try, :expr {:tag :var, :name 'f, :var nil}, :finally {:tag :var, :name 'g, :var nil}} (cc/parse '(try* f (finally* g)))))
 
 
 (deftest parse-fn
@@ -955,7 +1022,7 @@
   (assert= {:tag :fn, :name 'abc, :name-index 0, :bodies []} (cc/parse '(fn* abc)))
   (assert= {:tag :fn, :bodies [{:params [] :expr nil}]} (cc/parse '(fn* [])))
   (assert= {:tag :fn, :name 'abc, :name-index 0, :bodies [{:params [] :expr nil}]} (cc/parse '(fn* abc [])))
-  (assert= [{:params [] :expr {:tag :var, :name 'f}}] (:bodies (cc/parse '(fn* [] f))))
+  (assert= [{:params [] :expr {:tag :var, :name 'f, :var nil}}] (:bodies (cc/parse '(fn* [] f))))
   (assert= [{:params [] :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* f [] f))))
   (assert= [{:params [{:name 'x, :index 0}], :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [x] x))))
   (assert= [{:params [{:name 'x, :index 0} {:name 'y, :index 1}], :expr {:tag :local, :index 0}}] (:bodies (cc/parse '(fn* [x y] x))))
@@ -1016,17 +1083,23 @@
   (assert-no-exception (cc/parse '(fn* [x] (if x 1 (recur x))))))
 
 
+(in-ns 'cleo.core.parse-set.test)
+(def x 0)
+(cleo.core/in-ns 'cleo.core.test)
+
+
 (deftest parse-set!
   (assert= {:tag :assign
-            :target {:tag :var, :name 'x}
+            :target {:tag :var, :name 'x, :var #'cleo.core.parse-set.test/x}
             :arg {:tag :const, :value 10}}
-           (cc/parse '(set! x 10)))
+           (binding-ns 'cleo.core.parse-set.test (cc/parse '(set! x 10))))
   (assert= {:tag :assign
             :target {:tag :dot
-                     :expr {:tag :var, :name 'x}
+                     :expr {:tag :var, :name 'x, :var #'cleo.core.parse-set.test/x}
                      :member 'f}
-            :arg {:tag :var, :name 'y}}
-           (cc/parse '(set! (.-f x) y)))) ; recur!
+            :arg {:tag :var, :name 'y, :var nil}}
+           (binding-ns 'cleo.core.parse-set.test (cc/parse '(set! (.-f x) y))))) ; recur!
+
 
 (deftest parse-errors
   (assert-compilation-error "Too few arguments to if" (cc/parse '(if)))
@@ -1056,6 +1129,21 @@
   (assert-compilation-error "Too many arguments to def" (cc/parse '(def {} x 10 30)))
   (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 20)))
   (assert-compilation-error "First argument to def must be a Symbol" (cc/parse '(def 10 x)))
+  (assert= (resolve 'cleo.compiler.imported-def.test/imported-existing)
+           (binding-ns 'cleo.compiler.def.test (resolve 'imported-existing)))
+  (assert-compilation-error "imported-existing already refers to: #'cleo.compiler.imported-def.test/imported-existing in namespace: cleo.compiler.def.test"
+                            (binding-ns 'cleo.compiler.def.test
+                                           (cc/parse '(def imported-existing 10))))
+  (assert (resolve 'cleo.compiler.def.test.other/ex))
+  (assert-compilation-error "Can't create defs outside of current ns"
+                            (binding-ns 'cleo.compiler.def.test
+                                        (cc/parse '(def cleo.compiler.def.test.other/ex))))
+  (assert-compilation-error "Can't refer to qualified var that doesn't exist"
+                            (binding-ns 'cleo.compiler.def.test
+                                        (cc/parse '(def cleo.compiler.def.test.other/nex))))
+
+  (assert-compilation-error "Can't take value of a macro: #'cleo.core.test/test-macro" (cc/parse 'cleo.core.test/test-macro))
+  (assert-compilation-error "var: cleo.compiler.private-var.test/test-var is not public" (cc/parse 'cleo.compiler.private-var.test/test-var))
 
   (assert-compilation-error "Too few arguments to throw, expected a single value" (cc/parse '(throw)))
   (assert-compilation-error "Too many arguments to throw, expected a single value" (cc/parse '(throw 10 20)))
@@ -1268,16 +1356,6 @@
                                              193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224
                                              225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257)))
                 :bytecode (drop (+ 2 (* 3 256))))))
-
-
-(defmacro binding-ns [name expr]
-  `(let [prev# (ns-name *ns*)]
-     (try*
-       (do
-         (in-ns ~name)
-         ~expr)
-       (finally*
-         (in-ns prev#)))))
 
 
 (def test-var0 10)
@@ -1544,9 +1622,6 @@
 (def test-var257 2580)
 
 
-(define-var 'cleo.compiler.private-var.test/test-var {:private true})
-
-
 (deftest translate-var
   (assert= {:arity 0
             :vars [#'test-var1]
@@ -1567,13 +1642,11 @@
                        vm/POP
                        vm/LDV 0 0]}
            (translate-body '(do cleo.core.test/test-var1 cleo.core.test/test-var2 cleo.core.test/test-var1)))
-  (assert-compilation-error "var: cleo.compiler.private-var.test/test-var is not public" (cc/translate (cc/parse 'cleo.compiler.private-var.test/test-var)))
   (binding-ns 'cleo.compiler.private-var.test
               (assert= {:arity 0
                         :vars [#'cleo.compiler.private-var.test/test-var]
                         :bytecode [vm/LDV 0 0]}
                        (translate-body 'cleo.compiler.private-var.test/test-var)))
-  (assert-compilation-error "Can't take value of a macro: #'cleo.core.test/test-macro" (cc/translate (cc/parse 'cleo.core.test/test-macro)))
   (assert= [vm/LDV 254 0
             vm/POP
             vm/LDV 255 0
@@ -1676,34 +1749,39 @@
     (assert= {:tag :throw
               :expr {:tag :dot
                      :expr {:tag :var
-                            :name 'x}
+                            :name 'x
+                            :var nil}
                      :member 'y
                      :marked-path [:expr]}}
              (cc/transform-expr (with-tag :dot) mark-path (cc/parse '(throw (. x -y)))))
     (assert= {:tag :try
               :expr {:fn {:tag :var
-                          :name 'f}
+                          :name 'f,
+                          :var nil}
                      :tag :call
                      :args [{:tag :const, :value 10}]
                      :marked-path [:expr]}
               :finally {:tag :call
                         :fn {:tag :var
-                             :name 'f}
+                             :name 'f
+                             :var nil}
                         :args [{:tag :const, :value 20}]
                         :marked-path [:finally]}}
              (cc/transform-expr (with-tag :call) mark-path (cc/parse '(try* (f 10) (finally* (f 20))))))
     (assert= {:tag :try
               :expr {:fn {:tag :var
-                          :name 'f}
+                          :name 'f,
+                          :var nil}
                      :tag :call
                      :args [{:tag :const, :value 10}]
                      :marked-path [:expr]}
-              :catch {:type 'Exception
+              :catch {:type Exception
                       :local {:index 0
                               :name 'e}
                       :expr {:tag :call
                              :fn {:tag :var
-                                  :name 'f}
+                                  :name 'f
+                                  :var nil}
                              :args [{:tag :const, :value 20}]
                              :marked-path [:catch :expr]}}}
              (cc/transform-expr (with-tag :call) mark-path (cc/parse '(try* (f 10) (catch* Exception e (f 20))))))
@@ -1774,15 +1852,21 @@
                                :exprs [{:tag :const, :value 2}]
                                :marked-path [:exprs 0 :args 1]}]}]}
              (cc/transform-expr (with-tag :do) mark-path (cc/parse '(loop* [x 0 y 1] (recur (do 1) (do 2))))))
-    (assert= {:tag :def
-              :name 'x}
-             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x))))
-    (assert= {:tag :def
-              :name 'x
-              :expr {:tag :do
-                     :exprs [{:tag :const, :value 30}]
-                     :marked-path [:expr]}}
-             (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x (do 30)))))))
+    (let [expr (binding-ns 'cleo.core.transform-expr.test
+                           (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def x))))]
+      (assert= {:tag :def
+                :name 'x
+                :var (resolve 'cleo.core.transform-expr.test/x)}
+               expr))
+    (let [expr (binding-ns 'cleo.core.transform-expr.test
+                           (cc/transform-expr (with-tag :do) mark-path (cc/parse '(def y (do 30)))))]
+      (assert= {:tag :def
+                :name 'y
+                :var (resolve 'cleo.core.transform-expr.test/y)
+                :expr {:tag :do
+                       :exprs [{:tag :const, :value 30}]
+                       :marked-path [:expr]}}
+               expr))))
 
 
 (defn identity-inline {:const true} ([x] x) ([] "ignored") ([x y] "ignored"))
@@ -2460,8 +2544,8 @@
                    :locals [{:name 'x
                              :index 1
                              :expr {:tag :call
-                                    :fn {:tag :var, :name 'cast}
-                                    :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 0}]
+                                    :fn {:tag :var, :name 'cast, :var #'cleo.core/cast}
+                                    :args [{:tag :var, :name 'cleo.core.test/ABC, :var #'ABC} {:tag :local, :index 0}]
                                     :value-type ABC}
                              :value-type ABC}
                             {:name 'y
@@ -2480,8 +2564,8 @@
                    :locals [{:name 'x
                              :index '2
                              :expr {:tag :call
-                                    :fn {:tag :var, :name 'cast}
-                                    :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 0}]
+                                    :fn {:tag :var, :name 'cast, :var #'cleo.core/cast}
+                                    :args [{:tag :var, :name 'cleo.core.test/ABC, :var #'ABC} {:tag :local, :index 0}]
                                     :value-type ABC}
                              :value-type ABC}]
                    :exprs [{:tag :do
@@ -2507,15 +2591,15 @@
                                     :locals [{:name 'x
                                               :index 3
                                               :expr {:tag :call
-                                                     :fn {:tag :var, :name 'cast}
-                                                     :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 0}]
+                                                     :fn {:tag :var, :name 'cast, :var #'cleo.core/cast}
+                                                     :args [{:tag :var, :name 'cleo.core.test/ABC, :var #'ABC} {:tag :local, :index 0}]
                                                      :value-type ABC}
                                               :value-type ABC}
                                              {:name 'y
                                               :index 4
                                               :expr {:tag :call
-                                                     :fn {:tag :var, :name 'cast}
-                                                     :args [{:tag :var, :name 'cleo.core.test/ABC} {:tag :local, :index 3, :value-type ABC}]
+                                                     :fn {:tag :var, :name 'cast, :var #'cleo.core/cast}
+                                                     :args [{:tag :var, :name 'cleo.core.test/ABC, :var #'ABC} {:tag :local, :index 3, :value-type ABC}]
                                                      :value-type ABC}
                                               :value-type ABC}]
                                     :exprs [{:tag :local, :index 4, :value-type ABC}]
@@ -2587,15 +2671,6 @@
            (translate-body '(fn* [x y] (cleo.core/not x y)))))
 
 
-(define-var 'cleo.compiler.def.test.other/ex nil)
-
-(in-ns 'cleo.compiler.imported-def.test)
-(def imported-existing 20)
-(cleo.core/in-ns 'cleo.compiler.def.test)
-(cleo.core/refer 'cleo.compiler.imported-def.test)
-(def existing 10)
-(cleo.core/in-ns 'cleo.core.test)
-
 (deftest translate-def
   (let [tbody (binding-ns 'cleo.compiler.def.test
                           (translate-body '(def x 10)))]
@@ -2656,18 +2731,6 @@
                          vm/LDC 1 0
                          vm/STVM]}
              tbody))
-  (assert= (resolve 'cleo.compiler.imported-def.test/imported-existing)
-           (binding-ns 'cleo.compiler.def.test (resolve 'imported-existing)))
-  (assert-compilation-error "imported-existing already refers to: #'cleo.compiler.imported-def.test/imported-existing in namespace: cleo.compiler.def.test"
-                            (binding-ns 'cleo.compiler.def.test
-                                           (translate-body '(def imported-existing 10))))
-  (assert (resolve 'cleo.compiler.def.test.other/ex))
-  (assert-compilation-error "Can't create defs outside of current ns"
-                            (binding-ns 'cleo.compiler.def.test
-                                        (cc/translate (cc/parse '(def cleo.compiler.def.test.other/ex)))))
-  (assert-compilation-error "Can't refer to qualified var that doesn't exist"
-                            (binding-ns 'cleo.compiler.def.test
-                                        (cc/translate (cc/parse '(def cleo.compiler.def.test.other/nex)))))
   (do
     (binding-ns 'cleo.compiler.def.test
                 (translate-body '(def existing 7)))
