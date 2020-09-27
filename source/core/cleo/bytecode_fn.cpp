@@ -124,13 +124,14 @@ Int64 get_bytecode_fn_body_bytes_size(Value body)
     return get_dynamic_object_int(body, 2);
 }
 
-Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n)
+Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value ast)
 {
     std::vector<Int64> arities(n);
     std::transform(bodies, bodies + n, begin(arities), get_bytecode_fn_body_arity);
-    std::vector<Value> elems(1 + n);
+    std::vector<Value> elems(2 + n);
     elems[0] = name;
-    std::copy_n(bodies, n, begin(elems) + 1);
+    elems[1] = ast;
+    std::copy_n(bodies, n, begin(elems) + 2);
     return create_object(*type::BytecodeFn, arities.data(), arities.size(), elems.data(), elems.size());
 }
 
@@ -151,7 +152,7 @@ Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i)
 
 Value get_bytecode_fn_body(Value fn, std::uint8_t i)
 {
-    return get_dynamic_object_element(fn, i + 1);
+    return get_dynamic_object_element(fn, i + 2);
 }
 
 Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)
@@ -167,7 +168,7 @@ Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)
         bodies[i] = rbodies[i];
     }
 
-    return create_bytecode_fn(get_bytecode_fn_name(fn), bodies.data(), bodies.size());
+    return create_bytecode_fn(get_bytecode_fn_name(fn), bodies.data(), bodies.size(), nil);
 }
 
 std::pair<Value, Int64> bytecode_fn_find_body(Value fn, std::uint8_t arity)
@@ -183,6 +184,19 @@ std::pair<Value, Int64> bytecode_fn_find_body(Value fn, std::uint8_t arity)
             return {get_bytecode_fn_body(fn, n - 1), va_arity};
     }
     return {};
+}
+
+Value get_bytecode_fn_ast(Value fn)
+{
+    return get_dynamic_object_element(fn, 1);
+}
+
+void bytecode_fn_update_bodies(Value fn, Value src_fn)
+{
+    assert(get_dynamic_object_size(fn) == get_dynamic_object_size(src_fn));
+
+    for (std::uint32_t size = get_dynamic_object_size(fn), i = 2; i != size; ++i)
+        set_dynamic_object_element(fn, i, get_dynamic_object_element(src_fn, i));
 }
 
 }

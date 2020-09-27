@@ -719,7 +719,8 @@
   (let [body (push-scope body)
         body (save-exprs-as-local! body args)
         body (conj-fn-bytecode! body @(:var fn) (count args))
-        body (pop-scope body)]
+        body (pop-scope body)
+        body (update body :dep-vars (fn [vs] (conj (or vs #{}) (:var fn))))]
     body))
 
 
@@ -1018,13 +1019,21 @@
           bodies))
 
 
-(defn translate-fn [parent-locals {:keys [name name-index bodies]}]
+(defn translate-fn [parent-locals {:keys [name name-index bodies] :as ast}]
   (let [tbodies (mapv (fn [body] (translate-body parent-locals name-index body)) bodies)
         closed-parent-locals (intern-parent-locals tbodies)
         tbodies (if (empty? closed-parent-locals)
                   tbodies
                   (mapv (fn [b] (init-loads b closed-parent-locals)) tbodies))
-        f {:bodies tbodies}
+        dep-vars (reduce (fn [vs b]
+                           (reduce conj vs (:dep-vars b)))
+                         #{}
+                         tbodies)
+        f {:bodies tbodies
+           :ast ast}
+        f (if (empty? dep-vars)
+            f
+            (assoc f :dep-vars dep-vars))
         f (if (empty? closed-parent-locals)
             f
             (assoc f :closed-parent-locals (serialize closed-parent-locals)))
@@ -1433,3 +1442,9 @@
             translate
             optimize-fn-bytecode
             serialize-fn)))))
+
+
+(defn compile-fn-ast [ast]
+  (-> (translate ast)
+      optimize-fn-bytecode
+      serialize-fn))

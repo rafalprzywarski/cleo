@@ -32,12 +32,14 @@ Int64 get_bytecode_fn_body_locals_size(Value body);
 const vm::Byte *get_bytecode_fn_body_bytes(Value body);
 Int64 get_bytecode_fn_body_bytes_size(Value body);
 
-Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n);
+Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value ast);
 Value get_bytecode_fn_name(Value fn);
 std::uint8_t get_bytecode_fn_size(Value fn);
 Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i);
 Value get_bytecode_fn_body(Value fn, std::uint8_t i);
 Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n);
 std::pair<Value, Int64> bytecode_fn_find_body(Value fn, std::uint8_t arity);
+Value get_bytecode_fn_ast(Value fn);
+void bytecode_fn_update_bodies(Value fn, Value src_fn);
 
 }

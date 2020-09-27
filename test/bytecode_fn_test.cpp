@@ -37,7 +37,7 @@ TEST_F(bytecode_fn_test, should_eval_the_body)
         vm::CALL, 2}};
     Root body{create_bytecode_fn_body(0, *consts, *vars, *et, 0, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
-    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn)};
     Root ex{i64(4)};
 
@@ -57,7 +57,7 @@ TEST_F(bytecode_fn_test, should_pass_the_arguments)
         vm::CALL, 2}};
     Root body{create_bytecode_fn_body(3, nil, nil, nil, 0, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
-    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn, get_var_value(get_var(MINUS)), 5, 7)};
     Root ex{i64(-2)};
 
@@ -85,7 +85,7 @@ TEST_F(bytecode_fn_test, should_reserve_stack_space_for_local_variables)
         vm::CALL, 2}};
     Root body{create_bytecode_fn_body(0, *consts, nil, nil, 3, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
-    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn)};
     Root ex{i64(-6)};
 
@@ -105,7 +105,7 @@ TEST_F(bytecode_fn_test, should_fail_when_arity_cannot_be_matched)
     Root body2{create_bytecode_fn_body(2, *consts, nil, nil, 0, bc.data(), bc.size())};
     std::array<Value, 3> bodies{{*body0, *body1, *body2}};
     auto name = create_symbol("fn012");
-    Root fn{create_bytecode_fn(name, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(name, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn, nil, nil, nil)};
 
     try
@@ -119,7 +119,7 @@ TEST_F(bytecode_fn_test, should_fail_when_arity_cannot_be_matched)
         ASSERT_EQ_REFS(*type::CallError, get_value_type(*e));
     }
 
-    fn = create_bytecode_fn(nil, nullptr, 0);
+    fn = create_bytecode_fn(nil, nullptr, 0, nil);
     call = list(*fn);
     ASSERT_THROW(eval(*call), Exception);
 }
@@ -136,7 +136,7 @@ TEST_F(bytecode_fn_test, should_dispatch_to_the_right_arity)
     Root body1{create_bytecode_fn_body(1, *consts1, nil, nil, 1, bc1.data(), bc1.size())};
     Root body2{create_bytecode_fn_body(2, *consts2, nil, nil, 2, bc2.data(), bc2.size())};
     std::array<Value, 3> bodies{{*body0, *body1, *body2}};
-    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call, ex, val;
 
     call = list(*fn);
@@ -167,7 +167,7 @@ TEST_F(bytecode_fn_test, should_dispatch_to_vararg)
     Root body1{create_bytecode_fn_body(1, *consts1, nil, nil, 1, bc1.data(), bc1.size())};
     Root body2{create_bytecode_fn_body(~Int64(1), *consts2, nil, nil, 2, bc2.data(), bc2.size())};
     std::array<Value, 3> bodies{{*body0, *body1, *body2}};
-    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call, ex, val;
 
     call = list(*fn);
@@ -187,7 +187,7 @@ TEST_F(bytecode_fn_test, should_dispatch_to_vararg)
 
     body2 = create_bytecode_fn_body(~Int64(3), *consts2, nil, nil, 2, bc2.data(), bc2.size()); // test passing the params!
     bodies[2] = *body2;
-    fn = create_bytecode_fn(nil, bodies.data(), bodies.size());
+    fn = create_bytecode_fn(nil, bodies.data(), bodies.size(), nil);
 
     call = list(*fn, nil, nil, nil);
     ex = i64(12);
@@ -201,7 +201,7 @@ TEST_F(bytecode_fn_test, should_pass_the_varargs_as_a_sequence_or_nil)
         {
             Root body{create_bytecode_fn_body(~Int64(2), nil, nil, nil, 0, bc.data(), bc.size())};
             std::array<Value, 1> bodies{{*body}};
-            return create_bytecode_fn(nil, bodies.data(), bodies.size());
+            return create_bytecode_fn(nil, bodies.data(), bodies.size(), nil);
         };
     Root fn_a{create_fn2va({vm::LDL, vm::Byte(-3), vm::Byte(-1)})};
     Root fn_b{create_fn2va({vm::LDL, vm::Byte(-2), vm::Byte(-1)})};
@@ -250,7 +250,7 @@ TEST_F(bytecode_fn_test, should_restore_stack_when_an_exception_is_thrown)
     std::array<vm::Byte, 4> bc{{vm::LDC, 0, 0, vm::THROW}};
     Root body{create_bytecode_fn_body(0, *consts, nil, nil, 10, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
-    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size())};
+    Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn)};
 
     auto old_stack = stack;
@@ -270,7 +270,7 @@ TEST_F(bytecode_fn_test, should_restore_stack_when_an_exception_is_thrown)
 TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
 {
     auto name = create_symbol("abc");
-    Root fn{create_bytecode_fn(name, nullptr, 0)};
+    Root fn{create_bytecode_fn(name, nullptr, 0, nil)};
     Root mfn{bytecode_fn_replace_consts(*fn, nullptr, 0)};
     EXPECT_EQ_REFS(*fn, *mfn);
 
@@ -291,7 +291,7 @@ TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
     rbodies.set(1, create_bytecode_fn_body(3, *consts2, *vars2, *et2, locals_size2, bytes2.data(), bytes2.size()));
     std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
 
-    fn = create_bytecode_fn(name, bodies.data(), bodies.size());
+    fn = create_bytecode_fn(name, bodies.data(), bodies.size(), nil);
     Root aconsts{array(17, 19)};
     std::array<Value, 2> nconsts{{get_array_elem(*aconsts, 0), get_array_elem(*aconsts, 1)}};
     mfn = bytecode_fn_replace_consts(*fn, nconsts.data(), nconsts.size());
@@ -360,6 +360,14 @@ TEST_F(bytecode_fn_test, should_find_exception_handlers_based_on_range_and_type_
     et = create_bytecode_fn_exception_table(entries4.data(), types4.data(), types4.size());
     EXPECT_EQ(55, bytecode_fn_find_exception_handler(*et, 5, *type::IllegalArgument).offset);
     EXPECT_EQ(33, bytecode_fn_find_exception_handler(*et, 5, *type::IllegalArgument).stack_size);
+}
+
+TEST_F(bytecode_fn_test, should_store_the_ast)
+{
+    Root ast{phmap(CONS, NEW)};
+    Root fn{create_bytecode_fn(nil, nullptr, 0, *ast)};
+
+    ASSERT_EQ_REFS(*ast, get_bytecode_fn_ast(*fn));
 }
 
 }

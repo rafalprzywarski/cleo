@@ -22,6 +22,8 @@ Value is_var_dynamic(Value var);
 Value is_var_public(Value var);
 Value get_var_meta(Value var);
 
+Value add_var_fn_dep(Value var, Value fn);
+
 struct PushBindingsGuard
 {
     PushBindingsGuard(Value bindings)

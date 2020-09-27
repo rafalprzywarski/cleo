@@ -139,6 +139,8 @@ const Value NAME_KEY = create_keyword("name");
 const Value NS_KEY = create_keyword("ns");
 const Value DOT = create_symbol(".");
 const Value EVAL = create_symbol("cleo.core", "eval");
+const Value COMPILE_FN_AST = create_symbol("cleo.compiler", "compile-fn-ast");
+const Value ADD_VAR_FN_DEP = create_symbol("cleo.core", "add-var-fn-dep");
 const Value SHOULD_RECOMPILE = create_symbol("cleo.core", "should-recompile");
 const Value GLOBAL_HIERARCHY = create_symbol("cleo.core", "global-hierarchy");
 
@@ -231,7 +233,7 @@ const ConstRoot NativeFunction{create_basic_type("cleo.core", "NativeFunction")}
 const ConstRoot CFunction{create_static_type("cleo.core", "CFunction", {{"addr", Int64}, "name", "param-types"})};
 const ConstRoot Symbol{create_basic_type("cleo.core", "Symbol")};
 const ConstRoot Keyword{create_basic_type("cleo.core", "Keyword")};
-const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "meta"})};
+const ConstRoot Var{create_static_type("cleo.core", "Var", {"name", "value", "meta", "dep-fns"})};
 const ConstRoot List{create_static_type("cleo.core", "List", {{"size", Int64}, "first", "next"})};
 const ConstRoot Cons{create_static_type("cleo.core", "Cons", {"first", "next"})};
 const ConstRoot LazySeq{create_static_type("cleo.core", "LazySeq", {"fn", "seq"})};
@@ -352,6 +354,7 @@ const StaticVar assoc = define_var(ASSOC, nil);
 const StaticVar merge = define_var(MERGE, nil);
 const StaticVar hash_obj = define_var(HASH_OBJ, nil);
 const StaticVar eval = define_var(EVAL, nil);
+const StaticVar compile_fn_ast = define_var(COMPILE_FN_AST, nil);
 const StaticVar global_hierarchy = define_var(GLOBAL_HIERARCHY, nil);
 
 }
@@ -2336,6 +2339,8 @@ struct Initialize
         define_function(DERIVE, create_native_function2<derive_type, &DERIVE>());
 
         define_function(GET_TYPE_FIELD_INDEX, create_native_function2<get_type_field_index, &GET_TYPE_FIELD_INDEX>());
+
+        define_function(ADD_VAR_FN_DEP, create_native_function2<add_var_fn_dep, &ADD_VAR_FN_DEP>());
     }
 } initialize;
 

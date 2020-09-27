@@ -856,12 +856,12 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     return create_bytecode_fn_body(arity, *consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
 }
 
-Force create_fn(Value name, std::vector<Value> bodies)
+Force create_fn(Value name, std::vector<Value> bodies, Value ast)
 {
     std::sort(
         begin(bodies), end(bodies),
         [](auto& l, auto& r) { return std::abs(get_bytecode_fn_body_arity(l)) < std::abs(get_bytecode_fn_body_arity(r)); });
-    return create_bytecode_fn(name, bodies.data(), bodies.size());
+    return create_bytecode_fn(name, bodies.data(), bodies.size(), ast);
 }
 
 Force reserve_fn_body_consts(Value body, Int64 n)
@@ -896,7 +896,7 @@ Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
         rest = seq_next(*rest);
     }
     if (rest->is_nil())
-        return create_bytecode_fn(name, nullptr, 0);
+        return create_bytecode_fn(name, nullptr, 0, nil);
     first = seq_first(*rest);
     Root forms{is_seq(*first) ? *rest : create_cons(*rest, nil)};
     auto count = seq_count(*forms);
@@ -917,7 +917,7 @@ Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
         rbodies.set(i, reserve_fn_body_consts(bodies[i], get_array_size(*used_locals)));
         bodies[i] = rbodies[i];
     }
-    return create_fn(name, std::move(bodies));
+    return create_fn(name, std::move(bodies), nil);
 }
 
 Force deserialize_exception_table(Value et)
@@ -983,6 +983,8 @@ Force serialize_fn(Value fn)
     Value BYTECODE = create_keyword("bytecode");
     Value fn_bodies = map_get(fn, create_keyword("bodies"));
     Value name = map_get(fn, create_keyword("name"));
+    Value ast = map_get(fn, create_keyword("ast"));
+    Value dep_vars = map_get(fn, create_keyword("dep-vars"));
     auto body_count = count(fn_bodies);
     std::vector<Value> bodies;
     Roots body_roots(body_count);
@@ -1022,7 +1024,13 @@ Force serialize_fn(Value fn)
         bodies.push_back(body_roots[bodies.size()]);
     }
 
-    return create_fn(name, bodies);
+    Root sfn{create_fn(name, bodies, ast)};
+    for (Root s{seq(dep_vars)}; *s; s = seq_next(*s))
+    {
+        Root var{seq_first(*s)};
+        add_var_fn_dep(*var, *sfn);
+    }
+    return *sfn;
 }
 
 Force deserialize_fn(Value fn)

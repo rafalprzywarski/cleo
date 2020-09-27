@@ -4,6 +4,9 @@
 #include "print.hpp"
 #include "list.hpp"
 #include "util.hpp"
+#include "persistent_hash_set.hpp"
+#include "eval.hpp"
+#include "bytecode_fn.hpp"
 
 namespace cleo
 {
@@ -17,7 +20,7 @@ Value define_var(Value sym, Value val, Value meta)
         set_var_meta(found->second, meta);
         return found->second;
     }
-    Root var{create_object3(*type::Var, sym, val, meta)};
+    Root var{create_object4(*type::Var, sym, val, meta, nil)};
     vars.insert({sym, *var});
     return *var;
 }
@@ -63,6 +66,16 @@ void pop_bindings()
 void set_var_root_value(Value var, Value val)
 {
     set_static_object_element(var, 1, val);
+    auto dep_fns = get_static_object_element(var, 3);
+    if (!dep_fns)
+        return;
+    for (Root s{persistent_hash_set_seq(dep_fns)}; *s; s = get_persistent_hash_set_seq_next(*s))
+    {
+        auto fn = get_persistent_hash_set_seq_first(*s);
+        std::array<Value, 2> compile{{*rt::compile_fn_ast, get_bytecode_fn_ast(fn)}};
+        Root fresh_fn{call(compile.data(), compile.size())};
+        bytecode_fn_update_bodies(fn, *fresh_fn);
+    }
 }
 
 void set_var_meta(Value var, Value meta)
@@ -129,6 +142,18 @@ Value is_var_public(Value var)
 Value get_var_meta(Value var)
 {
     return get_static_object_element(var, 2);
+}
+
+Value add_var_fn_dep(Value var, Value fn)
+{
+    auto dep_fns = get_static_object_element(var, 3);
+    if (dep_fns.is_nil())
+        dep_fns = *EMPTY_HASH_SET;
+
+    Root new_dep_fns{persistent_hash_set_conj(dep_fns, fn)};
+    set_static_object_element(var, 3, *new_dep_fns);
+
+    return nil;
 }
 
 }

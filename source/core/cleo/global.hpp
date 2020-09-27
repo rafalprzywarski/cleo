@@ -388,6 +388,7 @@ extern const StaticVar assoc;
 extern const StaticVar merge;
 extern const StaticVar hash_obj;
 extern const StaticVar eval;
+extern const StaticVar compile_fn_ast;
 extern const StaticVar global_hierarchy;
 
 }

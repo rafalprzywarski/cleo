@@ -4,7 +4,7 @@
 (require 'cleo.vm)
 (alias 'vm 'cleo.vm)
 
-(def slow-tests true)
+(def slow-tests nil)
 (def tests (atom {}))
 (def current-test (atom nil))
 (def failed-tests (atom #{}))
@@ -1240,21 +1240,23 @@
 
 
 (deftest translate-fn
-  (let [f (cc/translate (cc/parse '(fn* [])))]
-    (assert= 2 (count f))
+  (let [ast (cc/parse '(fn* []))
+        f (cc/translate ast)]
+    (assert= 3 (count f))
     (assert= (:bodies f) [{:arity 0
                            :bytecode [vm/CNIL]}])
+    (assert= ast (:ast f))
     (assert-not (-> f :name namespace))
     (assert (str-starts-with? (-> f :name name) "anonfn--"))
     (assert= Int64 (-> f :name name (subs 8) read-string type)))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/CNIL]}]}
-           (cc/translate (cc/parse '(fn* abc []))))
+           (dissoc (cc/translate (cc/parse '(fn* abc []))) :ast))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/LDL 255 255]}]}
-           (cc/translate (cc/parse '(fn* abc [] abc))))
+           (dissoc (cc/translate (cc/parse '(fn* abc [] abc))) :ast))
   (assert= {:name 'abc
             :bodies [{:arity 2
                       :bytecode [vm/LDL 254 255
@@ -1262,7 +1264,7 @@
                                  vm/LDL 255 255
                                  vm/POP
                                  vm/LDL 253 255]}]}
-           (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))))
+           (dissoc (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))) :ast))
   (assert= {:name 'abc
             :bodies [{:arity 2
                       :vararg true
@@ -1271,7 +1273,7 @@
                                  vm/LDL 255 255
                                  vm/POP
                                  vm/LDL 253 255]}]}
-           (cc/translate (cc/parse '(fn* abc [x & y] (do x y abc)))))
+           (dissoc (cc/translate (cc/parse '(fn* abc [x & y] (do x y abc)))) :ast))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/CNIL]}
@@ -1279,7 +1281,7 @@
                       :bytecode [vm/CNIL]}
                      {:arity 3
                       :bytecode [vm/CNIL]}]}
-           (cc/translate (cc/parse '(fn* abc ([]) ([x]) ([x y z])))))
+           (dissoc (cc/translate (cc/parse '(fn* abc ([]) ([x]) ([x y z])))) :ast))
   (when slow-tests
     (assert-compilation-error "Too many params: 32768" (translate-body (list 'fn*
                                                                              (loop [i 0 bindings (transient [])]
@@ -1977,7 +1979,8 @@
                        vm/LDL 1 0
                        vm/CALL 1]
             :vars [#'cleo.core/inc #'cleo.core/dec #'cleo.core/=]
-            :consts [0]}
+            :consts [0]
+            :dep-vars #{#'recur-fn}}
            (translate-body '(fn f [a b]
                               (let [ib (inc b)
                                     z (cleo.core/inline (cleo.core.test/recur-fn (inc ib) (dec a)))]
@@ -2012,7 +2015,8 @@
                        vm/CALL 1
                        vm/STL 2 0
                        vm/LDL 2 0]
-            :vars [#'cleo.core/dec #'cleo.core/inc]}
+            :vars [#'cleo.core/dec #'cleo.core/inc]
+            :dep-vars #{#'regular-fn}}
            (translate-body '(fn f [a b]
                               (let [x a
                                     y (inline (cleo.core.test/regular-fn b))
@@ -2034,9 +2038,17 @@
                        vm/LDC 0 0
                        vm/CALL 3]
             :vars [#'cleo.core/inc #'cleo.core/assoc]
-            :consts [10]}
+            :consts [10]
+            :dep-vars #{#'regular-fn}}
            (translate-body '(fn f [x y]
-                              (inline (cleo.core.test/regular-fn x (let [z (inc y)] z)))))))
+                              (inline (cleo.core.test/regular-fn x (let [z (inc y)] z))))))
+  (do
+    (def inlined-op (fn [x] (* x 2)))
+    (let [f (binding-ns 'cleo.core.test
+                        (cc/eval-form '(fn [x] (inline (inlined-op x)))))]
+      (assert= 40 (f 20))
+      (def inlined-op (fn [x] (- x)))
+      (assert= -20 (f 20)))))
 
 
 (deftest simplify-ifs-with-const-cond
