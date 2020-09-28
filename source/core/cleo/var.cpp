@@ -5,7 +5,6 @@
 #include "list.hpp"
 #include "util.hpp"
 #include "persistent_hash_set.hpp"
-#include "eval.hpp"
 #include "bytecode_fn.hpp"
 
 namespace cleo
@@ -66,16 +65,7 @@ void pop_bindings()
 void set_var_root_value(Value var, Value val)
 {
     set_static_object_element(var, 1, val);
-    auto dep_fns = get_static_object_element(var, 3);
-    if (!dep_fns)
-        return;
-    for (Root s{persistent_hash_set_seq(dep_fns)}; *s; s = get_persistent_hash_set_seq_next(*s))
-    {
-        auto fn = get_persistent_hash_set_seq_first(*s);
-        std::array<Value, 2> compile{{*rt::compile_fn_ast, get_bytecode_fn_ast(fn)}};
-        Root fresh_fn{call(compile.data(), compile.size())};
-        bytecode_fn_update_bodies(fn, *fresh_fn);
-    }
+    recompile_bytecode_fns(get_static_object_element(var, 3));
 }
 
 void set_var_meta(Value var, Value meta)

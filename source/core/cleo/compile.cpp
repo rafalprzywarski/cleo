@@ -985,6 +985,7 @@ Force serialize_fn(Value fn)
     Value name = map_get(fn, create_keyword("name"));
     Value ast = map_get(fn, create_keyword("ast"));
     Value dep_vars = map_get(fn, create_keyword("dep-vars"));
+    Value dep_fns = map_get(fn, create_keyword("dep-fns"));
     auto body_count = count(fn_bodies);
     std::vector<Value> bodies;
     Roots body_roots(body_count);
@@ -1029,6 +1030,11 @@ Force serialize_fn(Value fn)
     {
         Root var{seq_first(*s)};
         add_var_fn_dep(*var, *sfn);
+    }
+    for (Root s{seq(dep_fns)}; *s; s = seq_next(*s))
+    {
+        Root fn{seq_first(*s)};
+        add_bytecode_fn_fn_dep(*fn, *sfn);
     }
     return *sfn;
 }

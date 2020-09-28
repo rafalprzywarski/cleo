@@ -2,6 +2,8 @@
 #include "global.hpp"
 #include "array.hpp"
 #include "multimethod.hpp"
+#include "persistent_hash_set.hpp"
+#include "eval.hpp"
 #include <cstring>
 #include <algorithm>
 
@@ -128,10 +130,10 @@ Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value 
 {
     std::vector<Int64> arities(n);
     std::transform(bodies, bodies + n, begin(arities), get_bytecode_fn_body_arity);
-    std::vector<Value> elems(2 + n);
+    std::vector<Value> elems(3 + n);
     elems[0] = name;
     elems[1] = ast;
-    std::copy_n(bodies, n, begin(elems) + 2);
+    std::copy_n(bodies, n, begin(elems) + 3);
     return create_object(*type::BytecodeFn, arities.data(), arities.size(), elems.data(), elems.size());
 }
 
@@ -152,7 +154,7 @@ Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i)
 
 Value get_bytecode_fn_body(Value fn, std::uint8_t i)
 {
-    return get_dynamic_object_element(fn, i + 2);
+    return get_dynamic_object_element(fn, i + 3);
 }
 
 Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n)
@@ -195,8 +197,38 @@ void bytecode_fn_update_bodies(Value fn, Value src_fn)
 {
     assert(get_dynamic_object_size(fn) == get_dynamic_object_size(src_fn));
 
-    for (std::uint32_t size = get_dynamic_object_size(fn), i = 2; i != size; ++i)
+    for (std::uint32_t size = get_dynamic_object_size(fn), i = 3; i != size; ++i)
         set_dynamic_object_element(fn, i, get_dynamic_object_element(src_fn, i));
+
+    recompile_bytecode_fns(get_dynamic_object_element(fn, 2));
+}
+
+void recompile_bytecode_fn(Value fn)
+{
+    std::array<Value, 2> compile{{*rt::compile_fn_ast, get_bytecode_fn_ast(fn)}};
+    Root fresh_fn{call(compile.data(), compile.size())};
+    bytecode_fn_update_bodies(fn, *fresh_fn);
+}
+
+void recompile_bytecode_fns(Value fn_set)
+{
+    if (fn_set.is_nil())
+        return;
+    assert(get_value_type(fn_set).is(*type::PersistentHashSet));
+    for (Root s{persistent_hash_set_seq(fn_set)}; *s; s = get_persistent_hash_set_seq_next(*s))
+        recompile_bytecode_fn(get_persistent_hash_set_seq_first(*s));
+}
+
+Value add_bytecode_fn_fn_dep(Value fn, Value dep)
+{
+    auto deps = get_dynamic_object_element(fn, 2);
+    if (deps.is_nil())
+        deps = *EMPTY_HASH_SET;
+
+    Root new_deps{persistent_hash_set_conj(deps, dep)};
+    set_dynamic_object_element(fn, 2, *new_deps);
+
+    return nil;
 }
 
 }

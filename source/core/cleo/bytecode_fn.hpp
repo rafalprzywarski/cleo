@@ -41,5 +41,8 @@ Force bytecode_fn_replace_consts(Value fn, const Value *consts, Int64 n);
 std::pair<Value, Int64> bytecode_fn_find_body(Value fn, std::uint8_t arity);
 Value get_bytecode_fn_ast(Value fn);
 void bytecode_fn_update_bodies(Value fn, Value src_fn);
+Value add_bytecode_fn_fn_dep(Value fn, Value dep);
+void recompile_bytecode_fn(Value fn);
+void recompile_bytecode_fns(Value fn_set);
 
 }

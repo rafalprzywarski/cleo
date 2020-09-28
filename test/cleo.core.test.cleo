@@ -4,7 +4,7 @@
 (require 'cleo.vm)
 (alias 'vm 'cleo.vm)
 
-(def slow-tests nil)
+(def slow-tests true)
 (def tests (atom {}))
 (def current-test (atom nil))
 (def failed-tests (atom #{}))
@@ -1980,7 +1980,8 @@
                        vm/CALL 1]
             :vars [#'cleo.core/inc #'cleo.core/dec #'cleo.core/=]
             :consts [0]
-            :dep-vars #{#'recur-fn}}
+            :dep-vars #{#'recur-fn}
+            :dep-fns #{recur-fn}}
            (translate-body '(fn f [a b]
                               (let [ib (inc b)
                                     z (cleo.core/inline (cleo.core.test/recur-fn (inc ib) (dec a)))]
@@ -2016,7 +2017,8 @@
                        vm/STL 2 0
                        vm/LDL 2 0]
             :vars [#'cleo.core/dec #'cleo.core/inc]
-            :dep-vars #{#'regular-fn}}
+            :dep-vars #{#'regular-fn}
+            :dep-fns #{regular-fn}}
            (translate-body '(fn f [a b]
                               (let [x a
                                     y (inline (cleo.core.test/regular-fn b))
@@ -2039,13 +2041,23 @@
                        vm/CALL 3]
             :vars [#'cleo.core/inc #'cleo.core/assoc]
             :consts [10]
-            :dep-vars #{#'regular-fn}}
+            :dep-vars #{#'regular-fn}
+            :dep-fns #{regular-fn}}
            (translate-body '(fn f [x y]
                               (inline (cleo.core.test/regular-fn x (let [z (inc y)] z))))))
   (do
     (def inlined-op (fn [x] (* x 2)))
     (let [f (binding-ns 'cleo.core.test
                         (cc/eval-form '(fn [x] (inline (inlined-op x)))))]
+      (assert= 40 (f 20))
+      (def inlined-op (fn [x] (- x)))
+      (assert= -20 (f 20))))
+  (do
+    (def inlined-op (fn [x] (* x 2)))
+    (def inlined-op2 (binding-ns 'cleo.core.test
+                                 (cc/eval-form '(fn [x] (inline (inlined-op x))))))
+    (let [f (binding-ns 'cleo.core.test
+                        (cc/eval-form '(fn [x] (inline (inlined-op2 x)))))]
       (assert= 40 (f 20))
       (def inlined-op (fn [x] (- x)))
       (assert= -20 (f 20)))))
