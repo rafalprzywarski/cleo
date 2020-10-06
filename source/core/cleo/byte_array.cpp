@@ -2,6 +2,7 @@
 #include "global.hpp"
 #include "util.hpp"
 #include "hash.hpp"
+#include <cstring>
 
 namespace cleo
 {

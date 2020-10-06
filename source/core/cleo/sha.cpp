@@ -1,5 +1,6 @@
 #include "sha.hpp"
 #include <algorithm>
+#include <cassert>
 
 namespace cleo
 {
