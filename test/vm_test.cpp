@@ -791,12 +791,10 @@ TEST_F(vm_test, ifn)
     EXPECT_EQ_REFS(*fn, stack[0]);
     stack.clear();
 
-    Root consts1{array(10, 20, 30, 40, 50, 60)};
-    Root consts2{array(50, 60, 70, 80, 90, 100)};
     std::array<vm::Byte, 1> bytes{{vm::CNIL}};
     Roots rbodies(2);
-    rbodies.set(0, create_bytecode_fn_body(2, *consts1, nil, nil, 0, bytes.data(), bytes.size()));
-    rbodies.set(1, create_bytecode_fn_body(3, *consts2, nil, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(0, create_bytecode_fn_body(2, nil, nil, nil, nil, 0, bytes.data(), bytes.size()));
+    rbodies.set(1, create_bytecode_fn_body(3, nil, nil, nil, nil, 0, bytes.data(), bytes.size()));
     std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
 
     fn = create_bytecode_fn(name, bodies.data(), bodies.size(), nil);
@@ -808,13 +806,12 @@ TEST_F(vm_test, ifn)
 
     ASSERT_EQ(1u, stack.size());
     auto mfn = stack[0];
-    Root mconsts1{array(10, 20, 30, 40, 17, 19)};
-    Root mconsts2{array(50, 60, 70, 80, 17, 19)};
+    Root closed_vals{array(17, 19)};
     EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(mfn));
     EXPECT_EQ(2, get_bytecode_fn_size(mfn));
     EXPECT_EQ_VALS(name, get_bytecode_fn_name(mfn));
-    EXPECT_EQ_VALS(*mconsts1, get_bytecode_fn_body_consts(get_bytecode_fn_body(mfn, 0)));
-    EXPECT_EQ_VALS(*mconsts2, get_bytecode_fn_body_consts(get_bytecode_fn_body(mfn, 1)));
+    EXPECT_EQ_VALS(*closed_vals, get_bytecode_fn_body_closed_vals(get_bytecode_fn_body(mfn, 0)));
+    EXPECT_EQ_VALS(*closed_vals, get_bytecode_fn_body_closed_vals(get_bytecode_fn_body(mfn, 1)));
 }
 
 TEST_F(vm_test, throw_)

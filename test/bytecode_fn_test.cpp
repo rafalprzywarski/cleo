@@ -24,6 +24,7 @@ TEST_F(bytecode_fn_test, should_eval_the_body)
     Root x{new_index_out_of_bounds()};
     Root consts{array(2, *x)};
     Root vars{array(get_var(INTERNAL_ADD_2))};
+    Root closed_vals{array(7)};
     std::array<Int64, 4> entries{{0, 4, 4, 0}};
     std::array<Value, 1> types{{*type::IndexOutOfBounds}};
     Root et{create_bytecode_fn_exception_table(entries.data(), types.data(), types.size())};
@@ -33,13 +34,13 @@ TEST_F(bytecode_fn_test, should_eval_the_body)
         vm::POP,
         vm::LDV, 0, 0,
         vm::LDC, 0, 0,
-        vm::LDC, 0, 0,
+        vm::LDCV, 0, 0,
         vm::CALL, 2}};
-    Root body{create_bytecode_fn_body(0, *consts, *vars, *et, 0, bc.data(), bc.size())};
+    Root body{create_bytecode_fn_body(0, *consts, *vars, *closed_vals, *et, 0, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
     Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn)};
-    Root ex{i64(4)};
+    Root ex{i64(9)};
 
     auto old_stack = stack;
     Root val{eval(*call)};
@@ -55,7 +56,7 @@ TEST_F(bytecode_fn_test, should_pass_the_arguments)
         vm::LDL, vm::Byte(-2), vm::Byte(-1),
         vm::LDL, vm::Byte(-1), vm::Byte(-1),
         vm::CALL, 2}};
-    Root body{create_bytecode_fn_body(3, nil, nil, nil, 0, bc.data(), bc.size())};
+    Root body{create_bytecode_fn_body(3, nil, nil, nil, nil, 0, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
     Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn, get_var_value(get_var(MINUS)), 5, 7)};
@@ -83,7 +84,7 @@ TEST_F(bytecode_fn_test, should_reserve_stack_space_for_local_variables)
         vm::LDL, 1, 0,
         vm::LDL, 2, 0,
         vm::CALL, 2}};
-    Root body{create_bytecode_fn_body(0, *consts, nil, nil, 3, bc.data(), bc.size())};
+    Root body{create_bytecode_fn_body(0, *consts, nil, nil, nil, 3, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
     Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn)};
@@ -100,9 +101,9 @@ TEST_F(bytecode_fn_test, should_fail_when_arity_cannot_be_matched)
 {
     Root consts{array(10)};
     std::array<vm::Byte, 3> bc{{vm::LDC, 0, 0}};
-    Root body0{create_bytecode_fn_body(0, *consts, nil, nil, 0, bc.data(), bc.size())};
-    Root body1{create_bytecode_fn_body(1, *consts, nil, nil, 0, bc.data(), bc.size())};
-    Root body2{create_bytecode_fn_body(2, *consts, nil, nil, 0, bc.data(), bc.size())};
+    Root body0{create_bytecode_fn_body(0, *consts, nil, nil, nil, 0, bc.data(), bc.size())};
+    Root body1{create_bytecode_fn_body(1, *consts, nil, nil, nil, 0, bc.data(), bc.size())};
+    Root body2{create_bytecode_fn_body(2, *consts, nil, nil, nil, 0, bc.data(), bc.size())};
     std::array<Value, 3> bodies{{*body0, *body1, *body2}};
     auto name = create_symbol("fn012");
     Root fn{create_bytecode_fn(name, bodies.data(), bodies.size(), nil)};
@@ -132,9 +133,9 @@ TEST_F(bytecode_fn_test, should_dispatch_to_the_right_arity)
     std::array<vm::Byte, 3> bc0{{vm::LDC, 0, 0}};
     std::array<vm::Byte, 3> bc1{{vm::LDC, 1, 0}};
     std::array<vm::Byte, 3> bc2{{vm::LDC, 2, 0}};
-    Root body0{create_bytecode_fn_body(0, *consts0, nil, nil, 0, bc0.data(), bc0.size())};
-    Root body1{create_bytecode_fn_body(1, *consts1, nil, nil, 1, bc1.data(), bc1.size())};
-    Root body2{create_bytecode_fn_body(2, *consts2, nil, nil, 2, bc2.data(), bc2.size())};
+    Root body0{create_bytecode_fn_body(0, *consts0, nil, nil, nil, 0, bc0.data(), bc0.size())};
+    Root body1{create_bytecode_fn_body(1, *consts1, nil, nil, nil, 1, bc1.data(), bc1.size())};
+    Root body2{create_bytecode_fn_body(2, *consts2, nil, nil, nil, 2, bc2.data(), bc2.size())};
     std::array<Value, 3> bodies{{*body0, *body1, *body2}};
     Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call, ex, val;
@@ -163,9 +164,9 @@ TEST_F(bytecode_fn_test, should_dispatch_to_vararg)
     std::array<vm::Byte, 3> bc0{{vm::LDC, 0, 0}};
     std::array<vm::Byte, 3> bc1{{vm::LDC, 1, 0}};
     std::array<vm::Byte, 3> bc2{{vm::LDC, 2, 0}};
-    Root body0{create_bytecode_fn_body(0, *consts0, nil, nil, 0, bc0.data(), bc0.size())};
-    Root body1{create_bytecode_fn_body(1, *consts1, nil, nil, 1, bc1.data(), bc1.size())};
-    Root body2{create_bytecode_fn_body(~Int64(1), *consts2, nil, nil, 2, bc2.data(), bc2.size())};
+    Root body0{create_bytecode_fn_body(0, *consts0, nil, nil, nil, 0, bc0.data(), bc0.size())};
+    Root body1{create_bytecode_fn_body(1, *consts1, nil, nil, nil, 1, bc1.data(), bc1.size())};
+    Root body2{create_bytecode_fn_body(~Int64(1), *consts2, nil, nil, nil, 2, bc2.data(), bc2.size())};
     std::array<Value, 3> bodies{{*body0, *body1, *body2}};
     Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call, ex, val;
@@ -185,7 +186,7 @@ TEST_F(bytecode_fn_test, should_dispatch_to_vararg)
     val = eval(*call);
     EXPECT_EQ_VALS(*ex, *val);
 
-    body2 = create_bytecode_fn_body(~Int64(3), *consts2, nil, nil, 2, bc2.data(), bc2.size()); // test passing the params!
+    body2 = create_bytecode_fn_body(~Int64(3), *consts2, nil, nil, nil, 2, bc2.data(), bc2.size()); // test passing the params!
     bodies[2] = *body2;
     fn = create_bytecode_fn(nil, bodies.data(), bodies.size(), nil);
 
@@ -199,7 +200,7 @@ TEST_F(bytecode_fn_test, should_pass_the_varargs_as_a_sequence_or_nil)
 {
     auto create_fn2va = [](std::vector<vm::Byte> bc)
         {
-            Root body{create_bytecode_fn_body(~Int64(2), nil, nil, nil, 0, bc.data(), bc.size())};
+            Root body{create_bytecode_fn_body(~Int64(2), nil, nil, nil, nil, 0, bc.data(), bc.size())};
             std::array<Value, 1> bodies{{*body}};
             return create_bytecode_fn(nil, bodies.data(), bodies.size(), nil);
         };
@@ -248,7 +249,7 @@ TEST_F(bytecode_fn_test, should_restore_stack_when_an_exception_is_thrown)
     Root ex{new_index_out_of_bounds()};
     Root consts{array(*ex)};
     std::array<vm::Byte, 4> bc{{vm::LDC, 0, 0, vm::THROW}};
-    Root body{create_bytecode_fn_body(0, *consts, nil, nil, 10, bc.data(), bc.size())};
+    Root body{create_bytecode_fn_body(0, *consts, nil, nil, nil, 10, bc.data(), bc.size())};
     std::array<Value, 1> bodies{{*body}};
     Root fn{create_bytecode_fn(nil, bodies.data(), bodies.size(), nil)};
     Root call{list(*fn)};
@@ -287,8 +288,8 @@ TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
     std::array<vm::Byte, 1> bytes1{{vm::CNIL}};
     std::array<vm::Byte, 3> bytes2{{vm::CNIL, vm::CNIL, vm::POP}};
     Roots rbodies(2);
-    rbodies.set(0, create_bytecode_fn_body(2, *consts1, *vars1, *et1, locals_size1, bytes1.data(), bytes1.size()));
-    rbodies.set(1, create_bytecode_fn_body(3, *consts2, *vars2, *et2, locals_size2, bytes2.data(), bytes2.size()));
+    rbodies.set(0, create_bytecode_fn_body(2, *consts1, *vars1, nil, *et1, locals_size1, bytes1.data(), bytes1.size()));
+    rbodies.set(1, create_bytecode_fn_body(3, *consts2, *vars2, nil, *et2, locals_size2, bytes2.data(), bytes2.size()));
     std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
 
     fn = create_bytecode_fn(name, bodies.data(), bodies.size(), nil);
@@ -309,6 +310,60 @@ TEST_F(bytecode_fn_test, should_replace_last_n_constants_in_all_bodies)
     EXPECT_EQ_VALS(*mconsts2, get_bytecode_fn_body_consts(get_bytecode_fn_body(*mfn, 1)));
     EXPECT_EQ_REFS(*vars1, get_bytecode_fn_body_vars(get_bytecode_fn_body(*mfn, 0)));
     EXPECT_EQ_REFS(*vars2, get_bytecode_fn_body_vars(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ_REFS(*et1, get_bytecode_fn_body_exception_table(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ_REFS(*et2, get_bytecode_fn_body_exception_table(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ(locals_size1, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ(locals_size2, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ(Int64(bytes1.size()), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ(Int64(bytes2.size()), get_bytecode_fn_body_bytes_size(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_TRUE(std::equal(begin(bytes1), end(bytes1), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 0))));
+    EXPECT_TRUE(std::equal(begin(bytes2), end(bytes2), get_bytecode_fn_body_bytes(get_bytecode_fn_body(*mfn, 1))));
+}
+
+TEST_F(bytecode_fn_test, should_set_closed_values_in_all_bodies)
+{
+    auto name = create_symbol("abc");
+    Root fn{create_bytecode_fn(name, nullptr, 0, nil)};
+    Root mfn{bytecode_fn_set_closed_vals(*fn, nil)};
+    EXPECT_EQ_REFS(*fn, *mfn);
+
+    Root consts1{array()};
+    Root consts2{array()};
+    Root vars1{array()};
+    Root vars2{array()};
+    std::array<Int64, 4> et_entries{{1, 2, 7, 0}};
+    std::array<Value, 1> et_types{{*type::IndexOutOfBounds}};
+    Root et1{create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size())};
+    Root et2{create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size())};
+    Int64 locals_size1 = 7;
+    Int64 locals_size2 = 9;
+    std::array<vm::Byte, 1> bytes1{{vm::CNIL}};
+    std::array<vm::Byte, 3> bytes2{{vm::CNIL, vm::CNIL, vm::POP}};
+    Roots rbodies(2);
+    rbodies.set(0, create_bytecode_fn_body(2, *consts1, *vars1, nil, *et1, locals_size1, bytes1.data(), bytes1.size()));
+    rbodies.set(1, create_bytecode_fn_body(3, *consts2, *vars2, nil, *et2, locals_size2, bytes2.data(), bytes2.size()));
+    std::array<Value, 2> bodies{{rbodies[0], rbodies[1]}};
+
+    fn = create_bytecode_fn(name, bodies.data(), bodies.size(), nil);
+    EXPECT_EQ_REFS(nil, get_bytecode_fn_body_closed_vals(get_bytecode_fn_body(*fn, 0)));
+    EXPECT_EQ_REFS(nil, get_bytecode_fn_body_closed_vals(get_bytecode_fn_body(*fn, 1)));
+
+    Root closed_vals{array(10, 20)};
+    mfn = bytecode_fn_set_closed_vals(*fn, *closed_vals);
+
+    EXPECT_EQ_REFS(*type::BytecodeFn, get_value_type(*mfn));
+    EXPECT_EQ(2, get_bytecode_fn_size(*mfn));
+    EXPECT_EQ_VALS(name, get_bytecode_fn_name(*mfn));
+    EXPECT_EQ(2, get_bytecode_fn_arity(*mfn, 0));
+    EXPECT_EQ(3, get_bytecode_fn_arity(*mfn, 1));
+    EXPECT_EQ(2, get_bytecode_fn_body_arity(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ(3, get_bytecode_fn_body_arity(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ_REFS(*consts1, get_bytecode_fn_body_consts(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ_REFS(*consts2, get_bytecode_fn_body_consts(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ_REFS(*vars1, get_bytecode_fn_body_vars(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ_REFS(*vars2, get_bytecode_fn_body_vars(get_bytecode_fn_body(*mfn, 1)));
+    EXPECT_EQ_REFS(*closed_vals, get_bytecode_fn_body_closed_vals(get_bytecode_fn_body(*mfn, 0)));
+    EXPECT_EQ_REFS(*closed_vals, get_bytecode_fn_body_closed_vals(get_bytecode_fn_body(*mfn, 1)));
     EXPECT_EQ_REFS(*et1, get_bytecode_fn_body_exception_table(get_bytecode_fn_body(*mfn, 0)));
     EXPECT_EQ_REFS(*et2, get_bytecode_fn_body_exception_table(get_bytecode_fn_body(*mfn, 1)));
     EXPECT_EQ(locals_size1, get_bytecode_fn_body_locals_size(get_bytecode_fn_body(*mfn, 0)));

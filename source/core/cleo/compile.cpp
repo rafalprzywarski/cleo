@@ -42,7 +42,6 @@ struct Compiler
     Root consts{transient_array(*EMPTY_VECTOR)};
     Root vars{transient_array(*EMPTY_VECTOR)};
     Root parent_local_refs;
-    std::vector<std::uint32_t> parent_local_ref_offsets;
     std::vector<Int64> et_entries;
     std::vector<Value> et_types;
 
@@ -116,11 +115,6 @@ void set_i16(std::vector<vm::Byte>& v, std::size_t off, std::int16_t n)
     v[off + 1] = (n >> 8) & 0xff;
 }
 
-std::int16_t get_i16(const std::vector<vm::Byte>& v, std::size_t off)
-{
-    return std::int16_t(std::uint8_t(v[off]) | (std::uint16_t(std::uint8_t(v[off + 1])) << 8));
-}
-
 void append_STL(std::vector<vm::Byte>& v, std::int16_t n)
 {
     append(v, vm::STL);
@@ -136,6 +130,12 @@ void append_LDL(std::vector<vm::Byte>& v, std::int16_t n)
 void append_LDC(std::vector<vm::Byte>& v, std::int16_t n)
 {
     append(v, vm::LDC);
+    append_u16(v, n);
+}
+
+void append_LDCV(std::vector<vm::Byte>& v, std::int16_t n)
+{
+    append(v, vm::LDCV);
     append_u16(v, n);
 }
 
@@ -264,8 +264,7 @@ void Compiler::compile_const(Value c)
 void Compiler::compile_local_ref(Value sym)
 {
     auto ri = add_local_ref(sym);
-    parent_local_ref_offsets.push_back(code.size() + 1);
-    append_LDC(code, ri);
+    append_LDCV(code, ri);
 }
 
 void Compiler::compile_call(Scope scope, Value val)
@@ -847,13 +846,11 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     c.compile_value(scope, *val);
     auto used_locals_size = get_transient_array_size(*c.parent_local_refs);
     auto consts_size = get_transient_array_size(*c.consts);
-    for (auto off : c.parent_local_ref_offsets)
-        set_i16(c.code, off, get_i16(c.code, off) + consts_size);
     Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
     Root vars{get_transient_array_size(*c.vars) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.parent_local_refs) : nil;
     Root exception_table{!c.et_types.empty() ? create_bytecode_fn_exception_table(c.et_entries.data(), c.et_types.data(), c.et_types.size()) : nil};
-    return create_bytecode_fn_body(arity, *consts, *vars, *exception_table, c.locals_size, c.code.data(), c.code.size());
+    return create_bytecode_fn_body(arity, *consts, *vars, nil, *exception_table, c.locals_size, c.code.data(), c.code.size());
 }
 
 Force create_fn(Value name, std::vector<Value> bodies, Value ast)
@@ -862,22 +859,6 @@ Force create_fn(Value name, std::vector<Value> bodies, Value ast)
         begin(bodies), end(bodies),
         [](auto& l, auto& r) { return std::abs(get_bytecode_fn_body_arity(l)) < std::abs(get_bytecode_fn_body_arity(r)); });
     return create_bytecode_fn(name, bodies.data(), bodies.size(), ast);
-}
-
-Force reserve_fn_body_consts(Value body, Int64 n)
-{
-    if (n == 0)
-        return body;
-    Root consts{get_bytecode_fn_body_consts(body)};
-    consts = transient_array(*consts ? *consts : *EMPTY_VECTOR);
-    for (Int64 i = 0; i < n; ++i)
-        consts = transient_array_conj(*consts, nil);
-    auto size = get_transient_array_size(*consts);
-    if (size > MAX_CONSTS)
-        throw_compilation_error("Too many constants: " + std::to_string(size));
-    consts = size > 0 ? transient_array_persistent(*consts) : nil;
-
-    return create_bytecode_fn_body(get_bytecode_fn_body_arity(body), *consts, get_bytecode_fn_body_vars(body), get_bytecode_fn_body_exception_table(body), get_bytecode_fn_body_locals_size(body), get_bytecode_fn_body_bytes(body), get_bytecode_fn_body_bytes_size(body));
 }
 
 Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
@@ -911,11 +892,6 @@ Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
         Root params{seq_first(*form)};
         bodies.push_back(rbodies[i]);
         forms = seq_next(*forms);
-    }
-    for (Int64 i = 0; i < count; ++i)
-    {
-        rbodies.set(i, reserve_fn_body_consts(bodies[i], get_array_size(*used_locals)));
-        bodies[i] = rbodies[i];
     }
     return create_fn(name, std::move(bodies), nil);
 }
@@ -1019,6 +995,7 @@ Force serialize_fn(Value fn)
                        create_bytecode_fn_body(arity,
                                                map_get(*body, CONSTS),
                                                map_get(*body, VARS),
+                                               nil,
                                                *exception_table,
                                                map_contains(*body, LOCALS_SIZE) ? get_int64_value(map_get(*body, LOCALS_SIZE)) : 0,
                                                bytecode.data(), bytecode.size()));

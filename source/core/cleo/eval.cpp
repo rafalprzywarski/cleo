@@ -36,6 +36,7 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     auto arity = body_and_arity.second;
     auto consts = get_bytecode_fn_body_consts(body);
     auto vars = get_bytecode_fn_body_vars(body);
+    auto closed_vals = get_bytecode_fn_body_closed_vals(body);
     auto exception_table = get_bytecode_fn_body_exception_table(body);
     auto locals_size = get_bytecode_fn_body_locals_size(body);
     auto bytes = get_bytecode_fn_body_bytes(body);
@@ -56,7 +57,7 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     else
         stack_push(elems, elems + elems_size);
     stack_reserve(locals_size);
-    vm::eval_bytecode(consts, vars, nil, locals_size, exception_table, bytes, bytes_size);
+    vm::eval_bytecode(consts, vars, closed_vals, locals_size, exception_table, bytes, bytes_size);
     return stack.back();
 }
 

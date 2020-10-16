@@ -91,6 +91,7 @@ struct compile_test : Test
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -104,6 +105,7 @@ struct compile_test : Test
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         auto et = get_bytecode_fn_body_exception_table(body);
         EXPECT_EQ_VALS(*type::BytecodeFnExceptionTable, get_value_type(et));
         ASSERT_EQ(et_types.size(), get_bytecode_fn_exception_table_size(et));
@@ -129,6 +131,7 @@ struct compile_test : Test
         Root consts{to_value(constsv)};
         EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         auto et = get_bytecode_fn_body_exception_table(body);
         EXPECT_EQ_VALS(*type::BytecodeFnExceptionTable, get_value_type(et));
         ASSERT_EQ(et_types.size(), get_bytecode_fn_exception_table_size(et));
@@ -154,6 +157,7 @@ struct compile_test : Test
         EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -169,6 +173,7 @@ struct compile_test : Test
         EXPECT_EQ_VALS(*consts, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -192,6 +197,7 @@ struct compile_test : Test
         Root vars{to_value(varsv)};
         EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -209,6 +215,7 @@ struct compile_test : Test
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(0u, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -226,6 +233,7 @@ struct compile_test : Test
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_consts(body)));
         EXPECT_EQ_VALS(*vars, get_bytecode_fn_body_vars(body));
         EXPECT_EQ_REFS(*type::Array, get_value_type(get_bytecode_fn_body_vars(body)));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -238,6 +246,7 @@ struct compile_test : Test
         ASSERT_EQ_REFS(*type::BytecodeFnBody, get_value_type(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_consts(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_vars(body));
+        EXPECT_EQ_VALS(nil, get_bytecode_fn_body_closed_vals(body));
         EXPECT_EQ_VALS(nil, get_bytecode_fn_body_exception_table(body));
         EXPECT_EQ(locals_size, get_bytecode_fn_body_locals_size(body));
         EXPECT_EQ(code, bc(body));
@@ -1284,11 +1293,10 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
                                            vm::LDL, -2, -1,
                                            vm::LDL, -1, -1,
                                            vm::IFN, 2));
-    expect_body_with_consts_and_bytecode(inner_fn, 0,
-                                         arrayv(nil, nil),
-                                         b(vm::LDC, 0, 0,
-                                           vm::LDC, 1, 0,
-                                           vm::CALL, 1));
+    expect_body_with_bytecode(inner_fn, 0,
+                              b(vm::LDCV, 0, 0,
+                                vm::LDCV, 1, 0,
+                                vm::CALL, 1));
 
     fn = compile_fn("(fn* [x y] (fn* [] (x 10 y y x 20 30)))");
     inner_fn = get_fn_const(*fn, 0, 0);
@@ -1299,12 +1307,12 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
                                            vm::LDL, -1, -1,
                                            vm::IFN, 2));
     expect_body_with_consts_and_bytecode(inner_fn, 0,
-                                         arrayv(10, 20, 30, nil, nil),
-                                         b(vm::LDC, 3, 0,
+                                         arrayv(10, 20, 30),
+                                         b(vm::LDCV, 0, 0,
                                            vm::LDC, 0, 0,
-                                           vm::LDC, 4, 0,
-                                           vm::LDC, 4, 0,
-                                           vm::LDC, 3, 0,
+                                           vm::LDCV, 1, 0,
+                                           vm::LDCV, 1, 0,
+                                           vm::LDCV, 0, 0,
                                            vm::LDC, 1, 0,
                                            vm::LDC, 2, 0,
                                            vm::CALL, 6));
@@ -1319,57 +1327,56 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
                                                   vm::LDL, 0, 0,
                                                   vm::LDL, -2, -1,
                                                   vm::IFN, 2));
-    expect_body_with_consts_and_bytecode(inner_fn, 0,
-                                         arrayv(nil, nil),
-                                         b(vm::LDC, 0, 0,
-                                           vm::LDC, 1, 0,
-                                           vm::CALL, 1));
+    expect_body_with_bytecode(inner_fn, 0,
+                              b(vm::LDCV, 0, 0,
+                                vm::LDCV, 1, 0,
+                                vm::CALL, 1));
 
     fn = compile_fn("(fn* [x y a-var] (fn* [x] (let* [y 5] (x y a-var))))");
     inner_fn = get_fn_const(*fn, 0, 0);
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
     expect_body_with_locals_consts_and_bytecode(inner_fn, 0, 1,
-                                                arrayv(5, nil),
+                                                arrayv(5),
                                                 b(vm::LDC, 0, 0,
                                                   vm::STL, 0, 0,
                                                   vm::LDL, -1, -1,
                                                   vm::LDL, 0, 0,
-                                                  vm::LDC, 1, 0,
+                                                  vm::LDCV, 0, 0,
                                                   vm::CALL, 2));
 
     fn = compile_fn("(fn* [x] (fn* [y] (fn* [] (x y))))");
     inner_fn = get_fn_const(*fn, 0, 0);
     auto inner_inner_fn = get_fn_const(inner_fn, 0, 0);
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
-    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(inner_inner_fn, nil), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::LDL, -1, -1, vm::IFN, 2));
-    expect_body_with_consts_and_bytecode(inner_inner_fn, 0, arrayv(nil, nil), b(vm::LDC, 0, 0, vm::LDC, 1, 0, vm::CALL, 1));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(inner_inner_fn), b(vm::LDC, 0, 0, vm::LDCV, 0, 0, vm::LDL, -1, -1, vm::IFN, 2));
+    expect_body_with_bytecode(inner_inner_fn, 0, b(vm::LDCV, 0, 0, vm::LDCV, 1, 0, vm::CALL, 1));
 
     fn = compile_fn("(fn* [x] (fn* [x] (fn* [] x)))");
     inner_fn = get_fn_const(*fn, 0, 0);
     inner_inner_fn = get_fn_const(inner_fn, 0, 0);
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0));
     expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(inner_inner_fn), b(vm::LDC, 0, 0, vm::LDL, -1, -1, vm::IFN, 1));
-    expect_body_with_consts_and_bytecode(inner_inner_fn, 0, arrayv(nil), b(vm::LDC, 0, 0));
+    expect_body_with_bytecode(inner_inner_fn, 0, b(vm::LDCV, 0, 0));
 
     fn = compile_fn("(fn* [x y] (fn* ([] (x 10)) ([a] (a x y)) ([a & b] (b y))))");
     inner_fn = get_fn_const(*fn, 0, 0);
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -2, -1, vm::LDL, -1, -1, vm::IFN, 2));
-    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(10, nil, nil), b(vm::LDC, 1, 0, vm::LDC, 0, 0, vm::CALL, 1));
-    expect_body_with_consts_and_bytecode(inner_fn, 1, arrayv(nil, nil), b(vm::LDL, -1, -1, vm::LDC, 0, 0, vm::LDC, 1, 0, vm::CALL, 2));
-    expect_body_with_consts_and_bytecode(inner_fn, 2, arrayv(nil, nil), b(vm::LDL, -1, -1, vm::LDC, 1, 0, vm::CALL, 1));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(10), b(vm::LDCV, 0, 0, vm::LDC, 0, 0, vm::CALL, 1));
+    expect_body_with_bytecode(inner_fn, 1, b(vm::LDL, -1, -1, vm::LDCV, 0, 0, vm::LDCV, 1, 0, vm::CALL, 2));
+    expect_body_with_bytecode(inner_fn, 2, b(vm::LDL, -1, -1, vm::LDCV, 1, 0, vm::CALL, 1));
 
     fn = compile_fn("(fn* [f] (fn* [] (f a-var)))");
     inner_fn = get_fn_const(*fn, 0, 0);
-    expect_body_with_consts_vars_and_bytecode(inner_fn, 0, arrayv(nil), arrayv(a_var), b(vm::LDC, 0, 0, vm::LDV, 0, 0, vm::CALL, 1));
+    expect_body_with_vars_and_bytecode(inner_fn, 0, arrayv(a_var), b(vm::LDCV, 0, 0, vm::LDV, 0, 0, vm::CALL, 1));
 
     fn = compile_fn("(fn* [f] (fn* [] (try* (f) (catch* cleo.core/Exception e e))))");
     inner_fn = get_fn_const(*fn, 0, 0);
-    expect_body_with_consts_exception_table_locals_and_bytecode(inner_fn, 0, arrayv(nil), {0, 5, 8, 0}, {*type::Exception}, 1,
-                                                                b(vm::LDC, 0, 0,
-                                                                  vm::CALL, 0,
-                                                                  vm::BR, 6, 0,
-                                                                  vm::STL, 0, 0,
-                                                                  vm::LDL, 0, 0));
+    expect_body_with_exception_table_locals_and_bytecode(inner_fn, 0, {0, 5, 8, 0}, {*type::Exception}, 1,
+                                                         b(vm::LDCV, 0, 0,
+                                                           vm::CALL, 0,
+                                                           vm::BR, 6, 0,
+                                                           vm::STL, 0, 0,
+                                                           vm::LDL, 0, 0));
 
     fn = compile_fn("(fn* f1 [x y] (f1 y x))");
     expect_body_with_bytecode(*fn, 0, b(vm::LDL, -3, -1, vm::LDL, -1, -1, vm::LDL, -2, -1, vm::CALL, 2));
@@ -1379,7 +1386,7 @@ TEST_F(compile_test, should_compile_functions_creating_functions)
 
     fn = compile_fn("(fn* f1 [x] (fn* [] (f1 x 20)))");
     inner_fn = get_fn_const(*fn, 0, 0);
-    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(20, nil, nil), b(vm::LDC, 1, 0, vm::LDC, 2, 0, vm::LDC, 0, 0, vm::CALL, 2));
+    expect_body_with_consts_and_bytecode(inner_fn, 0, arrayv(20), b(vm::LDCV, 0, 0, vm::LDCV, 1, 0, vm::LDC, 0, 0, vm::CALL, 2));
     expect_body_with_consts_and_bytecode(*fn, 0, arrayv(inner_fn), b(vm::LDC, 0, 0, vm::LDL, -2, -1, vm::LDL, -1, -1, vm::IFN, 2));
 }
 

@@ -56,12 +56,13 @@ void invoke_body(Value body)
 {
     auto consts = get_bytecode_fn_body_consts(body);
     auto vars = get_bytecode_fn_body_vars(body);
+    auto closed_vals = get_bytecode_fn_body_closed_vals(body);
     auto exception_table = get_bytecode_fn_body_exception_table(body);
     auto locals_size = get_bytecode_fn_body_locals_size(body);
     auto bytes = get_bytecode_fn_body_bytes(body);
     auto bytes_size = get_bytecode_fn_body_bytes_size(body);
     stack_reserve(locals_size);
-    vm::eval_bytecode(consts, vars, nil, locals_size, exception_table, bytes, bytes_size);
+    vm::eval_bytecode(consts, vars, closed_vals, locals_size, exception_table, bytes, bytes_size);
 }
 
 void call_bytecode_fn(std::uint32_t n)
@@ -373,8 +374,9 @@ void eval_bytecode(Value constants, Value vars, Value closed, std::uint32_t loca
             if (auto n = p[1])
             {
                 auto fn = stack[stack.size() - n - 1];
-                auto consts = &stack[stack.size() - n];
-                stack[stack.size() - n - 1] = bytecode_fn_replace_consts(fn, consts, n).value();
+                auto vals = &stack[stack.size() - n];
+                Root vals_array{create_array(vals, n)};
+                stack[stack.size() - n - 1] = bytecode_fn_set_closed_vals(fn, *vals_array).value();
                 stack_pop(n);
             }
             p += 2;

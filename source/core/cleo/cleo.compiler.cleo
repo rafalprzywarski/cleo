@@ -550,6 +550,12 @@
       (conj-u16! n)))
 
 
+(defn- conj-LDCV! [v n]
+  (-> v
+      (conj! vm/LDCV)
+      (conj-u16! n)))
+
+
 (defn- translate-const! [{:keys [consts] :as body} val]
   (if val
     (let [consts (intern-strict consts val)]
@@ -608,7 +614,7 @@
   (if (contains? parent-locals index)
     (-> body
         (update :parent-local-loads (fn [pll] (conj! pll {:offset (count (:bytecode body)), :index index})))
-        (update :bytecode (fn [bc] (-> bc (conj-LDC! 0)))))
+        (update :bytecode (fn [bc] (-> bc (conj-LDCV! 0)))))
     (update body :bytecode (fn [bc] (-> bc (conj! vm/LDL) (conj-i16! (locals index)))))))
 
 
@@ -996,21 +1002,12 @@
     v))
 
 
-(defn conj-nils [v n]
-  (-> (transient v)
-      (conj-nils! n)
-      persistent!))
-
-
 (defn init-loads [{:keys [consts parent-local-loads] :as body} closed-parent-locals]
-  (let [const-base (count consts)]
-    (-> body
-        (update :consts (fn [c] (conj-nils (or c []) (count closed-parent-locals))))
-        (update :bytecode (fn [bc]
-                            (persistent! (reduce (fn [bc {:keys [index offset]}]
-                                                   (assoc-u16! bc (inc offset) (+ const-base (closed-parent-locals index))))
-                                                 (transient bc)
-                                                 parent-local-loads)))))))
+  (update body :bytecode (fn [bc]
+                           (persistent! (reduce (fn [bc {:keys [index offset]}]
+                                                  (assoc-u16! bc (inc offset) (closed-parent-locals index)))
+                                                (transient bc)
+                                                parent-local-loads)))))
 
 
 (defn intern-parent-locals [bodies]

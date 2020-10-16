@@ -168,6 +168,7 @@
     LDDV 3
     LDV 3
     LDSF 3
+    LDCV 3
     STL 3
     BR 3
     BNIL 3
