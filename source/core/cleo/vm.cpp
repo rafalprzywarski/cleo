@@ -61,7 +61,7 @@ void invoke_body(Value body)
     auto bytes = get_bytecode_fn_body_bytes(body);
     auto bytes_size = get_bytecode_fn_body_bytes_size(body);
     stack_reserve(locals_size);
-    vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
+    vm::eval_bytecode(consts, vars, nil, locals_size, exception_table, bytes, bytes_size);
 }
 
 void call_bytecode_fn(std::uint32_t n)
@@ -162,7 +162,7 @@ void apply_bytecode_fn(std::uint32_t n)
 
 }
 
-void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size)
+void eval_bytecode(Value constants, Value vars, Value closed, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size)
 {
     auto p = bytecode;
     auto endp = p + size;
@@ -247,6 +247,10 @@ void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value
             p += 3;
             break;
         }
+        case LDCV:
+            stack_push(get_array_elem_unchecked(closed, read_u16(p + 1)));
+            p += 3;
+            break;
         case STL:
         {
             stack[stack_base + read_i16(p + 1)] = stack.back();

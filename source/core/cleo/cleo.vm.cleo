@@ -49,6 +49,12 @@
 
 
 (def {:const true
+      :arglist '([(index UInt16)])
+      :doc "LoadD Closed Value - Load a value from the closed values table into the value stack"}
+  LDCV 0x16)
+
+
+(def {:const true
       :arglists '([(index Int8)])
       :doc "STore Local - pop a value from the value stack and store it as a local (if index is nonnegative) or a fn argument (if index is negative)"}
   STL 0x20)

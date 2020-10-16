@@ -26,14 +26,20 @@ struct vm_test : Test
     template <std::size_t N>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Byte, N>& bc)
     {
-        vm::eval_bytecode(constants, vars, locals_size, nil, bc.data(), bc.size());
+        vm::eval_bytecode(constants, vars, nil, locals_size, nil, bc.data(), bc.size());
+    }
+
+    template <std::size_t N>
+    void eval_bytecode(Value constants, Value vars, Value closed_vals, std::uint32_t locals_size, const std::array<Byte, N>& bc)
+    {
+        vm::eval_bytecode(constants, vars, closed_vals, locals_size, nil, bc.data(), bc.size());
     }
 
     template <std::size_t N, std::size_t K>
     void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, const std::array<Int64, K * 4>& et_entries, const std::array<Value, K>& et_types, const std::array<Byte, N>& bc)
     {
         Root etv{create_bytecode_fn_exception_table(et_entries.data(), et_types.data(), et_types.size())};
-        vm::eval_bytecode(constants, vars, locals_size, *etv, bc.data(), bc.size());
+        vm::eval_bytecode(constants, vars, nil, locals_size, *etv, bc.data(), bc.size());
     }
     static Force create_constants(std::vector<std::pair<std::uint32_t, Int64>> vals)
     {
@@ -137,6 +143,45 @@ TEST_F(vm_test, ldc)
     EXPECT_EQ_VALS(get_array_elem(*constants, 1), stack[2]);
     EXPECT_EQ_VALS(get_array_elem(*constants, 0), stack[1]);
     EXPECT_EQ_VALS(get_array_elem(*constants, 255), stack[0]);
+}
+
+TEST_F(vm_test, ldcv)
+{
+    Root closed_vals{create_constants({
+      {0, 13},
+      {1, 17},
+      {2, 19},
+      {128, 301},
+      {255, 302},
+      {256, 303},
+      {32767, 304},
+      {65535, 305}})};
+
+    const std::array<Byte, 3> bc1{{LDCV, Byte(-1), 0}};
+    eval_bytecode(nil, nil, *closed_vals, 0, bc1);
+
+    ASSERT_EQ(1u, stack.size());
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 255), stack[0]);
+
+    const std::array<Byte, 21> bc2{{
+        LDCV, 0, 0,
+        LDCV, 1, 0,
+        LDCV, 2, 0,
+        LDCV, Byte(-128), 0,
+        LDCV, 0, 1,
+        LDCV, Byte(-1), 127,
+        LDCV, Byte(-1), Byte(-1)}};
+    eval_bytecode(nil, nil, *closed_vals, 0, bc2);
+
+    ASSERT_EQ(8u, stack.size());
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 65535), stack[7]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 32767), stack[6]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 256), stack[5]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 128), stack[4]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 2), stack[3]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 1), stack[2]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 0), stack[1]);
+    EXPECT_EQ_VALS(get_array_elem(*closed_vals, 255), stack[0]);
 }
 
 TEST_F(vm_test, ldl)

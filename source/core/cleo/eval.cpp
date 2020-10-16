@@ -56,7 +56,7 @@ Force call_bytecode_fn(const Value *elems, std::uint32_t elems_size, std::uint8_
     else
         stack_push(elems, elems + elems_size);
     stack_reserve(locals_size);
-    vm::eval_bytecode(consts, vars, locals_size, exception_table, bytes, bytes_size);
+    vm::eval_bytecode(consts, vars, nil, locals_size, exception_table, bytes, bytes_size);
     return stack.back();
 }
 

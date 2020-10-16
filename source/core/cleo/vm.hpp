@@ -21,6 +21,7 @@ constexpr Byte LDDV = 0x12;
 constexpr Byte LDV = 0x13;
 constexpr Byte LDDF = 0x14;
 constexpr Byte LDSF = 0x15;
+constexpr Byte LDCV = 0x16;
 
 constexpr Byte STL = 0x20;
 constexpr Byte STVV = 0x21;
@@ -48,7 +49,7 @@ constexpr Byte NOT = 0x90;
 
 constexpr Byte NOP = 0xff;
 
-void eval_bytecode(Value constants, Value vars, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size);
+void eval_bytecode(Value constants, Value vars, Value closed, std::uint32_t locals_size, Value exception_table, const Byte *bytecode, std::uint32_t size);
 
 }
 }
