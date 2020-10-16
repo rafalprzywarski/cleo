@@ -34,6 +34,7 @@ const vm::Byte *get_bytecode_fn_body_bytes(Value body);
 Int64 get_bytecode_fn_body_bytes_size(Value body);
 
 Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value ast);
+Force create_open_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value ast);
 Value get_bytecode_fn_name(Value fn);
 std::uint8_t get_bytecode_fn_size(Value fn);
 Int64 get_bytecode_fn_arity(Value fn, std::uint8_t i);

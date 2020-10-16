@@ -255,6 +255,7 @@ const ConstRoot Seqable{create_protocol("cleo.core", "Seqable")};
 const ConstRoot Sequence{create_protocol("cleo.core", "Sequence")};
 const ConstRoot Callable{create_protocol("cleo.core", "Callable")};
 const ConstRoot BytecodeFn{create_dynamic_type("cleo.core", "BytecodeFn")};
+const ConstRoot OpenBytecodeFn{create_dynamic_type("cleo.core", "OpenBytecodeFn")};
 const ConstRoot BytecodeFnBody{create_dynamic_type("cleo.core", "BytecodeFnBody")};
 const ConstRoot BytecodeFnExceptionTable{create_dynamic_type("cleo.core", "BytecodeFnExceptionTable")};
 const ConstRoot Atom{create_static_type("cleo.core", "Atom", {"value"})};
@@ -787,11 +788,11 @@ Force pr_str_var(Value var)
     return create_string("#'" + to_string(get_var_name(var)));
 }
 
-Force pr_str_bytecode_fn(Value fn)
+Force pr_str_open_bytecode_fn(Value fn)
 {
-    check_type("fn", fn, *type::BytecodeFn);
+    check_kind("fn", fn, *type::OpenBytecodeFn);
     std::ostringstream os;
-    os << "#" << to_string(get_object_type_name(*type::BytecodeFn)) << "[" << to_string(get_bytecode_fn_name(fn)) << " 0x" << std::hex << fn.bits() << "]";
+    os << "#" << to_string(get_object_type_name(get_value_type(fn))) << "[" << to_string(get_bytecode_fn_name(fn)) << " 0x" << std::hex << fn.bits() << "]";
     return create_string(os.str());
 }
 
@@ -1385,7 +1386,7 @@ Force disasm(Value fn)
 {
     if (get_value_type(fn).is(*type::Var))
         fn = get_var_value(fn);
-    check_type("fn", fn, *type::BytecodeFn);
+    check_kind("fn", fn, *type::OpenBytecodeFn);
     Root dfn{*EMPTY_MAP};
     dfn = map_assoc(*dfn, create_keyword("name"), get_bytecode_fn_name(fn));
     Root bodies{*EMPTY_VECTOR};
@@ -1406,7 +1407,7 @@ Force disasm(Value fn)
             dbody = map_assoc(*dbody, create_keyword("exception-table"), *det);
         bodies = array_conj(*bodies, *dbody);
         for (Int64 j = 0; j < get_array_size(consts); ++j)
-            if (get_value_type(get_array_elem(consts, j)).is(*type::BytecodeFn))
+            if (isa(get_value_type(get_array_elem(consts, j)), *type::OpenBytecodeFn))
                 fns = array_conj(*fns, get_array_elem(consts, j));
     }
     dfn = map_assoc(*dfn, create_keyword("bodies"), *bodies);
@@ -1416,7 +1417,7 @@ Force disasm(Value fn)
 
 Force get_bytecode_fn_body(Value fn, Value arity)
 {
-    check_type("fn", fn, *type::BytecodeFn);
+    check_kind("fn", fn, *type::OpenBytecodeFn);
     check_type("arity", arity, type::Int64);
     auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
     if (!body_arity.first || body_arity.second != get_int64_value(arity))
@@ -1435,7 +1436,7 @@ Force get_bytecode_fn_body(Value fn, Value arity)
 
 Force get_bytecode_fn_consts(Value fn, Value arity)
 {
-    check_type("fn", fn, *type::BytecodeFn);
+    check_kind("fn", fn, *type::OpenBytecodeFn);
     check_type("arity", arity, type::Int64);
     auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
     if (!body_arity.first || body_arity.second != get_int64_value(arity))
@@ -1445,7 +1446,7 @@ Force get_bytecode_fn_consts(Value fn, Value arity)
 
 Force get_bytecode_fn_vars(Value fn, Value arity)
 {
-    check_type("fn", fn, *type::BytecodeFn);
+    check_kind("fn", fn, *type::OpenBytecodeFn);
     check_type("arity", arity, type::Int64);
     auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
     if (!body_arity.first || body_arity.second != get_int64_value(arity))
@@ -1455,7 +1456,7 @@ Force get_bytecode_fn_vars(Value fn, Value arity)
 
 Force get_bytecode_fn_locals_size(Value fn, Value arity)
 {
-    check_type("fn", fn, *type::BytecodeFn);
+    check_kind("fn", fn, *type::OpenBytecodeFn);
     check_type("arity", arity, type::Int64);
     auto body_arity = bytecode_fn_find_body(fn, get_int64_value(arity));
     if (!body_arity.first || body_arity.second != get_int64_value(arity))
@@ -1656,7 +1657,9 @@ struct Initialize
         derive(*type::PersistentVector, *type::Seqable);
         define_protocol(*type::Sequence);
         define_protocol(*type::Callable);
+        define_type(*type::OpenBytecodeFn);
         define_type(*type::BytecodeFn);
+        derive(*type::BytecodeFn, *type::OpenBytecodeFn);
         define_type(*type::BytecodeFnBody);
         define_type(*type::BytecodeFnExceptionTable);
         define_type(*type::Atom);
@@ -2172,8 +2175,8 @@ struct Initialize
         f = create_native_function1<pr_str_var, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Var, *f);
 
-        f = create_native_function1<pr_str_bytecode_fn, &PR_STR_OBJ>();
-        define_method(PR_STR_OBJ, *type::BytecodeFn, *f);
+        f = create_native_function1<pr_str_open_bytecode_fn, &PR_STR_OBJ>();
+        define_method(PR_STR_OBJ, *type::OpenBytecodeFn, *f);
 
         f = create_native_function1<pr_str_multimethod, &PR_STR_OBJ>();
         define_method(PR_STR_OBJ, *type::Multimethod, *f);

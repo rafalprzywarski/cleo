@@ -13,6 +13,17 @@ namespace cleo
 namespace
 {
 
+Force create_bytecode_fn(Value type, Value name, const Value *bodies, std::uint8_t n, Value ast)
+{
+    std::vector<Int64> arities(n);
+    std::transform(bodies, bodies + n, begin(arities), get_bytecode_fn_body_arity);
+    std::vector<Value> elems(3 + n);
+    elems[0] = name;
+    elems[1] = ast;
+    std::copy_n(bodies, n, begin(elems) + 3);
+    return create_object(type, arities.data(), arities.size(), elems.data(), elems.size());
+}
+
 Force bytecode_fn_body_set_closed_vals(Value b, Value vals)
 {
     return create_bytecode_fn_body(get_bytecode_fn_body_arity(b),
@@ -131,13 +142,12 @@ Int64 get_bytecode_fn_body_bytes_size(Value body)
 
 Force create_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value ast)
 {
-    std::vector<Int64> arities(n);
-    std::transform(bodies, bodies + n, begin(arities), get_bytecode_fn_body_arity);
-    std::vector<Value> elems(3 + n);
-    elems[0] = name;
-    elems[1] = ast;
-    std::copy_n(bodies, n, begin(elems) + 3);
-    return create_object(*type::BytecodeFn, arities.data(), arities.size(), elems.data(), elems.size());
+    return create_bytecode_fn(*type::BytecodeFn, name, bodies, n, ast);
+}
+
+Force create_open_bytecode_fn(Value name, const Value *bodies, std::uint8_t n, Value ast)
+{
+    return create_bytecode_fn(*type::OpenBytecodeFn, name, bodies, n, ast);
 }
 
 Value get_bytecode_fn_name(Value fn)

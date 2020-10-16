@@ -861,6 +861,14 @@ Force create_fn(Value name, std::vector<Value> bodies, Value ast)
     return create_bytecode_fn(name, bodies.data(), bodies.size(), ast);
 }
 
+Force create_open_fn(Value name, std::vector<Value> bodies, Value ast)
+{
+    std::sort(
+        begin(bodies), end(bodies),
+        [](auto& l, auto& r) { return std::abs(get_bytecode_fn_body_arity(l)) < std::abs(get_bytecode_fn_body_arity(r)); });
+    return create_open_bytecode_fn(name, bodies.data(), bodies.size(), ast);
+}
+
 Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
 {
     if (!is_seq(form))
@@ -893,7 +901,7 @@ Force compile_ifn(Value form, Value parent_locals, Root& used_locals)
         bodies.push_back(rbodies[i]);
         forms = seq_next(*forms);
     }
-    return create_fn(name, std::move(bodies), nil);
+    return (*used_locals ? create_open_fn : create_fn)(name, std::move(bodies), nil);
 }
 
 Force deserialize_exception_table(Value et)
@@ -960,6 +968,7 @@ Force serialize_fn(Value fn)
     Value fn_bodies = map_get(fn, create_keyword("bodies"));
     Value name = map_get(fn, create_keyword("name"));
     Value ast = map_get(fn, create_keyword("ast"));
+    bool has_closed_locals = !map_get(fn, create_keyword("closed-parent-locals")).is_nil();
     Value dep_vars = map_get(fn, create_keyword("dep-vars"));
     Value dep_fns = map_get(fn, create_keyword("dep-fns"));
     auto body_count = count(fn_bodies);
@@ -1002,7 +1011,7 @@ Force serialize_fn(Value fn)
         bodies.push_back(body_roots[bodies.size()]);
     }
 
-    Root sfn{create_fn(name, bodies, ast)};
+    Root sfn{(has_closed_locals ? create_open_fn : create_fn)(name, bodies, ast)};
     for (Root s{seq(dep_vars)}; *s; s = seq_next(*s))
     {
         Root var{seq_first(*s)};

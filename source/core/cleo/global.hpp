@@ -310,6 +310,7 @@ extern const ConstRoot Seqable;
 extern const ConstRoot Sequence;
 extern const ConstRoot Callable;
 extern const ConstRoot BytecodeFn;
+extern const ConstRoot OpenBytecodeFn;
 extern const ConstRoot BytecodeFnBody;
 extern const ConstRoot BytecodeFnExceptionTable;
 extern const ConstRoot Atom;

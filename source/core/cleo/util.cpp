@@ -59,6 +59,14 @@ void check_type(const std::string& name, Value val, Value type)
     throw_exception(new_illegal_argument(*msg));
 }
 
+void check_kind(const std::string& name, Value val, Value type)
+{
+    if (isa(get_value_type(val), type))
+        return;
+    Root msg{create_string(name + " expected to be of kind " + to_string(type))};
+    throw_exception(new_illegal_argument(*msg));
+}
+
 void throw_illegal_argument(const std::string& msg)
 {
     Root s{create_string(msg)};

@@ -12,6 +12,7 @@ Force CLEO_CDECL create_arg_type_error(Value val, std::uint8_t n);
 [[noreturn]] void throw_arg_type_error(Value val, std::uint8_t n);
 void check_arity(Value name, std::uint8_t num_args, std::uint8_t actual_num_args);
 void check_type(const std::string& name, Value val, Value type);
+void check_kind(const std::string& name, Value val, Value type);
 [[noreturn]] void throw_illegal_argument(const std::string& msg);
 [[noreturn]] void throw_integer_overflow();
 [[noreturn]] void throw_index_out_of_bounds();
