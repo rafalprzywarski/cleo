@@ -1254,6 +1254,12 @@ Force disasm_bytes(const vm::Byte *bytes, Int64 size, Value consts, Value vars)
             dbs = transient_array_conj(*dbs, *oc);
             p += 3;
             break;
+        case vm::LDCV:
+            x = create_int64(read_u16(p + 1));
+            oc = mk("LDCV", 3, *x);
+            dbs = transient_array_conj(*dbs, *oc);
+            p += 3;
+            break;
         case vm::STL:
             x = create_int64(read_i16(p + 1));
             oc = mk("STL", 3, *x);
