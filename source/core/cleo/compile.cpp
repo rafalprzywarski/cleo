@@ -39,7 +39,7 @@ struct Compiler
 
     std::vector<vm::Byte> code;
     std::int16_t locals_size = 0;
-    Root consts{transient_array(*EMPTY_VECTOR)};
+    Root consts{*EMPTY_HASH_MAP};
     Root vars{transient_array(*EMPTY_VECTOR)};
     Root parent_local_refs;
     std::vector<Int64> et_entries;
@@ -181,18 +181,29 @@ Int64 add_var(Root& vars, Value v)
 
 Int64 add_const(Root& consts, Value c)
 {
-    auto n = get_transient_array_size(*consts);
+    auto n = get_persistent_hash_map_size(*consts);
     if (n == MAX_CONSTS)
         throw_compilation_error("Too many constants: " + std::to_string(n + 1));
-    for (Int64 i = 0; i < n; ++i)
-    {
-        auto e = get_transient_array_elem(*consts, i);
-        if (get_value_type(e).is(get_value_type(c)) && e == c)
-            return i;
-    }
-
-    consts = transient_array_conj(*consts, c);
+    std::array<Value, 2> atc{{get_value_type(c), c}};
+    Root tc{create_array(atc.data(), atc.size())};
+    if (Value index = persistent_hash_map_get(*consts, *tc))
+        return get_int64_value(index);
+    Root rn{create_int64(n)};
+    consts = persistent_hash_map_assoc(*consts, *tc, *rn);
     return n;
+}
+
+Force serialize_consts(Value consts)
+{
+    auto n = get_persistent_hash_map_size(consts);
+    Root serialized{create_array(nullptr, n)};
+    serialized = transient_array(*serialized);
+    for (Root s{persistent_hash_map_seq(consts)}; *s; s = get_persistent_hash_map_seq_next(*s))
+    {
+        auto kv = get_persistent_hash_map_seq_first(*s);
+        transient_array_assoc_elem(*serialized, get_int64_value(get_array_elem_unchecked(kv, 1)), get_array_elem_unchecked(get_array_elem_unchecked(kv, 0), 1));
+    }
+    return transient_array_persistent(*serialized);
 }
 
 Int64 Compiler::add_local_ref(Value sym)
@@ -845,8 +856,8 @@ Force compile_fn_body(Value name, Value form, Value parent_locals, Root& used_lo
     auto scope = create_fn_body_scope(form, *locals, parent_locals);
     c.compile_value(scope, *val);
     auto used_locals_size = get_transient_array_size(*c.parent_local_refs);
-    auto consts_size = get_transient_array_size(*c.consts);
-    Root consts{consts_size > 0 ? transient_array_persistent(*c.consts) : nil};
+    auto consts_size = get_persistent_hash_map_size(*c.consts);
+    Root consts{consts_size > 0 ? serialize_consts(*c.consts) : nil};
     Root vars{get_transient_array_size(*c.vars) > 0 ? transient_array_persistent(*c.vars) : nil};
     used_locals = used_locals_size > 0 ? transient_array_persistent(*c.parent_local_refs) : nil;
     Root exception_table{!c.et_types.empty() ? create_bytecode_fn_exception_table(c.et_entries.data(), c.et_types.data(), c.et_types.size()) : nil};
