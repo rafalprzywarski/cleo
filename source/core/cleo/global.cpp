@@ -440,6 +440,10 @@ const Value EQUAL_DISPATCH = create_symbol("equal-dispatch");
 
 const Value BYTE_ARRAY = create_symbol("cleo.core", "byte-array");
 
+const Value TRANSIENT_VECTOR = create_symbol("cleo.core", "transient-vector");
+const Value PERSISTENT_VECTOR = create_symbol("cleo.core", "persistent-vector!");
+const Value TRANSIENT_VECTOR_ASSOC = create_symbol("cleo.core", "transient-vector-assoc!");
+
 const Root first_type{create_native_function([](const Value *args, std::uint8_t num_args) -> Force
 {
     return (num_args < 1) ? nil : get_value_type(args[0]);
@@ -2301,6 +2305,10 @@ struct Initialize
         define_function(GET_TIME, create_native_function0<get_time, &GET_TIME>());
 
         define_multimethod(CONJ_E, *first_type, undefined);
+
+        define_function(TRANSIENT_VECTOR, create_native_function1<transient_array, &TRANSIENT_VECTOR>(), *CONST_META);
+        define_function(PERSISTENT_VECTOR, create_native_function1<transient_array_persistent, &PERSISTENT_VECTOR>(), *CONST_META);
+        define_function(TRANSIENT_VECTOR_ASSOC, create_native_function3<transient_array_assoc, &TRANSIENT_VECTOR_ASSOC>(), *CONST_META);
 
         define_method(CONJ_E, *type::TransientArray, *rt::transient_array_conj);
         f = create_native_function2<transient_byte_array_conj, &CONJ_E>();
