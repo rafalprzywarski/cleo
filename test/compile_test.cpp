@@ -331,7 +331,7 @@ TEST_F(compile_test, should_compile_functions_returning_constants)
 TEST_F(compile_test, should_fail_when_there_are_too_many_constants)
 {
     Override<decltype(gc_frequency)> ovf{gc_frequency, 262144};
-    const Int64 VECTOR_CONSTS = 4;
+    const Int64 VECTOR_CONSTS = 4; // [], transient, conj!, persistent!
     Root consts{transient_array(*EMPTY_VECTOR)}, v;
     consts = transient_array_conj(*consts, create_symbol("x"));
     for (Int64 i = 0; i < (65536 - VECTOR_CONSTS); ++i)
@@ -341,19 +341,6 @@ TEST_F(compile_test, should_fail_when_there_are_too_many_constants)
     }
     consts = transient_array_persistent(*consts);
     Root form{list(FN, arrayv(create_symbol("x")), *consts)};
-    expect_compilation_error(*form, "Too many constants: 65536");
-
-    consts = transient_array(*EMPTY_VECTOR);
-    consts = transient_array_conj(*consts, create_symbol("x"));
-    consts = transient_array_conj(*consts, create_symbol("y"));
-    consts = transient_array_conj(*consts, create_symbol("z"));
-    for (Int64 i = 0; i < (65536 - VECTOR_CONSTS - 3); ++i)
-    {
-        v = i64(i);
-        consts = transient_array_conj(*consts, *v);
-    }
-    consts = transient_array_persistent(*consts);
-    form = list(FN, arrayv(create_symbol("x"), create_symbol("y"), create_symbol("z")), listv(FN, *EMPTY_VECTOR, *consts));
     expect_compilation_error(*form, "Too many constants: 65536");
 }
 
