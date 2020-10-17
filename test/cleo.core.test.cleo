@@ -122,23 +122,24 @@
 
 (def main
   (fn* main []
-    (do
-      (loop* [tests (seq @tests)]
-        (if tests
-          (do
-            (reset! current-test ((first tests) 0))
-            (try*
-             (((first tests) 1))
-             (catch* Exception e
-                     (fail "unexpected exception: " e
-                           (when (isa? (type e) LogicException)
-                             (str " callstack: " (pr-str (.-callstack e)))))))
-            (recur (next tests)))))
-      (print "ok:" (- (count @tests) (count @failed-tests)))
-      (if (< 0 (count @failed-tests))
-        (print " failed:" (count @failed-tests)))
-      (println)
-      (if (= 0 (count @failed-tests)) 0 1))))
+    (let* [start-time (get-time)]
+      (do
+        (loop* [tests (seq @tests)]
+          (if tests
+            (do
+              (reset! current-test ((first tests) 0))
+              (try*
+               (((first tests) 1))
+               (catch* Exception e
+                       (fail "unexpected exception: " e
+                             (when (isa? (type e) LogicException)
+                               (str " callstack: " (pr-str (.-callstack e)))))))
+              (recur (next tests)))))
+        (print "ok:" (- (count @tests) (count @failed-tests)))
+        (if (< 0 (count @failed-tests))
+          (print " failed:" (count @failed-tests)))
+        (println (str " (" (quot (- (get-time) start-time) 1000) " ms)"))
+        (if (= 0 (count @failed-tests)) 0 1)))))
 
 
 (deftest cast
