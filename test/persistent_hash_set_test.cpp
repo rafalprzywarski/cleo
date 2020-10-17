@@ -44,6 +44,7 @@ struct persistent_hash_set_test : Test
 
     Force create_key(const std::string& s)
     {
+        Override<decltype(gc_frequency)> ovf{gc_frequency, 4096};
         Root k{create_string(s)};
         return create_object1(*HashString, *k);
     }

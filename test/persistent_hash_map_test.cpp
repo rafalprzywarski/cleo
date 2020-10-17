@@ -44,6 +44,7 @@ struct persistent_hash_map_test : Test
 
     Force create_key(const std::string& s)
     {
+        Override<decltype(gc_frequency)> ovf{gc_frequency, 4096};
         Root k{create_string(s)};
         return create_object1(*HashString, *k);
     }
@@ -282,7 +283,7 @@ struct persistent_hash_map_test : Test
 
 struct persistent_hash_map_permutation_test : persistent_hash_map_test
 {
-    Override<decltype(gc_frequency)> ovf{gc_frequency, 64};
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 4096};
 };
 
 TEST_F(persistent_hash_map_test, should_be_created_empty)
