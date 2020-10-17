@@ -201,6 +201,7 @@ TEST_F(multimethod_test, should_fail_when_a_matching_method_does_not_exist)
 
 TEST_F(multimethod_test, get_method_should_check_for_ambiguity_after_selecting_the_best_match)
 {
+    Override<decltype(gc_frequency)> ovf{gc_frequency, 4096};
     for (int i = 0; i < 64; ++i)
     {
         auto name = symbol("hierarchies" + std::to_string(i));

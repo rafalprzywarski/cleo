@@ -18,6 +18,7 @@ struct vm_test : Test
 {
     vm_test() : Test("cleo.vm.test")
     {
+        Override<decltype(gc_frequency)> ovf{gc_frequency, 4096};
         refer(CLEO_CORE);
         stack.clear();
         int_stack.clear();
