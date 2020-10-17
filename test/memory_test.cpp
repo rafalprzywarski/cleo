@@ -74,7 +74,7 @@ TEST_F(memory_test, Root_should_prevent_garbage_collection)
     ASSERT_EQ(num_allocations, allocations.size());
 }
 
-TEST_F(memory_test, should_trace_symbols)
+TEST_F(memory_test, should_allocate_symbols_permanently)
 {
     create_symbol("cleo.memory.test", "not_collected1");
     create_symbol("cleo.memory.test", "not_collected2");
@@ -86,7 +86,7 @@ TEST_F(memory_test, should_trace_symbols)
     ASSERT_EQ(num_allocations, allocations.size());
 }
 
-TEST_F(memory_test, should_trace_keywords)
+TEST_F(memory_test, should_allocate_keywords_permanently)
 {
     create_keyword("cleo.memory.test", "not_collected1");
     create_keyword("cleo.memory.test", "not_collected2");

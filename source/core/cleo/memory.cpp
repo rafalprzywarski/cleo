@@ -46,14 +46,6 @@ void mark_value(Value val)
 
         switch (get_value_tag(val))
         {
-            case tag::SYMBOL:
-                vals.push_back(get_symbol_namespace(val));
-                vals.push_back(get_symbol_name(val));
-                break;
-            case tag::KEYWORD:;
-                vals.push_back(get_keyword_namespace(val));
-                vals.push_back(get_keyword_name(val));
-                break;
             case tag::OBJECT:
                 {
                     vals.push_back(get_object_type(val));
@@ -87,20 +79,6 @@ void mark_value(Value val)
 void unmark(void *ptr)
 {
     tag_ref(ptr) = 0;
-}
-
-void mark_symbols()
-{
-    for (auto& ns : symbols)
-        for (auto& sym : ns.second)
-            mark_value(sym.second);
-}
-
-void mark_keyword()
-{
-    for (auto& ns : keywords)
-        for (auto& sym : ns.second)
-            mark_value(sym.second);
 }
 
 void mark_vars()
@@ -158,7 +136,7 @@ std::pair<std::size_t, std::vector<std::pair<std::size_t, unsigned>>> collect_al
 
 }
 
-void *mem_alloc(std::size_t size)
+void *mem_palloc(std::size_t size)
 {
     if (gc_counter == 0)
     {
@@ -175,6 +153,12 @@ void *mem_alloc(std::size_t size)
         std::abort();
     ptr += OFFSET;
     unmark(ptr);
+    return ptr;
+}
+
+void *mem_alloc(std::size_t size)
+{
+    auto ptr = mem_palloc(size);
     allocations.push_back({ptr, size + OFFSET});
     return ptr;
 }
@@ -187,8 +171,6 @@ void mem_free(const Allocation& a)
 void gc()
 {
     auto t0 = get_time();
-    mark_symbols();
-    mark_keyword();
     mark_vars();
     mark_extra_roots();
     mark_stack();

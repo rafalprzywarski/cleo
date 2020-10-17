@@ -56,154 +56,6 @@ Value tag_ptr(void *ptr, Tag tag)
     return tag_data(reinterpret_cast<std::uintptr_t>(ptr), tag);
 }
 
-}
-
-Force create_native_function(NativeFunction f, Value name)
-{
-    assert(!name || get_value_tag(name) == tag::SYMBOL);
-    auto val = alloc<NativeFunctionWithName>();
-    val->name = name;
-    val->ptr = f;
-    return tag_ptr(val, tag::NATIVE_FUNCTION);
-}
-
-NativeFunction get_native_function_ptr(Value fn)
-{
-    return get_ptr<NativeFunctionWithName>(fn)->ptr;
-}
-
-Value get_native_function_name(Value fn)
-{
-    return get_ptr<NativeFunctionWithName>(fn)->name;
-}
-
-Value create_symbol(const std::string& ns, const std::string& name)
-{
-    auto& entry = symbols[ns][name];
-    if (entry)
-        return entry;
-    Root ns_root, name_root;
-    if (!ns.empty())
-        ns_root = create_string(ns);
-    name_root = create_string(name);
-    auto val = alloc<Symbol>();
-    val->ns = *ns_root;
-    val->name = *name_root;
-    val->hashVal = 0;
-    return entry = tag_ptr(val, tag::SYMBOL);
-}
-
-Value create_symbol(const std::string& name)
-{
-    return create_symbol({}, name);
-}
-
-Value get_symbol_namespace(Value s)
-{
-    return get_ptr<Symbol>(s)->ns;
-}
-
-Value get_symbol_name(Value s)
-{
-    return get_ptr<Symbol>(s)->name;
-}
-
-std::uint32_t get_symbol_hash(Value val)
-{
-    return get_ptr<Symbol>(val)->hashVal;
-}
-
-void set_symbol_hash(Value val, std::uint32_t h)
-{
-    get_ptr<Symbol>(val)->hashVal = h;
-}
-
-Value create_keyword(const std::string& ns, const std::string& name)
-{
-    auto& entry = keywords[ns][name];
-    if (entry)
-        return entry;
-    Root ns_root, name_root;
-    if (!ns.empty())
-        ns_root = create_string(ns);
-    name_root = create_string(name);
-    auto val = alloc<Keyword>();
-    val->ns = *ns_root;
-    val->name = *name_root;
-    val->hashVal = 0;
-    return entry = tag_ptr(val, tag::KEYWORD);
-}
-
-Value create_keyword(const std::string& name)
-{
-    return create_keyword({}, name);
-}
-
-Value get_keyword_namespace(Value s)
-{
-    return get_ptr<Keyword>(s)->ns;
-}
-
-Value get_keyword_name(Value s)
-{
-    return get_ptr<Keyword>(s)->name;
-}
-
-std::uint32_t get_keyword_hash(Value val)
-{
-    return get_ptr<Keyword>(val)->hashVal;
-}
-
-void set_keyword_hash(Value val, std::uint32_t h)
-{
-    get_ptr<Keyword>(val)->hashVal = h;
-}
-
-Value create_int48(Int64 intVal)
-{
-    return tag_data(std::uint64_t(intVal), tag::INT48);
-}
-
-Force create_int64(Int64 intVal)
-{
-    static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
-    if ((Int64(std::uint64_t(intVal) << tag::DATA_SHIFT) >> tag::DATA_SHIFT) == intVal)
-        return create_int48(intVal);
-    auto val = alloc<Int64>();
-    *val = intVal;
-    return tag_ptr(val, tag::INT64);
-}
-
-ValueBits CLEO_CDECL create_int64_unsafe(Int64 val)
-{
-    return create_int64(val).value().bits();
-}
-
-Value create_uchar(Char32 val)
-{
-    return tag_data(std::uint64_t(val), tag::UCHAR);
-}
-
-Char32 get_uchar_value(Value val)
-{
-    return Char32(val.bits());
-}
-
-Force create_float64(Float64 floatVal)
-{
-    if (std::isnan(floatVal))
-        return Value{tag::FLOAT64};
-    return Value{bit_cast<ValueBits>(floatVal) ^ tag::FLIP_MASK};
-}
-
-Float64 get_float64_value(Value val)
-{
-    return bit_cast<Float64>(val.bits() ^ tag::FLIP_MASK);
-}
-
-namespace
-{
-
 auto valid_utf8_code_point_length(const char* str, const char *endp)
 {
     struct R
@@ -301,12 +153,11 @@ std::uint32_t get_utf8_string_len(const char* str, std::uint32_t size)
     return n;
 }
 
-}
-
-Force create_string(const char* str, std::uint32_t size)
+template <typename Alloc>
+Force create_string(const char* str, std::uint32_t size, Alloc alloc)
 {
     auto valid_size = valid_utf8_string_size(str, size);
-    auto val = static_cast<String *>(mem_alloc(offsetof(String, firstChar) + valid_size.first + 1));
+    auto val = static_cast<String *>(alloc(offsetof(String, firstChar) + valid_size.first + 1));
     val->size = valid_size.first;
     val->hashVal = 0;
     if (valid_size.second)
@@ -316,6 +167,162 @@ Force create_string(const char* str, std::uint32_t size)
     (&val->firstChar)[valid_size.first] = 0;
     val->len = get_utf8_string_len(&val->firstChar, val->size);
     return tag_ptr(val, tag::UTF8STRING);
+}
+
+template <typename Alloc>
+Force create_string(const std::string& s, Alloc alloc)
+{
+    return create_string(s.c_str(), s.size(), alloc);
+}
+
+}
+
+Force create_native_function(NativeFunction f, Value name)
+{
+    assert(!name || get_value_tag(name) == tag::SYMBOL);
+    auto val = palloc<NativeFunctionWithName>();
+    val->name = name;
+    val->ptr = f;
+    return tag_ptr(val, tag::NATIVE_FUNCTION);
+}
+
+NativeFunction get_native_function_ptr(Value fn)
+{
+    return get_ptr<NativeFunctionWithName>(fn)->ptr;
+}
+
+Value get_native_function_name(Value fn)
+{
+    return get_ptr<NativeFunctionWithName>(fn)->name;
+}
+
+Value create_symbol(const std::string& ns, const std::string& name)
+{
+    auto& entry = symbols[ns][name];
+    if (entry)
+        return entry;
+    Root ns_root, name_root;
+    if (!ns.empty())
+        ns_root = create_string(ns, mem_palloc);
+    name_root = create_string(name, mem_palloc);
+    auto val = palloc<Symbol>();
+    val->ns = *ns_root;
+    val->name = *name_root;
+    val->hashVal = 0;
+    return entry = tag_ptr(val, tag::SYMBOL);
+}
+
+Value create_symbol(const std::string& name)
+{
+    return create_symbol({}, name);
+}
+
+Value get_symbol_namespace(Value s)
+{
+    return get_ptr<Symbol>(s)->ns;
+}
+
+Value get_symbol_name(Value s)
+{
+    return get_ptr<Symbol>(s)->name;
+}
+
+std::uint32_t get_symbol_hash(Value val)
+{
+    return get_ptr<Symbol>(val)->hashVal;
+}
+
+void set_symbol_hash(Value val, std::uint32_t h)
+{
+    get_ptr<Symbol>(val)->hashVal = h;
+}
+
+Value create_keyword(const std::string& ns, const std::string& name)
+{
+    auto& entry = keywords[ns][name];
+    if (entry)
+        return entry;
+    Root ns_root, name_root;
+    if (!ns.empty())
+        ns_root = create_string(ns, mem_palloc);
+    name_root = create_string(name, mem_palloc);
+    auto val = palloc<Keyword>();
+    val->ns = *ns_root;
+    val->name = *name_root;
+    val->hashVal = 0;
+    return entry = tag_ptr(val, tag::KEYWORD);
+}
+
+Value create_keyword(const std::string& name)
+{
+    return create_keyword({}, name);
+}
+
+Value get_keyword_namespace(Value s)
+{
+    return get_ptr<Keyword>(s)->ns;
+}
+
+Value get_keyword_name(Value s)
+{
+    return get_ptr<Keyword>(s)->name;
+}
+
+std::uint32_t get_keyword_hash(Value val)
+{
+    return get_ptr<Keyword>(val)->hashVal;
+}
+
+void set_keyword_hash(Value val, std::uint32_t h)
+{
+    get_ptr<Keyword>(val)->hashVal = h;
+}
+
+Value create_int48(Int64 intVal)
+{
+    return tag_data(std::uint64_t(intVal), tag::INT48);
+}
+
+Force create_int64(Int64 intVal)
+{
+    static_assert(std::int64_t(-4) >> 2 == -1, "needs arithmetic left shift");
+    if ((Int64(std::uint64_t(intVal) << tag::DATA_SHIFT) >> tag::DATA_SHIFT) == intVal)
+        return create_int48(intVal);
+    auto val = alloc<Int64>();
+    *val = intVal;
+    return tag_ptr(val, tag::INT64);
+}
+
+ValueBits CLEO_CDECL create_int64_unsafe(Int64 val)
+{
+    return create_int64(val).value().bits();
+}
+
+Value create_uchar(Char32 val)
+{
+    return tag_data(std::uint64_t(val), tag::UCHAR);
+}
+
+Char32 get_uchar_value(Value val)
+{
+    return Char32(val.bits());
+}
+
+Force create_float64(Float64 floatVal)
+{
+    if (std::isnan(floatVal))
+        return Value{tag::FLOAT64};
+    return Value{bit_cast<ValueBits>(floatVal) ^ tag::FLIP_MASK};
+}
+
+Float64 get_float64_value(Value val)
+{
+    return bit_cast<Float64>(val.bits() ^ tag::FLIP_MASK);
+}
+
+Force create_string(const char* str, std::uint32_t size)
+{
+    return create_string(str, size, mem_alloc);
 }
 
 const char *get_string_ptr(Value val)
