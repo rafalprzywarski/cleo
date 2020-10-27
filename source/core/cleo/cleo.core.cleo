@@ -267,8 +267,7 @@
        (let* [mdecl (parse-fdecl-meta decl)
               decl (second mdecl)
               m (assoc* (first mdecl) :macro true)
-              m (merge {:arglists (arglists* decl)
-                        :source-form (list 'quote &form)} m)]
+              m (merge {:arglists (arglists* decl)} m)]
          (list 'def m name (if (vector? (first decl))
                              `(fn* ~name ~@(into-do decl '[&form &env]))
                              `(fn* ~name ~@(map1 (fn* [d] (into-do d '[&form &env])) decl)))))))
@@ -344,8 +343,7 @@
          arglists (if (isa? (type (first decl)) cleo.core/Sequence)
                     (map1 first decl)
                     (list (first decl)))
-         m (merge {:arglists (arglists* decl)
-                   :source-form (list 'quote &form)} (first mdecl))]
+         m (merge {:arglists (arglists* decl)} (first mdecl))]
     `(def ~m ~name (fn ~name ~@decl))))
 
 
@@ -354,8 +352,7 @@
                [name doc-string? attr-map? ([params*] body)+])}
   [name & decl]
   (let* [mdecl (parse-fdecl-meta decl)
-         m (merge {:source-form (list 'quote &form)} (first mdecl))
-         m (assoc* m :private true)]
+         m (assoc* (first mdecl) :private true)]
     `(defn ~name ~m ~@(second mdecl))))
 
 
