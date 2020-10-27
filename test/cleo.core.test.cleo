@@ -1251,18 +1251,18 @@
     (assert= 3 (count f))
     (assert= (:bodies f) [{:arity 0
                            :bytecode [vm/CNIL]}])
-    (assert= ast (:ast f))
+    (assert= (pr-str ast) (:ast-str f))
     (assert-not (-> f :name namespace))
     (assert (str-starts-with? (-> f :name name) "anonfn--"))
     (assert= Int64 (-> f :name name (subs 8) read-string type)))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/CNIL]}]}
-           (dissoc (cc/translate (cc/parse '(fn* abc []))) :ast))
+           (dissoc (cc/translate (cc/parse '(fn* abc []))) :ast-str))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/LDL 255 255]}]}
-           (dissoc (cc/translate (cc/parse '(fn* abc [] abc))) :ast))
+           (dissoc (cc/translate (cc/parse '(fn* abc [] abc))) :ast-str))
   (assert= {:name 'abc
             :bodies [{:arity 2
                       :bytecode [vm/LDL 254 255
@@ -1270,7 +1270,7 @@
                                  vm/LDL 255 255
                                  vm/POP
                                  vm/LDL 253 255]}]}
-           (dissoc (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))) :ast))
+           (dissoc (cc/translate (cc/parse '(fn* abc [x y] (do x y abc)))) :ast-str))
   (assert= {:name 'abc
             :bodies [{:arity 2
                       :vararg true
@@ -1279,7 +1279,7 @@
                                  vm/LDL 255 255
                                  vm/POP
                                  vm/LDL 253 255]}]}
-           (dissoc (cc/translate (cc/parse '(fn* abc [x & y] (do x y abc)))) :ast))
+           (dissoc (cc/translate (cc/parse '(fn* abc [x & y] (do x y abc)))) :ast-str))
   (assert= {:name 'abc
             :bodies [{:arity 0
                       :bytecode [vm/CNIL]}
@@ -1287,7 +1287,7 @@
                       :bytecode [vm/CNIL]}
                      {:arity 3
                       :bytecode [vm/CNIL]}]}
-           (dissoc (cc/translate (cc/parse '(fn* abc ([]) ([x]) ([x y z])))) :ast))
+           (dissoc (cc/translate (cc/parse '(fn* abc ([]) ([x]) ([x y z])))) :ast-str))
   (when slow-tests
     (assert-compilation-error "Too many params: 32768" (translate-body (list 'fn*
                                                                              (loop [i 0 bindings (transient [])]

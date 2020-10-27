@@ -4,6 +4,7 @@
 #include "multimethod.hpp"
 #include "persistent_hash_set.hpp"
 #include "eval.hpp"
+#include "reader.hpp"
 #include <cstring>
 #include <algorithm>
 
@@ -219,7 +220,8 @@ void bytecode_fn_update_bodies(Value fn, Value src_fn)
 
 void recompile_bytecode_fn(Value fn)
 {
-    std::array<Value, 2> compile{{*rt::compile_fn_ast, get_bytecode_fn_ast(fn)}};
+    Root ast{read(get_bytecode_fn_ast(fn))};
+    std::array<Value, 2> compile{{*rt::compile_fn_ast, *ast}};
     Root fresh_fn{call(compile.data(), compile.size())};
     bytecode_fn_update_bodies(fn, *fresh_fn);
 }

@@ -978,7 +978,7 @@ Force serialize_fn(Value fn)
     Value BYTECODE = create_keyword("bytecode");
     Value fn_bodies = map_get(fn, create_keyword("bodies"));
     Value name = map_get(fn, create_keyword("name"));
-    Value ast = map_get(fn, create_keyword("ast"));
+    Value ast_str = map_get(fn, create_keyword("ast-str"));
     bool has_closed_locals = !map_get(fn, create_keyword("closed-parent-locals")).is_nil();
     Value dep_vars = map_get(fn, create_keyword("dep-vars"));
     Value dep_fns = map_get(fn, create_keyword("dep-fns"));
@@ -1022,7 +1022,7 @@ Force serialize_fn(Value fn)
         bodies.push_back(body_roots[bodies.size()]);
     }
 
-    Root sfn{(has_closed_locals ? create_open_fn : create_fn)(name, bodies, ast)};
+    Root sfn{(has_closed_locals ? create_open_fn : create_fn)(name, bodies, ast_str)};
     for (Root s{seq(dep_vars)}; *s; s = seq_next(*s))
     {
         Root var{seq_first(*s)};

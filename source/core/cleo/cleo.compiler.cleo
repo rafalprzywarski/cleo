@@ -1042,7 +1042,7 @@
                   tbodies
                   (mapv (fn [b] (init-loads b closed-parent-locals)) tbodies))
         f {:bodies tbodies
-           :ast ast}
+           :ast-str (pr-str ast)}
         f (assoc-not-empty f :dep-vars (merge-member-sets :dep-vars tbodies))
         f (assoc-not-empty f :dep-fns (merge-member-sets :dep-fns tbodies))
         f (if (empty? closed-parent-locals)
