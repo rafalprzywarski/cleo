@@ -432,6 +432,10 @@
         m))))
 
 
+(defn update! [m k f]
+  (assoc! m k (f (get m k))))
+
+
 (defmacro let
   {:special-form true
    :forms '[(let [bindings*] exprs*)]}

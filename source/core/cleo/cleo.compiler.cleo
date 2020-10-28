@@ -1311,20 +1311,19 @@
       (if (pos? (count offs))
         (let [off (peek offs)
               offs (pop! offs)]
-          (if (or (= off n)
-                  (v off))
-            (recur offs v)
-            (let [oc (bc off)
-                  isize (vm/isize oc)
-                  v (assoc! v off true)
-                  noff (+ off isize)
-                  offs (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
-                         (conj! offs (+ noff (get-i16 bc (inc off))))
-                         offs)
-                  offs (if (#{vm/BR vm/THROW} oc)
-                         offs
-                         (conj! offs noff))]
-              (recur offs v))))
+          (cond (= off n) (recur offs v)
+                (v off) (recur offs (update! v off inc))
+                :else (let [oc (bc off)
+                            isize (vm/isize oc)
+                            v (assoc! v off 1)
+                            noff (+ off isize)
+                            offs (if (#{vm/BR vm/BNIL vm/BNNIL} oc)
+                                   (conj! offs (+ noff (get-i16 bc (inc off))))
+                                   offs)
+                            offs (if (#{vm/BR vm/THROW} oc)
+                                   offs
+                                   (conj! offs noff))]
+                        (recur offs v))))
         (persistent! v)))))
 
 
@@ -1360,9 +1359,10 @@
               noff (+ off isize)
               noc (get bc noff)
               newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
-              branch? (#{vm/BR vm/BNIL vm/BNNIL} oc)]
+              branch? (#{vm/BR vm/BNIL vm/BNNIL} oc)
+              ncbranch? (#{vm/BNIL vm/BNNIL} noc)]
           (cond (and (#{vm/CNIL vm/LDC} oc)
-                     (#{vm/BNIL vm/BNNIL} noc))
+                     ncbranch?)
                 (recur noff
                        newoffs
                        (conj! broffs newoff)
@@ -1380,6 +1380,14 @@
                          broffs
                          doffs
                          (if needs-pop? (conj! out vm/POP) out)))
+                (and (= oc vm/NOT)
+                     ncbranch?
+                     (= (reachable-bytes noff) 1))
+                (recur (+ noff (vm/isize noc))
+                       (-> newoffs (conj! newoff) (conj-nils! (dec (vm/isize noc))))
+                       (conj! broffs newoff)
+                       (conj! doffs (get-dest noff))
+                       (-> out (conj! (if (= noc vm/BNIL) vm/BNNIL vm/BNIL)) (conj-i16! 0)))
                 branch?
                 (let [doff (get-dest off)
                       boc (get bc doff)
