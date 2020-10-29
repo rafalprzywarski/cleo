@@ -3636,8 +3636,7 @@
                                vm/BR 3 0
                                vm/LDL 254 255]))
   (assert= [vm/LDL 255 255
-            vm/BNNIL 3 0
-            vm/BR 247 255
+            vm/BNIL 250 255
             vm/LDL 254 255]
            (optimize-bytecode [vm/CNIL
                                vm/BNNIL 6 0
@@ -3712,8 +3711,7 @@
                                vm/BR 3 0
                                vm/LDL 254 255]))
   (assert= [vm/LDL 255 255
-            vm/BNIL 3 0
-            vm/BR 247 255
+            vm/BNNIL 250 255
             vm/LDL 254 255]
            (optimize-bytecode [vm/LDC 0 0
                                vm/BNIL 6 0
@@ -3809,6 +3807,75 @@
                                       vm/BR 3 0
                                       vm/LDL 253 255]
                            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 10, :stack-size 0, :type cleo.core/Exception}]})))
+
+
+(deftest optimize-bytecode-Bc-over-BR
+  (assert= [vm/LDL 253 255
+            vm/BNIL 6 0
+            vm/LDL 255 255
+            vm/BR 3 0
+            vm/LDL 254 255]
+           (optimize-bytecode [vm/LDL 253 255
+                               vm/BNNIL 3 0
+                               vm/BR 6 0
+                               vm/LDL 255 255
+                               vm/BR 3 0
+                               vm/LDL 254 255]))
+  (assert= [vm/LDL 253 255
+            vm/BNNIL 6 0
+            vm/LDL 255 255
+            vm/BR 3 0
+            vm/LDL 254 255]
+           (optimize-bytecode [vm/LDL 253 255
+                               vm/BNIL 3 0
+                               vm/BR 6 0
+                               vm/LDL 255 255
+                               vm/BR 3 0
+                               vm/LDL 254 255]))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/LDL 253 255
+                       vm/BNIL 3 0
+                       vm/BR 6 0
+                       vm/LDL 255 255
+                       vm/BR 3 0
+                       vm/LDL 254 255]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 12, :stack-size 0, :type cleo.core/Exception}]}
+           (optimize-body {:arity 3
+                           :bytecode [vm/LDL 255 255
+                                      vm/CALL 0
+                                      vm/POP
+                                      vm/LDL 253 255
+                                      vm/BNIL 3 0
+                                      vm/BR 6 0
+                                      vm/LDL 255 255
+                                      vm/BR 3 0
+                                      vm/LDL 254 255]
+                           :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 12, :stack-size 0, :type cleo.core/Exception}]}))
+  (assert= {:arity 3
+            :bytecode [vm/LDL 255 255
+                       vm/CALL 0
+                       vm/POP
+                       vm/LDL 253 255
+                       vm/BNNIL 3 0
+                       vm/BR 6 0
+                       vm/LDL 255 255
+                       vm/BR 3 0
+                       vm/LDL 254 255]
+            :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 12, :stack-size 0, :type cleo.core/Exception}]}
+           (optimize-body {:arity 3
+                           :bytecode [vm/LDL 255 255
+                                      vm/CALL 0
+                                      vm/POP
+                                      vm/LDL 253 255
+                                      vm/BNNIL 3 0
+                                      vm/BR 6 0
+                                      vm/LDL 255 255
+                                      vm/BR 3 0
+                                      vm/LDL 254 255]
+                           :exception-table [{:start-offset 0, :end-offset 5, :handler-offset 12, :stack-size 0, :type cleo.core/Exception}]})))
 
 
 (deftest eval-fn

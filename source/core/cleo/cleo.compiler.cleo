@@ -1360,6 +1360,7 @@
               noc (get bc noff)
               newoffs (-> newoffs (conj! newoff) (conj-nils! (dec isize)))
               branch? (#{vm/BR vm/BNIL vm/BNNIL} oc)
+              cbranch? (#{vm/BNIL vm/BNNIL} oc)
               ncbranch? (#{vm/BNIL vm/BNNIL} noc)]
           (cond (and (#{vm/CNIL vm/LDC} oc)
                      ncbranch?)
@@ -1388,6 +1389,18 @@
                        (conj! broffs newoff)
                        (conj! doffs (get-dest noff))
                        (-> out (conj! (if (= noc vm/BNIL) vm/BNNIL vm/BNIL)) (conj-i16! 0)))
+                (and cbranch?
+                     (= (get-i16 bc (inc off)) (vm/isize vm/BR))
+                     (= noc vm/BR)
+                     (not (zero? (get-i16 bc (inc noff))))
+                     (= (reachable-bytes noff) 1))
+                (recur noff
+                       newoffs
+                       (-> broffs (conj! newoff) (conj! (+ newoff isize)))
+                       (-> doffs (conj! (get-dest noff)) (conj! (get-dest off)))
+                       (-> out
+                           (conj! (if (= oc vm/BNIL) vm/BNNIL vm/BNIL)) (conj-i16! 0)
+                           (conj! vm/BR) (conj-i16! 0)))
                 branch?
                 (let [doff (get-dest off)
                       boc (get bc doff)
