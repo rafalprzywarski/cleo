@@ -1392,15 +1392,12 @@
                 (and cbranch?
                      (= (get-i16 bc (inc off)) (vm/isize vm/BR))
                      (= noc vm/BR)
-                     (not (zero? (get-i16 bc (inc noff))))
                      (= (reachable-bytes noff) 1))
-                (recur noff
-                       newoffs
-                       (-> broffs (conj! newoff) (conj! (+ newoff isize)))
-                       (-> doffs (conj! (get-dest noff)) (conj! (get-dest off)))
-                       (-> out
-                           (conj! (if (= oc vm/BNIL) vm/BNNIL vm/BNIL)) (conj-i16! 0)
-                           (conj! vm/BR) (conj-i16! 0)))
+                (recur (+ noff (vm/isize noc))
+                       (-> newoffs (conj! newoff) (conj-nils! (dec (vm/isize noc))))
+                       (conj! broffs newoff)
+                       (conj! doffs (get-dest noff))
+                       (-> out (conj! (if (= oc vm/BNIL) vm/BNNIL vm/BNIL)) (conj-i16! 0)))
                 branch?
                 (let [doff (get-dest off)
                       boc (get bc doff)
